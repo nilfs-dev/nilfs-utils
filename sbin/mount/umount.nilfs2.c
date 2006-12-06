@@ -366,7 +366,7 @@ static void change_mtab_opt(const char *spec, const char *node,
 	/* Above entries are used only when adding new entry */
 	mnt.mnt_opts = opts;
 
-	if (!nomtab && mtab_is_writable())
+	if (!nomtab)
 		update_mtab(node, &mnt);
 
 	my_free(mnt.mnt_fsname);
@@ -482,7 +482,7 @@ umount_one(const char *spec, const char *node, const char *type,
 		del_loop(loopdev);
 
 // writemtab:
-	if (!nomtab && mtab_is_writable() &&
+	if (!nomtab &&
 	    (umnt_err == 0 || umnt_err == EINVAL || umnt_err == ENOENT)) {
 		update_mtab(node, NULL);
 	}
