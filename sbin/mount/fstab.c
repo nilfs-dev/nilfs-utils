@@ -30,11 +30,11 @@
 #include <mntent.h>		/* for MNTTYPE_IGNORE */
 #endif	/* HAVE_MNTENT_H */
 
-#include "mntent.h"
+#include "mount_mntent.h"
 #include "fstab.h"
 #include "sundries.h"
 #include "xmalloc.h"
-#include "paths.h"
+#include "mount_paths.h"
 #include "nls.h"
 
 #define streq(s, t)	(strcmp ((s), (t)) == 0)

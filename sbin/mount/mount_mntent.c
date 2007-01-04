@@ -24,7 +24,7 @@
 #include <sys/stat.h>		/* for umask */
 #endif	/* HAVE_SYS_STAT_H */
 
-#include "mntent.h"
+#include "mount_mntent.h"
 #include "sundries.h"		/* for xmalloc */
 #include "nls.h"
 

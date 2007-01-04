@@ -3,8 +3,9 @@
 COMMONSOURCES = sundries.c xmalloc.c
 COMMONHEADERS = mount.nilfs2.h sundries.h xmalloc.h
 
-LEGACYSOURCES = fstab.c mntent.c mount_opts.c
-LEGACYHEADERS = fstab.h mount_constants.h mntent.h mount_opts.h paths.h
+LEGACYSOURCES = fstab.c mount_mntent.c mount_opts.c
+LEGACYHEADERS = fstab.h mount_constants.h mount_mntent.h mount_opts.h \
+		mount_paths.h
 
 AM_CFLAGS = -Wall
 AM_CPPFLAGS = -I$(top_srcdir)/include

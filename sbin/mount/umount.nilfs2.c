@@ -63,6 +63,14 @@
 #include <sys/mount.h>
 #endif	/* HAVE_SYS_MOUNT_H */
 
+#if HAVE_MNTENT_H
+#include <mntent.h>
+#endif	/* HAVE_MNTENT_H */
+
+#if HAVE_PATHS_H
+#include <paths.h>
+#endif	/* HAVE_PATHS_H */
+
 #if HAVE_SYS_STAT_H
 #include <sys/stat.h>
 #endif	/* HAVE_SYS_STAT_H */
@@ -80,10 +88,10 @@
 #include <errno.h>
 
 #include "fstab.h"
-#include "paths.h"
+#include "mount_paths.h"
 #include "sundries.h"
 #include "xmalloc.h"
-#include "mntent.h"
+#include "mount_mntent.h"
 #include "mount_constants.h"
 #include "mount_opts.h"
 #include "mount.nilfs2.h"

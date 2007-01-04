@@ -3,15 +3,8 @@
  *
  * modified by Ryusuke Konishi <konishi.ryusuke@lab.ntt.co.jp>
  */
-#ifndef MY_MNTENT_H
-#define MY_MNTENT_H
-
-/* General filesystem types.  */
-#ifndef MNTTYPE_IGNORE
-#define MNTTYPE_IGNORE  "ignore"        /* Ignore this entry.  */
-#define MNTTYPE_NFS     "nfs"           /* Network file system.  */
-#define MNTTYPE_SWAP    "swap"          /* Swap device.  */
-#endif
+#ifndef MOUNT_MNTENT_H
+#define MOUNT_MNTENT_H
 
 struct my_mntent {
 	const char *mnt_fsname;
@@ -37,4 +30,4 @@ void my_endmntent (mntFILE *mfp);
 int my_addmntent (mntFILE *mfp, struct my_mntent *mnt);
 struct my_mntent *my_getmntent (mntFILE *mfp);
 
-#endif
+#endif /* MOUNT_MNTENT_H */
