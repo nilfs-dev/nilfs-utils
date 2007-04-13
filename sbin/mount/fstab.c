@@ -127,16 +127,24 @@ my_free(const void *s) {
 }
 
 static void
-discard_mntentchn(struct mntentchn *mc0) {
-	struct mntentchn *mc, *mc1;
-
-	for (mc = mc0->nxt; mc && mc != mc0; mc = mc1) {
-		mc1 = mc->nxt;
+my_free_mc(struct mntentchn *mc) {
+	if (mc) {
 		my_free(mc->m.mnt_fsname);
 		my_free(mc->m.mnt_dir);
 		my_free(mc->m.mnt_type);
 		my_free(mc->m.mnt_opts);
 		free(mc);
+	}
+}
+
+
+static void
+discard_mntentchn(struct mntentchn *mc0) {
+	struct mntentchn *mc, *mc1;
+
+	for (mc = mc0->nxt; mc && mc != mc0; mc = mc1) {
+		mc1 = mc->nxt;
+		my_free_mc(mc);
 	}
 }
 
@@ -551,25 +559,22 @@ update_mtab (const char *dir, struct my_mntent *instead) {
 			if (mc && mc != mc0) {
 				mc->prev->nxt = mc->nxt;
 				mc->nxt->prev = mc->prev;
-				free(mc);
+				my_free_mc(mc);
 			}
 		} else {
 			/* Replace option strings. (changed for nilfs2) */
 			my_free(mc->m.mnt_opts);
-			mc->m.mnt_opts = instead->mnt_opts;
-			instead->mnt_opts = NULL;
+			mc->m.mnt_opts = xstrdup(instead->mnt_opts);
 		}
 	} else if (instead) {
 		/* not found, add a new entry */
 		absent = xmalloc(sizeof(*absent));
-		absent->m = *instead;
-
-		/* change for nilfs2 */
-		instead->mnt_fsname = NULL;
-		instead->mnt_dir = NULL;
-		instead->mnt_type = NULL;
-		instead->mnt_opts = NULL;
-
+		absent->m.mnt_fsname = xstrdup(instead->mnt_fsname);
+		absent->m.mnt_dir = xstrdup(instead->mnt_dir);
+		absent->m.mnt_type = xstrdup(instead->mnt_type);
+		absent->m.mnt_opts = xstrdup(instead->mnt_opts);
+		absent->m.mnt_freq = instead->mnt_freq;
+		absent->m.mnt_passno = instead->mnt_passno;
 		absent->nxt = mc0;
 		absent->prev = mc0->prev;
 		mc0->prev = absent;
@@ -583,6 +588,7 @@ update_mtab (const char *dir, struct my_mntent *instead) {
 		int errsv = errno;
 		error (_("cannot open %s (%s) - mtab not updated"),
 		       MOUNTED_TEMP, strerror (errsv));
+		discard_mntentchn(mc0);
 		goto leave;
 	}
 
