@@ -221,11 +221,7 @@ static void parse_options(int argc, char *argv[], struct mount_options *opts)
 			opts->fstype = optarg;
 			break;
 		case 'o':
-			if (opts->opts)
-				opts->opts = xstrconcat3(opts->opts, ",",
-							 optarg);
-			else
-				opts->opts = xstrdup(optarg);
+			opts->opts = append_opt(opts->opts, optarg, NULL);
 			break;
 		case 'r':
 			readonly++;

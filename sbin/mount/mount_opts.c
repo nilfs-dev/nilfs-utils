@@ -144,13 +144,38 @@ static int parse_string_opt(char *s)
 	return 0;
 }
 
+/* reallocates its first arg */
+char *append_opt(char *s, const char *opt, const char *val)
+{
+	if (!opt)
+		return s;
+	if (!s) {
+		if (!val)
+		       return xstrdup(opt);		/* opt */
+
+		return xstrconcat3(NULL, opt, val);	/* opt=val */
+	}
+	if (!val)
+		return xstrconcat3(s, ",", opt);	/* s,opt */
+
+	return xstrconcat4(s, ",", opt, val);		/* s,opt=val */
+}
+
+char *append_numopt(char *s, const char *opt, long num)
+{
+	char buf[32];
+
+	snprintf(buf, sizeof(buf), "%ld", num);
+	return append_opt(s, opt, buf);
+}
+
 /*
  * Look for OPT in opt_map table and return mask value.
  * If OPT isn't found, tack it onto extra_opts (which is non-NULL).
  * For the options uid= and gid= replace user or group name by its value.
  */
 static inline void
-parse_opt(const char *opt, int *mask, char *extra_opts, int len)
+parse_opt(const char *opt, int *mask, char **extra_opts)
 {
 	const struct opt_map *om;
 
@@ -175,37 +200,27 @@ parse_opt(const char *opt, int *mask, char *extra_opts, int len)
 			return;
 		}
 
-	len -= strlen(extra_opts);
-
-	if (*extra_opts && --len > 0)
-		strcat(extra_opts, ",");
-
 	/* convert nonnumeric ids to numeric */
 	if (!strncmp(opt, "uid=", 4) && !isdigit(opt[4])) {
 		struct passwd *pw = getpwnam(opt+4);
-		char uidbuf[20];
 
 		if (pw) {
-			sprintf(uidbuf, "uid=%d", pw->pw_uid);
-			if ((len -= strlen(uidbuf)) > 0)
-				strcat(extra_opts, uidbuf);
+			*extra_opts = append_numopt(*extra_opts,
+						"uid=", pw->pw_uid);
 			return;
 		}
 	}
 	if (!strncmp(opt, "gid=", 4) && !isdigit(opt[4])) {
 		struct group *gr = getgrnam(opt+4);
-		char gidbuf[20];
 
 		if (gr) {
-			sprintf(gidbuf, "gid=%d", gr->gr_gid);
-			if ((len -= strlen(gidbuf)) > 0)
-				strcat(extra_opts, gidbuf);
+			*extra_opts = append_numopt(*extra_opts,
+						"gid=", gr->gr_gid);
 			return;
 		}
 	}
 
-	if ((len -= strlen(opt)) > 0)
-		strcat(extra_opts, opt);
+	*extra_opts = append_opt(*extra_opts, opt, NULL);
 }
 
 /* Take -o options list and compute 4th and 5th args to mount(2).  flags
@@ -220,14 +235,10 @@ void parse_opts(const char *options, int *flags, char **extra_opts)
 	if (options != NULL) {
 		char *opts = xstrdup(options);
 		char *opt;
-		int len = strlen(opts) + 20;
-
-		*extra_opts = xmalloc(len);
-		**extra_opts = '\0';
 
 		for (opt = strtok(opts, ","); opt; opt = strtok(NULL, ","))
 			if (!parse_string_opt(opt))
-				parse_opt(opt, flags, *extra_opts, len);
+				parse_opt(opt, flags, extra_opts);
 
 		free(opts);
 	}
@@ -248,26 +259,25 @@ char *fix_opts_string(int flags, const char *extra_opts, const char *user)
 	const struct string_opt_map *m;
 	char *new_opts;
 
-	new_opts = xstrdup((flags & MS_RDONLY) ? "ro" : "rw");
+	new_opts = append_opt(NULL, (flags & MS_RDONLY) ? "ro" : "rw", NULL);
 	for (om = opt_map; om->opt != NULL; om++) {
 		if (om->skip)
 			continue;
 		if (om->inv || !om->mask || (flags & om->mask) != om->mask)
 			continue;
-		new_opts = xstrconcat3(new_opts, ",", om->opt);
+		new_opts = append_opt(new_opts, om->opt, NULL);
 		flags &= ~om->mask;
 	}
 	for (m = &string_opt_map[0]; m->tag; m++) {
 		if (!m->skip && *(m->valptr))
-			new_opts = xstrconcat4(new_opts, ",",
-					       m->tag, *(m->valptr));
+			new_opts = append_opt(new_opts, m->tag, *(m->valptr));
 	}
-	if (extra_opts && *extra_opts) {
-		new_opts = xstrconcat3(new_opts, ",", extra_opts);
-	}
-	if (user) {
-		new_opts = xstrconcat3(new_opts, ",user=", user);
-	}
+	if (extra_opts && *extra_opts)
+		new_opts = append_opt(new_opts, extra_opts, NULL);
+
+	if (user)
+		new_opts = append_opt(new_opts, "user=", user);
+
 	return new_opts;
 }
 
