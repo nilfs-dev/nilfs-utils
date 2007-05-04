@@ -25,6 +25,11 @@
 #include <pwd.h>
 #include <grp.h>
 
+#ifdef HAVE_LIBSELINUX
+#include <selinux/selinux.h>
+#include <selinux/context.h>
+#endif /* HAVE_LIBSELINUX */
+
 #include "sundries.h"
 #include "xmalloc.h"
 #include "mount_constants.h"
@@ -32,10 +37,14 @@
 #include "nls.h"
 
 
+#if defined(MS_SILENT) || defined(HAVE_LIBSELINUX)
+extern int verbose;
+#endif
 #ifdef MS_SILENT
-extern int verbose, mount_quiet;
+extern int mount_quiet;
 #endif
 extern int readonly, readwrite;
+extern char *progname;
 
 /* Map from -o and fstab option strings to the flag argument to mount(2).  */
 struct opt_map {
@@ -171,13 +180,72 @@ char *append_numopt(char *s, const char *opt, long num)
 	return append_opt(s, opt, buf);
 }
 
+#ifdef HAVE_LIBSELINUX
+/* strip quotes from a "string"
+ * Warning: This function modify the "str" argument.
+ */
+static char *
+strip_quotes(char *str)
+{
+	char *end = NULL;
+
+	if (*str != '"')
+		return str;
+
+	end = strrchr(str, '"');
+	if (end == NULL || end == str)
+		die (EX_USAGE, _("%s: improperly quoted option string '%s'"),
+		     progname, str);
+
+	*end = '\0';
+	return str+1;
+}
+
+/* translates SELinux context from human to raw format and
+ * appends it to the mount extra options.
+ *
+ * returns -1 on error and 0 on success
+ */
+static int
+append_context(const char *optname, char *optdata, char **extra_opts)
+{
+	security_context_t raw = NULL;
+	char *data = NULL;
+
+	if (!is_selinux_enabled())
+		/* ignore the option if we running without selinux */
+		return 0;
+
+	if (optdata==NULL || *optdata=='\0' || optname==NULL)
+		return -1;
+
+	/* TODO: use strip_quotes() for all mount options? */
+	data = *optdata =='"' ? strip_quotes(optdata) : optdata;
+
+	if (selinux_trans_to_raw_context(
+			(security_context_t) data, &raw)==-1 ||
+			raw==NULL)
+		return -1;
+
+	if (verbose)
+		printf(_("%s: translated %s '%s' to '%s'\n"),
+		       progname, optname, data, (char *) raw);
+
+	*extra_opts = append_opt(*extra_opts, optname, NULL);
+	*extra_opts = xstrconcat4(*extra_opts, "\"", (char *) raw, "\"");
+
+	freecon(raw);
+	return 0;
+}
+#endif
+
 /*
  * Look for OPT in opt_map table and return mask value.
  * If OPT isn't found, tack it onto extra_opts (which is non-NULL).
  * For the options uid= and gid= replace user or group name by its value.
  */
 static inline void
-parse_opt(const char *opt, int *mask, char **extra_opts)
+parse_opt(char *opt, int *mask, char **extra_opts)
 {
 	const struct opt_map *om;
 
@@ -222,6 +290,20 @@ parse_opt(const char *opt, int *mask, char **extra_opts)
 		}
 	}
 
+#ifdef HAVE_LIBSELINUX
+	if (strncmp(opt, "context=", 8) == 0 && *(opt+8)) {
+		if (append_context("context=", opt+8, extra_opts) == 0)
+			return;
+	}
+	if (strncmp(opt, "fscontext=", 10) == 0 && *(opt+10)) {
+		if (append_context("fscontext=", opt+10, extra_opts) == 0)
+			return;
+	}
+	if (strncmp(opt, "defcontext=", 11) == 0 && *(opt+11)) {
+		if (append_context("defcontext=", opt+11, extra_opts) == 0)
+			return;
+	}
+#endif
 	*extra_opts = append_opt(*extra_opts, opt, NULL);
 }
 
@@ -236,12 +318,25 @@ void parse_opts(const char *options, int *flags, char **extra_opts)
 
 	if (options != NULL) {
 		char *opts = xstrdup(options);
-		char *opt;
+		int open_quote = 0;
+		char *opt, *p;
 
-		for (opt = strtok(opts, ","); opt; opt = strtok(NULL, ","))
-			if (!parse_string_opt(opt))
-				parse_opt(opt, flags, extra_opts);
-
+		for (p=opts, opt=NULL; p && *p; p++) {
+			if (!opt)
+				opt = p;		/* begin of the option item */
+			if (*p == '"')
+				open_quote ^= 1;	/* reverse the status */
+			if (open_quote)
+				continue;		/* still in quoted block */
+			if (*p == ',')
+				*p = '\0';		/* terminate the option item */
+			/* end of option item or last item */
+			if (*p == '\0' || *(p+1) == '\0') {
+				if (!parse_string_opt(opt))
+					parse_opt(opt, flags, extra_opts);
+				opt = NULL;
+			}
+		}
 		free(opts);
 	}
 

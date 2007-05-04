@@ -32,4 +32,8 @@ mount_nilfs2_SOURCES = mount.nilfs2.c $(COMMONSOURCES) $(COMMONHEADERS)
 
 umount_nilfs2_SOURCES = umount.nilfs2.c $(COMMONSOURCES) $(COMMONHEADERS)
 
+if HAVE_SELINUX
+LDADD += -lselinux
+endif  # HAVE_SELINUX
+
 endif  # CONFIG_LIBMOUNT
