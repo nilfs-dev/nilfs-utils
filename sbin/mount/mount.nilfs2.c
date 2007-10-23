@@ -650,6 +650,8 @@ int main(int argc, char *argv[])
 	if (signal(SIGINT, handle_signal) == SIG_ERR)
 		die(EX_SYSERR, _("Could not set SIGINT"));
 
+	atexit(unlock_mtab);
+
 	block_signals(SIG_BLOCK);
 	res = mount_one(device, mntdir, opts);
 	block_signals(SIG_UNBLOCK);

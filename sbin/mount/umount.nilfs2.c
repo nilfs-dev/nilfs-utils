@@ -258,6 +258,8 @@ int main(int argc, char *argv[])
 	argc -= optind;
 	argv += optind;
 
+	atexit(unlock_mtab);
+
 	if (argc < 1)
 		die(EX_USAGE, _("No mountpoint specified"));
 	else while (argc--)
