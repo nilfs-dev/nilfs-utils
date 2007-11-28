@@ -76,6 +76,7 @@
 #include "cleaner_exec.h"
 #include "cleaner_msg.h"
 #include "nls.h"
+#include "pathnames.h"
 #include "realpath.h"
 
 struct nilfs_cleaner {
@@ -93,10 +94,6 @@ struct nilfs_cleaner {
 #ifndef LINE_MAX
 #define LINE_MAX	2048
 #endif	/* LINE_MAX */
-
-#ifndef MTAB
-#define MTAB  "/etc/mtab"
-#endif
 
 #ifndef MNTTYPE_NILFS
 #define MNTTYPE_NILFS	"nilfs2"
@@ -192,10 +189,10 @@ static int nilfs_cleaner_find_fs(struct nilfs_cleaner *cleaner,
 		cleaner->mountdir = cdir;
 	}
 
-	fp = fopen(MTAB, "r");
+	fp = fopen(_PATH_MOUNTED, "r");
 	if (fp == NULL) {
-		nilfs_cleaner_logger(LOG_ERR, _("Error: cannot open " MTAB
-						"."));
+		nilfs_cleaner_logger(LOG_ERR, _("Error: cannot open "
+						_PATH_MOUNTED "."));
 		goto abort;
 	}
 

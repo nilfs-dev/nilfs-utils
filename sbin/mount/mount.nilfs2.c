@@ -65,10 +65,6 @@
 #include <mntent.h>
 #endif	/* HAVE_MNTENT_H */
 
-#if HAVE_PATHS_H
-#include <paths.h>
-#endif	/* HAVE_PATHS_H */
-
 #if HAVE_SYS_STAT_H
 #include <sys/stat.h>
 #endif	/* HAVE_SYS_STAT_H */
@@ -82,7 +78,7 @@
 #include <errno.h>
 
 #include "fstab.h"
-#include "mount_paths.h"
+#include "pathnames.h"
 #include "sundries.h"
 #include "xmalloc.h"
 #include "mount_mntent.h"
@@ -345,16 +341,16 @@ update_mtab_entry(const char *spec, const char *node, const char *type,
 		mntFILE *mfp;
 
 		lock_mtab();
-		mfp = my_setmntent(MOUNTED, "a+");
+		mfp = my_setmntent(_PATH_MOUNTED, "a+");
 		if (mfp == NULL || mfp->mntent_fp == NULL) {
 			int errsv = errno;
 			error(_("%s: can't open %s, %s"),
-			      progname, MOUNTED, strerror(errsv));
+			      progname, _PATH_MOUNTED, strerror(errsv));
 		} else {
 			if ((my_addmntent (mfp, &mnt)) == 1) {
 				int errsv = errno;
 				error(_("%s: error writing %s, %s"),
-				      progname, MOUNTED, strerror(errsv));
+				      progname, _PATH_MOUNTED, strerror(errsv));
 			}
 		}
 		my_endmntent(mfp);
@@ -405,9 +401,9 @@ static int check_mtab(void)
 		if (mtab_is_writable())
 			res++;
 		else
-			error(_("%s: cannot modify " MOUNTED ".\n"
+			error(_("%s: cannot modify " _PATH_MOUNTED ".\n"
 				"Please remount the partition with -f option"
-				" after making " MOUNTED " writable."),
+				" after making " _PATH_MOUNTED " writable."),
 			       progname);
 	}
 	return res;
@@ -630,7 +626,7 @@ int main(int argc, char *argv[])
 
 	if (!nomtab && mtab_does_not_exist())
 		die(EX_USAGE, _("%s: no %s found - aborting"), progname,
-		    MOUNTED);
+		    _PATH_MOUNTED);
 
 	if (!(opts->flags & MS_RDONLY) && !(opts->flags & MS_BIND)) {
 		res = device_is_readonly(device, &devro);

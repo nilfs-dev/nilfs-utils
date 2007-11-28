@@ -26,8 +26,9 @@
 #endif
 
 #include <sys/stat.h>
+#include "pathnames.h"
 
-#define MOUNTS			"/etc/mtab"
+
 #define LINE_BUFFER_SIZE	256  /* Line buffer size for reading mtab */
 
 int check_mount(const char *device)
@@ -38,9 +39,9 @@ int check_mount(const char *device)
 	dev_t file_dev = 0, file_rdev = 0;
 	ino_t file_ino = 0;
 
-	f = setmntent(MOUNTS, "r");
+	f = setmntent(_PATH_MOUNTED, "r");
 	if (f == NULL) {
-		fprintf(stderr, "Error: cannot open %s!", MOUNTS);
+		fprintf(stderr, "Error: cannot open %s!", _PATH_MOUNTED);
 		return -1;
 	}
 

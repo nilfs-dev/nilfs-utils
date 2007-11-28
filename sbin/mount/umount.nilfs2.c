@@ -67,10 +67,6 @@
 #include <mntent.h>
 #endif	/* HAVE_MNTENT_H */
 
-#if HAVE_PATHS_H
-#include <paths.h>
-#endif	/* HAVE_PATHS_H */
-
 #if HAVE_SYS_STAT_H
 #include <sys/stat.h>
 #endif	/* HAVE_SYS_STAT_H */
@@ -88,7 +84,7 @@
 #include <errno.h>
 
 #include "fstab.h"
-#include "mount_paths.h"
+#include "pathnames.h"
 #include "sundries.h"
 #include "xmalloc.h"
 #include "mount_mntent.h"

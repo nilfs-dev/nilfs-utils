@@ -73,6 +73,7 @@
 #include <errno.h>
 #include <assert.h>
 #include "nilfs.h"
+#include "pathnames.h"
 #include "realpath.h"
 
 extern __u32 crc32_le(__u32 seed, unsigned char const *data, size_t length);
@@ -138,7 +139,6 @@ static int has_mntopt(const char *opts, const char *opt)
 #ifndef LINE_MAX
 #define LINE_MAX	2048
 #endif	/* LINE_MAX */
-#define PROCMOUNTS	"/proc/mounts"
 
 static int nilfs_find_fs(struct nilfs *nilfs, const char *dev, const char *dir,
 			 const char *opt)
@@ -165,7 +165,7 @@ static int nilfs_find_fs(struct nilfs *nilfs, const char *dev, const char *dir,
 		dir = cdir;
 	}
 
-	fp = fopen(PROCMOUNTS, "r");
+	fp = fopen(_PATH_PROC_MOUNTS, "r");
 	if (fp == NULL)
 		goto failed_dir;
 

@@ -75,6 +75,7 @@
 #include "nilfs.h"
 #include "nilfs_feature.h"
 #include "mkfs.h"
+#include "pathnames.h"
 
 
 typedef __u64  blocknr_t;
@@ -90,7 +91,6 @@ extern __u32 crc32_le(__u32 seed, unsigned char const *data, size_t length);
 /*
  * System primitives
  */
-#define MOUNTS			"/etc/mtab"
 #define LINE_BUFFER_SIZE	256  /* Line buffer size for reading mtab */
 #define BLOCKSIZE_BUFFER_SIZE	100
 
@@ -711,10 +711,10 @@ static void check_mount(int fd, const char *device)
 	FILE *fp;
 	char line[LINE_BUFFER_SIZE];
 
-	fp = fopen(MOUNTS, "r");
+	fp = fopen(_PATH_MOUNTED, "r");
 	if (fp == NULL) {
 		close(fd);
-		perr("Error: cannot open %s!", MOUNTS);
+		perr("Error: cannot open %s!", _PATH_MOUNTED);
 	}
 
 	while (fgets(line, LINE_BUFFER_SIZE, fp) != NULL) {
