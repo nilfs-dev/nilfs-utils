@@ -1,0 +1,59 @@
+nilfs-utils-2.0.0  Mon Feb 18, 2008 JST
+
+	* add a missing error handling of cleanerd.
+
+nilfs-utils-2.0.0-testing-9  Wed Feb 13, 2008 JST
+
+	* Fixed a hang problem that arose under a near disk full condition.
+	* Fixed the problem that a NILFS partition mounted at boot time could
+	  not be unmounted manually.  This problem came from the standard
+	  behavior of most Linux distributions where the /var/run directory was
+	  cleaned after a boot time mount process.  The clean-up job removed
+	  the PID file of cleanerd and caused its shutdown failure.
+	  The cleanerd and mount/umount programs were fairly changed for this
+	  fix; now /etc/mtab is used instead to keep a PID of the cleanerd.
+
+nilfs-utils-2.0.0-testing-8  Thu Dec 27, 2007 JST
+
+nilfs-utils-2.0.0-testing-7  Thu Nov 29, 2007 JST
+	
+	* add cast for 64bit environment.
+	* modify some error messages.
+	
+nilfs-utils-2.0.0-testing-6  Mon Oct 22, 2007 JST
+
+	* Changed the message of "No such device" error printed by mount.nilfs2
+	  to make it more understandable.
+
+nilfs-utils-2.0.0-testing-5  Mon Oct 15, 2007 JST
+
+nilfs-utils-2.0.0-testing-4  Thu Oct 11, 2007 JST
+
+	* Add a new argument to nilfs_sync() API to allow utilities (e.g. mkcp)
+	  to get the number of generated checkpoint atomically.
+	* Fixed an installation error due to a lookup failure of ldconfig
+	  that occurs on some distros.
+
+nilfs-utils-2.0.0-testing-3  Tue Jul 24, 2007 JST
+
+	* Allow regular files to be used with mkfs.nilfs2.
+	  
+	  The current implementation of mkfs.nilfs2 is limited to block devices
+	  only, because of the use of the BLKGETSIZE64 ioctl(). That patches
+	  allows mkfs.nilfs2 to format regular files, in addition to block
+	  devices.
+	  
+	  Signed-off-by: Thomas Petazzoni <thomas.petazzoni@enix.org>
+
+nilfs-utils-2.0.0-testing-2  Tue Jun 20, 2007 JST
+	
+	* Fixed a problem that the lscp and other userland tools might
+	  fail on Ubuntu 6 if a samba mounted partition exists.
+
+nilfs-utils-2.0.0-testing  Wed Jun 13, 2007 JST
+	
+	* The first release.
+	* Implemented the Garbage Collector.
+	* Rewrote almost all of the source code.
+--
+ChangeLog,v 1.18 2008-02-18 04:37:29 ryusuke Exp

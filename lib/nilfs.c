@@ -1,0 +1,881 @@
+/*
+ * nilfs.c - NILFS library.
+ *
+ * Copyright (C) 2007 Nippon Telegraph and Telephone Corporation.
+ *
+ * This file is part of NILFS.
+ *
+ * NILFS is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * NILFS is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with NILFS; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+ *
+ * nilfs.c,v 1.29 2007-10-19 01:19:51 koji Exp
+ *
+ * Written by Koji Sato <koji@osrg.net>.
+ */
+
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif	/* HAVE_CONFIG_H */
+
+#include <stdio.h>
+
+#if HAVE_STDLIB_H
+#include <stdlib.h>
+#endif	/* HAVE_STDLIB_H */
+
+#if HAVE_UNISTD_H
+#include <unistd.h>
+#endif	/* HAVE_UNISTD_H */
+
+#include <ctype.h>
+
+#if HAVE_SYS_TYPES_H
+#include <sys/types.h>
+#endif	/* HAVE_SYS_TYPES_H */
+
+#if HAVE_SYS_STAT_H
+#include <sys/stat.h>
+#endif	/* HAVE_SYS_STAT_H */
+
+#if HAVE_STRING_H
+#include <string.h>
+#endif	/* HAVE_STRING_H */
+
+#if HAVE_FCNTL_H
+#include <fcntl.h>
+#endif	/* HAVE_FCNTL_H */
+
+#if HAVE_LIMITS_H
+#include <limits.h>
+#endif	/* HAVE_LIMITS_H */
+
+#if HAVE_MMAP
+#include <sys/mman.h>
+#endif	/* HAVE_MMAP */
+
+#if HAVE_TIME_H
+#include <time.h>
+#endif	/* HAVE_TIME_H */
+
+#if HAVE_LINUX_TYPES_H
+#include <linux/types.h>
+#endif	/* HAVE_LINUX_TYPES_H */
+
+#include <errno.h>
+#include <assert.h>
+#include "nilfs.h"
+
+
+inline static int iseol(int c)
+{
+	return ((c == '\n') || (c == '\0'));
+}
+
+static size_t tokenize(char *line, char **tokens, size_t ntoks)
+{
+	char *p;
+	size_t n;
+
+	p = line;
+	for (n = 0; n < ntoks; n++) {
+		while (isspace(*p))
+			p++;
+		if (iseol(*p))
+			break;
+		tokens[n] = p++;
+		while (!isspace(*p) && !iseol(*p))
+			p++;
+		if (isspace(*p))
+			*p++ = '\0';
+		else
+			*p = '\0';
+	}
+	return n;
+}
+
+#define NMNTFLDS	6
+#define MNTFLD_FS	0
+#define MNTFLD_DIR	1
+#define MNTFLD_TYPE	2
+#define MNTFLD_OPTS	3
+#define MNTFLD_FREQ	4
+#define MNTFLD_PASSNO	5
+#define MNTOPT_RW	"rw"
+#define MNTOPT_RO	"ro"
+#define MNTOPT_SEP	','
+
+static int has_mntopt(const char *opts, const char *opt)
+{
+	const char *p, *q;
+	size_t len, n;
+
+	p = opts;
+	len = strlen(opt);
+	while (p != NULL) {
+		if ((q = strchr(p, MNTOPT_SEP)) != NULL) {
+			n = (q - p < len) ? len : q - p;
+			q++;
+		} else
+			n = (strlen(p) < len) ? len : strlen(p);
+		if (strncmp(p, opt, n) == 0)
+			return 1;
+		p = q;
+	}
+	return 0;
+}
+
+#ifndef LINE_MAX
+#define LINE_MAX	2048
+#endif	/* LINE_MAX */
+#define PROCMOUNTS	"/proc/mounts"
+
+static int nilfs_find_fs(struct nilfs *nilfs, const char *dev, const char *opt)
+{
+	FILE *fp;
+	char line[LINE_MAX], *mntent[NMNTFLDS];
+	size_t len;
+	int ret, n;
+
+	if ((fp = fopen(PROCMOUNTS, "r")) == NULL)
+		return -1;
+	ret = -1;
+	while (fgets(line, sizeof(line), fp) != NULL) {
+		n = tokenize(line, mntent, NMNTFLDS);
+		assert(n == NMNTFLDS);
+
+		if (((dev == NULL) || (strcmp(mntent[MNTFLD_FS], dev) == 0)) &&
+		    (strcmp(mntent[MNTFLD_TYPE], NILFS_FSTYPE) == 0) &&
+		    has_mntopt(mntent[MNTFLD_OPTS], opt)) {
+			if ((nilfs->n_dev = strdup(mntent[MNTFLD_FS])) == NULL)
+				break;
+			len = strlen(mntent[MNTFLD_DIR]) +
+				strlen(NILFS_IOC) + 2;
+			if ((nilfs->n_ioc =
+			     (char *)malloc(sizeof(char) * len)) == NULL) {
+				free(nilfs->n_dev);
+				nilfs->n_dev = NULL;
+				break;
+			}
+			snprintf(nilfs->n_ioc, len, "%s/%s",
+				 mntent[MNTFLD_DIR], NILFS_IOC);
+			ret = 0;
+			break;
+		}
+	}
+	fclose(fp);
+	return ret;
+}
+
+static int nilfs_read_sb(struct nilfs *nilfs)
+{
+	if (lseek(nilfs->n_devfd, NILFS_SB_OFFSET_BYTES, SEEK_SET) < 0)
+		return -1;
+	return read(nilfs->n_devfd, &nilfs->n_sb,
+		    sizeof(struct nilfs_super_block));
+}
+
+struct nilfs_super_block *nilfs_get_sb(struct nilfs *nilfs)
+{
+	return &nilfs->n_sb;
+}
+
+size_t nilfs_get_block_size(struct nilfs *nilfs)
+{
+	return 1UL << (le32_to_cpu(nilfs->n_sb.s_log_block_size) +
+		       NILFS_SB_BLOCK_SIZE_SHIFT);
+}
+
+int nilfs_opt_set_mmap(struct nilfs *nilfs)
+{
+	long pagesize;
+	size_t segsize;
+
+	if ((pagesize = sysconf(_SC_PAGESIZE)) < 0)
+		return -1;
+	segsize = le32_to_cpu(nilfs->n_sb.s_blocks_per_segment) *
+		nilfs_get_block_size(nilfs);
+	if (segsize % pagesize != 0)
+		return -1;
+
+	nilfs->n_opts |= NILFS_OPT_MMAP;
+	return 0;
+}
+
+void nilfs_opt_clear_mmap(struct nilfs *nilfs)
+{
+	nilfs->n_opts &= ~NILFS_OPT_MMAP;
+}
+
+int nilfs_opt_test_mmap(struct nilfs *nilfs)
+{
+	return !!(nilfs->n_opts & NILFS_OPT_MMAP);
+}
+
+/**
+ * nilfs_open - create a NILFS object
+ * @dev: device
+ * @flags: open flags
+ */
+struct nilfs *nilfs_open(const char *dev, int flags)
+{
+	struct nilfs *nilfs;
+	int oflags;
+
+	if (!(flags & (NILFS_OPEN_RAW |
+		       NILFS_OPEN_RDONLY |
+		       NILFS_OPEN_WRONLY |
+		       NILFS_OPEN_RDWR))) {
+		errno = EINVAL;
+		return NULL;
+	}
+
+	if ((nilfs = (struct nilfs *)malloc(sizeof(struct nilfs))) == NULL)
+		return NULL;
+	nilfs->n_devfd = -1;
+	nilfs->n_iocfd = -1;
+	nilfs->n_dev = NULL;
+	nilfs->n_ioc = NULL;
+
+	if (flags & NILFS_OPEN_RAW) {
+		if (dev == NULL) {
+			if (nilfs_find_fs(nilfs, dev, MNTOPT_RW) < 0)
+				goto out_fd;
+		} else {
+			if ((nilfs->n_dev = strdup(dev)) == NULL)
+				goto out_fd;
+		}
+		if ((nilfs->n_devfd = open(nilfs->n_dev, O_RDONLY)) < 0)
+			goto out_fd;
+		if (nilfs_read_sb(nilfs) < 0)
+			goto out_fd;
+	}
+
+	if (flags &
+	    (NILFS_OPEN_RDONLY | NILFS_OPEN_WRONLY | NILFS_OPEN_RDWR)) {
+		if (nilfs_find_fs(nilfs, dev, MNTOPT_RW) < 0) {
+			if (!(flags & NILFS_OPEN_RDONLY))
+				goto out_nilfs;
+			if (nilfs_find_fs(nilfs, dev, MNTOPT_RO) < 0)
+				goto out_nilfs;
+		}
+		oflags = O_CREAT;
+		if (flags & NILFS_OPEN_RDONLY)
+			oflags |= O_RDONLY;
+		else if (flags & NILFS_OPEN_WRONLY)
+			oflags |= O_WRONLY;
+		else if (flags & NILFS_OPEN_RDWR)
+			oflags |= O_RDWR;
+		if ((nilfs->n_iocfd = open(nilfs->n_ioc, oflags,
+					   S_IRUSR | S_IWUSR |
+					   S_IRGRP | S_IWGRP |
+					   S_IROTH | S_IWOTH)) < 0)
+			goto out_fd;
+	}
+
+	/* success */
+	return nilfs;
+
+	/* error */
+ out_fd:
+	if (nilfs->n_devfd >= 0)
+		close(nilfs->n_devfd);
+	if (nilfs->n_iocfd >= 0)
+		close(nilfs->n_iocfd);
+	if (nilfs->n_dev != NULL)
+		free(nilfs->n_dev);
+	if (nilfs->n_ioc != NULL)
+		free(nilfs->n_ioc);
+
+ out_nilfs:
+	free(nilfs);
+	return NULL;
+}
+
+/**
+ * nilfs_close - destroy a NILFS object
+ * @nilfs: NILFS object
+ */
+void nilfs_close(struct nilfs *nilfs)
+{
+	if (nilfs->n_devfd >= 0)
+		close(nilfs->n_devfd);
+	if (nilfs->n_iocfd >= 0)
+		close(nilfs->n_iocfd);
+	if (nilfs->n_dev != NULL)
+		free(nilfs->n_dev);
+	if (nilfs->n_ioc != NULL)
+		free(nilfs->n_ioc);
+	free(nilfs);
+}
+
+/**
+ * nilfs_get_dev -
+ * @nilfs: 
+ */
+const char *nilfs_get_dev(const struct nilfs *nilfs)
+{
+	return nilfs->n_dev;
+}
+
+/**
+ * nilfs_change_cpmode -
+ * @nilfs:
+ * @cno:
+ * @mode:
+ */
+int nilfs_change_cpmode(const struct nilfs *nilfs, nilfs_cno_t cno, int mode)
+{
+	struct nilfs_cpmode cpmode;
+
+	if (nilfs->n_iocfd < 0) {
+		errno = EBADF;
+		return -1;
+	}
+	if (cno < NILFS_CNO_MIN) {
+		errno = EINVAL;
+		return -1;
+	}
+
+	cpmode.cm_cno = cno;
+	cpmode.cm_mode = mode;
+	return ioctl(nilfs->n_iocfd, NILFS_IOCTL_CHANGE_CPMODE, &cpmode);
+}
+
+/**
+ * nilfs_get_cpinfo -
+ * @nilfs:
+ * @cno:
+ * @mode:
+ * @cpinfo:
+ * @nci:
+ */
+ssize_t nilfs_get_cpinfo(const struct nilfs *nilfs, nilfs_cno_t cno, int mode,
+			 struct nilfs_cpinfo *cpinfo, size_t nci)
+{
+	struct nilfs_argv argv;
+
+	if (nilfs->n_iocfd < 0) {
+		errno = EBADF;
+		return -1;
+	}
+	if ((mode == NILFS_CHECKPOINT) && (cno < NILFS_CNO_MIN)) {
+		errno = EINVAL;
+		return -1;
+	}
+
+	argv.v_base = cpinfo;
+	argv.v_nmembs = nci;
+	argv.v_size = sizeof(struct nilfs_cpinfo);
+	argv.v_index = cno;
+	argv.v_flags = mode;
+	if (ioctl(nilfs->n_iocfd, NILFS_IOCTL_GET_CPINFO, &argv) < 0)
+		return -1;
+	return argv.v_nmembs;
+}
+
+/**
+ * nilfs_delete_checkpoint -
+ * @nilfs:
+ * @cno:
+ */
+int nilfs_delete_checkpoint(const struct nilfs *nilfs, nilfs_cno_t cno)
+{
+	if (nilfs->n_iocfd < 0) {
+		errno = EBADF;
+		return -1;
+	}
+	return ioctl(nilfs->n_iocfd, NILFS_IOCTL_DELETE_CHECKPOINT, &cno);
+}
+
+/**
+ * nilfs_get_cpstat -
+ * @nilfs:
+ * @cpstat:
+ */
+int nilfs_get_cpstat(const struct nilfs *nilfs, struct nilfs_cpstat *cpstat)
+{
+	if (nilfs->n_iocfd < 0) {
+		errno = EBADF;
+		return -1;
+	}
+	return ioctl(nilfs->n_iocfd, NILFS_IOCTL_GET_CPSTAT, cpstat);
+}
+
+/**
+ * nilfs_get_suinfo -
+ * @nilfs:
+ * @segnum:
+ * @si:
+ * @nsi:
+ */
+ssize_t nilfs_get_suinfo(const struct nilfs *nilfs, nilfs_segnum_t segnum,
+			 struct nilfs_suinfo *si, size_t nsi)
+{
+	struct nilfs_argv argv;
+
+	if (nilfs->n_iocfd < 0) {
+		errno = EBADF;
+		return -1;
+	}
+
+	argv.v_base = si;
+	argv.v_nmembs = nsi;
+	argv.v_size = sizeof(struct nilfs_suinfo);
+	argv.v_index = segnum;
+	if (ioctl(nilfs->n_iocfd, NILFS_IOCTL_GET_SUINFO, &argv) < 0)
+		return -1;
+	return argv.v_nmembs;
+}
+
+/**
+ * nilfs_get_sustat -
+ * @nilfs:
+ * @sustat:
+ */
+int nilfs_get_sustat(const struct nilfs *nilfs, struct nilfs_sustat *sustat)
+{
+	if (nilfs->n_iocfd < 0) {
+		errno = EBADF;
+		return -1;
+	}
+
+	return ioctl(nilfs->n_iocfd, NILFS_IOCTL_GET_SUSTAT, sustat);
+}
+
+/**
+ * nilfs_get_vinfo -
+ * @nilfs:
+ * @vinfo:
+ * @nvi:
+ */
+ssize_t nilfs_get_vinfo(const struct nilfs *nilfs,
+			struct nilfs_vinfo *vinfo, size_t nvi)
+{
+	struct nilfs_argv argv;
+
+	if (nilfs->n_iocfd < 0) {
+		errno = EBADF;
+		return -1;
+	}
+
+	argv.v_base = vinfo;
+	argv.v_nmembs = nvi;
+	argv.v_size = sizeof(struct nilfs_vinfo);
+	if (ioctl(nilfs->n_iocfd, NILFS_IOCTL_GET_VINFO, &argv) < 0)
+		return -1;
+	return argv.v_nmembs;
+}
+
+/**
+ * nilfs_get_bdescs:
+ * @nilfs:
+ * @bdescs:
+ * @nbdescs:
+ */
+ssize_t nilfs_get_bdescs(const struct nilfs *nilfs,
+			 struct nilfs_bdesc *bdescs, size_t nbdescs)
+{
+	struct nilfs_argv argv;
+
+	if (nilfs->n_iocfd < 0) {
+		errno = EBADF;
+		return -1;
+	}
+
+	argv.v_base = bdescs;
+	argv.v_nmembs = nbdescs;
+	argv.v_size = sizeof(struct nilfs_bdesc);
+	if (ioctl(nilfs->n_iocfd, NILFS_IOCTL_GET_BDESCS, &argv) < 0)
+		return -1;
+	return argv.v_nmembs;
+}
+
+/**
+ * nilfs_clean_segments -
+ * @nilfs:
+ * @vdescs:
+ * @nvdescs:
+ * @periods:
+ * @nperiods:
+ * @vblocknrs:
+ * @nvblocknrs:
+ * @bdescs:
+ * @nbdescs:
+ * @segnums:
+ * @nsegs:
+ */
+int nilfs_clean_segments(const struct nilfs *nilfs,
+			 struct nilfs_vdesc *vdescs, size_t nvdescs,
+			 struct nilfs_period *periods, size_t nperiods,
+			 nilfs_sector_t *vblocknrs, size_t nvblocknrs,
+			 struct nilfs_bdesc *bdescs, size_t nbdescs,
+			 nilfs_segnum_t *segnums, size_t nsegs)
+{
+	struct nilfs_argv argv[5];
+
+	if (nilfs->n_iocfd < 0) {
+		errno = EBADF;
+		return -1;
+	}
+
+	argv[0].v_base = vdescs;
+	argv[0].v_nmembs = nvdescs;
+	argv[0].v_size = sizeof(struct nilfs_vdesc);
+	argv[1].v_base = periods;
+	argv[1].v_nmembs = nperiods;
+	argv[1].v_size = sizeof(struct nilfs_period);
+	argv[2].v_base = vblocknrs;
+	argv[2].v_nmembs = nvblocknrs;
+	argv[2].v_size = sizeof(nilfs_sector_t);
+	argv[3].v_base = bdescs;
+	argv[3].v_nmembs = nbdescs;
+	argv[3].v_size = sizeof(struct nilfs_bdesc);
+	argv[4].v_base = segnums;
+	argv[4].v_nmembs = nsegs;
+	argv[4].v_size = sizeof(nilfs_segnum_t);
+	return ioctl(nilfs->n_iocfd, NILFS_IOCTL_CLEAN_SEGMENTS, argv);
+}
+
+/**
+ * nilfs_timedwait -
+ * @nilfs:
+ * @cond:
+ * @timeout:
+ */
+int nilfs_timedwait(const struct nilfs *nilfs, int cond,
+		    struct timespec *timeout)
+{
+	struct nilfs_wait_cond wc;
+
+	if (nilfs->n_iocfd < 0) {
+		errno = EBADF;
+		return -1;
+	}
+
+	wc.wc_cond = cond;
+	if (timeout == NULL)
+		wc.wc_flags = 0;
+	else {
+		wc.wc_flags = 1;
+		wc.wc_timeout.tv_sec = timeout->tv_sec;
+		wc.wc_timeout.tv_nsec = timeout->tv_nsec;
+	}
+	return ioctl(nilfs->n_iocfd, NILFS_IOCTL_TIMEDWAIT, &wc);
+}
+
+/**
+ * nilfs_sync -
+ * @nilfs:
+ */
+int nilfs_sync(const struct nilfs *nilfs, nilfs_cno_t *cnop)
+{
+	int ret;
+
+	if (nilfs->n_iocfd < 0) {
+		errno = EBADF;
+		return -1;
+	}
+
+	if (((ret = ioctl(nilfs->n_iocfd, NILFS_IOCTL_SYNC, cnop)) < 0) &&
+	    (ret == -EROFS))
+		/* syncing read-only filesystem */
+		ret = 0;
+
+	return ret;
+}
+
+
+/* raw */
+
+/**
+ * nilfs_get_segment -
+ * @nilfs: NILFS object
+ * @segnum: segment number
+ */
+ssize_t nilfs_get_segment(struct nilfs *nilfs, unsigned long segnum,
+			  void **segmentp)
+{
+	void *segment;
+	size_t segsize;
+	off_t offset;
+
+	if (nilfs->n_devfd < 0) {
+		errno = EBADF;
+		return -1;
+	}
+
+	if (segnum >= le64_to_cpu(nilfs->n_sb.s_nsegments)) {
+		errno = EINVAL;
+		return -1;
+	}
+
+	segsize = le32_to_cpu(nilfs->n_sb.s_blocks_per_segment) *
+		(1UL << (le32_to_cpu(nilfs->n_sb.s_log_block_size) +
+			 NILFS_SB_BLOCK_SIZE_SHIFT));
+	offset = ((off_t)segnum) * segsize;
+
+#ifdef HAVE_MMAP
+	if (nilfs_opt_test_mmap(nilfs)) {
+		if ((segment = mmap(0, segsize, PROT_READ, MAP_SHARED,
+				    nilfs->n_devfd, offset)) == MAP_FAILED)
+			return -1;
+	} else {
+#endif	/* HAVE_MMAP */
+		if ((segment = malloc(segsize)) == NULL)
+			return -1;
+		if (lseek(nilfs->n_devfd, offset, SEEK_SET) != offset) {
+			free(segment);
+			return -1;
+		}
+		if (read(nilfs->n_devfd, segment, segsize) != segsize) {
+			free(segment);
+			return -1;
+		}
+#ifdef HAVE_MMAP
+	}
+#endif	/* HAVE_MMAP */
+
+	*segmentp = segment;
+	return segsize;
+}
+
+/**
+ * nilfs_put_segment -
+ * @nilfs: NILFS object
+ * @seg: segment
+ */
+int nilfs_put_segment(struct nilfs *nilfs, void *segment)
+{
+	size_t segsize;
+
+	if (nilfs->n_devfd < 0) {
+		errno = EBADF;
+		return -1;
+	}
+
+#ifdef HAVE_MUNMAP
+	if (nilfs_opt_test_mmap(nilfs)) {
+		segsize = le32_to_cpu(nilfs->n_sb.s_blocks_per_segment) *
+			(1UL << (le32_to_cpu(nilfs->n_sb.s_log_block_size) +
+				 NILFS_SB_BLOCK_SIZE_SHIFT));
+		return munmap(segment, segsize);
+	} else {
+#endif	/* HAVE_MUNMAP */
+		free(segment);
+		return 0;
+#ifdef HAVE_MUNMAP
+	}
+#endif	/* HAVE_MUNMAP */
+}
+
+
+/* internal use only */
+
+/* nilfs_psegment */
+static int nilfs_psegment_is_valid(const struct nilfs_psegment *pseg)
+{
+	int offset;
+
+	if (le32_to_cpu(pseg->p_segsum->ss_magic) != NILFS_SEGSUM_MAGIC)
+		return 0;
+
+	offset = sizeof(pseg->p_segsum->ss_datasum) +
+		sizeof(pseg->p_segsum->ss_sumsum);
+	return le32_to_cpu(pseg->p_segsum->ss_sumsum) ==
+		nilfs_crc32(pseg->p_seed,
+			    (unsigned char *)pseg->p_segsum + offset,
+			    le32_to_cpu(pseg->p_segsum->ss_sumbytes) - offset);
+}
+
+void nilfs_psegment_init(struct nilfs_psegment *pseg,
+			 nilfs_segnum_t segnum,
+			 void *seg, size_t nblocks,
+			 const struct nilfs *nilfs)
+{
+	nilfs_blkoff_t blkoff;
+
+	blkoff = (segnum == 0) ?
+		le64_to_cpu(nilfs->n_sb.s_first_data_block) : 0;
+
+	pseg->p_blksize = 1UL << (le32_to_cpu(nilfs->n_sb.s_log_block_size) +
+				  NILFS_SB_BLOCK_SIZE_SHIFT);
+	pseg->p_nblocks = nblocks;
+	pseg->p_nblocks_per_segment =
+		le32_to_cpu(nilfs->n_sb.s_blocks_per_segment);
+	pseg->p_segblocknr = pseg->p_nblocks_per_segment * segnum + blkoff;
+	pseg->p_seed = le32_to_cpu(nilfs->n_sb.s_crc_seed);
+
+	pseg->p_segsum = (struct nilfs_segment_summary *)(seg +
+			blkoff * pseg->p_blksize);
+	pseg->p_blocknr = pseg->p_segblocknr;
+}
+
+int nilfs_psegment_is_end(const struct nilfs_psegment *pseg)
+{
+	return (pseg->p_segblocknr + pseg->p_nblocks <= pseg->p_blocknr) ||
+		(pseg->p_segblocknr + pseg->p_nblocks_per_segment - pseg->p_blocknr < NILFS_PSEG_MIN_BLOCKS) ||
+		!nilfs_psegment_is_valid(pseg);
+}
+
+void nilfs_psegment_next(struct nilfs_psegment *pseg)
+{
+	unsigned long nblocks;	/* unsigned long ??? */
+
+	nblocks = le32_to_cpu(pseg->p_segsum->ss_nblocks);
+	pseg->p_segsum = (struct nilfs_segment_summary *)((void *)pseg->p_segsum + nblocks * pseg->p_blksize);
+	pseg->p_blocknr += nblocks;
+}
+
+/* nilfs_file */
+void nilfs_file_init(struct nilfs_file *file,
+		     const struct nilfs_psegment *pseg)
+{
+	size_t blksize, rest;
+
+	file->f_psegment = pseg;
+	blksize = file->f_psegment->p_blksize;
+
+	file->f_finfo = (struct nilfs_finfo *)(pseg->p_segsum + 1);
+	file->f_blocknr = pseg->p_blocknr +
+		(le32_to_cpu(pseg->p_segsum->ss_sumbytes) + blksize - 1) /
+		blksize;
+	file->f_index = 0;
+	file->f_offset = sizeof(struct nilfs_segment_summary);
+
+	rest = blksize - file->f_offset % blksize;
+	if (sizeof(struct nilfs_finfo) > rest) {
+		file->f_finfo = (struct nilfs_finfo *)((void *)file->f_finfo +
+						       rest);
+		file->f_offset += rest;
+	}
+}
+
+int nilfs_file_is_end(const struct nilfs_file *file)
+{
+	return file->f_index >=
+		le32_to_cpu(file->f_psegment->p_segsum->ss_nfinfo);
+}
+
+static size_t nilfs_binfo_total_size(unsigned long offset,
+				     size_t blksize,
+				     size_t bisize,
+				     size_t n)
+{
+	if (blksize - offset % blksize >= bisize * n)
+		return bisize * n;
+	else {
+		n -= (blksize - offset % blksize) / bisize;
+		return blksize - offset % blksize +
+			(n / (blksize / bisize)) * blksize +
+			(n % (blksize / bisize)) * bisize;
+	}
+}
+
+void nilfs_file_next(struct nilfs_file *file)
+{
+	size_t blksize, rest;
+	size_t dsize, nsize;
+	size_t tdsize, tnsize;
+
+	blksize = file->f_psegment->p_blksize;
+
+	if (!nilfs_file_is_super(file)) {
+		dsize = NILFS_BINFO_DATA_SIZE;
+		nsize = NILFS_BINFO_NODE_SIZE;
+	} else {
+		dsize = NILFS_BINFO_DAT_DATA_SIZE;
+		nsize = NILFS_BINFO_DAT_NODE_SIZE;
+	}
+
+	file->f_blocknr += le32_to_cpu(file->f_finfo->fi_nblocks);
+
+	tdsize = nilfs_binfo_total_size(
+		file->f_offset + sizeof(struct nilfs_finfo),
+		blksize, dsize,
+		le32_to_cpu(file->f_finfo->fi_ndatablk));
+	tnsize = nilfs_binfo_total_size(
+		file->f_offset + sizeof(struct nilfs_finfo) + tdsize,
+		blksize, nsize,
+		le32_to_cpu(file->f_finfo->fi_nblocks) -
+		le32_to_cpu(file->f_finfo->fi_ndatablk));
+	file->f_offset += sizeof(struct nilfs_finfo) + tdsize + tnsize;
+	file->f_finfo = (struct nilfs_finfo *)((void *)file->f_finfo +
+					       sizeof(struct nilfs_finfo) +
+					       tdsize + tnsize);
+	rest = blksize - file->f_offset % blksize;
+	if (sizeof(struct nilfs_finfo) > rest) {
+		file->f_offset += rest;
+		file->f_finfo = (struct nilfs_finfo *)((void *)file->f_finfo +
+						       rest);
+	}
+	file->f_index++;
+}
+
+/* nilfs_block */
+void nilfs_block_init(struct nilfs_block *blk, const struct nilfs_file *file)
+{
+	size_t blksize, bisize, rest;
+
+	blk->b_file = file;
+	blksize = blk->b_file->f_psegment->p_blksize;
+
+	blk->b_binfo = (void *)(file->f_finfo + 1);
+	blk->b_offset = file->f_offset + sizeof(struct nilfs_finfo);
+	blk->b_blocknr = file->f_blocknr;
+	blk->b_index = 0;
+	if (!nilfs_file_is_super(file)) {
+		blk->b_dsize = NILFS_BINFO_DATA_SIZE;
+		blk->b_nsize = NILFS_BINFO_NODE_SIZE;
+	} else {
+		blk->b_dsize = NILFS_BINFO_DAT_DATA_SIZE;
+		blk->b_nsize = NILFS_BINFO_DAT_NODE_SIZE;
+	}
+
+	bisize = nilfs_block_is_data(blk) ? blk->b_dsize : blk->b_nsize;
+	rest = blksize - blk->b_offset % blksize;
+	if (bisize > rest) {
+		blk->b_binfo += rest;
+		blk->b_offset += rest;
+	}
+}
+
+int nilfs_block_is_end(const struct nilfs_block *blk)
+{
+	return blk->b_index >= le32_to_cpu(blk->b_file->f_finfo->fi_nblocks);
+}
+
+void nilfs_block_next(struct nilfs_block *blk)
+{
+	size_t blksize, bisize, rest;
+
+	blksize = blk->b_file->f_psegment->p_blksize;
+
+	bisize = nilfs_block_is_data(blk) ? blk->b_dsize : blk->b_nsize;
+	blk->b_binfo += bisize;
+	blk->b_offset += bisize;
+	blk->b_index++;
+
+	bisize = nilfs_block_is_data(blk) ? blk->b_dsize : blk->b_nsize;
+	rest = blksize - blk->b_offset % blksize;
+	if (bisize > rest) {
+		blk->b_binfo += rest;
+		blk->b_offset += rest;
+	}
+
+	blk->b_blocknr++;
+}
+
+/* Local Variables:		*/
+/* eval: (c-set-style "linux")	*/
+/* End:				*/
