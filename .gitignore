@@ -1,0 +1,64 @@
+#
+# NOTE! Don't add files that are generated in specific
+# subdirectories here. Add them in the ".gitignore" file
+# in that subdirectory instead.
+#
+# Normal rules
+#
+.*
+*.log
+*~
+*.o
+*.a
+*.s
+*.lo
+*.la
+*.so
+*.so.dbg
+*.mod.c
+*.lst
+*.orig
+*.rej
+
+CVS
+!.gitignore
+tags
+TAGS
+
+#
+# Generated files
+#
+compile
+install-sh
+missing
+depcomp
+INSTALL
+COPYING
+aclocal.m4
+autoconf-[0-9].*
+autom4te.cache
+Makefile
+Makefile.in
+config.guess
+config.h.in
+config.h
+config.sub
+config.cache
+config.log
+config.status
+configure
+configure.scan
+ltmain.sh
+libtool
+stamp-h
+stamp-h1
+
+# stgit generated dirs
+patches-*
+
+# quilt's files
+patches
+series
+
+# cscope files
+cscope.*
