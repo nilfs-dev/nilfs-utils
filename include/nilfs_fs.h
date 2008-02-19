@@ -680,8 +680,8 @@ struct nilfs_cpmode {
  */
 struct nilfs_argv {
 	void *v_base;
-	size_t v_nmembs;	// number of members
-	size_t v_size;		// size of members
+	size_t v_nmembs;	/* number of members */
+	size_t v_size;		/* size of members */
 	int v_index;
 	int v_flags;
 };
