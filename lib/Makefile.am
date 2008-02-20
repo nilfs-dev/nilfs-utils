@@ -2,8 +2,6 @@
 ##
 ## Copyright (C) 2007 Nippon Telegraph and Telephone Corporation.
 ##
-## Makefile.am,v 1.5 2007-09-27 09:07:15 koji Exp
-##
 ## Written by Koji Sato <koji@osrg.net>.
 
 CURRENT = 0

@@ -19,8 +19,6 @@
  * along with NILFS; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  *
- * lssu.c,v 1.10 2007-10-25 04:58:02 koji Exp
- *
  * Written by Koji Sato <koji@osrg.net>.
  */
 #ifdef HAVE_CONFIG_H

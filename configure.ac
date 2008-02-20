@@ -2,8 +2,6 @@ dnl configure.ac
 dnl
 dnl Copyright (C) 2007 Nippon Telegraph and Telephone Corporation.
 dnl
-dnl configure.ac,v 1.20 2008-02-18 01:41:21 ryusuke Exp
-dnl
 dnl Written by Koji Sato <koji@osrg.net>.
 
 #                                               -*- Autoconf -*-

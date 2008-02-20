@@ -2,8 +2,6 @@
 ##
 ## Copyright (C) 2007 Nippon Telegraph and Telephone Corporation.
 ##
-## Makefile.am,v 1.3 2007-06-14 06:18:41 koji Exp
-##
 ## Written by Koji Sato <koji@osrg.net>.
 
 AM_CFLAGS = -Wall

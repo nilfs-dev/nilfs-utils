@@ -19,8 +19,6 @@
  * along with NILFS; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  *
- * chcp.c,v 1.4 2007-06-13 01:57:51 koji Exp
- *
  * Written by Koji Sato <koji@osrg.net>.
  */
 

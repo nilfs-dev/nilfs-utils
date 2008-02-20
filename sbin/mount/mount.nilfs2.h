@@ -1,7 +1,5 @@
 /*
  * mount.nilfs2.h - NILFS mount, declarations
- *
- * mount.nilfs2.h,v 1.7 2008-02-04 07:43:02 ryusuke Exp
  */
 
 #ifndef _MOUNT_NILFS2_H

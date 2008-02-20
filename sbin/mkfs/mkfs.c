@@ -19,8 +19,6 @@
  * along with NILFS; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  *
- * mkfs.c,v 1.26 2008-01-25 09:49:44 ryusuke Exp
- *
  * Written by Hisashi Hifumi <hifumi@osrg.net>,
  *            Amagai Yoshiji <amagai@osrg.net>.
  * Revised by Ryusuke Konishi <ryusuke@osrg.net>.

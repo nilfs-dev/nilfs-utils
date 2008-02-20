@@ -19,8 +19,6 @@
  * along with NILFS; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  *
- * cleanerd.c,v 1.24 2008-02-18 03:30:40 koji Exp
- *
  * Written by Koji Sato <koji@osrg.net>.
  */
 

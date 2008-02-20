@@ -19,8 +19,6 @@
  * along with NILFS; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  *
- * cldconfig.c,v 1.10 2008-01-07 08:06:39 koji Exp
- *
  * Written by Koji Sato <koji@osrg.net>.
  */
 

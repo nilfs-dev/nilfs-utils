@@ -19,8 +19,6 @@
  * along with NILFS; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  *
- * vector.c,v 1.3 2007-06-13 01:55:11 koji Exp
- *
  * Written by Koji Sato <koji@osrg.net>.
  */
 

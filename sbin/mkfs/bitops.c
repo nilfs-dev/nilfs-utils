@@ -2,8 +2,6 @@
  * bitops.c - bitmap operations
  *
  * This code has been extracted from e2fsprogs/lib/ext2fs/bitops.c
- *
- * bitops.c,v 1.2 2007-06-06 10:53:31 ryusuke Exp
  */
 
 #ifndef _EXT2_HAVE_ASM_BITOPS_

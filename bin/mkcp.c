@@ -19,8 +19,6 @@
  * along with NILFS; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  *
- * mkcp.c,v 1.7 2007-10-05 09:27:36 koji Exp
- *
  * Written by Koji Sato <koji@osrg.net>.
  */
 

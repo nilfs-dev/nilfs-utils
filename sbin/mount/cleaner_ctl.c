@@ -18,8 +18,6 @@
  * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
  * Boston, MA 021110-1307, USA.
  *
- * cleaner_ctl.c,v 1.7 2008-02-04 07:43:02 ryusuke Exp
- *
  * Written by Ryusuke Konishi <ryusuke@osrg.net>
  */
 

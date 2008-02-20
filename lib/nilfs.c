@@ -19,8 +19,6 @@
  * along with NILFS; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  *
- * nilfs.c,v 1.29 2007-10-19 01:19:51 koji Exp
- *
  * Written by Koji Sato <koji@osrg.net>.
  */
 

@@ -18,8 +18,6 @@
  * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
  * Boston, MA 021110-1307, USA.
  *
- * mount.nilfs2.c,v 1.19 2008-02-05 04:39:26 ryusuke Exp
- *
  * Written by Ryusuke Konishi <ryusuke@osrg.net>
  *         using examples from util-linux-2.12r/mount.c.
  *
