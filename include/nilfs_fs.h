@@ -124,10 +124,12 @@ struct nilfs_super_root {
 	struct nilfs_inode sr_sufile;
 };
 
-#define NILFS_SR_MDT_OFFSET(nilfs,i)       ((unsigned int)(&((struct nilfs_super_root *)0)->sr_dat) + (nilfs)->ns_inode_size * (i))
-#define NILFS_SR_DAT_OFFSET(nilfs)         NILFS_SR_MDT_OFFSET(nilfs,0)
-#define NILFS_SR_CPFILE_OFFSET(nilfs)      NILFS_SR_MDT_OFFSET(nilfs,1)
-#define NILFS_SR_SUFILE_OFFSET(nilfs)      NILFS_SR_MDT_OFFSET(nilfs,2)
+#define NILFS_SR_MDT_OFFSET(inode_size, i)  \
+	((unsigned long)&((struct nilfs_super_root *)0)->sr_dat + \
+			(inode_size) * (i))
+#define NILFS_SR_DAT_OFFSET(inode_size)     NILFS_SR_MDT_OFFSET(inode_size,0)
+#define NILFS_SR_CPFILE_OFFSET(inode_size)  NILFS_SR_MDT_OFFSET(inode_size,1)
+#define NILFS_SR_SUFILE_OFFSET(inode_size)  NILFS_SR_MDT_OFFSET(inode_size,2)
 #define NILFS_SR_BYTES                  (sizeof(struct nilfs_super_root))
 
 /*
@@ -236,7 +238,8 @@ struct nilfs_super_block {
 /*
  * Bytes count of super_block for CRC-calculation
  */
-#define NILFS_SB_BYTES   ((int)(((struct nilfs_super_block *)0)->s_reserved))
+#define NILFS_SB_BYTES  \
+	((long)&((struct nilfs_super_block *)0)->s_reserved)
 
 /*
  * Special inode number
