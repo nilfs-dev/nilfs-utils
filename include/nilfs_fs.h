@@ -463,7 +463,7 @@ struct nilfs_checkpoint {
 	__le64 cp_inodes_count;
 	__le64 cp_blocks_count;		/* Reserved (might be deleted) */
 
- 	/* Do not change the byte offset of ifile inode.
+	/* Do not change the byte offset of ifile inode.
 	   To keep the compatibility of the disk format,
 	   additional fields should be added behind cp_ifile_inode. */
 	struct nilfs_inode cp_ifile_inode;
