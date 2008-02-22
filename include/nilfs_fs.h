@@ -46,7 +46,7 @@
 /*
  * Inode flags stored in nilfs_inode and on-memory nilfs inode
  *
- * We define these flags based on ext2-fs because of the 
+ * We define these flags based on ext2-fs because of the
  * compatibility reason; to avoid problems in chattr(1)
  */
 #define NILFS_SECRM_FL		0x00000001 /* Secure deletion */
@@ -218,7 +218,7 @@ struct nilfs_super_block {
 	char	s_last_mounted[64]; 	/* directory where last mounted */
 
 	__le32  s_c_interval;           /* Commit interval of segment */
-	__le32  s_c_block_max;          /* Threshold of data amount for 
+	__le32  s_c_block_max;          /* Threshold of data amount for
 					   the segment construction */
 	__u32	s_reserved[192];	/* padding to the end of the block */
 };
@@ -451,7 +451,7 @@ struct nilfs_snapshot_list {
  * @cp_nblk_inc: number of blocks incremented by this checkpoint
  * @cp_inodes_count: inodes count
  * @cp_blocks_count: blocks count
- * @cp_ifile_inode: inode of ifile 
+ * @cp_ifile_inode: inode of ifile
  */
 struct nilfs_checkpoint {
 	__le32 cp_flags;
@@ -740,7 +740,7 @@ struct nilfs_vinfo {
 };
 
 /**
- * struct nilfs_vdesc - 
+ * struct nilfs_vdesc -
  */
 struct nilfs_vdesc {
 	__u64 vd_ino;
