@@ -127,9 +127,9 @@ struct nilfs_super_root {
 #define NILFS_SR_MDT_OFFSET(inode_size, i)  \
 	((unsigned long)&((struct nilfs_super_root *)0)->sr_dat + \
 			(inode_size) * (i))
-#define NILFS_SR_DAT_OFFSET(inode_size)     NILFS_SR_MDT_OFFSET(inode_size,0)
-#define NILFS_SR_CPFILE_OFFSET(inode_size)  NILFS_SR_MDT_OFFSET(inode_size,1)
-#define NILFS_SR_SUFILE_OFFSET(inode_size)  NILFS_SR_MDT_OFFSET(inode_size,2)
+#define NILFS_SR_DAT_OFFSET(inode_size)     NILFS_SR_MDT_OFFSET(inode_size, 0)
+#define NILFS_SR_CPFILE_OFFSET(inode_size)  NILFS_SR_MDT_OFFSET(inode_size, 1)
+#define NILFS_SR_SUFILE_OFFSET(inode_size)  NILFS_SR_MDT_OFFSET(inode_size, 2)
 #define NILFS_SR_BYTES                  (sizeof(struct nilfs_super_root))
 
 /*
@@ -186,7 +186,7 @@ struct nilfs_super_block {
 	__le64  s_dev_size;		/* block device size in bytes */
 	__le64	s_first_data_block;	/* 1st seg disk block number */
 	__le32  s_blocks_per_segment;   /* number of blocks per full segment */
-	__le32	s_r_segments_percentage;/* Reserved segments percentage */ /* or __le16 */
+	__le32	s_r_segments_percentage; /* Reserved segments percentage */
 
 	__le64  s_last_cno;		/* Last checkpoint number */
 	__le64  s_last_pseg;		/* disk block addr pseg written last */
