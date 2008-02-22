@@ -831,7 +831,3 @@ struct nilfs_wait_cond32 {
 #endif	/* CONFIG_COMPAT */
 
 #endif	/* _LINUX_NILFS_FS_H */
-
-/* Local Variables:		*/
-/* eval: (c-set-style "linux")	*/
-/* End:				*/
