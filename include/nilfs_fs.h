@@ -58,7 +58,7 @@
 #define NILFS_NOATIME_FL	0x00000080 /* do not update atime */
 /* Reserved for compression usage... */
 #define NILFS_NOTAIL_FL		0x00008000 /* file tail should not be merged */
-#define NILFS_DIRSYNC_FL	0x00010000 /* dirsync behaviour (directories only) */
+#define NILFS_DIRSYNC_FL	0x00010000 /* dirsync behaviour */
 
 #define NILFS_FL_USER_VISIBLE	0x0003DFFF /* User visible flags */
 #define NILFS_FL_USER_MODIFIABLE	0x000380FF /* User modifiable flags */
@@ -181,7 +181,8 @@ struct nilfs_super_block {
 	__le32	s_sum;			/* Check sum of super block */
 
 	__le32	s_log_block_size;	/* Block size represented as follows
-					   blocksize = 1 << (s_log_block_size + 10) */
+					   blocksize =
+					       1 << (s_log_block_size + 10) */
 	__le64  s_nsegments;		/* Number of segments in filesystem */
 	__le64  s_dev_size;		/* block device size in bytes */
 	__le64	s_first_data_block;	/* 1st seg disk block number */
@@ -193,7 +194,8 @@ struct nilfs_super_block {
 	__le64  s_last_seq;             /* seq. number of seg written last */
 	__le64	s_free_blocks_count;	/* Free blocks count */
 
-	__le64	s_ctime;		/* Creation time (execution time of newfs) */
+	__le64	s_ctime;		/* Creation time (execution time of
+					   newfs) */
 	__le64	s_mtime;		/* Mount time */
 	__le64	s_wtime;		/* Write time */
 	__le16	s_mnt_count;		/* Mount count */
@@ -206,7 +208,7 @@ struct nilfs_super_block {
 	__le32	s_creator_os;		/* OS */
 	__le16	s_def_resuid;		/* Default uid for reserved blocks */
 	__le16	s_def_resgid;		/* Default gid for reserved blocks */
-	__le32	s_first_ino; 		/* First non-reserved inode */ /* or __le16 */
+	__le32	s_first_ino; 		/* First non-reserved inode */
 
 	__le16  s_inode_size; 		/* Size of an inode */
 	__le16  s_dat_entry_size;       /* Size of a dat entry */
@@ -545,7 +547,9 @@ struct nilfs_cpfile_header {
 };
 
 #define NILFS_CPFILE_FIRST_CHECKPOINT_OFFSET	\
-	((sizeof(struct nilfs_cpfile_header) + sizeof(struct nilfs_checkpoint) - 1) / sizeof(struct nilfs_checkpoint))
+	((sizeof(struct nilfs_cpfile_header) +				\
+	  sizeof(struct nilfs_checkpoint) - 1) /			\
+			sizeof(struct nilfs_checkpoint))
 
 /**
  * struct nilfs_segment_usage - segment usage
@@ -624,7 +628,9 @@ struct nilfs_sufile_header {
 };
 
 #define NILFS_SUFILE_FIRST_SEGMENT_USAGE_OFFSET	\
-	((sizeof(struct nilfs_sufile_header) + sizeof(struct nilfs_segment_usage) - 1) / sizeof(struct nilfs_segment_usage))
+	((sizeof(struct nilfs_sufile_header) +				\
+	  sizeof(struct nilfs_segment_usage) - 1) /			\
+			 sizeof(struct nilfs_segment_usage))
 
 /**
  * nilfs_suinfo - segment usage information
@@ -777,17 +783,28 @@ struct nilfs_wait_cond {
 
 #define NILFS_IOCTL_IDENT		'n'
 
-#define NILFS_IOCTL_CHANGE_CPMODE	_IOW(NILFS_IOCTL_IDENT, 0x80, struct nilfs_cpmode)
-#define NILFS_IOCTL_DELETE_CHECKPOINT	_IOW(NILFS_IOCTL_IDENT, 0x81, nilfs_cno_t)
-#define NILFS_IOCTL_GET_CPINFO		_IOR(NILFS_IOCTL_IDENT, 0x82, struct nilfs_argv)
-#define NILFS_IOCTL_GET_CPSTAT		_IOR(NILFS_IOCTL_IDENT, 0x83, struct nilfs_cpstat)
-#define NILFS_IOCTL_GET_SUINFO		_IOR(NILFS_IOCTL_IDENT, 0x84, struct nilfs_argv)
-#define NILFS_IOCTL_GET_SUSTAT		_IOR(NILFS_IOCTL_IDENT, 0x85, struct nilfs_sustat)
-#define NILFS_IOCTL_GET_VINFO		_IOWR(NILFS_IOCTL_IDENT, 0x86, struct nilfs_argv)
-#define NILFS_IOCTL_GET_BDESCS		_IOWR(NILFS_IOCTL_IDENT, 0x87, struct nilfs_argv)
-#define NILFS_IOCTL_CLEAN_SEGMENTS	_IOW(NILFS_IOCTL_IDENT, 0x88, struct nilfs_argv[5])
-#define NILFS_IOCTL_TIMEDWAIT		_IOWR(NILFS_IOCTL_IDENT, 0x89, struct nilfs_wait_cond)
-#define NILFS_IOCTL_SYNC		_IOR(NILFS_IOCTL_IDENT, 0x8A, nilfs_cno_t)
+#define NILFS_IOCTL_CHANGE_CPMODE  \
+	_IOW(NILFS_IOCTL_IDENT, 0x80, struct nilfs_cpmode)
+#define NILFS_IOCTL_DELETE_CHECKPOINT  \
+	_IOW(NILFS_IOCTL_IDENT, 0x81, nilfs_cno_t)
+#define NILFS_IOCTL_GET_CPINFO  \
+	_IOR(NILFS_IOCTL_IDENT, 0x82, struct nilfs_argv)
+#define NILFS_IOCTL_GET_CPSTAT  \
+	_IOR(NILFS_IOCTL_IDENT, 0x83, struct nilfs_cpstat)
+#define NILFS_IOCTL_GET_SUINFO  \
+	_IOR(NILFS_IOCTL_IDENT, 0x84, struct nilfs_argv)
+#define NILFS_IOCTL_GET_SUSTAT  \
+	_IOR(NILFS_IOCTL_IDENT, 0x85, struct nilfs_sustat)
+#define NILFS_IOCTL_GET_VINFO  \
+	_IOWR(NILFS_IOCTL_IDENT, 0x86, struct nilfs_argv)
+#define NILFS_IOCTL_GET_BDESCS  \
+	_IOWR(NILFS_IOCTL_IDENT, 0x87, struct nilfs_argv)
+#define NILFS_IOCTL_CLEAN_SEGMENTS  \
+	_IOW(NILFS_IOCTL_IDENT, 0x88, struct nilfs_argv[5])
+#define NILFS_IOCTL_TIMEDWAIT  \
+	_IOWR(NILFS_IOCTL_IDENT, 0x89, struct nilfs_wait_cond)
+#define NILFS_IOCTL_SYNC  \
+	_IOR(NILFS_IOCTL_IDENT, 0x8A, nilfs_cno_t)
 
 /* compat_ioctl */
 #ifdef CONFIG_COMPAT
@@ -820,14 +837,22 @@ struct nilfs_wait_cond32 {
 	struct compat_timespec wc_timeout;
 };
 
-#define NILFS_IOCTL32_CHANGE_CPMODE	_IOW(NILFS_IOCTL_IDENT, 0x80, struct nilfs_cpmode32)
-#define NILFS_IOCTL32_GET_CPINFO	_IOR(NILFS_IOCTL_IDENT, 0x82, struct nilfs_argv32)
-#define NILFS_IOCTL32_GET_SUINFO	_IOR(NILFS_IOCTL_IDENT, 0x84, struct nilfs_argv32)
-#define NILFS_IOCTL32_GET_SUSTAT	_IOR(NILFS_IOCTL_IDENT, 0x85, struct nilfs_sustat32)
-#define NILFS_IOCTL32_GET_VINFO		_IOWR(NILFS_IOCTL_IDENT, 0x86, struct nilfs_argv32)
-#define NILFS_IOCTL32_GET_BDESCS	_IOWR(NILFS_IOCTL_IDENT, 0x87, struct nilfs_argv32)
-#define NILFS_IOCTL32_CLEAN_SEGMENTS	_IOW(NILFS_IOCTL_IDENT, 0x88, struct nilfs_argv32[5])
-#define NILFS_IOCTL32_TIMEDWAIT		_IOWR(NILFS_IOCTL_IDENT, 0x89, struct nilfs_wait_cond32)
+#define NILFS_IOCTL32_CHANGE_CPMODE  \
+	_IOW(NILFS_IOCTL_IDENT, 0x80, struct nilfs_cpmode32)
+#define NILFS_IOCTL32_GET_CPINFO  \
+	_IOR(NILFS_IOCTL_IDENT, 0x82, struct nilfs_argv32)
+#define NILFS_IOCTL32_GET_SUINFO  \
+	_IOR(NILFS_IOCTL_IDENT, 0x84, struct nilfs_argv32)
+#define NILFS_IOCTL32_GET_SUSTAT  \
+	_IOR(NILFS_IOCTL_IDENT, 0x85, struct nilfs_sustat32)
+#define NILFS_IOCTL32_GET_VINFO  \
+	_IOWR(NILFS_IOCTL_IDENT, 0x86, struct nilfs_argv32)
+#define NILFS_IOCTL32_GET_BDESCS  \
+	_IOWR(NILFS_IOCTL_IDENT, 0x87, struct nilfs_argv32)
+#define NILFS_IOCTL32_CLEAN_SEGMENTS  \
+	_IOW(NILFS_IOCTL_IDENT, 0x88, struct nilfs_argv32[5])
+#define NILFS_IOCTL32_TIMEDWAIT  \
+	_IOWR(NILFS_IOCTL_IDENT, 0x89, struct nilfs_wait_cond32)
 #endif	/* CONFIG_COMPAT */
 
 #endif	/* _LINUX_NILFS_FS_H */
