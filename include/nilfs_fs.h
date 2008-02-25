@@ -479,19 +479,19 @@ enum {
 };
 
 #define NILFS_CHECKPOINT_FNS(flag, name)				\
-inline static void							\
+static inline void							\
 nilfs_checkpoint_set_##name(struct nilfs_checkpoint *cp)		\
 {									\
 	cp->cp_flags = cpu_to_le32(le32_to_cpu(cp->cp_flags) |		\
 				   (1UL << NILFS_CHECKPOINT_##flag));	\
 }									\
-inline static void							\
+static inline void							\
 nilfs_checkpoint_clear_##name(struct nilfs_checkpoint *cp)		\
 {									\
 	cp->cp_flags = cpu_to_le32(le32_to_cpu(cp->cp_flags) &		\
 				   ~(1UL << NILFS_CHECKPOINT_##flag));	\
 }									\
-inline static int							\
+static inline int							\
 nilfs_checkpoint_##name(const struct nilfs_checkpoint *cp)		\
 {									\
 	return !!(le32_to_cpu(cp->cp_flags) &				\
@@ -523,7 +523,7 @@ struct nilfs_cpinfo {
 };
 
 #define NILFS_CPINFO_FNS(flag, name)					\
-inline static int							\
+static inline int							\
 nilfs_cpinfo_##name(const struct nilfs_cpinfo *cpinfo)			\
 {									\
 	return !!(cpinfo->ci_flags & (1UL << NILFS_CHECKPOINT_##flag));	\
@@ -575,20 +575,20 @@ enum {
 };
 
 #define NILFS_SEGMENT_USAGE_FNS(flag, name)				\
-inline static void							\
+static inline void							\
 nilfs_segment_usage_set_##name(struct nilfs_segment_usage *su)		\
 {									\
 	su->su_flags = cpu_to_le32(le32_to_cpu(su->su_flags) |		\
 				   (1UL << NILFS_SEGMENT_USAGE_##flag));\
 }									\
-inline static void							\
+static inline void							\
 nilfs_segment_usage_clear_##name(struct nilfs_segment_usage *su)	\
 {									\
 	su->su_flags =							\
 		cpu_to_le32(le32_to_cpu(su->su_flags) &			\
 			    ~(1UL << NILFS_SEGMENT_USAGE_##flag));      \
 }									\
-inline static int							\
+static inline int							\
 nilfs_segment_usage_##name(const struct nilfs_segment_usage *su)	\
 {									\
 	return !!(le32_to_cpu(su->su_flags) &				\
@@ -600,7 +600,7 @@ NILFS_SEGMENT_USAGE_FNS(DIRTY, dirty)
 NILFS_SEGMENT_USAGE_FNS(ERROR, error)
 NILFS_SEGMENT_USAGE_FNS(VOLATILE_ACTIVE, volatile_active)
 
-inline static void
+static inline void
 nilfs_segment_usage_set_clean(struct nilfs_segment_usage *su)
 {
 	su->su_lastmod = cpu_to_le64(0);
@@ -608,7 +608,7 @@ nilfs_segment_usage_set_clean(struct nilfs_segment_usage *su)
 	su->su_flags = cpu_to_le32(0);
 }
 
-inline static int
+static inline int
 nilfs_segment_usage_clean(const struct nilfs_segment_usage *su)
 {
 	return !le32_to_cpu(su->su_flags);
@@ -645,7 +645,7 @@ struct nilfs_suinfo {
 };
 
 #define NILFS_SUINFO_FNS(flag, name)					\
-inline static int							\
+static inline int							\
 nilfs_suinfo_##name(const struct nilfs_suinfo *si)			\
 {									\
 	return si->si_flags & (1UL << NILFS_SEGMENT_USAGE_##flag);	\
@@ -656,7 +656,7 @@ NILFS_SUINFO_FNS(DIRTY, dirty)
 NILFS_SUINFO_FNS(ERROR, error)
 NILFS_SUINFO_FNS(VOLATILE_ACTIVE, volatile_active)
 
-inline static int nilfs_suinfo_clean(const struct nilfs_suinfo *si)
+static inline int nilfs_suinfo_clean(const struct nilfs_suinfo *si)
 {
 	return !si->si_flags;
 }
