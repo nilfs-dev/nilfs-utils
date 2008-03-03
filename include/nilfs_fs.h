@@ -786,7 +786,7 @@ struct nilfs_wait_cond {
 #define NILFS_IOCTL_CHANGE_CPMODE  \
 	_IOW(NILFS_IOCTL_IDENT, 0x80, struct nilfs_cpmode)
 #define NILFS_IOCTL_DELETE_CHECKPOINT  \
-	_IOW(NILFS_IOCTL_IDENT, 0x81, nilfs_cno_t)
+	_IOW(NILFS_IOCTL_IDENT, 0x81, __u64)
 #define NILFS_IOCTL_GET_CPINFO  \
 	_IOR(NILFS_IOCTL_IDENT, 0x82, struct nilfs_argv)
 #define NILFS_IOCTL_GET_CPSTAT  \
@@ -804,7 +804,7 @@ struct nilfs_wait_cond {
 #define NILFS_IOCTL_TIMEDWAIT  \
 	_IOWR(NILFS_IOCTL_IDENT, 0x89, struct nilfs_wait_cond)
 #define NILFS_IOCTL_SYNC  \
-	_IOR(NILFS_IOCTL_IDENT, 0x8A, nilfs_cno_t)
+	_IOR(NILFS_IOCTL_IDENT, 0x8A, __u64)
 
 /* compat_ioctl */
 #ifdef CONFIG_COMPAT

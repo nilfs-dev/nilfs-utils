@@ -123,7 +123,7 @@ static const unsigned bitmap_blocks_per_group = 1;
 static const unsigned nr_initial_segments = 2; /* initial segment + next */
 static const unsigned nr_initial_inodes = 3;  /* root directory + .sketch +
 						 .nilfs */
-static const nilfs_cno_t first_cno = 1; /* Number of the first checkpoint */
+static const __u64 first_cno = 1; /* Number of the first checkpoint */
 
 /* Segment layout information (per partial segment) */
 #define MAX_FILES        10
@@ -177,7 +177,7 @@ struct nilfs_segment_ref {
 	blocknr_t start;                /* Start block of the partial segment 
 					   having a valid super root */
 	blocknr_t free_blocks_count;
-	nilfs_cno_t cno;                /* checkpoint number */
+	__u64 cno;                /* checkpoint number */
 };
 
 static void init_disk_layout(struct nilfs_disk_info *, int, const char *, struct mkfs_options *);
@@ -232,7 +232,7 @@ struct nilfs_fs_info {
 
 	blocknr_t next, altnext;
 	unsigned seq;
-	nilfs_cno_t cno;
+	__u64 cno;
 	blocknr_t vblocknr;
 };
 
@@ -1157,7 +1157,7 @@ static void prepare_cpfile(void)
 	blocknr_t entry_block = blocknr;
 	struct nilfs_cpfile_header *header;
 	struct nilfs_checkpoint *cp;
-	nilfs_cno_t cno = 1;
+	__u64 cno = 1;
 	int i;
 
 	header = map_disk_buffer(blocknr, 1);
