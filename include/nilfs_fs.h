@@ -250,7 +250,7 @@ struct nilfs_super_block {
 #define NILFS_CPFILE_INO	4	/* checkpoint file */
 #define NILFS_SUFILE_INO	5	/* segment usage file */
 #define NILFS_IFILE_INO		6	/* ifile */
-#define NILFS_ATIME_INO		7	/* .atime file (reserved) */
+#define NILFS_ATIME_INO		7	/* Atime file (reserved) */
 #define NILFS_SKETCH_INO	10	/* Sketch file */
 #define NILFS_USER_INO		11	/* Fisrt user's file inode number */
 
