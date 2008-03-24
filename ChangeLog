@@ -1,3 +1,12 @@
+nilfs-utils-2.0.1  Mon Mar 24, 2008 JST
+
+	* import changes on nilfs_fs.h to prepare for future extensions.
+	* import changes on nilfs_fs.h to avoid checkpatch.pl errors and
+	  warnings.
+	* fix gcc-4.2 warnings on 64-bit machines
+	* remove expanded rcs keywords
+	* add .gitignore
+
 nilfs-utils-2.0.0  Mon Feb 18, 2008 JST
 
 	* add a missing error handling of cleanerd.
