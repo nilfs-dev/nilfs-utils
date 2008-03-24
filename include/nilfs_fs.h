@@ -149,6 +149,7 @@ struct nilfs_super_root {
  */
 #define NILFS_VALID_FS			0x0001  /* Unmounted cleanly */
 #define NILFS_ERROR_FS			0x0002  /* Errors detected */
+#define NILFS_RESIZE_FS			0x0004	/* Resize required */
 
 /*
  * Mount flags (sbi->s_mount_opt)
@@ -803,6 +804,8 @@ struct nilfs_wait_cond {
 	_IOWR(NILFS_IOCTL_IDENT, 0x89, struct nilfs_wait_cond)
 #define NILFS_IOCTL_SYNC  \
 	_IOR(NILFS_IOCTL_IDENT, 0x8A, __u64)
+#define NILFS_IOCTL_RESIZE  \
+	_IOW(NILFS_IOCTL_IDENT, 0x8B, __u64)
 
 /* compat_ioctl */
 #ifdef CONFIG_COMPAT
