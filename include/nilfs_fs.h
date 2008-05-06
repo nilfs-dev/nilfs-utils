@@ -409,6 +409,13 @@ struct nilfs_segment_summary {
 #define NILFS_SS_SYNDT  0x0008  /* includes data only updates */
 #define NILFS_SS_GC     0x0010  /* segment written for cleaner operation */
 
+/**
+ * struct nilfs_persistent_group_desc - block group descriptor
+ * @pg_nfrees: number of free entries in block group
+ */
+struct nilfs_persistent_group_desc {
+	__le32 pg_nfrees;
+};
 
 /**
  * struct nilfs_dat_entry - disk address translation entry

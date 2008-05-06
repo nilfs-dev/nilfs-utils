@@ -56,10 +56,6 @@ typedef __u16 __le16;
 
 #include "nilfs_fs.h"
 
-struct nilfs_persistent_group_desc {
-	__le32 pg_nfrees;
-};
-
 #define NILFS_DISKHDR_SIZE 		4096 /* HDD header (MBR+superblock) */
 #define NILFS_CHAR_BIT                  8    /* char bits */
 #define NILFS_DEF_BLOCKSIZE_BITS	12   /* default blocksize = 2^12
