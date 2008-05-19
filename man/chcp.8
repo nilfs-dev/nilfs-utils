@@ -1,0 +1,36 @@
+.\"  Copyright (C) 2007-2008 Nippon Telegraph and Telephone Corporation.
+.\"  Written by Ryusuke Konishi <ryusuke@osrg.net>
+.\"
+.TH CHCP 8 "May 2008" "nilfs-utils version 2.0"
+.SH NAME
+chcp \- change mode of NILFS2 checkpoints
+.SH SYNOPSIS
+.B chcp
+[\fIoptions\fP] \fBcp\fP | \fBss\fP [\fIdevice\fP] \fIcheckpoint-number\fP ...
+.SH DESCRIPTION
+.B chcp
+is a utility to change the mode of the given checkpoints for the NILFS2
+file system found in \fIdevice\fP.
+.B chcp
+changes checkpoints to snapshots, or vice versa.  The target
+checkpoints are specified with one or more checkpoint numbers.  When
+\fIdevice\fP is omitted, it tries to find a NILFS2 file system from
+\fI/proc/mounts\fP.
+.PP
+This command is valid only for mounted NILFS2 file systems, and
+will fail if the \fIdevice\fP has no active mounts.
+.SH OPTIONS
+.TP
+.B \-h
+Display help message and exit.
+.SH AUTHOR
+Koji Sato <koji@osrg.net>
+.SH AVAILABILITY
+.B chcp
+is part of the nilfs-utils package and is available from
+http://www.nilfs.org.
+.SH SEE ALSO
+.BR nilfs (8),
+.BR lscp (1),
+.BR mkcp (8),
+.BR rmcp (8).
