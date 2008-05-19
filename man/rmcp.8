@@ -1,0 +1,39 @@
+.\"  Copyright (C) 2007-2008 Nippon Telegraph and Telephone Corporation.
+.\"  Written by Ryusuke Konishi <ryusuke@osrg.net>
+.\"
+.TH RMCP 8 "May 2008" "nilfs-utils version 2.0"
+.SH NAME
+rmcp \- remove NILFS2 checkpoints
+.SH SYNOPSIS
+.B rmcp
+[\fIoptions\fP] [\fIdevice\fP] \fIcheckpoint-number\fP ...
+.SH DESCRIPTION
+.B rmcp
+is a utility for removing checkpoints from the NILFS2 file system
+found in \fIdevice\fP.  The checkpoints to be removed are specified
+with one or more checkpoint numbers.  When \fIdevice\fP is omitted, it
+tries to find a NILFS2 file system from \fI/proc/mounts\fP.
+.PP
+This command is valid only for mounted NILFS2 file systems, and
+will fail if the \fIdevice\fP has no active mounts.
+.SH OPTIONS
+.TP
+.B \-f
+Ignore snapshots or nonexistent checkpoints.
+.TP
+.B \-i
+Prompt before any removal.
+.TP
+.B \-h
+Display help message and exit.
+.SH AUTHOR
+Koji Sato <koji@osrg.net>
+.SH AVAILABILITY
+.B rmcp
+is part of the nilfs-utils package and is available from
+http://www.nilfs.org.
+.SH SEE ALSO
+.BR nilfs (8),
+.BR lscp (1),
+.BR mkcp (8),
+.BR chcp (8).
