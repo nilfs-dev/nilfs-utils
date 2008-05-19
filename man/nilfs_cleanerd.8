@@ -1,0 +1,70 @@
+.\"  Copyright (C) 2007-2008 Nippon Telegraph and Telephone Corporation.
+.\"  Written by Ryusuke Konishi <ryusuke@osrg.net>
+.\"
+.TH NILFS_CLEANERD 8 "May 2008" "nilfs-utils version 2.0"
+.SH NAME
+nilfs_cleanerd \- NILFS2 garbage collector
+.SH SYNOPSIS
+.B nilfs_cleanerd
+[\fIoptions\fP] \fIdevice\fP
+.SH DESCRIPTION
+.B nilfs_cleanerd
+is a system daemon which reclaims disk space of a NILFS2 file system
+found in \fIdevice\fP.
+.PP
+This program can be invoked either automatically by
+\fBmount.nilfs2\fP(8) or manually by an administrator.  However, in
+order to avoid state inconsistencies among administration tools, it is
+recommended to invoke \fBnilfs_cleanerd\fP through
+\fBmount.nilfs2\fP(8) and to shutdown it through
+\fBumount.nilfs2\fP(8), where these helper programs are usually
+executed from \fBmount\fP(8) and \fBumount\fP(8) respectively.
+.SH OPTIONS
+.TP
+.B \-c
+Specify configuration file.
+.TP
+.B \-h
+Display help message and exit.
+.SH SIGNALS
+.B nilfs_cleanerd
+reacts to a set of signals.  You may send a signal to
+\fBnilfs_cleanerd\fP using the \fIPID\fP shown by the mount command
+(or in \fI/etc/mtab\fP):
+.RS
+.TP 0
+.B # mount \-t nilfs2
+.br
+/dev/sdb1 on /nilfs type nilfs2 (rw,gcpid=\fIPID\fP)
+.br
+.B # kill \-\fISIGNAL\fP \fIPID\fP
+.RE
+.PP
+.TP
+.B SIGHUP
+This lets \fBnilfs_cleanerd\fP perform a re-initialization.  The
+configuration file (default is \fI/etc/nilfs_cleanerd.conf\fP) will be
+reread.
+.TP
+.B SIGTERM
+The \fBnilfs_cleanerd\fP will exit cleanly.
+.TP
+.B SIGUSR1, SIGUSR2
+Reserved for future use.  These let \fBnilfs_cleanerd\fP die at
+present.
+.SH FILES
+.TP
+.I /etc/nilfs_cleanerd.conf
+Configuration file for \fBnilfs_cleanerd\fP.
+See \fBnilfs_cleanerd.conf\fP(5) for details.
+.SH AUTHOR
+Koji Sato <koji@osrg.net>
+.SH AVAILABILITY
+.B nilfs_cleanerd
+is part of the nilfs-utils package and is available from
+http://www.nilfs.org.
+.SH SEE ALSO
+.BR nilfs (8),
+.BR mount.nilfs2 (8),
+.BR umount.nilfs2 (8),
+.BR nilfs_cleanerd.conf (5).
