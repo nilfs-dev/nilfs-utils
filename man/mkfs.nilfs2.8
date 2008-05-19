@@ -1,0 +1,132 @@
+.\"  Copyright (C) 2007-2008 Nippon Telegraph and Telephone Corporation.
+.\"  Written by Ryusuke Konishi <ryusuke@osrg.net>
+.\"
+.TH MKFS.NILFS2 8 "May 2008" "nilfs-utils version 2.0"
+.SH NAME
+mkfs.nilfs2 \- create a NILFS2 filesystem
+.SH SYNOPSIS
+.B "mkfs \-t nilfs2"
+[
+.B \-b
+.I block-size
+]
+[
+.B \-B
+.I blocks-per-segment
+]
+[
+.B \-c
+]
+[
+.B \-L
+.I volume-label
+]
+[
+.B \-m
+.I reserved-segments-percentage
+]
+[
+.B \-n
+]
+[
+.B \-q
+]
+[
+.B \-V
+]
+.I device
+.sp
+.B mkfs.nilfs2
+[
+.B \-b
+.I block-size
+]
+[
+.B \-B
+.I blocks-per-segment
+]
+[
+.B \-c
+]
+[
+.B \-L
+.I volume-label
+]
+[
+.B \-m
+.I reserved-segments-percentage
+]
+[
+.B \-n
+]
+[
+.B \-q
+]
+[
+.B \-V
+]
+.I device
+.SH DESCRIPTION
+.B mkfs.nilfs2
+is used to create a nilfs2 filesystem (usually in a disk partition).
+\fIdevice\fP is the special file corresponding to the device (e.g.
+\fI/dev/sdXX\fP). Usually \fBmkfs.nilfs2\fP is invoked from the
+\fBmkfs\fP(8) front-end program.
+.PP
+The exit code returned by
+.B mkfs.nilfs2
+is 0 on success and 1 on failure.
+.SH OPTIONS
+.TP
+.BI \-b " block-size"
+Specify the size of blocks in bytes.  The valid block size is 1024,
+2048, 4096, 8192 bytes, ..., and the maximum block size is restricted
+to the system page size.  For most machines, it is 4096 bytes.  The
+default block size is 4096 bytes.
+.TP
+.BI \-B " blocks-per-segment"
+Specify the number of blocks in a segment, where the segment (also
+called full segment) is an allocation unit of disk space of NILFS.
+This parameter gives the size of segment and consequently determines
+how many segments are aligned in the specified device.  The default
+number of blocks per segment is 2048 (= 8MB with 4KB blocks).
+.TP
+.B \-c
+Check the device for bad blocks before building the filesystem.
+.TP
+.BI \-L " new-volume-label"
+Set the volume label for the filesystem to
+.IR new-volume-label\fP.
+The maximum length of the volume label is 16 bytes.
+.TP
+.BI \-m " reserved-segments-percentage"
+Specify the percentage of the segments reserved for garbage
+collection.  The default percentage is 5%.
+.TP
+.B \-n
+Cause
+.B mkfs.nilfs2
+to not actually create a filesystem, but display
+what it would be do if it were to create a filesystem.
+.TP
+.B \-q
+Quiet execution.  Useful if
+.B mkfs.nilfs2
+is run in a script.
+.TP
+.B \-V
+Print the version number of
+.B mkfs.nilfs2
+and exit.
+.SH AUTHOR
+This version of
+.B mkfs.nilfs2
+has been written by Ryusuke Konishi <ryusuke@osrg.net>.
+.SH AVAILABILITY
+.B mkfs.nilfs2
+is part of the nilfs-utils package and is available from
+http://www.nilfs.org.
+.SH SEE ALSO
+.BR nilfs (8),
+.BR mkfs (8),
+.BR badblocks (8).
