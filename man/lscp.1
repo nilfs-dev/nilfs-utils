@@ -1,0 +1,65 @@
+.\"  Copyright (C) 2007-2008 Nippon Telegraph and Telephone Corporation.
+.\"  Written by Ryusuke Konishi <ryusuke@osrg.net>
+.\"
+.TH LSCP 1 "May 2008" "nilfs-utils version 2.0"
+.SH NAME
+lscp \- list NILFS2 checkpoints
+.SH SYNOPSIS
+.B lscp
+[\fIoptions\fP] [\fIdevice\fP]
+.SH DESCRIPTION
+.B lscp
+is a utility for displaying checkpoints or snapshots of the NILFS2
+file system found in \fIdevice\fP.  When \fIdevice\fP is omitted, it
+tries to find a NILFS2 file system from \fI/proc/mounts\fP.
+.PP
+This command is valid only for mounted NILFS2 file systems, and
+will fail if the \fIdevice\fP has no active mounts.
+.SH OPTIONS
+.TP
+.B \-r
+Reverse order.
+.TP
+.B \-s
+List only snapshots.
+.TP
+.B \-h
+Display help message and exit.
+.SH "FIELD DESCRIPTION"
+Every line of the \fBlscp\fP output consists of the following seven
+fields:
+.TP
+.B CNO
+Checkpoint number.
+.TP
+.B DATE
+Creation date.
+.TP
+.B TIME
+Creation time.
+.TP
+.B MODE
+Mode of the checkpoint; \fBcp\fP for a plain checkpoint, and \fBss\fP
+for a snapshot.
+.TP
+.B SKT
+Sketch flag.  This shows whether the checkpoint has a valid sketch
+data or not.  For details on sketch, see \fBnilfs\fP(8).
+.TP
+.B NBLKINC
+Number of blocks appended by the checkpoint.
+.TP
+.B ICNT
+Number of inodes included in the entire file system at the time
+specified by the checkpoint.
+.SH AUTHOR
+Koji Sato <koji@osrg.net>
+.SH AVAILABILITY
+.B lscp
+is part of the nilfs-utils package and is available from
+http://www.nilfs.org.
+.SH SEE ALSO
+.BR nilfs (8),
+.BR mkcp (8),
+.BR chcp (8),
+.BR rmcp (8).
