@@ -4,4 +4,4 @@
 ##
 ## Written by Koji Sato <koji@osrg.net>.
 
-SUBDIRS = lib bin sbin include
+SUBDIRS = lib bin sbin include man

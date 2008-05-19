@@ -82,6 +82,7 @@ AC_CONFIG_FILES([Makefile
                  bin/Makefile
 		 include/Makefile
                  lib/Makefile
+                 man/Makefile
                  sbin/Makefile
                  sbin/cleanerd/Makefile
                  sbin/mkfs/Makefile
