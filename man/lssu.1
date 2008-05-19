@@ -1,0 +1,66 @@
+.\"  Copyright (C) 2007-2008 Nippon Telegraph and Telephone Corporation.
+.\"  Written by Ryusuke Konishi <ryusuke@osrg.net>
+.\"
+.TH LSSU 1 "May 2008" "nilfs-utils version 2.0"
+.SH NAME
+lssu \- list usage state of NILFS2 segments
+.SH SYNOPSIS
+.B lssu
+[\fIoptions\fP] [\fIdevice\fP]
+.SH DESCRIPTION
+.B lssu
+is a utility for displaying the usage state of NILFS2 segments in
+\fIdevice\fP, where a segment is contiguous lump of disk blocks and is
+the allocation unit of NILFS2 disk space.  When \fIdevice\fP is
+omitted, it tries to find a NILFS2 file system from
+\fI/proc/mounts\fP.
+.PP
+This command is valid only for mounted NILFS2 file systems, and
+will fail if the \fIdevice\fP has no active mounts.
+.SH OPTIONS
+.TP
+.B \-a
+Do not hide clean segments.
+.TP
+.B \-h
+Display help message and exit.
+.SH "FIELD DESCRIPTION"
+Every line of the \fBlssu\fP output consists of the following fields:
+.TP
+.B SEGNUM
+Segment number.
+.TP
+.B DATE
+Creation date.
+.TP
+.B TIME
+Creation time.
+.TP
+.B STAT
+State of the segment.  It consists of three flags whose meaning is
+shown below:
+.RS
+.TP
+.B a
+The segment is active, meaning that it is recently created and cannot
+be reclaimed by the garbage collector.
+.TP
+.B d
+The segment is dirty, meaning that it is in use.
+.TP
+.B e
+The segment is erroneous, meaning that it has once caused an I/O
+error.  NILFS2 avoids allocating the segments with this flag.
+.RE
+.TP
+.B NBLOCKS
+Number of in-use blocks of the segment.
+.SH AUTHOR
+Koji Sato <koji@osrg.net>
+.SH AVAILABILITY
+.B lssu
+is part of the nilfs-utils package and is available from
+http://www.nilfs.org.
+.SH SEE ALSO
+.BR nilfs (8),
+.BR dumpseg (8).
