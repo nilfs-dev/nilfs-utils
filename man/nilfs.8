@@ -1,0 +1,129 @@
+.\"  Copyright (C) 2005-2008 Nippon Telegraph and Telephone Corporation.
+.\"  Written by Ryusuke Konishi <ryusuke@osrg.net>
+.\"
+.TH NILFS 8 "May 2008" "NILFS version 2.0"
+.SH NAME
+NILFS \- the new implementation of a log-structured file system
+.SH SYNOPSIS
+Overview of the NILFS file system and the related tools.
+.SH DESCRIPTION
+NILFS is a log-structured file system developed for Linux.  NILFS
+provides versioning capability of an entire file system and continuous
+snapshotting that allows users to restore files mistakenly overwritten
+or destroyed a while ago.
+.PP
+The current major version of NILFS is version 2, which is referred to
+as NILFS2.  NILFS2 is equipped with an online garbage collector (also
+called cleaner) that reclaims disk space in the background with
+keeping multiple snapshots.
+.PP
+When data is written or any change is made to a NILFS2 file system, it
+automatically creates a checkpoint.  A checkpoint represents a
+consistent state of the NILFS2 file system of a certain instant.  It
+becomes mountable after being changed into a snapshot.  A snapshot is
+the checkpoint marked not to be deleted by the cleaner.  NILFS2
+creates a number of checkpoints at regular intervals (unless there is
+no change) or with synchronous writings.  There is no practical limit
+on the number of checkpoints and snapshots.
+.PP
+The following tools are available to manage the checkpoint and the
+snapshot:
+.TP 12
+\fBlscp
+lists checkpoints or snapshots
+.TP
+\fBmkcp
+makes a checkpoint or a snapshot
+.TP
+\fBchcp
+changes an existing checkpoint to a snapshot or vice versa
+.TP
+\fBrmcp
+invalidates specified checkpoint(s)
+.PP
+These tools give the versioning capability to NILFS2; a user can
+select significant versions among continuously created checkpoints and
+can change them to snapshots to be preserved for long periods.
+.PP
+Every checkpoint except for the snapshot will become unprotected from
+the cleaner after a given period of time.  This period is controlled
+by the \fBprotection_period\fP parameter defined in the
+\fB/etc/nilfs_cleanerd.conf\fP(5) file.
+.SH MOUNT OPTIONS
+Refer to the
+.BR mount.nilfs2 (8).
+.SH EXAMPLES
+.TP
+.B mkfs \-t nilfs2 \fP/dev/sdb1
+creates a NILFS2 file system on a block device `/dev/sdb1'.
+.TP
+.B mount \-t nilfs2 \fP/dev/sdb1 /nilfs
+mounts the NILFS2 file system on a mount point `/nilfs' like an
+ordinary POSIX file system.  This will invoke a cleaner process
+\fBnilfs_cleanerd\fP(8) through an external mount program
+(i.e. \fBmount.nilfs2\fP(8)).
+.TP
+.B lscp
+lists checkpoints created in the file system as follows:
+.PP
+        CNO        DATE     TIME  MODE  SKT   NBLKINC       ICNT
+          1  2008-05-08 14:45:49  cp     -         11          3
+          2  2008-05-08 14:50:22  cp     -     200523         81
+          3  2008-05-08 20:40:34  cp     -        136         61
+          4  2008-05-08 20:41:20  cp     -     187666       1604
+          5  2008-05-08 20:41:42  cp     -         51       1634
+        ...
+.TP
+.B chcp ss \fP2
+changes the checkpoint whose \fIcheckpoint-number\fP is two to a snapshot.
+Then the checkpoint list will become as follows:
+.PP
+        CNO        DATE     TIME  MODE  SKT   NBLKINC       ICNT
+          1  2008-05-08 14:45:49  cp     -         11          3
+          2  2008-05-08 14:50:22  ss     -     200523         81
+          3  2008-05-08 20:40:34  cp     -        136         61
+          4  2008-05-08 20:41:20  cp     -     187666       1604
+          5  2008-05-08 20:41:42  cp     -         51       1634
+        ...
+.TP
+.B mount \-t nilfs2 \-r \-o cp=2 \fP/dev/sdb1 /snapshot
+mounts the snapshot on another directory `/snapshot' as a read-only
+file system.  Here the snapshot mount requires at least two options, a
+read-only option (\fB\-r\fP or \fB\-o ro\fP) and the \fBcp\fP option
+(\fB\-o cp=\fP\fIcheckpoint-number\fP).  Note that a read/write mount and
+one or more snapshots are mountable independently, so the online
+backup is possible through the snapshot mounts.
+.PP
+        # mount \-t nilfs2
+        /dev/sdb1 on /nilfs type nilfs2 (rw,gcpid=13296)
+        /dev/sdb1 on /snapshot type nilfs2 (ro,cp=2)
+.TP
+.B umount \fP/nilfs
+unmounts the NILFS2 file system mounted on `/nilfs' and will shutdown
+the \fBnilfs_cleanerd\fP(8) through an external umount program
+(\fBumount.nilfs2\fP(8)) for the read/write mount.
+.SH SKETCH
+NILFS2 provides an extended function to associate user-defined data of
+arbitrary format with checkpoints.  This data is called `sketch', and
+is tagged to a checkpoint by writing its content in a virtual file
+\fB.sketch\fP before creating the checkpoint.  The \fB.sketch\fP file
+behaves as a regular file except it gets truncated at the instant of
+the checkpoint creation.  It is created by \fBmkfs.nilfs2\fP(8) and is
+located directly below the top directory of the NILFS2 file system.
+.SH AUTHORS
+.B NILFS2
+was developed by NILFS development team <nilfs@osrg.net>.
+.SH SEE ALSO
+.BR mkfs.nilfs2 (8),
+.BR mount.nilfs2 (8),
+.BR umount.nilfs2 (8),
+.BR nilfs_cleanerd (8),
+.BR nilfs_cleanerd.conf (5),
+.BR lscp (1),
+.BR mkcp (8),
+.BR chcp (8),
+.BR rmcp (8),
+.BR lssu (1),
+.BR dumpseg (8)
+.sp
+http://www.nilfs.org/
