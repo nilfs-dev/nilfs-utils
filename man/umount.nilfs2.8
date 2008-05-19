@@ -1,0 +1,54 @@
+.\"  Copyright (C) 2007-2008 Nippon Telegraph and Telephone Corporation.
+.\"  Written by Ryusuke Konishi <ryusuke@osrg.net>
+.\"
+.TH UMOUNT.NILFS2 8 "May 2008" "nilfs-utils version 2.0"
+.SH NAME
+umount.nilfs2 \- unmount NILFS2 file systems
+.SH SYNOPSIS
+.B umount
+[\fB\-t nilfs2\fP] [\fB\-dfilnrv\fP] \fIdevice\fP | \fIdir\fP [...]
+.sp
+.B umount.nilfs2
+[\fB\-nrv\fP] \fIdir\fP [...]
+.SH DESCRIPTION
+.B umount.nilfs2
+detaches the NILFS2 file system(s) mentioned from the file hierarchy.
+This is the umount helper for NILFS2 to shutdown the garbage collector
+\fBnilfs_cleanerd\fP(8) before detaching the file system.  Usually it
+should be invoked through \fBumount\fP(8).
+.SH OPTIONS
+See \fBumount\fP(8) for the full set of options.  Commonly used options
+with NILFS2 are as follows:
+.TP
+.B \-i
+Don't call \fBumount.nilfs2\fP.  Valid for \fBumount\fP(8).
+.TP
+.B \-n
+Unmount without writing in \fI/etc/mtab\fP.  This option must be used
+carefully because \fBmount.nilfs2\fP and \fBumount.nilfs2\fP use the
+table to store the process ID of \fBnilfs_cleanerd\fP(8).
+.TP
+.B \-r
+In case unmounting fails, try to remount read-only.
+.TP
+.B \-v
+Verbose mode.
+.SH THE LOOP DEVICE
+.B umount.nilfs2
+will free the loop device (if any) associated with the mount, in case
+it finds the option `loop=...' in \fI/etc/mtab\fP.  The -d option,
+which also allows \fBumount\fP(8) to free the loop device without the
+`loop=...' option, is not supported.
+.SH AUTHOR
+.B umount.nilfs2
+is written by Ryusuke Konishi <ryusuke@osrg.net> for NILFS2, based on
+the umount program included in the util-linux package.
+.SH AVAILABILITY
+.B umount.nilfs2
+is part of the nilfs-utils package and is available from
+http://www.nilfs.org.
+.SH SEE ALSO
+.BR nilfs (8),
+.BR umount (8),
+.BR mount.nilfs2 (8),
+.BR nilfs_cleanerd (8).
