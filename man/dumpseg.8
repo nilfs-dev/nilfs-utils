@@ -1,0 +1,93 @@
+.\"  Copyright (C) 2007-2008 Nippon Telegraph and Telephone Corporation.
+.\"  Written by Ryusuke Konishi <ryusuke@osrg.net>
+.\"
+.TH DUMPSEG 8 "May 2008" "nilfs-utils version 2.0"
+.SH NAME
+dumpseg \- print segment information of NILFS2
+.SH SYNOPSIS
+.B dumpseg
+[\fIdevice\fP] \fIsegment-number\fP ...
+.sp
+.B dumpseg \-h
+.SH DESCRIPTION
+The
+.B dumpseg
+program is an analysis tool for on-disk logs of a NILFS2 file system
+found in \fIdevice\fP.  It displays the configuration of every log
+stored in the segments specified by one or more \fIsegment-numbers\fP.
+The term segment here means a contiguous lump of disk blocks giving an
+allocation unit of NILFS2 disk space.  When \fIdevice\fP is omitted,
+it tries to find an active NILFS2 file system from \fI/proc/mounts\fP.
+.PP
+.B dumpseg
+is a tool for debugging rather than administration.  To list a summary
+of segments, \fBlssu\fP(1) is available instead.
+.SH OPTIONS
+.TP
+.B \-h
+Display help message and exit.
+.SH "FIELD DESCRIPTION"
+.B dumpseg
+shows the configuration of each log with the following fields, where
+each field is printed in the style of ``\fIfield-name\fP \fB=\fP
+\fIvalue\fP''.
+.TP
+.B creation time
+Creation date and time of the log.
+.TP
+.B nfinfo
+Number of file information summaries.
+.TP
+.B finfo
+File information summary. This information starts with the following fields:
+.RS
+.TP
+.B ino
+Inode number of the file.
+.TP
+.B cno
+Number of the checkpoint that the blocks included in the file belong
+to.  For normal writings, this is equal to the latest checkpoint
+number.  For the writings involved in garbage collection, this
+indicates a past checkpoint number.
+.TP
+.B nblocks
+Number of blocks of the file written in the log.  This number is a sum
+of the number of data blocks and B-tree node blocks.  The contents of
+these blocks are written serially in the payload part of the log.
+Only modified or newly created blocks are written to each log.
+.TP
+.B ndatblk
+Number of data blocks of the file written in the log.
+.RE
+.TP
+.B ""
+Then, for each update block in the file, the following information
+will follow these headings.
+.RS
+.TP
+.B vblocknr
+Virtual block number.  Not printed for data blocks of the Disk Address
+Translation file (DAT file).
+.TP
+.B blkoff
+Block offset number.  Not printed for B-tree node blocks except for
+the DAT file.
+.TP
+.B level
+Level of B-tree node block.  Printed only for the DAT file.
+.TP
+.B blocknr
+Block address on the \fIdevice\fP.  This is not an actual field in the
+summary but is calculated from the disk address of each log.
+.RE
+.RE
+.SH AUTHOR
+Koji Sato <koji@osrg.net>
+.SH AVAILABILITY
+.B dumpseg
+is part of the nilfs-utils package and is available from
+http://www.nilfs.org.
+.SH SEE ALSO
+.BR nilfs (8),
+.BR lssu (1).
