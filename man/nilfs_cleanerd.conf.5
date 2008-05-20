@@ -1,0 +1,54 @@
+.\"  Copyright (C) 2007-2008 Nippon Telegraph and Telephone Corporation.
+.\"  Written by Ryusuke Konishi <ryusuke@osrg.net>
+.\"
+.TH NILFS_CLEANERD.CONF 5 "May 2008" "nilfs-utils version 2.0"
+.SH NAME
+nilfs_cleanerd.conf \- nilfs_cleanerd(8) configuration file
+.SH DESCRIPTION
+The 
+.I nilfs_cleanerd.conf
+file is the configuration file for the \fBnilfs_cleanerd\fP(8) which
+reclaims disk space of the NILFS2 filesystem.  This file specifies the
+parameters related to garbage collection (GC) and behaviour of the
+daemon program.
+.PP
+The file contains keyword argument pairs or keyword-only directives,
+one per line.  Lines starting with '#' are interpreted as comments.
+The comment lines and empty lines are ignored.
+.SH PARAMETERS
+The possible keywords and their meanings are as follows (keywords and
+arguments are both case-sensitive):
+.TP
+.B protection_period
+Specify the period during which each checkpoint is protected from the
+garbage collector (in seconds).  NILFS2 GC never deletes checkpoints
+and their blocks whose duration time is less than the value.  The
+default value is 3600, meaning one hour.
+.TP
+.B selection_policy
+Specify the GC policy. At present, only the `\fBtimestamp\fP' policy,
+which reclaims segments in order from oldest to newest, is support.
+.TP
+.B nsegments_per_clean
+Specify the number of segments reclaimed by a single cleaning step.
+The default value is 2.
+.TP
+.B cleaning_interval
+Specify the cleaning interval in seconds.  The default value is 5.
+.TP
+.B use_mmap
+Specify whether to use \fBmmap\fP(2) for reading segments.  At
+present, this option is enabled if supported regardless of this
+directive.
+.TP
+.B log_priority
+Gives the verbosity level that is used when logging messages from
+\fBnilfs_cleanerd\fP(8).  The possible values are: \fBemerg\fP,
+\fBalert\fP, \fBcrit\fP, \fBerr\fP, \fBwarning\fP, \fBnotice\fP,
+\fBinfo\fP, and \fBdebug\fP.  The default is \fBinfo\fP.
+.SH FILES
+.TP
+.I /etc/nilfs_cleanerd.conf
+Configuration file for \fBnilfs_cleanerd\fP(8).
+.SH SEE ALSO
+.BR nilfs_cleanerd (8).
