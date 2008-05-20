@@ -1,3 +1,10 @@
+nilfs-utils-2.0.2  Tue May 20, 2008 JST
+
+	* add man pages for nilfs2 and its utilities.
+	* move declaration of nilfs_persistent_group_desc struct into the
+	  nilfs_fs.h file.  This structure defines on-disk format of ifile
+	  group descriptor, and should be declared in nilfs_fs.h.
+
 nilfs-utils-2.0.1  Mon Mar 24, 2008 JST
 
 	* import changes on nilfs_fs.h to prepare for future extensions.
