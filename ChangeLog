@@ -1,3 +1,10 @@
+nilfs-utils-2.0.3  Thu May 22, 2008 JST
+
+	* fix the problem of 'make dist-bzip2' that it produces a tarball
+	  without man pages.  This fixes it by using dist_man_MANS instead
+	  of man_MANS.  This release is equivalent to the previous release
+	  for the rest.
+
 nilfs-utils-2.0.2  Tue May 20, 2008 JST
 
 	* add man pages for nilfs2 and its utilities.
