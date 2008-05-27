@@ -93,7 +93,7 @@ nilfs_cldconfig_handle_protection_period(struct nilfs_cldconfig *config,
 static unsigned long long
 nilfs_cldconfig_selection_policy_timestamp(const struct nilfs_suinfo *si)
 {
-	return si->si_lastmod;
+	return si->sui_lastmod;
 }
 
 static int

@@ -100,7 +100,7 @@ static void lssu_print_suinfo(const struct nilfs_suinfo *si, size_t nsi,
 
 	for (segnum = 0; segnum < nsi; segnum++) {
 		if (all || !nilfs_suinfo_clean(&si[segnum])) {
-			if ((t = (time_t)(si[segnum].si_lastmod)) != 0) {
+			if ((t = (time_t)(si[segnum].sui_lastmod)) != 0) {
 				localtime_r(&t, &tm);
 				strftime(timebuf, LSSU_BUFSIZE, "%F %T", &tm);
 			} else
@@ -113,7 +113,7 @@ static void lssu_print_suinfo(const struct nilfs_suinfo *si, size_t nsi,
 			       nilfs_suinfo_active(&si[segnum]) ? 'a' : '-',
 			       nilfs_suinfo_dirty(&si[segnum]) ? 'd' : '-',
 			       nilfs_suinfo_error(&si[segnum]) ? 'e' : '-',
-			       si[segnum].si_nblocks);
+			       si[segnum].sui_nblocks);
 		}
 	}
 }

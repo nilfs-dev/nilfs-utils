@@ -245,9 +245,9 @@ nilfs_cleanerd_select_segments(struct nilfs_cleanerd *cleanerd,
 			    !nilfs_suinfo_volatile_active(&si[i]) &&
 			    !nilfs_suinfo_error(&si[i]) &&
 			    ((imp = (*config->cf_selection_policy.p_importance)(&si[i])) < thr)) {
-				if (si[i].si_lastmod < oldest)
-					oldest = si[i].si_lastmod;
-				if (si[i].si_lastmod < prottime) {
+				if (si[i].sui_lastmod < oldest)
+					oldest = si[i].sui_lastmod;
+				if (si[i].sui_lastmod < prottime) {
 					sm = (struct nilfs_segimp *)nilfs_vector_get_new_element(smv);
 					if (sm == NULL) {
 						nssegs = -1;
@@ -442,7 +442,7 @@ static int nilfs_cleanerd_acc_blocks(struct nilfs_cleanerd *cleanerd,
 				      segnums[i], &segment) < 0)
 			return -1;
 		ret = nilfs_cleanerd_acc_blocks_segment(cleanerd,
-			segnums[i], segment, si.si_nblocks, vdescv, bdescv);
+			segnums[i], segment, si.sui_nblocks, vdescv, bdescv);
 		if ((nilfs_put_segment(cleanerd->c_nilfs, segment) < 0) ||
 		    (ret < 0))
 			return -1;

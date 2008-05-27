@@ -641,21 +641,21 @@ struct nilfs_sufile_header {
 
 /**
  * nilfs_suinfo - segment usage information
- * @si_lastmod:
- * @si_nblocks:
- * @si_flags:
+ * @sui_lastmod:
+ * @sui_nblocks:
+ * @sui_flags:
  */
 struct nilfs_suinfo {
-	__u64 si_lastmod;
-	__u32 si_nblocks;
-	__u32 si_flags;
+	__u64 sui_lastmod;
+	__u32 sui_nblocks;
+	__u32 sui_flags;
 };
 
 #define NILFS_SUINFO_FNS(flag, name)					\
 static inline int							\
 nilfs_suinfo_##name(const struct nilfs_suinfo *si)			\
 {									\
-	return si->si_flags & (1UL << NILFS_SEGMENT_USAGE_##flag);	\
+	return si->sui_flags & (1UL << NILFS_SEGMENT_USAGE_##flag);	\
 }
 
 NILFS_SUINFO_FNS(ACTIVE, active)
@@ -665,7 +665,7 @@ NILFS_SUINFO_FNS(VOLATILE_ACTIVE, volatile_active)
 
 static inline int nilfs_suinfo_clean(const struct nilfs_suinfo *si)
 {
-	return !si->si_flags;
+	return !si->sui_flags;
 }
 
 /* ioctl */
