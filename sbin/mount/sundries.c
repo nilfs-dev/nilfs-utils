@@ -309,7 +309,7 @@ char *change_opt(const char *opts, const char *token, void *varp,
 		memcpy(newopts, opts, ind);
 		strcpy(newopts + ind, instead);
 		strcat(newopts, ep);
-	} else if (*opts == '\0') {
+	} else if (opts == NULL || *opts == '\0') {
 		newopts = xstrdup(instead);
 	} else {
 		newopts = xstrdup(opts);
