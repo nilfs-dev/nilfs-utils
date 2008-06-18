@@ -27,6 +27,7 @@
 #ifdef MS_SILENT
 extern int verbose, mount_quiet;
 #endif
+extern int readonly, readwrite;
 
 /* Map from -o and fstab option strings to the flag argument to mount(2).  */
 struct opt_map {
@@ -218,11 +219,11 @@ void parse_opts(const char *options, int *flags, char **extra_opts)
 		free(opts);
 	}
 
-#if 0  /* XXX: should make them external variables? */
 	if (readonly)
 		*flags |= MS_RDONLY;
 	if (readwrite)
 		*flags &= ~MS_RDONLY;
+#if 0
 	*flags |= mounttype;
 #endif
 }

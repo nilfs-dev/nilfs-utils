@@ -55,6 +55,8 @@
 
 int verbose = 0;
 int mount_quiet = 0;
+int readonly = 0;
+int readwrite = 0;
 static int nomtab = 0;
 static int devro = 0;
 
@@ -138,7 +140,7 @@ static void parse_options(int argc, char *argv[], struct mount_options *opts)
 {
 	int c;
 
-	while ((c = getopt(argc, argv, "vnt:o:")) != EOF) {
+	while ((c = getopt(argc, argv, "vnt:o:rw")) != EOF) {
 		switch (c) {
 		case 'v':
 			verbose++;
@@ -156,13 +158,18 @@ static void parse_options(int argc, char *argv[], struct mount_options *opts)
 			else
 				opts->opts = xstrdup(optarg);
 			break;
+		case 'r':
+			readonly++;
+			break;
+		case 'w':
+			readwrite++;
+			break;
 		default:
 			break;
 		}
 	}
 
-	if (opts->opts)
-		parse_opts(opts->opts, &opts->flags, &opts->extra_opts);
+	parse_opts(opts->opts, &opts->flags, &opts->extra_opts);
 }
 
 static struct mntentchn *find_rw_mount(const char *device)
