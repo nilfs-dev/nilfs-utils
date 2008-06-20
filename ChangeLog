@@ -1,3 +1,12 @@
+nilfs-utils-2.0.4  Fri Jun 20, 2008 JST
+
+	* fix the segmentation fault problem of mount.nilfs2 that occurs
+	  if it is invoked without passing through /sbin/mount.
+	* allow ro/rw-mount options for mount.nilfs2.
+	* apply the patch that renames a member prefix of struct nilfs_suinfo
+	  in nilfs_fs.h, which was required to avoid a compile-time error
+	  of the nilfs2 kernel module on IA64 machines.
+	
 nilfs-utils-2.0.3  Thu May 22, 2008 JST
 
 	* fix the problem of 'make dist-bzip2' that it produces a tarball
