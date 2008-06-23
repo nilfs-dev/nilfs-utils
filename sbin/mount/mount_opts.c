@@ -212,7 +212,7 @@ append_context(const char *optname, char *optdata, char **extra_opts)
 	security_context_t raw = NULL;
 	char *data = NULL;
 
-	if (!is_selinux_enabled())
+	if (is_selinux_enabled() != 1)
 		/* ignore the option if we running without selinux */
 		return 0;
 
@@ -223,8 +223,8 @@ append_context(const char *optname, char *optdata, char **extra_opts)
 	data = *optdata =='"' ? strip_quotes(optdata) : optdata;
 
 	if (selinux_trans_to_raw_context(
-			(security_context_t) data, &raw)==-1 ||
-			raw==NULL)
+			(security_context_t) data, &raw) == -1 ||
+			raw == NULL)
 		return -1;
 
 	if (verbose)
