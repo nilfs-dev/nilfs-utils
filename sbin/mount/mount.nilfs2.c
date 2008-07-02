@@ -282,105 +282,148 @@ static int check_remount_dir(struct mntentchn *mc, const char *mntdir)
 	return res;
 }
 
-static int mount_one(char *device, char *mntdir,
-		     const struct mount_options *opts)
+struct nilfs_mount_info {
+	char *device;
+	char *mntdir;
+	char *optstr;
+	pid_t gcpid;
+	int type;
+};
+
+static int
+prepare_mount(struct nilfs_mount_info *mi, const struct mount_options *mo)
 {
 	struct mntentchn *mc;
-	char *optstr = NULL, *exopts;
-	pid_t pid = 0;
-	gcpid_opt_t id;
-	int remount = NORMAL_MOUNT;
-	int res, err = EX_FAIL;
+	gcpid_opt_t pid;
+	int res = -1;
 
-	if (!(opts->flags & MS_RDONLY)) { /* rw-mount */
-		mc = find_rw_mount(device);
-		if (mc != NULL) {
-			if (!(opts->flags & MS_REMOUNT)) {
-				error(_("%s: the device already has a "
-					"rw-mount on %s.\n"
-					"\t\tmultiple rw-mount is not "
-					"supported."),
-				      progname, mc->m.mnt_dir);
-				goto failed;
-			}
-			if (check_remount_dir(mc, mntdir) < 0)
-				goto failed;
+	mi->type = NORMAL_MOUNT;
+	mi->gcpid = 0;
+	mi->optstr = NULL;
 
-			if (find_opt(mc->m.mnt_opts, gcpid_opt_fmt, &id) >= 0)
-				pid = id;
-			remount = RW2RW_REMOUNT;
-		}
-	} else if ((opts->flags & MS_REMOUNT) &&
-		   (mc = find_rw_mount(device)) != NULL) { /* ro-remount */
-
-		if (check_remount_dir(mc, mntdir) < 0)
-			goto failed;
-		if (find_opt(mc->m.mnt_opts, gcpid_opt_fmt, &id) < 0) {
-			error(_("%s: cannot identify cleaner pid working on "
-				"%s. remount failed."),
-			      progname, device);
+	if (!(mo->flags & MS_RDONLY)) { /* rw-mount */
+		if ((mc = find_rw_mount(mi->device)) == NULL)
+			goto out;
+		if (!(mo->flags & MS_REMOUNT)) {
+			error(_("%s: the device already has a rw-mount on %s."
+				"\n\t\tmultiple rw-mount is not supported."),
+			      progname, mc->m.mnt_dir);
 			goto failed;
 		}
-		if (stop_cleanerd(device, (pid_t)id) < 0) {
+
+		/* rw->rw remount */
+		if (check_remount_dir(mc, mi->mntdir) < 0)
+			goto failed;
+		
+		if (find_opt(mc->m.mnt_opts, gcpid_opt_fmt, &pid) >= 0)
+			mi->gcpid = pid;
+		mi->optstr = xstrdup(mc->m.mnt_opts); /* previous opts */
+		mi->type = RW2RW_REMOUNT;
+	} else if (mo->flags & MS_REMOUNT) { /* ro-remount */
+		if ((mc = find_rw_mount(mi->device)) == NULL)
+			goto out;
+
+		/* rw->ro remount */
+		if (check_remount_dir(mc, mi->mntdir) < 0)
+			goto failed;
+		pid = 0;
+		if (find_opt(mc->m.mnt_opts, gcpid_opt_fmt, &pid) >= 0 &&
+		    stop_cleanerd(mi->device, (pid_t)pid) < 0) {
 			error(_("%s: remount failed due to %s shutdown "
 				"failure"), progname, CLEANERD_NAME);
 			goto failed;
 		}
-		remount = RW2RO_REMOUNT;
-		optstr = xstrdup(mc->m.mnt_opts); /* previous opts */
+		mi->gcpid = pid;
+		mi->optstr = xstrdup(mc->m.mnt_opts); /* previous opts */
+		mi->type = RW2RO_REMOUNT;
 	}
+ out:
+	res = 0;
+ failed:
+	return res;
+}
 
-	res = mount(device, mntdir, fstype, opts->flags & ~MS_NOSYS,
-		    opts->extra_opts);
-	if (res) {
-		int errsv = errno;
+static int
+do_mount_one(struct nilfs_mount_info *mi, const struct mount_options *mo)
+{
+	int res, errsv;
 
-		switch (errsv) {
-		case ENODEV:
-			error(_("%s: cannot find or load %s filesystem"),
-			      progname, fstype);
-			break;
-		default:
-			error(_("%s: Error while mounting %s on %s: %s"), 
-			      progname, device, mntdir, strerror(errsv));
-			break;
-		}
-		if (remount == RW2RO_REMOUNT) {
-			/* Restarting cleaner daemon */
-			if (start_cleanerd(device, mntdir, &pid) == 0) {
-				if (verbose)
-					printf(_("%s: restarted %s\n"),
-					       progname, CLEANERD_NAME);
-				update_gcpid_opt(&optstr, pid);
-				update_mtab_entry(device, mntdir, fstype,
-						  optstr, 0, 0, 0);
-			} else {
-				error(_("%s: failed to restart %s"),
-				      progname, CLEANERD_NAME);
-			}
-		}
-		goto failed;
+	res = mount(mi->device, mi->mntdir, fstype, mo->flags & ~MS_NOSYS,
+		    mo->extra_opts);
+	if (!res)
+		return 0;
+
+	errsv = errno;
+	switch (errsv) {
+	case ENODEV:
+		error(_("%s: cannot find or load %s filesystem"),
+		      progname, fstype);
+		break;
+	default:
+		error(_("%s: Error while mounting %s on %s: %s"), 
+		      progname, mi->device, mi->mntdir, strerror(errsv));
+		break;
 	}
-	if (!(opts->flags & MS_RDONLY) && remount != RW2RW_REMOUNT) {
-		if (start_cleanerd(device, mntdir, &pid) < 0)
+	if (mi->type == RW2RO_REMOUNT) {
+		/* Restarting cleaner daemon */
+		if (start_cleanerd(mi->device, mi->mntdir, &mi->gcpid) == 0) {
+			if (verbose)
+				printf(_("%s: restarted %s\n"),
+				       progname, CLEANERD_NAME);
+			update_gcpid_opt(&mi->optstr, mi->gcpid);
+			update_mtab_entry(mi->device, mi->mntdir, fstype,
+					  mi->optstr, 0, 0, 0);
+		} else {
+			error(_("%s: failed to restart %s"),
+			      progname, CLEANERD_NAME);
+		}
+	}
+	return res;
+}
+
+static void update_mount_state(struct nilfs_mount_info *mi,
+			       const struct mount_options *mo)
+{
+	pid_t pid = mi->gcpid;
+	char *exopts;
+
+	if (!(mo->flags & MS_RDONLY) && mi->type != RW2RW_REMOUNT) {
+		if (start_cleanerd(mi->device, mi->mntdir, &pid) < 0)
 			error(_("%s aborted"), CLEANERD_NAME);
 		else if (verbose)
-			printf(_("%s: started %s\n"), progname, CLEANERD_NAME);
+			printf(_("%s: started %s\n"), progname,
+			       CLEANERD_NAME);
 	}
-
-	my_free(optstr);
-	exopts = fix_extra_opts_string(opts->extra_opts, pid);
-	optstr = fix_opts_string(((opts->flags & ~MS_NOMTAB) | MS_NETDEV),
-				 exopts, NULL);
-
-	update_mtab_entry(device, mntdir, fstype, optstr, 0, 0,
-			  !(opts->flags & MS_REMOUNT));
-
+	my_free(mi->optstr);
+	exopts = fix_extra_opts_string(mo->extra_opts, pid);
+	mi->optstr = fix_opts_string(((mo->flags & ~MS_NOMTAB) | MS_NETDEV),
+				     exopts, NULL);
+		
+	update_mtab_entry(mi->device, mi->mntdir, fstype, mi->optstr, 0, 0,
+			  !(mo->flags & MS_REMOUNT));
 	my_free(exopts);
-	err = 0;
+}
 
+static int mount_one(char *device, char *mntdir,
+		     const struct mount_options *opts)
+{
+	struct nilfs_mount_info mi = { .device = device, .mntdir = mntdir };
+	int res, err = EX_FAIL;
+
+	res = prepare_mount(&mi, opts);
+	if (res)
+		goto failed;
+
+	res = do_mount_one(&mi, opts);
+	if (res)
+		goto failed;
+
+	if (!nomtab)
+		update_mount_state(&mi, opts);
+
+	err = 0;
  failed:
-	my_free(optstr);
+	my_free(mi.optstr);
 	return err;
 }
 
