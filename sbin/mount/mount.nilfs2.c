@@ -59,6 +59,7 @@ int readonly = 0;
 int readwrite = 0;
 static int nomtab = 0;
 static int devro = 0;
+static int fake = 0;
 
 extern char *optarg;
 extern int optind;
@@ -140,8 +141,11 @@ static void parse_options(int argc, char *argv[], struct mount_options *opts)
 {
 	int c;
 
-	while ((c = getopt(argc, argv, "vnt:o:rw")) != EOF) {
+	while ((c = getopt(argc, argv, "fvnt:o:rw")) != EOF) {
 		switch (c) {
+		case 'f':
+			fake++;
+			break;
 		case 'v':
 			verbose++;
 			break;
@@ -341,7 +345,7 @@ prepare_mount(struct nilfs_mount_info *mi, const struct mount_options *mo)
 			goto failed;
 		pid = 0;
 		if (find_opt(mc->m.mnt_opts, gcpid_opt_fmt, &pid) >= 0 &&
-		    stop_cleanerd(mi->device, (pid_t)pid) < 0) {
+		    !fake && stop_cleanerd(mi->device, (pid_t)pid) < 0) {
 			error(_("%s: remount failed due to %s shutdown "
 				"failure"), progname, CLEANERD_NAME);
 			goto failed;
@@ -438,10 +442,11 @@ static int mount_one(char *device, char *mntdir,
 	if (res)
 		goto failed;
 
-	res = do_mount_one(&mi, opts);
-	if (res)
-		goto failed;
-
+	if (!fake) {
+		res = do_mount_one(&mi, opts);
+		if (res)
+			goto failed;
+	}
 	update_mount_state(&mi, opts);
 	err = 0;
  failed:

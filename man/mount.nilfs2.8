@@ -6,13 +6,13 @@
 mount.nilfs2 \- mount a NILFS2 file system
 .SH SYNOPSIS
 .B mount -t nilfs2
-[\fB\-inrvw\fP] [\fB\-o\fP \fIoptions\fP [\fB,\fP...]] \fIdevice\fP \fIdir\fP
+[\fB\-finrvw\fP] [\fB\-o\fP \fIoptions\fP [\fB,\fP...]] \fIdevice\fP \fIdir\fP
 .sp
 .B mount -t nilfs2
-[\fB\-inrvw\fP] [\fB\-o\fP \fIoptions\fP [\fB,\fP...]] \fIdevice\fP | \fIdir\fP
+[\fB\-finrvw\fP] [\fB\-o\fP \fIoptions\fP [\fB,\fP...]] \fIdevice\fP | \fIdir\fP
 .sp
 .B mount.nilfs2
-[\fB\-nrvw\fP] [\fB\-o\fP \fIoptions\fP [\fB,\fP...]] \fIdevice\fP \fIdir\fP
+[\fB\-fnrvw\fP] [\fB\-o\fP \fIoptions\fP [\fB,\fP...]] \fIdevice\fP \fIdir\fP
 .SH DESCRIPTION
 .B mount.nilfs2
 serves to attach a NILFS2 file system on the specified directory
@@ -46,17 +46,22 @@ applying a \fB\-r\fP or \fB\-w\fP option, when present.
 See \fBmount\fP(8) for the full set of options.  Commonly used options
 are as follows:
 .TP
+.B \-f
+Fakes mounting the file system, meaning that the actual system call
+will be skipped.  This option is used to add entries for devices that
+were mounted earlier with the \fB-n\fP option. It can also be used for
+invoking \fBnilfs_cleanerd\fP(8) skipped previously.
+.TP
 .B \-i
 Don't call \fBmount.nilfs2\fP.  Useful to perform NILFS2 without the
 garbage collector.
 .TP
 .B \-n
-Mount without writing in \fI/etc/mtab\fP.  This is used for example
-when \fI/etc\fP is on a read-only file system.  However, for NILFS2,
-this option would prevent \fBumount.nilfs2\fP from detaching the
-NILFS2 file system because \fBmount.nilfs2\fP and \fBumount.nilfs2\fP
-use the table to store the process ID of \fBnilfs_cleanerd\fP(8).  So
-this must be used carefully.
+Mount without writing in \fI/etc/mtab\fP.  This is necessary for
+example when \fI/etc\fP is on a read-only file system.  With this
+option, invocation of \fBnilfs_cleanerd\fP(8) is skipped.
+To add entries to mtab and invoke the garbage collector later, the
+\fB-f\fP option is available.
 .TP
 .B \-r
 Mount the file system read-only.  A synonym is \fB"\-o ro"\fP.
