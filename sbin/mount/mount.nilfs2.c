@@ -232,29 +232,26 @@ update_mtab_entry(const char *spec, const char *node, const char *type,
 	if (verbose)
 		print_one (&mnt);
 
-	if (!nomtab && mtab_is_writable()) {
-		if (!addnew)
-			update_mtab (mnt.mnt_dir, &mnt);
-		else {
-			mntFILE *mfp;
+	if (!addnew)
+		update_mtab (mnt.mnt_dir, &mnt);
+	else {
+		mntFILE *mfp;
 
-			lock_mtab();
-			mfp = my_setmntent(MOUNTED, "a+");
-			if (mfp == NULL || mfp->mntent_fp == NULL) {
+		lock_mtab();
+		mfp = my_setmntent(MOUNTED, "a+");
+		if (mfp == NULL || mfp->mntent_fp == NULL) {
+			int errsv = errno;
+			error(_("%s: can't open %s, %s"),
+			      progname, MOUNTED, strerror(errsv));
+		} else {
+			if ((my_addmntent (mfp, &mnt)) == 1) {
 				int errsv = errno;
-				error(_("%s: can't open %s, %s"),
+				error(_("%s: error writing %s, %s"),
 				      progname, MOUNTED, strerror(errsv));
-			} else {
-				if ((my_addmntent (mfp, &mnt)) == 1) {
-					int errsv = errno;
-					error(_("%s: error writing %s, %s"),
-					      progname, MOUNTED,
-					      strerror(errsv));
-				}
 			}
-			my_endmntent(mfp);
-			unlock_mtab();
 		}
+		my_endmntent(mfp);
+		unlock_mtab();
 	}
 	my_free(mnt.mnt_fsname);
 	my_free(mnt.mnt_dir);
@@ -289,6 +286,22 @@ struct nilfs_mount_info {
 	pid_t gcpid;
 	int type;
 };
+
+static int check_mtab(void)
+{
+	int res = 0;
+
+	if (!nomtab) {
+		if (mtab_is_writable())
+			res++;
+		else
+			error(_("%s: cannot modify " MOUNTED ".\n"
+				"Please remount the partition with -f option"
+				" after making " MOUNTED " writable."),
+			       progname);
+	}
+	return res;
+}
 
 static int
 prepare_mount(struct nilfs_mount_info *mi, const struct mount_options *mo)
@@ -351,7 +364,7 @@ do_mount_one(struct nilfs_mount_info *mi, const struct mount_options *mo)
 	res = mount(mi->device, mi->mntdir, fstype, mo->flags & ~MS_NOSYS,
 		    mo->extra_opts);
 	if (!res)
-		return 0;
+		goto out;
 
 	errsv = errno;
 	switch (errsv) {
@@ -364,7 +377,9 @@ do_mount_one(struct nilfs_mount_info *mi, const struct mount_options *mo)
 		      progname, mi->device, mi->mntdir, strerror(errsv));
 		break;
 	}
-	if (mi->type == RW2RO_REMOUNT) {
+	if (mi->type != RW2RO_REMOUNT)
+		goto out;
+	if (check_mtab()) {
 		/* Restarting cleaner daemon */
 		if (start_cleanerd(mi->device, mi->mntdir, &mi->gcpid) == 0) {
 			if (verbose)
@@ -377,7 +392,9 @@ do_mount_one(struct nilfs_mount_info *mi, const struct mount_options *mo)
 			error(_("%s: failed to restart %s"),
 			      progname, CLEANERD_NAME);
 		}
-	}
+	} else
+		printf(_("%s not restarted\n"), CLEANERD_NAME);
+ out:
 	return res;
 }
 
@@ -386,13 +403,20 @@ static void update_mount_state(struct nilfs_mount_info *mi,
 {
 	pid_t pid = mi->gcpid;
 	char *exopts;
+	int rungc;
 
-	if (!(mo->flags & MS_RDONLY) && mi->type != RW2RW_REMOUNT) {
+	rungc = !(mo->flags & MS_RDONLY) &&
+		(mi->type != RW2RW_REMOUNT || mi->gcpid == 0);
+	if (!check_mtab()) {
+		if (rungc)
+			printf(_("%s not started\n"), CLEANERD_NAME);
+		return;
+	}
+	if (rungc) {
 		if (start_cleanerd(mi->device, mi->mntdir, &pid) < 0)
 			error(_("%s aborted"), CLEANERD_NAME);
 		else if (verbose)
-			printf(_("%s: started %s\n"), progname,
-			       CLEANERD_NAME);
+			printf(_("%s: started %s\n"), progname, CLEANERD_NAME);
 	}
 	my_free(mi->optstr);
 	exopts = fix_extra_opts_string(mo->extra_opts, pid);
@@ -418,9 +442,7 @@ static int mount_one(char *device, char *mntdir,
 	if (res)
 		goto failed;
 
-	if (!nomtab)
-		update_mount_state(&mi, opts);
-
+	update_mount_state(&mi, opts);
 	err = 0;
  failed:
 	my_free(mi.optstr);
