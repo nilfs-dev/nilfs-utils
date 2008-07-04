@@ -428,7 +428,7 @@ do_mount_one(struct nilfs_mount_info *mi, const struct mount_options *mo)
 static void update_mount_state(struct nilfs_mount_info *mi,
 			       const struct mount_options *mo)
 {
-	pid_t pid = mi->gcpid;
+	pid_t pid = (mi->type == RW2RW_REMOUNT) ? mi->gcpid : 0;
 	char *exopts;
 	int rungc;
 
