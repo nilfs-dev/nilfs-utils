@@ -192,6 +192,27 @@ static struct mntentchn *find_rw_mount(const char *device)
 	return mc;
 }
 
+static int mounted(const char *spec, const char *node)
+{
+	struct mntentchn *mc;
+	char *fsname = canonicalize(spec);
+	char *dir = canonicalize(node);
+	int ret = 0;
+
+	mc = getmntdirbackward(dir, NULL);
+	while (mc) {
+		if (strcmp(mc->m.mnt_type, fstype) == 0 &&
+		    strcmp(mc->m.mnt_fsname, fsname) == 0) {
+			ret = 1;
+			break;
+		}
+		mc = getmntdirbackward(dir, mc);
+	}
+	my_free(fsname);
+	my_free(dir);
+	return ret;
+}
+
 static void update_gcpid_opt(char **opts, pid_t newpid)
 {
 	char buf[256], *newopts;
@@ -289,6 +310,7 @@ struct nilfs_mount_info {
 	char *optstr;
 	pid_t gcpid;
 	int type;
+	int mounted;
 };
 
 static int check_mtab(void)
@@ -317,6 +339,7 @@ prepare_mount(struct nilfs_mount_info *mi, const struct mount_options *mo)
 	mi->type = NORMAL_MOUNT;
 	mi->gcpid = 0;
 	mi->optstr = NULL;
+	mi->mounted = mounted(mi->device, mi->mntdir);
 
 	if (!(mo->flags & MS_RDONLY)) { /* rw-mount */
 		if ((mc = find_rw_mount(mi->device)) == NULL)
@@ -391,7 +414,7 @@ do_mount_one(struct nilfs_mount_info *mi, const struct mount_options *mo)
 				       progname, CLEANERD_NAME);
 			update_gcpid_opt(&mi->optstr, mi->gcpid);
 			update_mtab_entry(mi->device, mi->mntdir, fstype,
-					  mi->optstr, 0, 0, 0);
+					  mi->optstr, 0, 0, !mi->mounted);
 		} else {
 			error(_("%s: failed to restart %s"),
 			      progname, CLEANERD_NAME);
@@ -428,7 +451,7 @@ static void update_mount_state(struct nilfs_mount_info *mi,
 				     exopts, NULL);
 		
 	update_mtab_entry(mi->device, mi->mntdir, fstype, mi->optstr, 0, 0,
-			  !(mo->flags & MS_REMOUNT));
+			  !mi->mounted);
 	my_free(exopts);
 }
 
