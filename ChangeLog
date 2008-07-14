@@ -1,3 +1,10 @@
+nilfs-utils-2.0.5  Mon Jul 14, 2008 JST
+
+	* add fake option (-f) to mount.nilfs2.
+	* fix a problem related to the fake option support in which a gcpid
+	  option remains in /etc/mtab even after ro-remount succeeded.
+	* push forward check of /etc/mtab.
+
 nilfs-utils-2.0.4  Fri Jun 20, 2008 JST
 
 	* fix the segmentation fault problem of mount.nilfs2 that occurs
