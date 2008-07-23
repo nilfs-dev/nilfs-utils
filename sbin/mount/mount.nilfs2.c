@@ -586,7 +586,7 @@ static int mount_one(char *device, char *mntdir,
 	update_mount_state(&mi, opts);
 
 #ifdef HAVE_LIBSELINUX
-	if (is_selinux_enabled() > 0) {
+	if (verbose && is_selinux_enabled() > 0) {
 		security_context_t raw = NULL, def = NULL;
 
 		if (getfilecon(mntdir, &raw) > 0 &&
@@ -597,10 +597,7 @@ static int mount_one(char *device, char *mntdir,
 					 "       You just mounted an file system that supports labels which does not\n"
 					 "       contain labels, onto an SELinux box. It is likely that confined\n"
 					 "       applications will generate AVC messages and not be allowed access to\n"
-					 "       this file system.  You can add labels to this file system by executing\n"
-					 "       restorecon(8). If you do not want to add labels to this file system,\n"
-					 "       you should mount the file system using one of the \"context\" mount\n"
-					 "       option."),
+					 "       this file system.  For more details see restorecon(8) and mount(8).\n"),
 				       progname, mntdir);
 		}
 		freecon(raw);
