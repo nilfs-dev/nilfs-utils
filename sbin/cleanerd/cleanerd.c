@@ -519,7 +519,7 @@ nilfs_cleanerd_get_snapshot(const struct nilfs_cleanerd *cleanerd,
 		}
 		for (j = 0; j < n; j++)
 			ss[i + j] = cpinfo[j].ci_cno;
-		cno = cpinfo[i + n - 1].ci_cno + 1;
+		cno = cpinfo[n - 1].ci_cno + 1;
 	}
 
 	*ssp = ss;
