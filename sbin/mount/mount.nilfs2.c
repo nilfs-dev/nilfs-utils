@@ -202,7 +202,7 @@ static int mounted(const char *spec, const char *node)
 	mc = getmntdirbackward(dir, NULL);
 	while (mc) {
 		if (strcmp(mc->m.mnt_type, fstype) == 0 &&
-		    strcmp(mc->m.mnt_fsname, fsname) == 0) {
+		    (fsname == NULL || strcmp(mc->m.mnt_fsname, fsname) == 0)) {
 			ret = 1;
 			break;
 		}
@@ -336,34 +336,37 @@ prepare_mount(struct nilfs_mount_info *mi, const struct mount_options *mo)
 	gcpid_opt_t pid;
 	int res = -1;
 
+	if (!(mo->flags & MS_REMOUNT) && mounted(NULL, mi->mntdir)) {
+		error(_("%s: %s is already mounted."), progname, mi->mntdir);
+		goto failed;
+	}
+
 	mi->type = NORMAL_MOUNT;
 	mi->gcpid = 0;
 	mi->optstr = NULL;
 	mi->mounted = mounted(mi->device, mi->mntdir);
 
-	if (!(mo->flags & MS_RDONLY)) { /* rw-mount */
-		if ((mc = find_rw_mount(mi->device)) == NULL)
-			goto out;
-		if (!(mo->flags & MS_REMOUNT)) {
-			error(_("%s: the device already has a rw-mount on %s."
-				"\n\t\tmultiple rw-mount is not supported."),
-			      progname, mc->m.mnt_dir);
-			goto failed;
-		}
+	mc = find_rw_mount(mi->device);
+	if (mc == NULL)
+		return 0; /* no previous rw-mount */
 
-		/* rw->rw remount */
+	switch (mo->flags & (MS_RDONLY | MS_REMOUNT)) {
+	case 0: /* overlapping rw-mount */
+		error(_("%s: the device already has a rw-mount on %s."
+			"\n\t\tmultiple rw-mount is not allowed."),
+		      progname, mc->m.mnt_dir);
+		goto failed;
+	case MS_RDONLY: /* ro-mount (a rw-mount exists) */
+		break;
+	case MS_REMOUNT: /* rw->rw remount */
 		if (check_remount_dir(mc, mi->mntdir) < 0)
 			goto failed;
-		
 		if (find_opt(mc->m.mnt_opts, gcpid_opt_fmt, &pid) >= 0)
 			mi->gcpid = pid;
 		mi->optstr = xstrdup(mc->m.mnt_opts); /* previous opts */
 		mi->type = RW2RW_REMOUNT;
-	} else if (mo->flags & MS_REMOUNT) { /* ro-remount */
-		if ((mc = find_rw_mount(mi->device)) == NULL)
-			goto out;
-
-		/* rw->ro remount */
+		break;
+	case MS_RDONLY | MS_REMOUNT:  /* rw->ro remount */
 		if (check_remount_dir(mc, mi->mntdir) < 0)
 			goto failed;
 		pid = 0;
@@ -376,8 +379,9 @@ prepare_mount(struct nilfs_mount_info *mi, const struct mount_options *mo)
 		mi->gcpid = pid;
 		mi->optstr = xstrdup(mc->m.mnt_opts); /* previous opts */
 		mi->type = RW2RO_REMOUNT;
+		break;
 	}
- out:
+
 	res = 0;
  failed:
 	return res;
