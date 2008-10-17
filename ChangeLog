@@ -1,3 +1,9 @@
+nilfs-utils-2.0.6  Fri Oct 17, 2008 JST
+
+	* fix the cleanerd bug that causes a kernel panic for more than
+	  512 snapshots.
+	* tighten checks before calling mount syscall.
+
 nilfs-utils-2.0.5  Mon Jul 14, 2008 JST
 
 	* add fake option (-f) to mount.nilfs2.
