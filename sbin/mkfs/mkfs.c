@@ -32,6 +32,7 @@
 
 
 #undef CONFIG_ATIME_FILE
+#undef CONFIG_SKETCH_FILE
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -988,6 +989,7 @@ static void make_empty_dir(ino_t dir_ino, ino_t parent_ino)
 	memcpy(de->name, "..\0\0\0\0\0", 8);
 //	rec_len += de->rec_len;
 
+#if defined(CONFIG_SKETCH_FILE)
 	de = next_dir_entry(de);
 	de->inode = cpu_to_le64(NILFS_SKETCH_INO);
 	de->name_len = 7;
@@ -996,6 +998,7 @@ static void make_empty_dir(ino_t dir_ino, ino_t parent_ino)
 	de->file_type = NILFS_FT_REG_FILE;
 	memcpy(de->name, ".sketch", 8);
 //	rec_len += de->rec_len;
+#endif
 
 	de = next_dir_entry(de);
 	de->inode = cpu_to_le64(NILFS_NILFS_INO);
