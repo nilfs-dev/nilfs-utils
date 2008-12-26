@@ -1087,9 +1087,9 @@ static void update_blocknr(struct nilfs_file_info *fi,
 
 static void prepare_blockgrouped_file(blocknr_t blocknr)
 {
-	struct nilfs_persistent_group_desc *desc;
+	struct nilfs_palloc_group_desc *desc;
 	const unsigned group_descs_per_block
-		= blocksize / sizeof(struct nilfs_persistent_group_desc);
+		= blocksize / sizeof(struct nilfs_palloc_group_desc);
 	int i;
 
 	for (i = 0, desc = map_disk_buffer(blocknr, 1);
@@ -1101,7 +1101,7 @@ static void prepare_blockgrouped_file(blocknr_t blocknr)
 static inline void
 alloc_blockgrouped_file_entry(blocknr_t blocknr, unsigned long nr)
 {
-	struct nilfs_persistent_group_desc *desc = map_disk_buffer(blocknr, 1);
+	struct nilfs_palloc_group_desc *desc = map_disk_buffer(blocknr, 1);
 					/* allways use the first group */
 	void *bitmap = map_disk_buffer(blocknr + 1, 1);
 

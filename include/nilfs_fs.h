@@ -61,10 +61,6 @@
 #define NILFS_FL_USER_VISIBLE	0x0003DFFF /* User visible flags */
 #define NILFS_FL_USER_MODIFIABLE	0x000380FF /* User modifiable flags */
 
-/* Flags for inode allocators */
-#define NILFS_INODE_NEW		0x10000000 /* i_mode has free link chain */
-#define NILFS_INODE_UNUSED	0x20000000 /* i_mode has free link chain */
-
 
 #define NILFS_INODE_BMAP_SIZE	7
 /**
@@ -134,15 +130,6 @@ struct nilfs_super_root {
  * Maximal mount counts
  */
 #define NILFS_DFL_MAX_MNT_COUNT		50      /* 50 mounts */
-
-/*
- * Retry count for IO errors
- *
- * Basically retry for the same block is entrusted to device drivers.
- * Recovery process gives up any further attempts to find a last valid
- * segment when IO errors repeatedly occur.
- */
-#define NILFS_EIO_RETRY_COUNT		4
 
 /*
  * File system states (sbp->s_state, nilfs->ns_mount_state)
@@ -410,10 +397,10 @@ struct nilfs_segment_summary {
 #define NILFS_SS_GC     0x0010  /* segment written for cleaner operation */
 
 /**
- * struct nilfs_persistent_group_desc - block group descriptor
+ * struct nilfs_palloc_group_desc - block group descriptor
  * @pg_nfrees: number of free entries in block group
  */
-struct nilfs_persistent_group_desc {
+struct nilfs_palloc_group_desc {
 	__le32 pg_nfrees;
 };
 
