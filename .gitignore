@@ -24,6 +24,10 @@ CVS
 !.gitignore
 tags
 TAGS
+GPATH
+GRTAGS
+GSYMS
+GTAGS
 
 #
 # Generated files
