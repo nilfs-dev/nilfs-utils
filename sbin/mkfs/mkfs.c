@@ -655,6 +655,60 @@ static void read_disk_header(int fd, const char *device)
 	}
 }
 
+#define MAX_NBLOCKS_CLEAR_BUFFER	8
+
+static int erase_disk_range(int fd, off64_t offset, size_t count)
+{
+	void *buffer;
+	size_t size, bufsz;
+	int ret = -1;
+
+	for (bufsz = blocksize * MAX_NBLOCKS_CLEAR_BUFFER;
+	     bufsz >= blocksize; bufsz >>= 1) {
+		buffer = malloc(bufsz);
+		if (buffer != NULL)
+			break;
+	}
+	if (bufsz < blocksize)
+		cannot_allocate_memory();
+
+	memset(buffer, 0, bufsz);
+
+	if (lseek64(fd, offset, SEEK_SET) < 0)
+		goto failed;
+
+	while (count > 0) {
+		size = count > bufsz ? bufsz : count;
+		if (write(fd, buffer, size) < size)
+			goto failed;
+		count -= size;
+	}
+	ret = 0;
+
+ failed:
+	free(buffer);
+	return ret;
+}
+
+static int erase_disk(int fd, struct nilfs_disk_info *di)
+{
+	int ret;
+
+	BUG_ON(di->dev_size < NILFS_DISK_ERASE_SIZE ||
+	       di->dev_size - NILFS_DISK_ERASE_SIZE < NILFS_SB_OFFSET_BYTES);
+
+	/* Erase tail of partition */
+	ret = erase_disk_range(fd, di->dev_size - NILFS_DISK_ERASE_SIZE,
+			       NILFS_DISK_ERASE_SIZE);
+	if (ret == 0) {
+		/* Erase head of partition */
+		ret = erase_disk_range(fd, NILFS_SB_OFFSET_BYTES,
+				       NILFS_DISK_ERASE_SIZE -
+				       NILFS_SB_OFFSET_BYTES);
+	}
+	return ret;
+}
+
 static void write_disk(int fd, struct nilfs_disk_info *di,
 		       struct mkfs_options *opts)
 {
@@ -669,6 +723,9 @@ static void write_disk(int fd, struct nilfs_disk_info *di,
 		      blocksize, di->device, di->dev_size);
 	}
 	if (!opts->nflag) {
+		if (erase_disk(fd, di) < 0)
+			goto failed_to_write;
+
 		/* Writing segments */
 		for (i = 0, si = di->seginfo; i < di->nseginfo; i++, si++) {
 			lseek64(fd, si->start * blocksize, SEEK_SET);
@@ -1094,7 +1151,7 @@ static void prepare_blockgrouped_file(blocknr_t blocknr)
 
 	for (i = 0, desc = map_disk_buffer(blocknr, 1);
 	     i < group_descs_per_block; i++, desc++)
-		desc->pg_nfrees = cpu_to_le32(blocksize * NILFS_CHAR_BIT);
+		desc->pg_nfrees = cpu_to_le32(blocksize * 8 /* CHAR_BIT */);
 	map_disk_buffer(blocknr + 1, 1); /* Initialize bitmap block */
 }
 

@@ -57,7 +57,10 @@ typedef __u16 __le16;
 #include "nilfs_fs.h"
 
 #define NILFS_DISKHDR_SIZE 		4096 /* HDD header (MBR+superblock) */
-#define NILFS_CHAR_BIT                  8    /* char bits */
+#define NILFS_DISK_ERASE_SIZE		1048576	/* size of first and last
+						   bytes to be erased (except
+						   for the partition table) */
+
 #define NILFS_DEF_BLOCKSIZE_BITS	12   /* default blocksize = 2^12
 						bytes */
 #define NILFS_DEF_BLOCKSIZE	        (1 << NILFS_DEF_BLOCKSIZE_BITS)
