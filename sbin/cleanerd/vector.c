@@ -135,7 +135,7 @@ int nilfs_vector_delete_elements(struct nilfs_vector *vector,
 	if (index + nelems - 1 < vector->v_nelems - 1)
 		memmove(vector->v_data + vector->v_elemsize * index,
 			vector->v_data + vector->v_elemsize * (index + nelems),
-			(vector->v_nelems - (index + nelems - 1)) *
+			(vector->v_nelems - (index + nelems)) *
 			vector->v_elemsize);
 	vector->v_nelems -= nelems;
 	return 0;
