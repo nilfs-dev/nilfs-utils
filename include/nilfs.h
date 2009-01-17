@@ -79,9 +79,7 @@ typedef __u64	__be64;
 
 /* XXX: sector_t is not defined in user land */
 typedef __u64 sector_t;	// XXX: __u64 ??
-typedef sector_t nilfs_sector_t;
 typedef sector_t nilfs_blkoff_t;
-typedef __u64 nilfs_segnum_t;
 typedef __u64 nilfs_cno_t;
 
 #define NILFS_IOC	".nilfs"
@@ -226,7 +224,7 @@ struct nilfs_block {
 
 
 /* partial segment iterator */
-void nilfs_psegment_init(struct nilfs_psegment *, nilfs_segnum_t,
+void nilfs_psegment_init(struct nilfs_psegment *, __u64,
 			 void *, size_t, const struct nilfs *);
 int nilfs_psegment_is_end(const struct nilfs_psegment *);
 void nilfs_psegment_next(struct nilfs_psegment *);
@@ -291,17 +289,14 @@ ssize_t nilfs_get_cpinfo(const struct nilfs *, nilfs_cno_t, int,
 			 struct nilfs_cpinfo *, size_t);
 int nilfs_delete_checkpoint(const struct nilfs *, nilfs_cno_t);
 int nilfs_get_cpstat(const struct nilfs *, struct nilfs_cpstat *);
-ssize_t nilfs_get_suinfo(const struct nilfs *, nilfs_segnum_t,
-			 struct nilfs_suinfo *, size_t);
+ssize_t nilfs_get_suinfo(const struct nilfs *, __u64, struct nilfs_suinfo *,
+			 size_t);
 int nilfs_get_sustat(const struct nilfs *, struct nilfs_sustat *);
 ssize_t nilfs_get_vinfo(const struct nilfs *, struct nilfs_vinfo *, size_t);
 ssize_t nilfs_get_bdescs(const struct nilfs *, struct nilfs_bdesc *, size_t);
-int nilfs_clean_segments(const struct nilfs *,
-			 struct nilfs_vdesc *, size_t,
-			 struct nilfs_period *, size_t,
-			 nilfs_sector_t *, size_t,
-			 struct nilfs_bdesc *, size_t,
-			 nilfs_segnum_t *, size_t);
+int nilfs_clean_segments(const struct nilfs *, struct nilfs_vdesc *, size_t,
+			 struct nilfs_period *, size_t, __u64 *, size_t,
+			 struct nilfs_bdesc *, size_t, __u64 *, size_t);
 int nilfs_sync(const struct nilfs *, nilfs_cno_t *);
 
 #endif	/* NILFS_H */

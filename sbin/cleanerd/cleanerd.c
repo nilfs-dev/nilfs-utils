@@ -192,7 +192,7 @@ static int nilfs_comp_segimp(const void *elem1, const void *elem2)
 static ssize_t
 nilfs_cleanerd_select_segments(struct nilfs_cleanerd *cleanerd,
 			       struct nilfs_sustat *sustat,
-			       nilfs_segnum_t *segnums, size_t nsegs,
+			       __u64 *segnums, size_t nsegs,
 			       struct timespec *ts)
 {
 	struct nilfs *nilfs;
@@ -202,7 +202,7 @@ nilfs_cleanerd_select_segments(struct nilfs_cleanerd *cleanerd,
 	struct nilfs_suinfo si[NILFS_CLEANERD_NSUINFO];
 	struct timeval tv;
 	time_t prottime, oldest;
-	nilfs_segnum_t segnum;
+	__u64 segnum;
 	size_t count;
 	ssize_t nssegs, n;
 	unsigned long long imp, thr;
@@ -417,7 +417,7 @@ static int nilfs_cleanerd_acc_blocks_psegment(struct nilfs_cleanerd *cleanerd,
 }
 
 static int nilfs_cleanerd_acc_blocks_segment(struct nilfs_cleanerd *cleanerd,
-					     nilfs_segnum_t segnum,
+					     __u64 segnum,
 					     void *segment,
 					     size_t nblocks,
 					     struct nilfs_vector *vdescv,
@@ -435,7 +435,7 @@ static int nilfs_cleanerd_acc_blocks_segment(struct nilfs_cleanerd *cleanerd,
 }
 
 static int nilfs_cleanerd_acc_blocks(struct nilfs_cleanerd *cleanerd,
-				     nilfs_segnum_t *segnums, size_t nsegs,
+				     __u64 *segnums, size_t nsegs,
 				     struct nilfs_vector *vdescv,
 				     struct nilfs_vector *bdescv)
 {
@@ -592,7 +592,7 @@ static int nilfs_cleanerd_toss_vdescs(struct nilfs_cleanerd *cleanerd,
 {
 	struct nilfs_vdesc *vdesc;
 	struct nilfs_period *periodp;
-	nilfs_sector_t *vblocknrp;
+	__u64 *vblocknrp;
 	nilfs_cno_t *ss;
 	ssize_t n;
 	int i, j, ret;
@@ -611,9 +611,9 @@ static int nilfs_cleanerd_toss_vdescs(struct nilfs_cleanerd *cleanerd,
 						ss, n)) {
 				break;
 			}
-			if (((periodp = (struct nilfs_period *)
+			if (((periodp =
 			      nilfs_vector_get_new_element(periodv)) == NULL) ||
-			    ((vblocknrp = (nilfs_sector_t *)
+			    ((vblocknrp =
 			      nilfs_vector_get_new_element(vblocknrv)) == NULL)) {
 				ret = -1;
 				goto out;
@@ -712,7 +712,7 @@ static int nilfs_cleanerd_toss_bdescs(struct nilfs_cleanerd *cleanerd,
 }
 
 static int nilfs_cleanerd_clean_segments(struct nilfs_cleanerd *cleanerd,
-					 nilfs_segnum_t *segnums, size_t nsegs)
+					 __u64 *segnums, size_t nsegs)
 {
 	struct nilfs_vector *vdescv, *bdescv, *periodv, *vblocknrv;
 	int ret;
@@ -724,9 +724,9 @@ static int nilfs_cleanerd_clean_segments(struct nilfs_cleanerd *cleanerd,
 	vdescv = nilfs_vector_create(sizeof(struct nilfs_vdesc));
 	bdescv = nilfs_vector_create(sizeof(struct nilfs_bdesc));
 	periodv = nilfs_vector_create(sizeof(struct nilfs_period));
-	vblocknrv = nilfs_vector_create(sizeof(nilfs_sector_t));
-	if ((vdescv == NULL) || (bdescv == NULL) ||
-	    (periodv == NULL) || (vblocknrv == NULL))
+	vblocknrv = nilfs_vector_create(sizeof(__u64));
+	if (vdescv == NULL || bdescv == NULL || periodv == NULL ||
+	    vblocknrv == NULL)
 		goto out_vec;
 
 	if ((ret = nilfs_cleanerd_acc_blocks(cleanerd, segnums, nsegs,
@@ -859,7 +859,7 @@ static int nilfs_cleanerd_clean_loop(struct nilfs_cleanerd *cleanerd)
 	struct timeval curr, target, diff;
 	struct timespec timeout;
 	time_t prev_nongc_ctime = 0;
-	nilfs_segnum_t segnums[NILFS_CLDCONFIG_NSEGMENTS_PER_CLEAN_MAX];
+	__u64 segnums[NILFS_CLDCONFIG_NSEGMENTS_PER_CLEAN_MAX];
 	sigset_t sigset;
 	int i, n;
 

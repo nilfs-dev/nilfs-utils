@@ -65,7 +65,7 @@ static ssize_t lssu_get_suinfo(struct nilfs *nilfs, struct nilfs_suinfo **sip)
 {
 	struct nilfs_suinfo *si;
 	struct nilfs_sustat sustat;
-	nilfs_segnum_t segnum;
+	__u64 segnum;
 	size_t count;
 	ssize_t n, total = 0;
 
@@ -97,7 +97,7 @@ static void lssu_print_suinfo(const struct nilfs_suinfo *si, size_t nsi,
 	struct tm tm;
 	time_t t;
 	char timebuf[LSSU_BUFSIZE];
-	nilfs_segnum_t segnum;
+	__u64 segnum;
 
 	printf("              SEGNUM        DATE     TIME STAT     NBLOCKS\n");
 

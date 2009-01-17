@@ -372,7 +372,7 @@ ssize_t nilfs_get_cpinfo(const struct nilfs *nilfs, nilfs_cno_t cno, int mode,
 		return -1;
 	}
 
-	argv.v_base = cpinfo;
+	argv.v_base = (unsigned long)cpinfo;
 	argv.v_nmembs = nci;
 	argv.v_size = sizeof(struct nilfs_cpinfo);
 	argv.v_index = cno;
@@ -417,7 +417,7 @@ int nilfs_get_cpstat(const struct nilfs *nilfs, struct nilfs_cpstat *cpstat)
  * @si:
  * @nsi:
  */
-ssize_t nilfs_get_suinfo(const struct nilfs *nilfs, nilfs_segnum_t segnum,
+ssize_t nilfs_get_suinfo(const struct nilfs *nilfs, __u64 segnum,
 			 struct nilfs_suinfo *si, size_t nsi)
 {
 	struct nilfs_argv argv;
@@ -427,7 +427,7 @@ ssize_t nilfs_get_suinfo(const struct nilfs *nilfs, nilfs_segnum_t segnum,
 		return -1;
 	}
 
-	argv.v_base = si;
+	argv.v_base = (unsigned long)si;
 	argv.v_nmembs = nsi;
 	argv.v_size = sizeof(struct nilfs_suinfo);
 	argv.v_index = segnum;
@@ -467,7 +467,7 @@ ssize_t nilfs_get_vinfo(const struct nilfs *nilfs,
 		return -1;
 	}
 
-	argv.v_base = vinfo;
+	argv.v_base = (unsigned long)vinfo;
 	argv.v_nmembs = nvi;
 	argv.v_size = sizeof(struct nilfs_vinfo);
 	if (ioctl(nilfs->n_iocfd, NILFS_IOCTL_GET_VINFO, &argv) < 0)
@@ -491,7 +491,7 @@ ssize_t nilfs_get_bdescs(const struct nilfs *nilfs,
 		return -1;
 	}
 
-	argv.v_base = bdescs;
+	argv.v_base = (unsigned long)bdescs;
 	argv.v_nmembs = nbdescs;
 	argv.v_size = sizeof(struct nilfs_bdesc);
 	if (ioctl(nilfs->n_iocfd, NILFS_IOCTL_GET_BDESCS, &argv) < 0)
@@ -516,9 +516,9 @@ ssize_t nilfs_get_bdescs(const struct nilfs *nilfs,
 int nilfs_clean_segments(const struct nilfs *nilfs,
 			 struct nilfs_vdesc *vdescs, size_t nvdescs,
 			 struct nilfs_period *periods, size_t nperiods,
-			 nilfs_sector_t *vblocknrs, size_t nvblocknrs,
+			 __u64 *vblocknrs, size_t nvblocknrs,
 			 struct nilfs_bdesc *bdescs, size_t nbdescs,
-			 nilfs_segnum_t *segnums, size_t nsegs)
+			 __u64 *segnums, size_t nsegs)
 {
 	struct nilfs_argv argv[5];
 
@@ -527,21 +527,21 @@ int nilfs_clean_segments(const struct nilfs *nilfs,
 		return -1;
 	}
 
-	argv[0].v_base = vdescs;
+	argv[0].v_base = (unsigned long)vdescs;
 	argv[0].v_nmembs = nvdescs;
 	argv[0].v_size = sizeof(struct nilfs_vdesc);
-	argv[1].v_base = periods;
+	argv[1].v_base = (unsigned long)periods;
 	argv[1].v_nmembs = nperiods;
 	argv[1].v_size = sizeof(struct nilfs_period);
-	argv[2].v_base = vblocknrs;
+	argv[2].v_base = (unsigned long)vblocknrs;
 	argv[2].v_nmembs = nvblocknrs;
-	argv[2].v_size = sizeof(nilfs_sector_t);
-	argv[3].v_base = bdescs;
+	argv[2].v_size = sizeof(__u64);
+	argv[3].v_base = (unsigned long)bdescs;
 	argv[3].v_nmembs = nbdescs;
 	argv[3].v_size = sizeof(struct nilfs_bdesc);
-	argv[4].v_base = segnums;
+	argv[4].v_base = (unsigned long)segnums;
 	argv[4].v_nmembs = nsegs;
-	argv[4].v_size = sizeof(nilfs_segnum_t);
+	argv[4].v_size = sizeof(__u64);
 	return ioctl(nilfs->n_iocfd, NILFS_IOCTL_CLEAN_SEGMENTS, argv);
 }
 
@@ -669,7 +669,7 @@ static int nilfs_psegment_is_valid(const struct nilfs_psegment *pseg)
 			    le32_to_cpu(pseg->p_segsum->ss_sumbytes) - offset);
 }
 
-void nilfs_psegment_init(struct nilfs_psegment *pseg, nilfs_segnum_t segnum,
+void nilfs_psegment_init(struct nilfs_psegment *pseg, __u64 segnum,
 			 void *seg, size_t nblocks, const struct nilfs *nilfs)
 {
 	unsigned long blkoff, nblocks_per_segment;

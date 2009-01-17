@@ -58,7 +58,7 @@ struct nilfs_cleanerd {
  * @si_importance: importance of segment
  */
 struct nilfs_segimp {
-	nilfs_segnum_t si_segnum;
+	__u64 si_segnum;
 	unsigned long long si_importance;
 };
 

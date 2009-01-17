@@ -134,7 +134,7 @@ static void dumpseg_print_psegment(struct nilfs_psegment *pseg)
 }
 
 static void dumpseg_print_segment(struct nilfs *nilfs,
-				  nilfs_segnum_t segnum,
+				  __u64 segnum,
 				  void *seg,
 				  size_t segsize)
 {
@@ -151,7 +151,7 @@ static void dumpseg_print_segment(struct nilfs *nilfs,
 int main(int argc, char *argv[])
 {
 	struct nilfs *nilfs;
-	nilfs_segnum_t segnum;
+	__u64 segnum;
 	char *dev, *endptr, *progname;
 	void *seg;
 	ssize_t segsize;
