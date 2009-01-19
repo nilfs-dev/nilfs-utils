@@ -749,7 +749,7 @@ void nilfs_file_init(struct nilfs_file *file,
 		(le32_to_cpu(pseg->p_segsum->ss_sumbytes) + blksize - 1) /
 		blksize;
 	file->f_index = 0;
-	file->f_offset = sizeof(struct nilfs_segment_summary);
+	file->f_offset = le16_to_cpu(pseg->p_segsum->ss_bytes);
 
 	rest = blksize - file->f_offset % blksize;
 	if (sizeof(struct nilfs_finfo) > rest) {
