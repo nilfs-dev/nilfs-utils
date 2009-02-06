@@ -737,22 +737,22 @@ void nilfs_psegment_next(struct nilfs_psegment *pseg)
 void nilfs_file_init(struct nilfs_file *file,
 		     const struct nilfs_psegment *pseg)
 {
-	size_t blksize, rest;
+	size_t blksize, rest, hdrsize;
 
 	file->f_psegment = pseg;
 	blksize = file->f_psegment->p_blksize;
+	hdrsize = le16_to_cpu(pseg->p_segsum->ss_bytes);
 
-	file->f_finfo = (struct nilfs_finfo *)(pseg->p_segsum + 1);
+	file->f_finfo = (void *)pseg->p_segsum + hdrsize;
 	file->f_blocknr = pseg->p_blocknr +
 		(le32_to_cpu(pseg->p_segsum->ss_sumbytes) + blksize - 1) /
 		blksize;
 	file->f_index = 0;
-	file->f_offset = le16_to_cpu(pseg->p_segsum->ss_bytes);
+	file->f_offset = hdrsize;
 
 	rest = blksize - file->f_offset % blksize;
 	if (sizeof(struct nilfs_finfo) > rest) {
-		file->f_finfo = (struct nilfs_finfo *)((void *)file->f_finfo +
-						       rest);
+		file->f_finfo = (void *)file->f_finfo + rest;
 		file->f_offset += rest;
 	}
 }
