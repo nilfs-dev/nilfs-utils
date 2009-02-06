@@ -764,18 +764,17 @@ int nilfs_file_is_end(const struct nilfs_file *file)
 }
 
 static size_t nilfs_binfo_total_size(unsigned long offset,
-				     size_t blksize,
-				     size_t bisize,
-				     size_t n)
+				     size_t blksize, size_t bisize, size_t n)
 {
-	if (blksize - offset % blksize >= bisize * n)
+	size_t binfo_per_block, rest = blksize - offset % blksize;
+
+	if (bisize * n <= rest)
 		return bisize * n;
-	else {
-		n -= (blksize - offset % blksize) / bisize;
-		return blksize - offset % blksize +
-			(n / (blksize / bisize)) * blksize +
-			(n % (blksize / bisize)) * bisize;
-	}
+
+	n -= rest / bisize;
+	binfo_per_block = blksize / bisize;
+	return rest + (n / binfo_per_block) * blksize +
+		(n % binfo_per_block) * bisize;
 }
 
 void nilfs_file_next(struct nilfs_file *file)
