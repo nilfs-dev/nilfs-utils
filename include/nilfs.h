@@ -162,7 +162,7 @@ NILFS_LOCK_FNS(write, F_WRLCK)
  * @p_blocknr: block number of partial segment
  * @p_segblocknr: block number of segment
  * @p_nblocks: number of blocks in segment
- * @p_nblocks_per_segment: number of blocks per segment
+ * @p_maxblocks: maximum number of blocks in segment
  * @p_blksize: block size
  * @p_seed: CRC seed
  */
@@ -172,7 +172,7 @@ struct nilfs_psegment {
 
 	sector_t p_segblocknr;
 	size_t p_nblocks;
-	sector_t p_nblocks_per_segment;
+	size_t p_maxblocks;
 	size_t p_blksize;
 	__u32 p_seed;
 };

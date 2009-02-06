@@ -696,42 +696,40 @@ static int nilfs_psegment_is_valid(const struct nilfs_psegment *pseg)
 			    le32_to_cpu(pseg->p_segsum->ss_sumbytes) - offset);
 }
 
-void nilfs_psegment_init(struct nilfs_psegment *pseg,
-			 nilfs_segnum_t segnum,
-			 void *seg, size_t nblocks,
-			 const struct nilfs *nilfs)
+void nilfs_psegment_init(struct nilfs_psegment *pseg, nilfs_segnum_t segnum,
+			 void *seg, size_t nblocks, const struct nilfs *nilfs)
 {
-	nilfs_blkoff_t blkoff;
+	unsigned long blkoff, nblocks_per_segment;
 
 	blkoff = (segnum == 0) ?
 		le64_to_cpu(nilfs->n_sb.s_first_data_block) : 0;
+	nblocks_per_segment = le32_to_cpu(nilfs->n_sb.s_blocks_per_segment);
 
 	pseg->p_blksize = 1UL << (le32_to_cpu(nilfs->n_sb.s_log_block_size) +
 				  NILFS_SB_BLOCK_SIZE_SHIFT);
 	pseg->p_nblocks = nblocks;
-	pseg->p_nblocks_per_segment =
-		le32_to_cpu(nilfs->n_sb.s_blocks_per_segment);
-	pseg->p_segblocknr = pseg->p_nblocks_per_segment * segnum + blkoff;
+	pseg->p_maxblocks = nblocks_per_segment - blkoff;
+	pseg->p_segblocknr = (sector_t)nblocks_per_segment * segnum + blkoff;
 	pseg->p_seed = le32_to_cpu(nilfs->n_sb.s_crc_seed);
 
-	pseg->p_segsum = (struct nilfs_segment_summary *)(seg +
-			blkoff * pseg->p_blksize);
+	pseg->p_segsum = seg + blkoff * pseg->p_blksize;
 	pseg->p_blocknr = pseg->p_segblocknr;
 }
 
 int nilfs_psegment_is_end(const struct nilfs_psegment *pseg)
 {
-	return (pseg->p_segblocknr + pseg->p_nblocks <= pseg->p_blocknr) ||
-		(pseg->p_segblocknr + pseg->p_nblocks_per_segment - pseg->p_blocknr < NILFS_PSEG_MIN_BLOCKS) ||
+	return pseg->p_blocknr >= pseg->p_segblocknr + pseg->p_nblocks ||
+		pseg->p_segblocknr + pseg->p_maxblocks - pseg->p_blocknr <
+		NILFS_PSEG_MIN_BLOCKS ||
 		!nilfs_psegment_is_valid(pseg);
 }
 
 void nilfs_psegment_next(struct nilfs_psegment *pseg)
 {
-	unsigned long nblocks;	/* unsigned long ??? */
+	unsigned long nblocks;
 
 	nblocks = le32_to_cpu(pseg->p_segsum->ss_nblocks);
-	pseg->p_segsum = (struct nilfs_segment_summary *)((void *)pseg->p_segsum + nblocks * pseg->p_blksize);
+	pseg->p_segsum = (void *)pseg->p_segsum + nblocks * pseg->p_blksize;
 	pseg->p_blocknr += nblocks;
 }
 
