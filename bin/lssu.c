@@ -67,7 +67,7 @@ static ssize_t lssu_get_suinfo(struct nilfs *nilfs, struct nilfs_suinfo **sip)
 	struct nilfs_sustat sustat;
 	nilfs_segnum_t segnum;
 	size_t count;
-	ssize_t n;
+	ssize_t n, total = 0;
 
 	if (nilfs_get_sustat(nilfs, &sustat) < 0)
 		return -1;
@@ -82,10 +82,13 @@ static ssize_t lssu_get_suinfo(struct nilfs *nilfs, struct nilfs_suinfo **sip)
 			free(si);
 			return -1;
 		}
+		if (n == 0)
+			break; /* safety valve against broken filesystems */
+		total += n;
 	}
 
 	*sip = si;
-	return sustat.ss_nsegs;
+	return total;
 }
 
 static void lssu_print_suinfo(const struct nilfs_suinfo *si, size_t nsi,
