@@ -498,6 +498,7 @@ nilfs_cleanerd_get_snapshot(const struct nilfs_cleanerd *cleanerd,
 	struct nilfs_cpinfo cpinfo[NILFS_CLEANERD_NCPINFO];
 	nilfs_cno_t cno, *ss;
 	ssize_t n;
+	__u64 nss = 0;
 	int i, j;
 
 	if (nilfs_get_cpstat(cleanerd->c_nilfs, &cpstat) < 0)
@@ -517,13 +518,21 @@ nilfs_cleanerd_get_snapshot(const struct nilfs_cleanerd *cleanerd,
 			free(ss);
 			return -1;
 		}
+		if (n == 0)
+			break;
 		for (j = 0; j < n; j++)
 			ss[i + j] = cpinfo[j].ci_cno;
+		nss += n;
 		cno = cpinfo[n - 1].ci_next;
+		if (cno == 0)
+			break;
 	}
-
+	if (cpstat.cs_nsss != nss)
+		syslog(LOG_WARNING, "snapshot count mismatch: %llu != %llu",
+		       (unsigned long long)cpstat.cs_nsss,
+		       (unsigned long long)nss);
 	*ssp = ss;
-	return cpstat.cs_nsss;
+	return nss;
 }
 
 static int nilfs_vdesc_is_live(const struct nilfs_vdesc *vdesc,
