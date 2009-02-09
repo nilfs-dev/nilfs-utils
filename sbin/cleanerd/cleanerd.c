@@ -258,6 +258,14 @@ nilfs_cleanerd_select_segments(struct nilfs_cleanerd *cleanerd,
 				}
 			}
 		}
+		if (n == 0) {
+			syslog(LOG_WARNING,
+			       "inconsistent number of segments: %llu "
+			       "(nsegs=%llu)",
+			       (unsigned long long)nilfs_vector_get_size(smv),
+			       (unsigned long long)sustat->ss_nsegs);
+			break;
+		}
 	}
 	nilfs_vector_sort(smv, nilfs_comp_segimp);
 
