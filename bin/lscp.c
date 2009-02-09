@@ -74,7 +74,7 @@ static ssize_t lscp_get_cpinfo(struct nilfs *nilfs, int mode,
 	struct nilfs_cpinfo *cpinfo;
 	nilfs_cno_t cno;
 	size_t ncp, count;
-	ssize_t n;
+	ssize_t n, total = 0;
 	int i;
 
 	ncp = (mode == NILFS_CHECKPOINT) ? cpstat->cs_ncps : cpstat->cs_nsss;
@@ -93,14 +93,21 @@ static ssize_t lscp_get_cpinfo(struct nilfs *nilfs, int mode,
 			free(cpinfo);
 			return -1;
 		}
-		cno = (mode == NILFS_CHECKPOINT) ?
-			cpinfo[i + n - 1].ci_cno + 1 :
-			cpinfo[i + n - 1].ci_next;
+		if (n == 0)
+			break;
+		total += n;
+		if (mode == NILFS_CHECKPOINT) {
+			cno = cpinfo[i + n - 1].ci_cno + 1;
+		} else {
+			cno = cpinfo[i + n - 1].ci_next;
+			if (cno == 0)
+				break;
+		}
 	}
 
  out:
 	*cpinfop = cpinfo;
-	return ncp;
+	return total;
 }
 
 static void lscp_reverse_cpinfo(struct nilfs_cpinfo *cpinfo, size_t n)
