@@ -1,3 +1,20 @@
+nilfs-utils-2.0.7  Wed Feb 11, 2009 JST
+
+	* fix possible infinite loop in lscp.
+	* fix incorrect termination detection of nilfs_psegment_for_each()
+	* fix calculation of finfo offset that will break compatibility for
+	  future extension of segment summary.
+	* fix a wrong memmove size calculation in cleanerd.
+	* avoid possible infinite loop of lssu and cleanerd that may occur
+	  for inconsistent file systems.
+	* insert some check code in cleanerd to verify consistency of the
+	  number of snapshots.
+	* mkfs.nilfs2 zeroes out the head and tail of device.
+	* make sketch file deprecated.
+	* add tag files gtags to .gitignore.
+	* clean up nilfs_file_next and nilfs_binfo_total_size.
+	* import recent updates of nilfs_fs.h.
+
 nilfs-utils-2.0.6  Fri Oct 17, 2008 JST
 
 	* fix the cleanerd bug that causes a kernel panic for more than
