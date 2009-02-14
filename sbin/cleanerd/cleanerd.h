@@ -38,11 +38,13 @@
  * @c_nilfs: nilfs
  * @c_config: config structure
  * @c_conffile: configuration file name
+ * @c_running: running state
  */
 struct nilfs_cleanerd {
 	struct nilfs *c_nilfs;
 	struct nilfs_cldconfig c_config;
 	char *c_conffile;
+	int c_running;
 };
 
 #ifndef SYSCONFDIR
