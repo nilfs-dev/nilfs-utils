@@ -302,7 +302,6 @@ int nilfs_clean_segments(const struct nilfs *,
 			 nilfs_sector_t *, size_t,
 			 struct nilfs_bdesc *, size_t,
 			 nilfs_segnum_t *, size_t);
-int nilfs_timedwait(const struct nilfs *, int, struct timespec *);
 int nilfs_sync(const struct nilfs *, nilfs_cno_t *);
 
 #endif	/* NILFS_H */

@@ -546,33 +546,6 @@ int nilfs_clean_segments(const struct nilfs *nilfs,
 }
 
 /**
- * nilfs_timedwait -
- * @nilfs:
- * @cond:
- * @timeout:
- */
-int nilfs_timedwait(const struct nilfs *nilfs, int cond,
-		    struct timespec *timeout)
-{
-	struct nilfs_wait_cond wc;
-
-	if (nilfs->n_iocfd < 0) {
-		errno = EBADF;
-		return -1;
-	}
-
-	wc.wc_cond = cond;
-	if (timeout == NULL)
-		wc.wc_flags = 0;
-	else {
-		wc.wc_flags = 1;
-		wc.wc_timeout.tv_sec = timeout->tv_sec;
-		wc.wc_timeout.tv_nsec = timeout->tv_nsec;
-	}
-	return ioctl(nilfs->n_iocfd, NILFS_IOCTL_TIMEDWAIT, &wc);
-}
-
-/**
  * nilfs_sync -
  * @nilfs:
  */
