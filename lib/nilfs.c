@@ -650,6 +650,20 @@ int nilfs_put_segment(struct nilfs *nilfs, void *segment)
 #endif	/* HAVE_MUNMAP */
 }
 
+__u64 nilfs_get_segment_seqnum(const struct nilfs *nilfs, void *segment,
+			       __u64 segnum)
+{
+	struct nilfs_segment_summary *segsum;
+	unsigned long blkoff;
+
+	blkoff = (segnum == 0) ?
+		le64_to_cpu(nilfs->n_sb.s_first_data_block) : 0;
+
+	segsum = segment + blkoff * 
+		(1UL << (le32_to_cpu(nilfs->n_sb.s_log_block_size) +
+			 NILFS_SB_BLOCK_SIZE_SHIFT));
+	return le64_to_cpu(segsum->ss_seq);
+}
 
 /* internal use only */
 

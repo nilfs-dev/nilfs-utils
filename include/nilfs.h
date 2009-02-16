@@ -282,7 +282,7 @@ inline static int nilfs_block_is_node(const struct nilfs_block *blk)
 ssize_t nilfs_get_segment(struct nilfs *, unsigned long, void **);
 int nilfs_put_segment(struct nilfs *, void *);
 size_t nilfs_get_block_size(struct nilfs *);
-
+__u64 nilfs_get_segment_seqnum(const struct nilfs *, void *, __u64);
 
 int nilfs_change_cpmode(const struct nilfs *, nilfs_cno_t, int);
 ssize_t nilfs_get_cpinfo(const struct nilfs *, nilfs_cno_t, int,
