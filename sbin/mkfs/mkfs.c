@@ -127,7 +127,7 @@ static const unsigned nr_initial_inodes = 3;  /* root directory + .sketch +
 static const __u64 first_cno = 1; /* Number of the first checkpoint */
 
 /* Segment layout information (per partial segment) */
-#define MAX_FILES        10
+#define MAX_FILES        16
 
 struct nilfs_file_info {
 	ino_t ino;
@@ -181,7 +181,8 @@ struct nilfs_segment_ref {
 	__u64 cno;                /* checkpoint number */
 };
 
-static void init_disk_layout(struct nilfs_disk_info *, int, const char *, struct mkfs_options *);
+static void init_disk_layout(struct nilfs_disk_info *, int, const char *,
+			     struct mkfs_options *);
 
 
 static inline blocknr_t count_free_blocks(struct nilfs_disk_info *di)
@@ -245,6 +246,7 @@ static void commit_segment(void);
 static void make_rootdir(void);
 static void make_sketch(void);
 static void make_dot_nilfs(void);
+static void make_reserved_files(void);
 
 
 static inline struct nilfs_segment_ref *get_last_segment(void)
@@ -532,6 +534,10 @@ int main(int argc, char *argv[])
 	add_file(si, NILFS_ROOT_INO, 1, 0);
 	add_file(si, NILFS_SKETCH_INO, 0, 0);
 	add_file(si, NILFS_NILFS_INO, 0, 0);
+	add_file(si, NILFS_ATIME_INO, 0, 0);
+	add_file(si, 1, 0, 0);
+	add_file(si, 8, 0, 0);
+	add_file(si, 9, 0, 0);
 	add_file(si, NILFS_IFILE_INO, count_ifile_blocks(blocksize), 0);
 	add_file(si, NILFS_CPFILE_INO, count_cpfile_blocks(blocksize), 0);
 	add_file(si, NILFS_SUFILE_INO, count_sufile_blocks(blocksize), 0);
@@ -551,6 +557,7 @@ int main(int argc, char *argv[])
 	make_sketch();   /* Make sketch file */
 	make_dot_nilfs(); /* Make .nilfs */
 	make_rootdir();  /* Make root directory */
+	make_reserved_files();
 	commit_segment();
 
 	commit_super_block(di, get_last_segment());
@@ -1082,6 +1089,14 @@ static void make_sketch(void)
 static void make_dot_nilfs(void)
 {
 	init_inode(NILFS_NILFS_INO, DT_REG, 0644, 0);
+}
+
+static void make_reserved_files(void)
+{
+	init_inode(NILFS_ATIME_INO, DT_REG, 0, 0);
+	init_inode(1, DT_REG, 0, 0);
+	init_inode(8, DT_REG, 0, 0);
+	init_inode(9, DT_REG, 0, 0);
 }
 
 static void *
