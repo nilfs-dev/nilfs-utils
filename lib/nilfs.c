@@ -319,7 +319,7 @@ void nilfs_close(struct nilfs *nilfs)
 
 /**
  * nilfs_get_dev -
- * @nilfs: 
+ * @nilfs:
  */
 const char *nilfs_get_dev(const struct nilfs *nilfs)
 {
@@ -659,7 +659,7 @@ __u64 nilfs_get_segment_seqnum(const struct nilfs *nilfs, void *segment,
 	blkoff = (segnum == 0) ?
 		le64_to_cpu(nilfs->n_sb.s_first_data_block) : 0;
 
-	segsum = segment + blkoff * 
+	segsum = segment + blkoff *
 		(1UL << (le32_to_cpu(nilfs->n_sb.s_log_block_size) +
 			 NILFS_SB_BLOCK_SIZE_SHIFT));
 	return le64_to_cpu(segsum->ss_seq);

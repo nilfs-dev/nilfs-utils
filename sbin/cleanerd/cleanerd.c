@@ -76,7 +76,7 @@
 #ifdef _GNU_SOURCE
 #include <getopt.h>
 const static struct option long_option[] = {
-	{"conffile",required_argument, NULL, 'c'},
+	{"conffile", required_argument, NULL, 'c'},
 	{"help", no_argument, NULL, 'h'},
 	/* internal option for mount.nilfs2 only */
 	{"nofork", no_argument, NULL, 'n'},
@@ -137,7 +137,7 @@ nilfs_cleanerd_create(const char *dev, const char *conffile)
 
 	if ((cleanerd = malloc(sizeof(*cleanerd))) == NULL)
 		return NULL;
-	
+
 	if ((cleanerd->c_nilfs = nilfs_open(
 		     dev, NILFS_OPEN_RAW | NILFS_OPEN_RDWR)) == NULL)
 		goto out_cleanerd;
@@ -175,7 +175,7 @@ static void nilfs_cleanerd_destroy(struct nilfs_cleanerd *cleanerd)
 static int nilfs_comp_segimp(const void *elem1, const void *elem2)
 {
 	struct nilfs_segimp *segimp1, *segimp2;
-	
+
 	segimp1 = (struct nilfs_segimp *)elem1;
 	segimp2 = (struct nilfs_segimp *)elem2;
 
@@ -290,7 +290,7 @@ nilfs_cleanerd_select_segments(struct nilfs_cleanerd *cleanerd,
 static int nilfs_comp_vdesc_blocknr(const void *elem1, const void *elem2)
 {
 	struct nilfs_vdesc *vdesc1, *vdesc2;
-	
+
 	vdesc1 = (struct nilfs_vdesc *)elem1;
 	vdesc2 = (struct nilfs_vdesc *)elem2;
 
@@ -760,7 +760,7 @@ static ssize_t nilfs_cleanerd_clean_segments(struct nilfs_cleanerd *cleanerd,
 		ret = n;
 		goto out_vec;
 	}
-	
+
 	if ((ret = nilfs_cleanerd_get_vdesc(cleanerd, vdescv)) < 0)
 		goto out_vec;
 
@@ -827,7 +827,7 @@ static int daemonize(int nochdir, int noclose, int nofork)
 	if (setsid() < 0)
 		return -1;
 
-	//umask(0);
+	/* umask(0); */
 
 	if (!nochdir && (chdir(ROOTDIR) < 0))
 		return -1;
@@ -990,7 +990,7 @@ static int nilfs_cleanerd_clean_loop(struct nilfs_cleanerd *cleanerd)
 				cleanerd->c_config.cf_cleaning_interval;
 		}
 
-	sleep:
+ sleep:
 		if (sigprocmask(SIG_UNBLOCK, &sigset, NULL) < 0) {
 			syslog(LOG_ERR, "cannot set signal mask: %m");
 			return -1;
