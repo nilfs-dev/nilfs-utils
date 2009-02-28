@@ -245,6 +245,7 @@ struct nilfs *nilfs_open(const char *dev, int flags)
 	nilfs->n_iocfd = -1;
 	nilfs->n_dev = NULL;
 	nilfs->n_ioc = NULL;
+	nilfs->n_mincno = NILFS_CNO_MIN;
 
 	if (flags & NILFS_OPEN_RAW) {
 		if (dev == NULL) {
@@ -333,7 +334,7 @@ const char *nilfs_get_dev(const struct nilfs *nilfs)
  * @cno:
  * @mode:
  */
-int nilfs_change_cpmode(const struct nilfs *nilfs, nilfs_cno_t cno, int mode)
+int nilfs_change_cpmode(struct nilfs *nilfs, nilfs_cno_t cno, int mode)
 {
 	struct nilfs_cpmode cpmode;
 
@@ -359,7 +360,7 @@ int nilfs_change_cpmode(const struct nilfs *nilfs, nilfs_cno_t cno, int mode)
  * @cpinfo:
  * @nci:
  */
-ssize_t nilfs_get_cpinfo(const struct nilfs *nilfs, nilfs_cno_t cno, int mode,
+ssize_t nilfs_get_cpinfo(struct nilfs *nilfs, nilfs_cno_t cno, int mode,
 			 struct nilfs_cpinfo *cpinfo, size_t nci)
 {
 	struct nilfs_argv argv;
@@ -368,9 +369,12 @@ ssize_t nilfs_get_cpinfo(const struct nilfs *nilfs, nilfs_cno_t cno, int mode,
 		errno = EBADF;
 		return -1;
 	}
-	if ((mode == NILFS_CHECKPOINT) && (cno < NILFS_CNO_MIN)) {
-		errno = EINVAL;
-		return -1;
+	if (mode == NILFS_CHECKPOINT) {
+		if (cno < NILFS_CNO_MIN) {
+			errno = EINVAL;
+			return -1;
+		} else if (cno < nilfs->n_mincno)
+			cno = nilfs->n_mincno;
 	}
 
 	argv.v_base = (unsigned long)cpinfo;
@@ -380,6 +384,11 @@ ssize_t nilfs_get_cpinfo(const struct nilfs *nilfs, nilfs_cno_t cno, int mode,
 	argv.v_flags = mode;
 	if (ioctl(nilfs->n_iocfd, NILFS_IOCTL_GET_CPINFO, &argv) < 0)
 		return -1;
+	if (mode == NILFS_CHECKPOINT && argv.v_nmembs > 0 &&
+	    cno == nilfs->n_mincno) {
+		if (cpinfo[0].ci_cno > nilfs->n_mincno)
+			nilfs->n_mincno = cpinfo[0].ci_cno;
+	}
 	return argv.v_nmembs;
 }
 
@@ -388,7 +397,7 @@ ssize_t nilfs_get_cpinfo(const struct nilfs *nilfs, nilfs_cno_t cno, int mode,
  * @nilfs:
  * @cno:
  */
-int nilfs_delete_checkpoint(const struct nilfs *nilfs, nilfs_cno_t cno)
+int nilfs_delete_checkpoint(struct nilfs *nilfs, nilfs_cno_t cno)
 {
 	if (nilfs->n_iocfd < 0) {
 		errno = EBADF;
@@ -514,7 +523,7 @@ ssize_t nilfs_get_bdescs(const struct nilfs *nilfs,
  * @segnums:
  * @nsegs:
  */
-int nilfs_clean_segments(const struct nilfs *nilfs,
+int nilfs_clean_segments(struct nilfs *nilfs,
 			 struct nilfs_vdesc *vdescs, size_t nvdescs,
 			 struct nilfs_period *periods, size_t nperiods,
 			 __u64 *vblocknrs, size_t nvblocknrs,

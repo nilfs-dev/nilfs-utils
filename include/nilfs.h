@@ -97,15 +97,17 @@ typedef __u64 nilfs_cno_t;
  * @n_devfd: file descriptor of device file
  * @n_iocfd: file descriptor of ioctl file
  * @n_opts: options
+ * @n_mincno: the minimum of valid checkpoint numbers
  */
 struct nilfs {
 	struct nilfs_super_block n_sb;
 	char *n_dev;
-	//char *n_mnt;
+	/* char *n_mnt; */
 	char *n_ioc;
 	int n_devfd;
 	int n_iocfd;
 	int n_opts;
+	nilfs_cno_t n_mincno;
 };
 
 #define NILFS_OPEN_RAW		0x01
@@ -284,17 +286,17 @@ int nilfs_put_segment(struct nilfs *, void *);
 size_t nilfs_get_block_size(struct nilfs *);
 __u64 nilfs_get_segment_seqnum(const struct nilfs *, void *, __u64);
 
-int nilfs_change_cpmode(const struct nilfs *, nilfs_cno_t, int);
-ssize_t nilfs_get_cpinfo(const struct nilfs *, nilfs_cno_t, int,
+int nilfs_change_cpmode(struct nilfs *, nilfs_cno_t, int);
+ssize_t nilfs_get_cpinfo(struct nilfs *, nilfs_cno_t, int,
 			 struct nilfs_cpinfo *, size_t);
-int nilfs_delete_checkpoint(const struct nilfs *, nilfs_cno_t);
+int nilfs_delete_checkpoint(struct nilfs *, nilfs_cno_t);
 int nilfs_get_cpstat(const struct nilfs *, struct nilfs_cpstat *);
 ssize_t nilfs_get_suinfo(const struct nilfs *, __u64, struct nilfs_suinfo *,
 			 size_t);
 int nilfs_get_sustat(const struct nilfs *, struct nilfs_sustat *);
 ssize_t nilfs_get_vinfo(const struct nilfs *, struct nilfs_vinfo *, size_t);
 ssize_t nilfs_get_bdescs(const struct nilfs *, struct nilfs_bdesc *, size_t);
-int nilfs_clean_segments(const struct nilfs *, struct nilfs_vdesc *, size_t,
+int nilfs_clean_segments(struct nilfs *, struct nilfs_vdesc *, size_t,
 			 struct nilfs_period *, size_t, __u64 *, size_t,
 			 struct nilfs_bdesc *, size_t, __u64 *, size_t);
 int nilfs_sync(const struct nilfs *, nilfs_cno_t *);
