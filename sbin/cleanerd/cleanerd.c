@@ -110,6 +110,10 @@ static void nilfs_cleanerd_set_log_priority(struct nilfs_cleanerd *cleanerd)
 	setlogmask(LOG_UPTO(cleanerd->c_config.cf_log_priority));
 }
 
+/**
+ * nilfs_cleanerd_config - load configuration file
+ * @cleanerd: cleanerd object
+ */
 static int nilfs_cleanerd_config(struct nilfs_cleanerd *cleanerd)
 {
 	if (nilfs_cldconfig_read(&cleanerd->c_config,
@@ -130,6 +134,11 @@ static int nilfs_cleanerd_config(struct nilfs_cleanerd *cleanerd)
 #define PATH_MAX	8192
 #endif	/* PATH_MAX */
 
+/**
+ * nilfs_cleanerd_create - create cleanerd object
+ * @dev: name of the device on which the cleanerd operates
+ * @conffile: pathname of configuration file
+ */
 static struct nilfs_cleanerd *
 nilfs_cleanerd_create(const char *dev, const char *conffile)
 {
@@ -186,6 +195,14 @@ static int nilfs_comp_segimp(const void *elem1, const void *elem2)
 
 #define NILFS_CLEANERD_NSUINFO	512
 
+/**
+ * nilfs_cleanerd_select_segments - select segments to be reclaimed
+ * @cleanerd: cleanerd object
+ * @sustat: status information on segments
+ * @segnums: array of segment numbers to store selected segments
+ * @nsegs: size of the @segnums array
+ * @ts: pointer to a timespec struct to store sleep time
+ */
 static ssize_t
 nilfs_cleanerd_select_segments(struct nilfs_cleanerd *cleanerd,
 			       struct nilfs_sustat *sustat,
@@ -328,6 +345,13 @@ static int nilfs_comp_bdesc(const void *elem1, const void *elem2)
 		return 0;
 }
 
+/**
+ * nilfs_cleanerd_acc_blocks_file - collect summary of blocks in a file
+ * @cleanerd: cleanerd object
+ * @file: file object
+ * @vdescv: vector object to store (descriptors of) virtual block numbers
+ * @bdescv: vector object to store (descriptors of) disk block numbers
+ */
 static int nilfs_cleanerd_acc_blocks_file(struct nilfs_cleanerd *cleanerd,
 					  struct nilfs_file *file,
 					  struct nilfs_vector *vdescv,
@@ -385,6 +409,13 @@ static int nilfs_cleanerd_acc_blocks_file(struct nilfs_cleanerd *cleanerd,
 	return 0;
 }
 
+/**
+ * nilfs_cleanerd_acc_blocks_psegment - collect summary of blocks in a log
+ * @cleanerd: cleanerd object
+ * @psegment: partial segment object
+ * @vdescv: vector object to store (descriptors of) virtual block numbers
+ * @bdescv: vector object to store (descriptors of) disk block numbers
+ */
 static int nilfs_cleanerd_acc_blocks_psegment(struct nilfs_cleanerd *cleanerd,
 					      struct nilfs_psegment *psegment,
 					      struct nilfs_vector *vdescv,
@@ -400,6 +431,15 @@ static int nilfs_cleanerd_acc_blocks_psegment(struct nilfs_cleanerd *cleanerd,
 	return 0;
 }
 
+/**
+ * nilfs_cleanerd_acc_blocks_segment - collect summary of blocks in a segment
+ * @cleanerd: cleanerd object
+ * @segnum: segment number to be parsed
+ * @segment: start address of segment data
+ * @nblocks: size of valid logs in the segment (per block)
+ * @vdescv: vector object to store (descriptors of) virtual block numbers
+ * @bdescv: vector object to store (descriptors of) disk block numbers
+ */
 static int nilfs_cleanerd_acc_blocks_segment(struct nilfs_cleanerd *cleanerd,
 					     __u64 segnum,
 					     void *segment,
@@ -418,7 +458,13 @@ static int nilfs_cleanerd_acc_blocks_segment(struct nilfs_cleanerd *cleanerd,
 	return 0;
 }
 
-static ssize_t nilfs_diselect_segment(__u64 *segnums, size_t nsegs, int nr)
+/**
+ * nilfs_deselect_segment - deselect a segment
+ * @segnums: array of selected segments
+ * @nsegs: size of @segnums array
+ * @nr: index number for @segnums array to be deselected
+ */
+static ssize_t nilfs_deselect_segment(__u64 *segnums, size_t nsegs, int nr)
 {
 	if (nr >= nsegs || nsegs == 0)
 		return -1;
@@ -434,6 +480,15 @@ static ssize_t nilfs_diselect_segment(__u64 *segnums, size_t nsegs, int nr)
 
 #define nilfs_cnt64_ge(a, b)	((__s64)(a) - (__s64)(b) >= 0)
 
+/**
+ * nilfs_cleanerd_acc_blocks - collect summary of blocks contained in segments
+ * @cleanerd: cleanerd object
+ * @sustat: status information on segments
+ * @segnums: array of selected segments
+ * @nsegs: size of @segnums array
+ * @vdescv: vector object to store (descriptors of) virtual block numbers
+ * @bdescv: vector object to store (descriptors of) disk block numbers
+ */
 static ssize_t nilfs_cleanerd_acc_blocks(struct nilfs_cleanerd *cleanerd,
 					 struct nilfs_sustat *sustat,
 					 __u64 *segnums, size_t nsegs,
@@ -455,7 +510,7 @@ static ssize_t nilfs_cleanerd_acc_blocks(struct nilfs_cleanerd *cleanerd,
 
 		segseq = nilfs_get_segment_seqnum(nilfs, segment, segnums[i]);
 		if (nilfs_cnt64_ge(segseq, sustat->ss_prot_seq)) {
-			n = nilfs_diselect_segment(segnums, n, i);
+			n = nilfs_deselect_segment(segnums, n, i);
 			if (nilfs_put_segment(nilfs, segment) < 0)
 				return -1;
 			continue;
@@ -472,6 +527,11 @@ static ssize_t nilfs_cleanerd_acc_blocks(struct nilfs_cleanerd *cleanerd,
 
 #define NILFS_CLEANERD_NVINFO		512
 
+/**
+ * nilfs_cleanerd_get_vdesc - get information on virtual block addresses
+ * @cleanerd: cleanerd object
+ * @vdescv: vector object storing (descriptors of) virtual block numbers
+ */
 static int nilfs_cleanerd_get_vdesc(struct nilfs_cleanerd *cleanerd,
 				    struct nilfs_vector *vdescv)
 {
@@ -507,6 +567,11 @@ static int nilfs_cleanerd_get_vdesc(struct nilfs_cleanerd *cleanerd,
 
 #define NILFS_CLEANERD_NCPINFO	512
 
+/**
+ * nilfs_cleanerd_get_snapshot - get checkpoint numbers of snapshots
+ * @cleanerd: cleanerd object
+ * @ssp: pointer to store array of checkpoint numbers which are snapshots
+ */
 static ssize_t
 nilfs_cleanerd_get_snapshot(const struct nilfs_cleanerd *cleanerd,
 			    nilfs_cno_t **ssp)
@@ -552,6 +617,13 @@ nilfs_cleanerd_get_snapshot(const struct nilfs_cleanerd *cleanerd,
 	return nss;
 }
 
+/**
+ * nilfs_vdesc_is_live - judge if a virtual block address is live or dead
+ * @vdesc: descriptor object of the virtual block address
+ * @protect: protection
+ * @ss: checkpoint numbers of snapshots
+ * @n: size of @ss array
+ */
 static int nilfs_vdesc_is_live(const struct nilfs_vdesc *vdesc,
 			       nilfs_cno_t protect,
 			       const nilfs_cno_t *ss,
@@ -593,6 +665,16 @@ static int nilfs_vdesc_is_live(const struct nilfs_vdesc *vdesc,
 	return ss[index] < vdesc->vd_period.p_end;
 }
 
+/**
+ * nilfs_cleanerd_toss_vdescs - deselect deletable virtual block numbers
+ * @cleanerd: cleanerd object
+ * @vdescv: vector object storing (descriptors of) virtual block numbers
+ * @periodv: vector object to store deletable checkpoint numbers (periods)
+ * @vblocknrv: vector object to store deletable virtual block numbers
+ *
+ * nilfs_cleanerd_toss_vdescs() deselects virtual block numbers of files
+ * other than the DAT file.
+ */
 static int nilfs_cleanerd_toss_vdescs(struct nilfs_cleanerd *cleanerd,
 				      struct nilfs_vector *vdescv,
 				      struct nilfs_vector *periodv,
@@ -640,6 +722,11 @@ static int nilfs_cleanerd_toss_vdescs(struct nilfs_cleanerd *cleanerd,
 	return ret;
 }
 
+/**
+ * nilfs_cleanerd_unify_period - unify periods of checkpoint numbers
+ * @cleanerd: cleanerd object
+ * @periodv: vector object storing checkpoint numbers
+ */
 static void nilfs_cleanerd_unify_period(struct nilfs_cleanerd *cleanerd,
 					struct nilfs_vector *periodv)
 {
@@ -668,6 +755,11 @@ static void nilfs_cleanerd_unify_period(struct nilfs_cleanerd *cleanerd,
 
 #define NILFS_CLEANERD_NBDESCS	512
 
+/**
+ * nilfs_cleanerd_get_bdescs - get information on disk block addresses
+ * @cleanerd: cleanerd object
+ * @bdescv: vector object storing (descriptors of) disk block numbers
+ */
 static int nilfs_cleanerd_get_bdescs(struct nilfs_cleanerd *cleanerd,
 				     struct nilfs_vector *bdescv)
 {
@@ -691,11 +783,23 @@ static int nilfs_cleanerd_get_bdescs(struct nilfs_cleanerd *cleanerd,
 	return 0;
 }
 
+/**
+ * nilfs_bdesc_is_live - judge if a disk block address is live or dead
+ * @bdesc: descriptor object of the disk block address
+ */
 static int nilfs_bdesc_is_live(struct nilfs_bdesc *bdesc)
 {
 	return bdesc->bd_oblocknr == bdesc->bd_blocknr;
 }
 
+/**
+ * nilfs_cleanerd_toss_bdescs - deselect deletable disk block numbers
+ * @cleanerd: cleanerd object
+ * @bdescv: vector object storing (descriptors of) disk block numbers
+ *
+ * nilfs_cleanerd_toss_bdescs() deselects disk block numbers of the DAT file
+ * which don't belong to the latest DAT file.
+ */
 static int nilfs_cleanerd_toss_bdescs(struct nilfs_cleanerd *cleanerd,
 				      struct nilfs_vector *bdescv)
 {
@@ -715,6 +819,13 @@ static int nilfs_cleanerd_toss_bdescs(struct nilfs_cleanerd *cleanerd,
 	return 0;
 }
 
+/**
+ * nilfs_cleanerd_clean_segments - reclaim segments
+ * @cleanerd: cleanerd object
+ * @sustat: status information on segments
+ * @segnums: array of segment numbers storing selected segments
+ * @nsegs: size of the @segnums array
+ */
 static ssize_t nilfs_cleanerd_clean_segments(struct nilfs_cleanerd *cleanerd,
 					     struct nilfs_sustat *sustat,
 					     __u64 *segnums, size_t nsegs)
@@ -861,6 +972,10 @@ do {						\
 	(ts)->tv_nsec = (tv)->tv_usec * 1000;	\
 } while (0)
 
+/**
+ * nilfs_cleanerd_clean_loop - main loop of the cleaner daemon
+ * @cleanerd: cleanerd object
+ */
 static int nilfs_cleanerd_clean_loop(struct nilfs_cleanerd *cleanerd)
 {
 	struct nilfs_sustat sustat;
