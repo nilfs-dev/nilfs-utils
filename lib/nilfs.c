@@ -159,8 +159,8 @@ static int nilfs_find_fs(struct nilfs *nilfs, const char *dev, const char *opt)
 				break;
 			len = strlen(mntent[MNTFLD_DIR]) +
 				strlen(NILFS_IOC) + 2;
-			if ((nilfs->n_ioc =
-			     (char *)malloc(sizeof(char) * len)) == NULL) {
+			nilfs->n_ioc = malloc(sizeof(char) * len);
+			if (nilfs->n_ioc == NULL) {
 				free(nilfs->n_dev);
 				nilfs->n_dev = NULL;
 				break;
@@ -238,7 +238,8 @@ struct nilfs *nilfs_open(const char *dev, int flags)
 		return NULL;
 	}
 
-	if ((nilfs = (struct nilfs *)malloc(sizeof(struct nilfs))) == NULL)
+	nilfs = malloc(sizeof(*nilfs));
+	if (nilfs == NULL)
 		return NULL;
 	nilfs->n_devfd = -1;
 	nilfs->n_iocfd = -1;

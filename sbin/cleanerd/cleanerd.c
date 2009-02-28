@@ -174,10 +174,7 @@ static void nilfs_cleanerd_destroy(struct nilfs_cleanerd *cleanerd)
 
 static int nilfs_comp_segimp(const void *elem1, const void *elem2)
 {
-	struct nilfs_segimp *segimp1, *segimp2;
-
-	segimp1 = (struct nilfs_segimp *)elem1;
-	segimp2 = (struct nilfs_segimp *)elem2;
+	const struct nilfs_segimp *segimp1 = elem1, *segimp2 = elem2;
 
 	if (segimp1->si_importance < segimp2->si_importance)
 		return -1;
@@ -244,7 +241,7 @@ nilfs_cleanerd_select_segments(struct nilfs_cleanerd *cleanerd,
 				if (si[i].sui_lastmod < oldest)
 					oldest = si[i].sui_lastmod;
 				if (si[i].sui_lastmod < prottime) {
-					sm = (struct nilfs_segimp *)nilfs_vector_get_new_element(smv);
+					sm = nilfs_vector_get_new_element(smv);
 					if (sm == NULL) {
 						nssegs = -1;
 						goto out;
@@ -268,7 +265,7 @@ nilfs_cleanerd_select_segments(struct nilfs_cleanerd *cleanerd,
 	nssegs = (nilfs_vector_get_size(smv) < nsegs) ?
 		nilfs_vector_get_size(smv) : nsegs;
 	for (i = 0; i < nssegs; i++) {
-		sm = (struct nilfs_segimp *)nilfs_vector_get_element(smv, i);
+		sm = nilfs_vector_get_element(smv, i);
 		assert(sm != NULL);
 		segnums[i] = sm->si_segnum;
 	}
@@ -289,30 +286,21 @@ nilfs_cleanerd_select_segments(struct nilfs_cleanerd *cleanerd,
 
 static int nilfs_comp_vdesc_blocknr(const void *elem1, const void *elem2)
 {
-	struct nilfs_vdesc *vdesc1, *vdesc2;
-
-	vdesc1 = (struct nilfs_vdesc *)elem1;
-	vdesc2 = (struct nilfs_vdesc *)elem2;
+	const struct nilfs_vdesc *vdesc1 = elem1, *vdesc2 = elem2;
 
 	return (vdesc1->vd_blocknr < vdesc2->vd_blocknr) ? -1 : 1;
 }
 
 static int nilfs_comp_vdesc_vblocknr(const void *elem1, const void *elem2)
 {
-	struct nilfs_vdesc *vdesc1, *vdesc2;
-
-	vdesc1 = (struct nilfs_vdesc *)elem1;
-	vdesc2 = (struct nilfs_vdesc *)elem2;
+	const struct nilfs_vdesc *vdesc1 = elem1, *vdesc2 = elem2;
 
 	return (vdesc1->vd_vblocknr < vdesc2->vd_vblocknr) ? -1 : 1;
 }
 
 static int nilfs_comp_period(const void *elem1, const void *elem2)
 {
-	struct nilfs_period *period1, *period2;
-
-	period1 = (struct nilfs_period *)elem1;
-	period2 = (struct nilfs_period *)elem2;
+	const struct nilfs_period *period1 = elem1, *period2 = elem2;
 
 	return (period1->p_start < period2->p_start) ? -1 :
 		(period1->p_start == period2->p_start) ? 0 : 1;
@@ -320,10 +308,7 @@ static int nilfs_comp_period(const void *elem1, const void *elem2)
 
 static int nilfs_comp_bdesc(const void *elem1, const void *elem2)
 {
-	struct nilfs_bdesc *bdesc1, *bdesc2;
-
-	bdesc1 = (struct nilfs_bdesc *)elem1;
-	bdesc2 = (struct nilfs_bdesc *)elem2;
+	const struct nilfs_bdesc *bdesc1 = elem1, *bdesc2 = elem2;
 
 	if (bdesc1->bd_ino < bdesc2->bd_ino)
 		return -1;
@@ -358,8 +343,8 @@ static int nilfs_cleanerd_acc_blocks_file(struct nilfs_cleanerd *cleanerd,
 	ino = le64_to_cpu(file->f_finfo->fi_ino);
 	if (nilfs_file_is_super(file)) {
 		nilfs_block_for_each(&blk, file) {
-			if ((bdesc = (struct nilfs_bdesc *)
-			     nilfs_vector_get_new_element(bdescv)) == NULL)
+			bdesc = nilfs_vector_get_new_element(bdescv);
+			if (bdesc == NULL)
 				return -1;
 			bdesc->bd_ino = ino;
 			bdesc->bd_oblocknr = blk.b_blocknr;
@@ -368,7 +353,7 @@ static int nilfs_cleanerd_acc_blocks_file(struct nilfs_cleanerd *cleanerd,
 					le64_to_cpu(*(__le64 *)blk.b_binfo);
 				bdesc->bd_level = 0;
 			} else {
-				binfo = (union nilfs_binfo *)blk.b_binfo;
+				binfo = blk.b_binfo;
 				bdesc->bd_offset =
 					le64_to_cpu(binfo->bi_dat.bi_blkoff);
 				bdesc->bd_level = binfo->bi_dat.bi_level;
@@ -377,14 +362,14 @@ static int nilfs_cleanerd_acc_blocks_file(struct nilfs_cleanerd *cleanerd,
 	} else {
 		cno = le64_to_cpu(file->f_finfo->fi_cno);
 		nilfs_block_for_each(&blk, file) {
-			if ((vdesc = (struct nilfs_vdesc *)
-			     nilfs_vector_get_new_element(vdescv)) == NULL)
+			vdesc = nilfs_vector_get_new_element(vdescv);
+			if (vdesc == NULL)
 				return -1;
 			vdesc->vd_ino = ino;
 			vdesc->vd_cno = cno;
 			vdesc->vd_blocknr = blk.b_blocknr;
 			if (nilfs_block_is_data(&blk)) {
-				binfo = (union nilfs_binfo *)blk.b_binfo;
+				binfo = blk.b_binfo;
 				vdesc->vd_vblocknr =
 					le64_to_cpu(binfo->bi_v.bi_vblocknr);
 				vdesc->vd_offset =
@@ -502,16 +487,14 @@ static int nilfs_cleanerd_get_vdesc(struct nilfs_cleanerd *cleanerd,
 		     (j < NILFS_CLEANERD_NVINFO) &&
 			     (i + j < nilfs_vector_get_size(vdescv));
 		     j++) {
-			vdesc = (struct nilfs_vdesc *)
-				nilfs_vector_get_element(vdescv, i + j);
+			vdesc = nilfs_vector_get_element(vdescv, i + j);
 			assert(vdesc != NULL);
 			vinfo[j].vi_vblocknr = vdesc->vd_vblocknr;
 		}
 		if ((n = nilfs_get_vinfo(cleanerd->c_nilfs, vinfo, j)) < 0)
 			return -1;
 		for (j = 0; j < n; j++) {
-			vdesc = (struct nilfs_vdesc *)
-				nilfs_vector_get_element(vdescv, i + j);
+			vdesc = nilfs_vector_get_element(vdescv, i + j);
 			assert((vdesc != NULL) &&
 			       (vdesc->vd_vblocknr == vinfo[j].vi_vblocknr));
 			vdesc->vd_period.p_start = vinfo[j].vi_start;
@@ -540,8 +523,8 @@ nilfs_cleanerd_get_snapshot(const struct nilfs_cleanerd *cleanerd,
 	if (cpstat.cs_nsss == 0)
 		return 0;
 
-	if ((ss = (nilfs_cno_t *)malloc(
-		     sizeof(nilfs_cno_t) * cpstat.cs_nsss)) == NULL)
+	ss = malloc(sizeof(*ss) * cpstat.cs_nsss);
+	if (ss == NULL)
 		return -1;
 
 	cno = 0;
@@ -628,8 +611,7 @@ static int nilfs_cleanerd_toss_vdescs(struct nilfs_cleanerd *cleanerd,
 
 	for (i = 0; i < nilfs_vector_get_size(vdescv); i++) {
 		for (j = i; j < nilfs_vector_get_size(vdescv); j++) {
-			vdesc = (struct nilfs_vdesc *)
-				nilfs_vector_get_element(vdescv, j);
+			vdesc = nilfs_vector_get_element(vdescv, j);
 			assert(vdesc != NULL);
 			if (nilfs_vdesc_is_live(vdesc,
 						NILFS_CNO_MAX, /* not supported */
@@ -667,12 +649,10 @@ static void nilfs_cleanerd_unify_period(struct nilfs_cleanerd *cleanerd,
 	nilfs_vector_sort(periodv, nilfs_comp_period);
 
 	for (i = 0; i < nilfs_vector_get_size(periodv); i++) {
-		base = (struct nilfs_period *)
-			nilfs_vector_get_element(periodv, i);
+		base = nilfs_vector_get_element(periodv, i);
 		assert(base != NULL);
 		for (j = i + 1; j < nilfs_vector_get_size(periodv); j++) {
-			target = (struct nilfs_period *)
-				nilfs_vector_get_element(periodv, j);
+			target = nilfs_vector_get_element(periodv, j);
 			assert(target != NULL);
 			if (base->p_end < target->p_start)
 				break;
@@ -724,8 +704,7 @@ static int nilfs_cleanerd_toss_bdescs(struct nilfs_cleanerd *cleanerd,
 
 	for (i = 0; i < nilfs_vector_get_size(bdescv); i++) {
 		for (j = i; j < nilfs_vector_get_size(bdescv); j++) {
-			bdesc = (struct nilfs_bdesc *)
-				nilfs_vector_get_element(bdescv, j);
+			bdesc = nilfs_vector_get_element(bdescv, j);
 			assert(bdesc != NULL);
 			if (nilfs_bdesc_is_live(bdesc))
 				break;
