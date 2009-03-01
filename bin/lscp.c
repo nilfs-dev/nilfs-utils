@@ -139,7 +139,7 @@ static void lscp_print_cpinfo(const struct nilfs_cpinfo *cpinfo, size_t n)
 	char timebuf[LSCP_BUFSIZE];
 	int i;
 
-	printf("                 CNO        DATE     TIME  MODE  SKT   NBLKINC       ICNT\n");
+	printf("                 CNO        DATE     TIME  MODE  FLG   NBLKINC       ICNT\n");
 
 	for (i = 0; i < n; i++) {
 		t = (time_t)(cpinfo[i].ci_create);
@@ -150,7 +150,7 @@ static void lscp_print_cpinfo(const struct nilfs_cpinfo *cpinfo, size_t n)
 		       (unsigned long long)cpinfo[i].ci_cno,
 		       timebuf,
 		       nilfs_cpinfo_snapshot(&cpinfo[i]) ? "ss" : "cp",
-		       nilfs_cpinfo_sketch(&cpinfo[i]) ? "s" : "-",
+		       "-",
 		       (unsigned long long)cpinfo[i].ci_nblk_inc,
 		       (unsigned long long)cpinfo[i].ci_inodes_count);
 	}

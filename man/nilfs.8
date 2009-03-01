@@ -66,7 +66,7 @@ ordinary POSIX file system.  This will invoke a cleaner process
 .B lscp
 lists checkpoints created in the file system as follows:
 .PP
-        CNO        DATE     TIME  MODE  SKT   NBLKINC       ICNT
+        CNO        DATE     TIME  MODE  FLG   NBLKINC       ICNT
           1  2008-05-08 14:45:49  cp     -         11          3
           2  2008-05-08 14:50:22  cp     -     200523         81
           3  2008-05-08 20:40:34  cp     -        136         61
@@ -78,7 +78,7 @@ lists checkpoints created in the file system as follows:
 changes the checkpoint whose \fIcheckpoint-number\fP is two to a snapshot.
 Then the checkpoint list will become as follows:
 .PP
-        CNO        DATE     TIME  MODE  SKT   NBLKINC       ICNT
+        CNO        DATE     TIME  MODE  FLG   NBLKINC       ICNT
           1  2008-05-08 14:45:49  cp     -         11          3
           2  2008-05-08 14:50:22  ss     -     200523         81
           3  2008-05-08 20:40:34  cp     -        136         61
@@ -102,14 +102,6 @@ backup is possible through the snapshot mounts.
 unmounts the NILFS2 file system mounted on `/nilfs' and will shutdown
 the \fBnilfs_cleanerd\fP(8) through an external umount program
 (\fBumount.nilfs2\fP(8)) for the read/write mount.
-.SH SKETCH (deprecated)
-NILFS2 provides an extended function to associate user-defined data of
-arbitrary format with checkpoints.  This data is called `sketch', and
-is tagged to a checkpoint by writing its content in a virtual file
-\fB.sketch\fP before creating the checkpoint.  The \fB.sketch\fP file
-behaves as a regular file except it gets truncated at the instant of
-the checkpoint creation.  It is created by \fBmkfs.nilfs2\fP(8) and is
-located directly below the top directory of the NILFS2 file system.
 .SH AUTHORS
 .B NILFS2
 was developed by NILFS development team <nilfs@osrg.net>.
