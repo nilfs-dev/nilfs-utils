@@ -146,11 +146,11 @@ static void lscp_print_cpinfo(const struct nilfs_cpinfo *cpinfo, size_t n)
 		localtime_r(&t, &tm);
 		strftime(timebuf, LSCP_BUFSIZE, "%F %T", &tm);
 				 
-		printf("%20llu  %s  %s     %s %10llu %10llu\n",
+		printf("%20llu  %s   %s    %s %10llu %10llu\n",
 		       (unsigned long long)cpinfo[i].ci_cno,
 		       timebuf,
 		       nilfs_cpinfo_snapshot(&cpinfo[i]) ? "ss" : "cp",
-		       "-",
+		       nilfs_cpinfo_minor(&cpinfo[i]) ? "i" : "-",
 		       (unsigned long long)cpinfo[i].ci_nblk_inc,
 		       (unsigned long long)cpinfo[i].ci_inodes_count);
 	}

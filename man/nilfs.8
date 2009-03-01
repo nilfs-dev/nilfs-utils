@@ -67,11 +67,11 @@ ordinary POSIX file system.  This will invoke a cleaner process
 lists checkpoints created in the file system as follows:
 .PP
         CNO        DATE     TIME  MODE  FLG   NBLKINC       ICNT
-          1  2008-05-08 14:45:49  cp     -         11          3
-          2  2008-05-08 14:50:22  cp     -     200523         81
-          3  2008-05-08 20:40:34  cp     -        136         61
-          4  2008-05-08 20:41:20  cp     -     187666       1604
-          5  2008-05-08 20:41:42  cp     -         51       1634
+          1  2008-05-08 14:45:49   cp    -         11          3
+          2  2008-05-08 14:50:22   cp    -     200523         81
+          3  2008-05-08 20:40:34   cp    -        136         61
+          4  2008-05-08 20:41:20   cp    -     187666       1604
+          5  2008-05-08 20:41:42   cp    -         51       1634
         ...
 .TP
 .B chcp ss \fP2
@@ -79,11 +79,11 @@ changes the checkpoint whose \fIcheckpoint-number\fP is two to a snapshot.
 Then the checkpoint list will become as follows:
 .PP
         CNO        DATE     TIME  MODE  FLG   NBLKINC       ICNT
-          1  2008-05-08 14:45:49  cp     -         11          3
-          2  2008-05-08 14:50:22  ss     -     200523         81
-          3  2008-05-08 20:40:34  cp     -        136         61
-          4  2008-05-08 20:41:20  cp     -     187666       1604
-          5  2008-05-08 20:41:42  cp     -         51       1634
+          1  2008-05-08 14:45:49   cp    -         11          3
+          2  2008-05-08 14:50:22   ss    -     200523         81
+          3  2008-05-08 20:40:34   cp    -        136         61
+          4  2008-05-08 20:41:20   cp    -     187666       1604
+          5  2008-05-08 20:41:42   cp    -         51       1634
         ...
 .TP
 .B mount \-t nilfs2 \-r \-o cp=2 \fP/dev/sdb1 /snapshot
