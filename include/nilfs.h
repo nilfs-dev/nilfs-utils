@@ -100,7 +100,7 @@ typedef __u64 nilfs_cno_t;
  * @n_mincno: the minimum of valid checkpoint numbers
  */
 struct nilfs {
-	struct nilfs_super_block n_sb;
+	struct nilfs_super_block *n_sb;
 	char *n_dev;
 	/* char *n_mnt; */
 	char *n_ioc;
@@ -280,6 +280,8 @@ inline static int nilfs_block_is_node(const struct nilfs_block *blk)
 	     nilfs_block_next(blk))
 
 #define NILFS_SB_BLOCK_SIZE_SHIFT	10
+
+int nilfs_read_sb(struct nilfs *);
 
 ssize_t nilfs_get_segment(struct nilfs *, unsigned long, void **);
 int nilfs_put_segment(struct nilfs *, void *);

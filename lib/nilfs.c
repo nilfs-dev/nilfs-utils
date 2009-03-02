@@ -175,22 +175,9 @@ static int nilfs_find_fs(struct nilfs *nilfs, const char *dev, const char *opt)
 	return ret;
 }
 
-static int nilfs_read_sb(struct nilfs *nilfs)
-{
-	if (lseek(nilfs->n_devfd, NILFS_SB_OFFSET_BYTES, SEEK_SET) < 0)
-		return -1;
-	return read(nilfs->n_devfd, &nilfs->n_sb,
-		    sizeof(struct nilfs_super_block));
-}
-
-struct nilfs_super_block *nilfs_get_sb(struct nilfs *nilfs)
-{
-	return &nilfs->n_sb;
-}
-
 size_t nilfs_get_block_size(struct nilfs *nilfs)
 {
-	return 1UL << (le32_to_cpu(nilfs->n_sb.s_log_block_size) +
+	return 1UL << (le32_to_cpu(nilfs->n_sb->s_log_block_size) +
 		       NILFS_SB_BLOCK_SIZE_SHIFT);
 }
 
@@ -201,7 +188,7 @@ int nilfs_opt_set_mmap(struct nilfs *nilfs)
 
 	if ((pagesize = sysconf(_SC_PAGESIZE)) < 0)
 		return -1;
-	segsize = le32_to_cpu(nilfs->n_sb.s_blocks_per_segment) *
+	segsize = le32_to_cpu(nilfs->n_sb->s_blocks_per_segment) *
 		nilfs_get_block_size(nilfs);
 	if (segsize % pagesize != 0)
 		return -1;
@@ -241,6 +228,8 @@ struct nilfs *nilfs_open(const char *dev, int flags)
 	nilfs = malloc(sizeof(*nilfs));
 	if (nilfs == NULL)
 		return NULL;
+
+	nilfs->n_sb = NULL;
 	nilfs->n_devfd = -1;
 	nilfs->n_iocfd = -1;
 	nilfs->n_dev = NULL;
@@ -296,6 +285,8 @@ struct nilfs *nilfs_open(const char *dev, int flags)
 		free(nilfs->n_dev);
 	if (nilfs->n_ioc != NULL)
 		free(nilfs->n_ioc);
+	if (nilfs->n_sb != NULL)
+		free(nilfs->n_sb);
 
  out_nilfs:
 	free(nilfs);
@@ -316,6 +307,8 @@ void nilfs_close(struct nilfs *nilfs)
 		free(nilfs->n_dev);
 	if (nilfs->n_ioc != NULL)
 		free(nilfs->n_ioc);
+	if (nilfs->n_sb != NULL)
+		free(nilfs->n_sb);
 	free(nilfs);
 }
 
@@ -596,13 +589,13 @@ ssize_t nilfs_get_segment(struct nilfs *nilfs, unsigned long segnum,
 		return -1;
 	}
 
-	if (segnum >= le64_to_cpu(nilfs->n_sb.s_nsegments)) {
+	if (segnum >= le64_to_cpu(nilfs->n_sb->s_nsegments)) {
 		errno = EINVAL;
 		return -1;
 	}
 
-	segsize = le32_to_cpu(nilfs->n_sb.s_blocks_per_segment) *
-		(1UL << (le32_to_cpu(nilfs->n_sb.s_log_block_size) +
+	segsize = le32_to_cpu(nilfs->n_sb->s_blocks_per_segment) *
+		(1UL << (le32_to_cpu(nilfs->n_sb->s_log_block_size) +
 			 NILFS_SB_BLOCK_SIZE_SHIFT));
 	offset = ((off_t)segnum) * segsize;
 
@@ -647,8 +640,8 @@ int nilfs_put_segment(struct nilfs *nilfs, void *segment)
 
 #ifdef HAVE_MUNMAP
 	if (nilfs_opt_test_mmap(nilfs)) {
-		segsize = le32_to_cpu(nilfs->n_sb.s_blocks_per_segment) *
-			(1UL << (le32_to_cpu(nilfs->n_sb.s_log_block_size) +
+		segsize = le32_to_cpu(nilfs->n_sb->s_blocks_per_segment) *
+			(1UL << (le32_to_cpu(nilfs->n_sb->s_log_block_size) +
 				 NILFS_SB_BLOCK_SIZE_SHIFT));
 		return munmap(segment, segsize);
 	} else {
@@ -667,10 +660,10 @@ __u64 nilfs_get_segment_seqnum(const struct nilfs *nilfs, void *segment,
 	unsigned long blkoff;
 
 	blkoff = (segnum == 0) ?
-		le64_to_cpu(nilfs->n_sb.s_first_data_block) : 0;
+		le64_to_cpu(nilfs->n_sb->s_first_data_block) : 0;
 
 	segsum = segment + blkoff *
-		(1UL << (le32_to_cpu(nilfs->n_sb.s_log_block_size) +
+		(1UL << (le32_to_cpu(nilfs->n_sb->s_log_block_size) +
 			 NILFS_SB_BLOCK_SIZE_SHIFT));
 	return le64_to_cpu(segsum->ss_seq);
 }
@@ -699,15 +692,15 @@ void nilfs_psegment_init(struct nilfs_psegment *pseg, __u64 segnum,
 	unsigned long blkoff, nblocks_per_segment;
 
 	blkoff = (segnum == 0) ?
-		le64_to_cpu(nilfs->n_sb.s_first_data_block) : 0;
-	nblocks_per_segment = le32_to_cpu(nilfs->n_sb.s_blocks_per_segment);
+		le64_to_cpu(nilfs->n_sb->s_first_data_block) : 0;
+	nblocks_per_segment = le32_to_cpu(nilfs->n_sb->s_blocks_per_segment);
 
-	pseg->p_blksize = 1UL << (le32_to_cpu(nilfs->n_sb.s_log_block_size) +
+	pseg->p_blksize = 1UL << (le32_to_cpu(nilfs->n_sb->s_log_block_size) +
 				  NILFS_SB_BLOCK_SIZE_SHIFT);
 	pseg->p_nblocks = nblocks;
 	pseg->p_maxblocks = nblocks_per_segment - blkoff;
 	pseg->p_segblocknr = (sector_t)nblocks_per_segment * segnum + blkoff;
-	pseg->p_seed = le32_to_cpu(nilfs->n_sb.s_crc_seed);
+	pseg->p_seed = le32_to_cpu(nilfs->n_sb->s_crc_seed);
 
 	pseg->p_segsum = seg + blkoff * pseg->p_blksize;
 	pseg->p_blocknr = pseg->p_segblocknr;
