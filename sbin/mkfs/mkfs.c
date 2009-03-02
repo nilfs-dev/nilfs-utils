@@ -426,7 +426,8 @@ init_disk_layout(struct nilfs_disk_info *di, int fd, const char *device,
 		too_small_segment(di->blocks_per_segment,
 				  first_segblk + NILFS_PSEG_MIN_BLOCKS);
 
-	di->nsegments = (dev_size >> di->blkbits) / di->blocks_per_segment;
+	di->nsegments = (NILFS_SB2_OFFSET_BYTES(dev_size) >> di->blkbits) /
+		di->blocks_per_segment;
 	min_nsegments = nilfs_min_nsegments(di, opts->r_segments_percentage);
 	if (di->nsegments < min_nsegments)
 		perr("Error: too small device."
@@ -746,11 +747,18 @@ static void write_disk(int fd, struct nilfs_disk_info *di,
 		if (fsync(fd) < 0)
 			goto failed_to_write;
 
-		/* Writing super block */
-		blocknr = NILFS_SB_OFFSET_BYTES / blocksize;
-		lseek64(fd, blocknr * blocksize, SEEK_SET);
-		if (write(fd, map_disk_buffer(blocknr, 1), blocksize) < 0 ||
-		    fsync(fd) < 0)
+		/* Writing primary super block */
+		if (lseek64(fd, NILFS_SB_OFFSET_BYTES, SEEK_SET) < 0 ||
+		    write(fd, raw_sb, sizeof(*raw_sb)) < 0)
+			goto failed_to_write;
+
+		/* Writing secondary super block */
+		if (lseek64(fd, NILFS_SB2_OFFSET_BYTES(di->dev_size),
+			    SEEK_SET) < 0 ||
+		    write(fd, raw_sb, sizeof(*raw_sb)) < 0)
+			goto failed_to_write;
+
+		if (fsync(fd) < 0)
 			goto failed_to_write;
 	}
 	if (!opts->quiet)
