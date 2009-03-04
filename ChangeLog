@@ -1,3 +1,13 @@
+nilfs-utils-2.0.9  Wed Mar  4, 2009 JST
+
+	* fix cleanerd bug causing removal of protected checkpoints.
+	  This is the bugfix of the problem reported by Nori-san.
+	* add comments to cleanerd functions.
+	* mkfs add inode entries for reserved meta data files.  This would help
+	  to remove future compatibility problems.
+	* cleanups; remove unnecessary type casting of cleanerd and library,
+	  remove trailing white spaces, and so on.
+
 nilfs-utils-2.0.8  Thu Feb 19, 2009 JST
 
 	* follow the change of ioctl API. Architecture dependent problems
