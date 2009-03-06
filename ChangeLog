@@ -1,3 +1,14 @@
+nilfs-utils-2.0.10  Sat Mar  7, 2009 JST
+
+	* enhance mkfs.nilfs2 to make secondary super block.
+	* add support of the secondary super block to nilfs library.
+	* add minor flag for checkpoints created by internal operations.
+	  This allows userland application to identify whether each
+	  checkpoint is created by file system change or internal operations
+	  such as garbage collection or checkpoint mode change.
+	  lscp now displays 'i' flag on those minor checkpoints.
+	* clean up sketch file.
+
 nilfs-utils-2.0.9  Wed Mar  4, 2009 JST
 
 	* fix cleanerd bug causing removal of protected checkpoints.
