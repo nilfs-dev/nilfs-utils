@@ -1,3 +1,10 @@
+nilfs-utils-2.0.11  Fri Mar 13, 2009 JST
+
+	* force mount.nilfs2 to print a message to warn possible
+	  on-disk format change.
+	* follow minor changes on nilfs_fs.h which are for supporting
+	  nanosecond timestamps.
+
 nilfs-utils-2.0.10  Sat Mar  7, 2009 JST
 
 	* enhance mkfs.nilfs2 to make secondary super block.
