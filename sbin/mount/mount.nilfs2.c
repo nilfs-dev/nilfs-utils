@@ -42,6 +42,7 @@
 #include <sys/stat.h>
 #include <signal.h>
 #include <errno.h>
+#include <syslog.h>
 
 #include "fstab.h"
 #include "paths.h"
@@ -329,6 +330,19 @@ static int check_mtab(void)
 	return res;
 }
 
+static void show_disk_format_warning(const struct nilfs_mount_info *mi,
+				     const struct mount_options *mo)
+{
+	if ((mo->flags & MS_RDONLY) || mi->type == RW2RW_REMOUNT)
+		return;
+	openlog(progname, LOG_PERROR, LOG_USER);
+	syslog(LOG_NOTICE,
+	       "WARNING! - The NILFS on-disk format may change at any time.");
+	syslog(LOG_NOTICE,
+	       "WARNING! - Do not place critical data on a NILFS filesystem.");
+	closelog();
+}
+
 static int
 prepare_mount(struct nilfs_mount_info *mi, const struct mount_options *mo)
 {
@@ -468,6 +482,8 @@ static int mount_one(char *device, char *mntdir,
 	res = prepare_mount(&mi, opts);
 	if (res)
 		goto failed;
+
+	show_disk_format_warning(&mi, opts);
 
 	if (!fake) {
 		res = do_mount_one(&mi, opts);
