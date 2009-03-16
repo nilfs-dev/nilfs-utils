@@ -46,64 +46,46 @@
 #include <getopt.h>
 const static struct option long_option[] = {
 	{"all",  no_argument, NULL, 'a'},
+	{"index",required_argument, NULL, 'i'},
+	{"lines",required_argument, NULL, 'n'},
 	{"help", no_argument, NULL, 'h'},
 	{NULL, 0, NULL, 0}
 };
 
 #define LSSU_USAGE	"Usage: %s [OPTION]... [DEVICE]\n"		\
 			"  -a, --all\t\tdo not hide clean segments\n"	\
+			"  -i, --index\tstart index\n"			\
+			"  -n, --lines\toutput lines\n"			\
 			"  -h, --help\t\tdisplay this help and exit\n"
 #else	/* !_GNU_SOURCE */
 #include <unistd.h>
-#define LSSU_USAGE	"Usage: %s [-ah] [device]\n"
+#define LSSU_USAGE	"Usage: %s [-ah] [-i index] [-n lines] [device]\n"
 #endif	/* _GNU_SOURCE */
 
 #define LSSU_BUFSIZE	128
 #define LSSU_NSEGS	512
 
-static ssize_t lssu_get_suinfo(struct nilfs *nilfs, struct nilfs_suinfo **sip)
+static __u64 param_index;
+static __u64 param_lines;
+static struct nilfs_suinfo suinfos[LSSU_NSEGS];
+
+
+static void lssu_print_header(void)
 {
-	struct nilfs_suinfo *si;
-	struct nilfs_sustat sustat;
-	__u64 segnum;
-	size_t count;
-	ssize_t n, total = 0;
-
-	if (nilfs_get_sustat(nilfs, &sustat) < 0)
-		return -1;
-	if ((si = (struct nilfs_suinfo *)malloc(
-		     sizeof(struct nilfs_suinfo) * sustat.ss_nsegs)) == NULL)
-		return -1;
-	for (segnum = 0; segnum < sustat.ss_nsegs; segnum += n) {
-		count = (sustat.ss_nsegs - segnum < LSSU_NSEGS) ?
-			sustat.ss_nsegs - segnum : LSSU_NSEGS;
-		if ((n = nilfs_get_suinfo(nilfs, segnum,
-					  &si[segnum], count)) < 0) {
-			free(si);
-			return -1;
-		}
-		if (n == 0)
-			break; /* safety valve against broken filesystems */
-		total += n;
-	}
-
-	*sip = si;
-	return total;
+	printf("              SEGNUM        DATE     TIME STAT     NBLOCKS\n");
 }
 
-static void lssu_print_suinfo(const struct nilfs_suinfo *si, size_t nsi,
-			      int all)
+static void lssu_print_suinfo(__u64 segnum, ssize_t nsi, int all)
 {
 	struct tm tm;
 	time_t t;
 	char timebuf[LSSU_BUFSIZE];
-	__u64 segnum;
+	ssize_t i;
 
-	printf("              SEGNUM        DATE     TIME STAT     NBLOCKS\n");
-
-	for (segnum = 0; segnum < nsi; segnum++) {
-		if (all || !nilfs_suinfo_clean(&si[segnum])) {
-			if ((t = (time_t)(si[segnum].sui_lastmod)) != 0) {
+	for (i = 0; i < nsi; i++, segnum++) {
+		if (all || !nilfs_suinfo_clean(&suinfos[i])) {
+			t = (time_t)suinfos[i].sui_lastmod;
+			if (t != 0) {
 				localtime_r(&t, &tm);
 				strftime(timebuf, LSSU_BUFSIZE, "%F %T", &tm);
 			} else
@@ -113,20 +95,46 @@ static void lssu_print_suinfo(const struct nilfs_suinfo *si, size_t nsi,
 			printf("%20llu  %s  %c%c%c  %10u\n",
 			       (unsigned long long)segnum,
 			       timebuf,
-			       nilfs_suinfo_active(&si[segnum]) ? 'a' : '-',
-			       nilfs_suinfo_dirty(&si[segnum]) ? 'd' : '-',
-			       nilfs_suinfo_error(&si[segnum]) ? 'e' : '-',
-			       si[segnum].sui_nblocks);
+			       nilfs_suinfo_active(&suinfos[i]) ? 'a' : '-',
+			       nilfs_suinfo_dirty(&suinfos[i]) ? 'd' : '-',
+			       nilfs_suinfo_error(&suinfos[i]) ? 'e' : '-',
+			       suinfos[i].sui_nblocks);
 		}
 	}
+}
+
+static int lssu_listup_suinfo(struct nilfs *nilfs, int all)
+{
+	struct nilfs_sustat sustat;
+	__u64 segnum, rest, count;
+	ssize_t nsi;
+
+	lssu_print_header();
+	if (nilfs_get_sustat(nilfs, &sustat) < 0)
+		return 1;
+	segnum = param_index ? param_index : 0;
+	rest = param_lines && param_lines < sustat.ss_nsegs ? param_lines :
+		sustat.ss_nsegs;
+
+	for ( ; rest > 0; rest -= nsi) {
+		if (segnum >= sustat.ss_nsegs)
+			break;
+		count = (rest < LSSU_NSEGS) ? rest : LSSU_NSEGS;
+		nsi = nilfs_get_suinfo(nilfs, segnum, suinfos, count);
+		if (nsi < 0)
+			return 1;
+
+		lssu_print_suinfo(segnum, nsi, all);
+		segnum += nsi;
+	}
+
+	return 0;
 }
 
 int main(int argc, char *argv[])
 {
 	struct nilfs *nilfs;
-	struct nilfs_suinfo *si;
 	char *dev, *progname;
-	ssize_t n;
 	int c, all, status;
 #ifdef _GNU_SOURCE
 	int option_index;
@@ -134,7 +142,8 @@ int main(int argc, char *argv[])
 
 	all = 0;
 	opterr = 0;
-	if ((progname = strrchr(argv[0], '/')) == NULL)
+	progname = strrchr(argv[0], '/');
+	if (progname == NULL)
 		progname = argv[0];
 	else
 		progname++;
@@ -143,12 +152,18 @@ int main(int argc, char *argv[])
 	while ((c = getopt_long(argc, argv, "ah",
 				long_option, &option_index)) >= 0) {
 #else	/* !_GNU_SOURCE */
-	while ((c = getopt(argc, argv, "ah")) >= 0) {
+	while ((c = getopt(argc, argv, "ai:n:h")) >= 0) {
 #endif	/* _GNU_SOURCE */
 
 		switch (c) {
 		case 'a':
 			all = 1;
+			break;
+		case 'i':
+			param_index = (__u64)atoll(optarg);
+			break;
+		case 'n':
+			param_lines = (__u64)atoll(optarg);
 			break;
 		case 'h':
 			fprintf(stderr, LSSU_USAGE, progname);
@@ -169,25 +184,15 @@ int main(int argc, char *argv[])
 		exit(1);
 	}
 
-	if ((nilfs = nilfs_open(dev, NILFS_OPEN_RDONLY)) == NULL) {
+	nilfs = nilfs_open(dev, NILFS_OPEN_RDONLY);
+	if (nilfs == NULL) {
 		fprintf(stderr, "%s: %s: cannot open NILFS\n",
 			progname, dev);
 		exit(1);
 	}
 
-	status = 1;
+	status = lssu_listup_suinfo(nilfs, all);
 
-	if ((n = lssu_get_suinfo(nilfs, &si)) < 0) {
-		fprintf(stderr, "%s: %s\n", progname, strerror(errno));
-		goto out;
-	}
-
-	lssu_print_suinfo(si, n, all);
-
-	free(si);
-	status = 0;
-
- out:
 	nilfs_close(nilfs);
 	exit(status);
 }
