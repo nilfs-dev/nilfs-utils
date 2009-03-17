@@ -575,11 +575,12 @@ int main(int argc, char *argv[])
 static void disk_scan(const char *device, struct mkfs_options *opts)
 {
 	char buf[COMMAND_BUFFER_SIZE];
+	ssize_t n;
 
-	if (snprintf(buf, COMMAND_BUFFER_SIZE, "badblocks -b %ld %s %s %s\n",
+	n = snprintf(buf, COMMAND_BUFFER_SIZE, "badblocks -b %ld %s %s %s\n",
 		     opts->blocksize, opts->quiet ? "" : "-s",
-		     (opts->cflag > 1) ? "-w" : "",
-		     device) < COMMAND_BUFFER_SIZE)
+		     (opts->cflag > 1) ? "-w" : "", device);
+	if (n < 0 || n >= COMMAND_BUFFER_SIZE)
 		perr("Internal error: command line buffer overflow");
 	if (!opts->quiet)
 		pinfo("checking blocks");
