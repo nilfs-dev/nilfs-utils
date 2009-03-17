@@ -122,7 +122,10 @@ static void dumpseg_print_psegment(struct nilfs_psegment *pseg)
 	char timebuf[DUMPSEG_BUFSIZE];
 	time_t t;
 
-	printf("  partial segment \n");
+	printf("  partial segment: blocknr = %llu, nblocks = %llu\n",
+	       (unsigned long long)pseg->p_blocknr,
+	       (unsigned long long)le64_to_cpu(pseg->p_segsum->ss_nblocks));
+
 	t = (time_t)le64_to_cpu(pseg->p_segsum->ss_create);
 	localtime_r(&t, &tm);
 	strftime(timebuf, DUMPSEG_BUFSIZE, "%F %T", &tm);
@@ -140,11 +143,22 @@ static void dumpseg_print_segment(struct nilfs *nilfs,
 {
 	struct nilfs_psegment pseg;
 	size_t blksize;
+	__u64 next;
 
 	printf("segment: segnum = %llu\n", (unsigned long long)segnum);
 	blksize = nilfs_get_block_size(nilfs);
-	nilfs_psegment_for_each(&pseg, segnum, seg, segsize / blksize, nilfs) {
-		dumpseg_print_psegment(&pseg);
+	nilfs_psegment_init(&pseg, segnum, seg, segsize / blksize, nilfs);
+
+	if (!nilfs_psegment_is_end(&pseg)) {
+		next = le64_to_cpu(pseg.p_segsum->ss_next) /
+			le32_to_cpu(nilfs_get_sb(nilfs)->s_blocks_per_segment);
+		printf("  sequence number = %llu, next segnum = %llu\n",
+		       (unsigned long long)le64_to_cpu(pseg.p_segsum->ss_seq),
+		       (unsigned long long)next);
+		do {
+			dumpseg_print_psegment(&pseg);
+			nilfs_psegment_next(&pseg);
+		} while (!nilfs_psegment_is_end(&pseg));
 	}
 }
 
