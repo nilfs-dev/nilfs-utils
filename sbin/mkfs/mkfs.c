@@ -819,7 +819,7 @@ static void parse_options(int argc, char *argv[], struct mkfs_options *opts)
 {
 	int c, show_version_only = 0;
 
-	while ((c = getopt(argc, argv, "b:B:cL:m:nq:VP:")) != EOF) {
+	while ((c = getopt(argc, argv, "b:B:cL:m:nqVP:")) != EOF) {
 		switch (c) {
 		case 'b':
 			opts->blocksize = atol(optarg);
