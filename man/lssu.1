@@ -9,18 +9,23 @@ lssu \- list usage state of NILFS2 segments
 [\fIoptions\fP] [\fIdevice\fP]
 .SH DESCRIPTION
 .B lssu
-is a utility for displaying the usage state of NILFS2 segments in
-\fIdevice\fP, where a segment is contiguous lump of disk blocks and is
-the allocation unit of NILFS2 disk space.  When \fIdevice\fP is
-omitted, it tries to find a NILFS2 file system from
-\fI/proc/mounts\fP.
+is a utility for displaying usage state of NILFS2 segments in
+\fIdevice\fP, where a segment is contiguous lump of disk blocks and
+an allocation unit of NILFS2 disk space.  When \fIdevice\fP is
+omitted, \fI/proc/mounts\fP is examined to find a NILFS2 file system.
 .PP
-This command is valid only for mounted NILFS2 file systems, and
-will fail if the \fIdevice\fP has no active mounts.
+This command will fail if the \fIdevice\fP has no active mounts of a
+NILFS2 file system.
 .SH OPTIONS
 .TP
 .B \-a
 Do not hide clean segments.
+.TP
+.B \-i \fIindex\fP
+Skip \fIindex\fP segments at start of input.
+.TP
+.B \-n \fIlines\fP
+List only \fIlines\fP input segments.
 .TP
 .B \-h
 Display help message and exit.
