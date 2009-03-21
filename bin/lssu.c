@@ -103,7 +103,7 @@ static void lssu_print_suinfo(__u64 segnum, ssize_t nsi, int all)
 	}
 }
 
-static int lssu_listup_suinfo(struct nilfs *nilfs, int all)
+static int lssu_list_suinfo(struct nilfs *nilfs, int all)
 {
 	struct nilfs_sustat sustat;
 	__u64 segnum, rest, count;
@@ -112,7 +112,7 @@ static int lssu_listup_suinfo(struct nilfs *nilfs, int all)
 	lssu_print_header();
 	if (nilfs_get_sustat(nilfs, &sustat) < 0)
 		return 1;
-	segnum = param_index ? param_index : 0;
+	segnum = param_index;
 	rest = param_lines && param_lines < sustat.ss_nsegs ? param_lines :
 		sustat.ss_nsegs;
 
@@ -149,7 +149,7 @@ int main(int argc, char *argv[])
 		progname++;
 
 #ifdef _GNU_SOURCE
-	while ((c = getopt_long(argc, argv, "ah",
+	while ((c = getopt_long(argc, argv, "ai:n:h",
 				long_option, &option_index)) >= 0) {
 #else	/* !_GNU_SOURCE */
 	while ((c = getopt(argc, argv, "ai:n:h")) >= 0) {
@@ -191,7 +191,7 @@ int main(int argc, char *argv[])
 		exit(1);
 	}
 
-	status = lssu_listup_suinfo(nilfs, all);
+	status = lssu_list_suinfo(nilfs, all);
 
 	nilfs_close(nilfs);
 	exit(status);
