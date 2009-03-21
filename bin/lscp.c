@@ -46,6 +46,9 @@
 
 #include <errno.h>
 #include "nilfs.h"
+
+#undef CONFIG_PRINT_CPSTAT
+
 #ifdef _GNU_SOURCE
 #include <getopt.h>
 const static struct option long_option[] = {
@@ -68,6 +71,7 @@ const static struct option long_option[] = {
 
 #define LSCP_BUFSIZE	128
 #define LSCP_NCPINFO	512
+#define LSCP_MINDELTA	64	/* Minimum delta for reverse direction */
 
 
 static __u64 param_index;
@@ -91,23 +95,25 @@ static void lscp_print_cpinfo(struct nilfs_cpinfo *cpinfo)
 	strftime(timebuf, LSCP_BUFSIZE, "%F %T", &tm);
 
 	printf("%20llu  %s   %s    %s %10llu %10llu\n",
-	       (unsigned long long)cpinfo->ci_cno,
-	       timebuf,
+	       (unsigned long long)cpinfo->ci_cno, timebuf,
 	       nilfs_cpinfo_snapshot(cpinfo) ? "ss" : "cp",
 	       nilfs_cpinfo_minor(cpinfo) ? "i" : "-",
 	       (unsigned long long)cpinfo->ci_nblk_inc,
 	       (unsigned long long)cpinfo->ci_inodes_count);
 }
 
-/*
+#ifdef CONFIG_PRINT_CPSTAT
 static void lscp_print_cpstat(const struct nilfs_cpstat *cpstat, int mode)
 {
 	if (mode == NILFS_CHECKPOINT)
-		printf("total %llu/%llu\n", cpstat->cs_nsss, cpstat->cs_ncps);
+		printf("total %llu/%llu\n",
+		       (unsigned long long)cpstat->cs_nsss,
+		       (unsigned long long)cpstat->cs_ncps);
 	else
-		printf("total %llu\n", cpstat->cs_nsss);
+		printf("total %llu\n",
+		       (unsigned long long)cpstat->cs_nsss);
 }
-*/
+#endif
 
 static ssize_t lscp_get_cpinfo(struct nilfs *nilfs, nilfs_cno_t cno, int mode,
 			       size_t count)
@@ -122,94 +128,62 @@ static int lscp_forward_cpinfo(struct nilfs *nilfs,
 			       struct nilfs_cpstat *cpstat)
 {
 	nilfs_cno_t sidx;
-	size_t rest;
+	__u64 rest;
 	ssize_t n;
-	int i, flag = 0;
+	int i;
 
 	rest = param_lines && param_lines < cpstat->cs_ncps ? param_lines :
 		cpstat->cs_ncps;
 	sidx = param_index ? param_index : NILFS_CNO_MIN;
-	if (!cpstat->cs_ncps)
-		goto out;
 
-	while (rest > 0) {
-		if (sidx >= cpstat->cs_cno)
-			break;
+	while (rest > 0 && sidx < cpstat->cs_cno) {
 		n = lscp_get_cpinfo(nilfs, sidx, NILFS_CHECKPOINT, rest);
 		if (n < 0)
-			return 1;
+			return n;
 		if (!n)
 			break;
 
-		if (!flag) {
-			lscp_print_header();
-			flag = 1;
-		}
 		for (i = 0; i < n; i++, rest--)
 			lscp_print_cpinfo(&cpinfos[i]);
 
 		sidx = cpinfos[n - 1].ci_cno + 1;
 	}
-
- out:
-	if (!flag)
-		lscp_print_header();
 	return 0;
 }
 
 static int lscp_backward_cpinfo(struct nilfs *nilfs,
 				struct nilfs_cpstat *cpstat)
 {
-	nilfs_cno_t sidx, eidx;
-	size_t rest;
+	nilfs_cno_t sidx; /* start index (inclusive) */
+	nilfs_cno_t eidx; /* end index (exclusive) */
+	__u64 rest, delta;
 	ssize_t n;
-	int i, flag = 0;
+	int i;
 
-	if (!cpstat->cs_ncps)
-		goto out;
 	rest = param_lines && param_lines < cpstat->cs_ncps ? param_lines :
 		cpstat->cs_ncps;
-	eidx = param_index ? param_index + 1 : cpstat->cs_cno;
-	sidx = cpstat->cs_ncps < LSCP_NCPINFO || eidx < LSCP_NCPINFO ? 
-		NILFS_CNO_MIN : eidx - LSCP_NCPINFO + 1;
+	eidx = param_index && param_index < cpstat->cs_cno ? param_index + 1 :
+		cpstat->cs_cno;
 
-	while (rest > 0) {
-		if (sidx >= cpstat->cs_cno)
-			goto next_block;
-		n = lscp_get_cpinfo(nilfs, sidx, NILFS_CHECKPOINT,
-				    LSCP_NCPINFO);
+	for ( ; rest > 0 && eidx > NILFS_CNO_MIN; eidx = sidx) {
+		delta = (rest > LSCP_NCPINFO ? LSCP_NCPINFO :
+			 (rest < LSCP_MINDELTA ? LSCP_MINDELTA : rest));
+		sidx = (eidx >= NILFS_CNO_MIN + delta) ? eidx - delta :
+			NILFS_CNO_MIN;
+
+		n = lscp_get_cpinfo(nilfs, sidx, NILFS_CHECKPOINT, eidx - sidx);
 		if (n < 0)
-			return 1;
+			return n;
 		if (!n)
 			break;
 
-		if (!flag) {
-			lscp_print_header();
-			flag = 1;
-		}
-		for (i = 0; i < n && rest > 0; i++) {
+		for (i = 0 ; i < n && rest > 0; i++) {
 			if (cpinfos[n - i - 1].ci_cno >= eidx)
 				continue;
 			lscp_print_cpinfo(&cpinfos[n - i - 1]);
 			rest--;
 		}
-
- next_block:
-		if (sidx <= NILFS_CNO_MIN)
-			break;
-
-		eidx = sidx;
-		if (sidx < LSCP_NCPINFO)
-			sidx = sidx > rest ? sidx - rest : NILFS_CNO_MIN;
-		else if (rest < LSCP_NCPINFO)
-			sidx -= rest;
-		else
-			sidx -= LSCP_NCPINFO;
 	}
-
- out:
-	if (!flag)
-		lscp_print_header();
 	return 0;
 }
 
@@ -217,18 +191,17 @@ static int lscp_search_snapshot(struct nilfs *nilfs,
 				struct nilfs_cpstat *cpstat, nilfs_cno_t *sidx)
 {
 	nilfs_cno_t cno;
+	__u64 nreq;
 	ssize_t n, i;
 
-	if (!cpstat->cs_nsss)
-		return 0;
-
-	for (cno = *sidx ; cno < cpstat->cs_cno; cno += LSCP_NCPINFO) {
-		n = lscp_get_cpinfo(nilfs, cno, NILFS_CHECKPOINT,
-				    LSCP_NCPINFO);
+	for (cno = *sidx, nreq = 1; cno < cpstat->cs_cno;
+	     cno += n, nreq = cpstat->cs_cno - cno) {
+		n = lscp_get_cpinfo(nilfs, cno, NILFS_CHECKPOINT, nreq);
 		if (n < 0)
-			return -1;
-		else if (!n)
-			return 0;
+			return n;
+		if (!n)
+			break;
+
 		for (i = 0; i < n; i++) {
 			if (nilfs_cpinfo_snapshot(&cpinfos[i])) {
 				*sidx = cpinfos[i].ci_cno;
@@ -236,7 +209,6 @@ static int lscp_search_snapshot(struct nilfs *nilfs,
 			}
 		}
 	}
-
 	return 0;
 }
 
@@ -244,99 +216,71 @@ static int lscp_forward_ssinfo(struct nilfs *nilfs,
 			       struct nilfs_cpstat *cpstat)
 {
 	nilfs_cno_t sidx;
-	size_t rest;
+	__u64 rest;
 	ssize_t n;
-	int i, found, flag = 0;
+	int i, ret;
 
 	rest = param_lines && param_lines < cpstat->cs_nsss ? param_lines :
 		cpstat->cs_nsss;
-	sidx = param_index ? param_index : 0;
+	sidx = param_index;
 
-	if (!cpstat->cs_nsss)
-		goto out;
-	if (sidx >= cpstat->cs_cno)
-		goto out;
-	n = nilfs_get_cpinfo(nilfs, sidx, NILFS_CHECKPOINT, cpinfos, 1);
-	if (n < 0) {
-		return 1;
-	} else if (n == 0) {
-		goto out;
-	} else if (!nilfs_cpinfo_snapshot(&cpinfos[0])) {
-		found = lscp_search_snapshot(nilfs, cpstat, &sidx);
-		if (found < 0)
-			return 1;
-		else if (!found)
-			goto out;
-	} else {
-		sidx = cpinfos[0].ci_cno;
+	if (!rest || sidx >= cpstat->cs_cno)
+		return 0;
+
+	if (sidx > 0) {
+		/* find first snapshot */
+		ret = lscp_search_snapshot(nilfs, cpstat, &sidx);
+		if (ret < 0)
+			return ret;
+		else if (!ret)
+			return 0;  /* no snapshot found */
 	}
 
-	while (rest > 0) {
-		if (sidx >= cpstat->cs_cno)
-			break;
+	while (rest > 0 && sidx < cpstat->cs_cno) {
 		n = lscp_get_cpinfo(nilfs, sidx, NILFS_SNAPSHOT, rest);
 		if (n < 0)
-			return 1;
+			return n;
 		if (!n)
 			break;
 
-		if (!flag) {
-			lscp_print_header();
-			flag = 1;
-		}
-		for (i = 0; i < n; i++) {
-			if (!nilfs_cpinfo_snapshot(&cpinfos[n - i - 1]))
-				continue;
+		for (i = 0; i < n; i++)
 			lscp_print_cpinfo(&cpinfos[i]);
-			rest--;
-		}
 
+		rest -= n;
 		sidx = cpinfos[n - 1].ci_next;
 		if (!sidx)
 			break;
 	}
-
- out:
-	if (!flag)
-		lscp_print_header();
 	return 0;
 }
 
 static int lscp_backward_ssinfo(struct nilfs *nilfs,
 				struct nilfs_cpstat *cpstat)
 {
-	nilfs_cno_t sidx, eidx;
-	size_t rest;
+	nilfs_cno_t sidx; /* start index (inclusive) */
+	nilfs_cno_t eidx; /* end index (exclusive) */
+	__u64 rest;
+	__u64 rns; /* remaining number of snapshots (always rest <= rns) */
 	ssize_t n;
-	int i, flag = 0;
+	int i;
 
-	if (!cpstat->cs_nsss)
-		goto out;
+	rns = cpstat->cs_nsss;
+	rest = param_lines && param_lines < rns ? param_lines : rns;
+	eidx = param_index && param_index < cpstat->cs_cno ? param_index + 1 :
+		cpstat->cs_cno;
 
-	rest = param_lines && param_lines < cpstat->cs_nsss ? param_lines :
-		cpstat->cs_nsss;
-	eidx = param_index ? param_index + 1 : cpstat->cs_cno;
-	sidx = cpstat->cs_nsss < LSCP_NCPINFO || eidx < LSCP_NCPINFO ? 0 :
-		eidx - LSCP_NCPINFO + 1;
+	for ( ; rest > 0 && eidx > NILFS_CNO_MIN ; eidx = sidx) {
+		if (rns <= LSCP_NCPINFO || eidx <= NILFS_CNO_MIN + LSCP_NCPINFO)
+			goto remainder;
 
-	while (rest > 0) {
-		if (sidx >= cpstat->cs_cno)
-			goto next_block;
-		if (!sidx)
-			n = lscp_get_cpinfo(nilfs, sidx, NILFS_SNAPSHOT,
-					    LSCP_NCPINFO);
-		else
-			n = lscp_get_cpinfo(nilfs, sidx, NILFS_CHECKPOINT,
-					    LSCP_NCPINFO);
+		sidx = (eidx >= NILFS_CNO_MIN + LSCP_NCPINFO) ?
+			eidx - LSCP_NCPINFO : NILFS_CNO_MIN;
+		n = lscp_get_cpinfo(nilfs, sidx, NILFS_CHECKPOINT, eidx - sidx);
 		if (n < 0)
-			return 1;
+			return n;
 		if (!n)
 			break;
 
-		if (!flag) {
-			lscp_print_header();
-			flag = 1;
-		}
 		for (i = 0; i < n && rest > 0; i++) {
 			if (cpinfos[n - i - 1].ci_cno >= eidx)
 				continue;
@@ -345,21 +289,22 @@ static int lscp_backward_ssinfo(struct nilfs *nilfs,
 			lscp_print_cpinfo(&cpinfos[n - i - 1]);
 			eidx = cpinfos[n - i - 1].ci_cno;
 			rest--;
+			rns--;
 		}
-
- next_block:
-		if (sidx <= NILFS_CNO_MIN)
-			break;
-
-		if (sidx <= LSCP_NCPINFO)
-			sidx = 0;
-		else
-			sidx -= LSCP_NCPINFO;
 	}
+	return 0;
 
- out:
-	if (!flag)
-		lscp_print_header();
+ remainder:
+	/* remaining snapshots */
+	n = lscp_get_cpinfo(nilfs, 0, NILFS_SNAPSHOT, rns);
+	if (n < 0)
+		return n;
+	for (i = 0; i < n && rest > 0; i++) {
+		if (cpinfos[n - i - 1].ci_cno >= eidx)
+			continue;
+		lscp_print_cpinfo(&cpinfos[n - i - 1]);
+		rest--;
+	}
 	return 0;
 }
 
@@ -368,7 +313,7 @@ int main(int argc, char *argv[])
 	struct nilfs *nilfs;
 	struct nilfs_cpstat cpstat;
 	char *dev, *progname;
-	int c, mode, rvs, status;
+	int c, mode, rvs, status, ret;
 #ifdef _GNU_SOURCE
 	int option_index;
 #endif	/* _GNU_SOURCE */
@@ -384,7 +329,7 @@ int main(int argc, char *argv[])
 
 
 #ifdef _GNU_SOURCE
-	while ((c = getopt_long(argc, argv, "rsn:c:h",
+	while ((c = getopt_long(argc, argv, "rsi:n:h",
 				long_option, &option_index)) >= 0) {
 #else
 	while ((c = getopt(argc, argv, "rsi:n:h")) >= 0) {
@@ -405,11 +350,11 @@ int main(int argc, char *argv[])
 			break;
 		case 'h':
 			fprintf(stderr, LSCP_USAGE, progname);
-			exit(0);
+			exit(EXIT_SUCCESS);
 		default:
 			fprintf(stderr, "%s: invalid option -- %c\n",
 				progname, optopt);
-			exit(1);
+			exit(EXIT_FAILURE);
 		}
 	}
 
@@ -426,29 +371,37 @@ int main(int argc, char *argv[])
 	if (nilfs == NULL) {
 		fprintf(stderr, "%s: %s: cannot open NILFS\n",
 			progname, dev);
-		exit(1);
+		exit(EXIT_FAILURE);
 	}
 
-	status = 0;
+	status = EXIT_SUCCESS;
 
-	if (nilfs_get_cpstat(nilfs, &cpstat) < 0)
+	ret = nilfs_get_cpstat(nilfs, &cpstat);
+	if (ret < 0)
 		goto out;
+
+#ifdef CONFIG_PRINT_CPSTAT
+	lscp_print_cpstat(&cpstat, mode);
+#endif
+	lscp_print_header();
 
 	if (mode == NILFS_CHECKPOINT) {
 		if (!rvs)
-			status = lscp_forward_cpinfo(nilfs, &cpstat);
+			ret = lscp_forward_cpinfo(nilfs, &cpstat);
 		else
-			status = lscp_backward_cpinfo(nilfs, &cpstat);
+			ret = lscp_backward_cpinfo(nilfs, &cpstat);
 	} else {
 		if (!rvs)
-			status = lscp_forward_ssinfo(nilfs, &cpstat);
+			ret = lscp_forward_ssinfo(nilfs, &cpstat);
 		else
-			status = lscp_backward_ssinfo(nilfs, &cpstat);
+			ret = lscp_backward_ssinfo(nilfs, &cpstat);
 	}
 
-	if (status)
-		fprintf(stderr, "%s: %s\n", progname, strerror(errno));
  out:
+	if (ret < 0) {
+		status = EXIT_FAILURE;
+		fprintf(stderr, "%s: %s\n", progname, strerror(errno));
+	}
 	nilfs_close(nilfs);
 	exit(status);
 }
