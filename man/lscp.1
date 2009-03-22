@@ -10,11 +10,11 @@ lscp \- list NILFS2 checkpoints
 .SH DESCRIPTION
 .B lscp
 is a utility for displaying checkpoints or snapshots of the NILFS2
-file system found in \fIdevice\fP.  When \fIdevice\fP is omitted, it
-tries to find a NILFS2 file system from \fI/proc/mounts\fP.
+file system found in \fIdevice\fP.  When \fIdevice\fP is omitted,
+\fI/proc/mounts\fP is examined to find a NILFS2 file system.
 .PP
-This command is valid only for mounted NILFS2 file systems, and
-will fail if the \fIdevice\fP has no active mounts.
+This command will fail if the \fIdevice\fP has no active mounts of a
+NILFS2 file system.
 .SH OPTIONS
 .TP
 .B \-r
@@ -22,6 +22,12 @@ Reverse order.
 .TP
 .B \-s
 List only snapshots.
+.TP
+.B \-i \fIindex\fP
+Skip \fIindex\fP checkpoints (or snapshots) at start of input.
+.TP
+.B \-n \fIlines\fP
+List only \fIlines\fP input checkpoints (or snapshots).
 .TP
 .B \-h
 Display help message and exit.
