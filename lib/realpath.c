@@ -31,7 +31,6 @@
 #include <string.h>
 #include <errno.h>
 #include "realpath.h"
-#include "sundries.h"		/* for xstrdup */
 
 #define MAX_READLINKS 32
 
@@ -118,7 +117,11 @@ myrealpath(const char *path, char *resolved_path, int maxreslth) {
 			m = strlen(path);
 			if (buf)
 				free(buf);
-			buf = xmalloc(m + n + 1);
+			buf = malloc(m + n + 1);
+			if (!buf) {
+				errno = ENOMEM;
+				return NULL;
+			}
 			memcpy(buf, link_path, n);
 			memcpy(buf + n, path, m + 1);
 			path = buf;
