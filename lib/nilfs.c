@@ -862,7 +862,3 @@ void nilfs_block_next(struct nilfs_block *blk)
 
 	blk->b_blocknr++;
 }
-
-/* Local Variables:		*/
-/* eval: (c-set-style "linux")	*/
-/* End:				*/

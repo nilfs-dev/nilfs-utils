@@ -28,7 +28,3 @@
 #define LOCK_TIMEOUT	10
 
 #endif /* _MY_PATHS_H */
-
-/* Local Variables:		*/
-/* eval: (c-set-style "linux")	*/
-/* End:				*/

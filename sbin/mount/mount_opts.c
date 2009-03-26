@@ -257,7 +257,3 @@ char *fix_opts_string(int flags, const char *extra_opts, const char *user)
 	}
 	return new_opts;
 }
-
-/* Local Variables:		*/
-/* eval: (c-set-style "linux")	*/
-/* End:				*/

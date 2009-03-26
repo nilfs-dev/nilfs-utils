@@ -319,7 +319,3 @@ char *change_opt(const char *opts, const char *token, void *varp,
 
 	return newopts;
 }
-
-/* Local Variables:		*/
-/* eval: (c-set-style "linux")	*/
-/* End:				*/

@@ -51,7 +51,3 @@ int ext2fs_test_bit(int nr, const void * addr)
 }
 
 #endif	/* !_EXT2_HAVE_ASM_BITOPS_ */
-
-/* Local Variables:		*/
-/* eval: (c-set-style "linux")	*/
-/* End:				*/

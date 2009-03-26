@@ -79,7 +79,3 @@ if we have a stack or plain mount - mount atop of it, forming a stack. */
 
 
 #endif /* _MOUNT_CONSTANTS_H */
-
-/* Local Variables:		*/
-/* eval: (c-set-style "linux")	*/
-/* End:				*/

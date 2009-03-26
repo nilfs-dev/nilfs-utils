@@ -119,7 +119,3 @@ extern __u32 crc32_le(__u32, unsigned char const *, size_t);
 #define DT_SOCK		12
 #define DT_WHT		14
 
-
-/* Local Variables:		*/
-/* eval: (c-set-style "linux")	*/
-/* End:				*/

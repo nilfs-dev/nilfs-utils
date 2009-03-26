@@ -67,7 +67,3 @@ struct nilfs_segimp {
 };
 
 #endif	/* CLEANERD_H */
-
-/* Local Variables:		*/
-/* eval: (c-set-style "linux")	*/
-/* End:				*/

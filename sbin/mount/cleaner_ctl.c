@@ -155,7 +155,3 @@ int check_cleanerd(const char *spec, pid_t pid)
 {
 	return process_is_alive(pid);
 }
-
-/* Local Variables:		*/
-/* eval: (c-set-style "linux")	*/
-/* End:				*/

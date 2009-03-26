@@ -380,7 +380,3 @@ u32 __attribute_pure__ crc32_le(u32 crc, unsigned char const *p, size_t len)
  * 0, an initial remainder of all ones is used.  As long as you start
  * the same way on decoding, it doesn't make a difference.
  */
-
-/* Local Variables:		*/
-/* eval: (c-set-style "linux")	*/
-/* End:				*/

@@ -103,7 +103,3 @@ struct nilfs_cldconfig_log_priority {
 int nilfs_cldconfig_read(struct nilfs_cldconfig *, const char *);
 
 #endif	/* CLDCONFIG_H */
-
-/* Local Variables:		*/
-/* eval: (c-set-style "linux")	*/
-/* End:				*/

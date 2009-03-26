@@ -138,7 +138,3 @@ int main(int argc, char *argv[])
 	nilfs_close(nilfs);
 	exit(status);
 }
-
-/* Local Variables:		*/
-/* eval: (c-set-style "linux")	*/
-/* End:				*/

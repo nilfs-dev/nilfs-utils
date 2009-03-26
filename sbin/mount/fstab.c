@@ -569,7 +569,3 @@ update_mtab (const char *dir, struct my_mntent *instead) {
  leave:
 	unlock_mtab();
 }
-
-/* Local Variables:		*/
-/* eval: (c-set-style "linux")	*/
-/* End:				*/

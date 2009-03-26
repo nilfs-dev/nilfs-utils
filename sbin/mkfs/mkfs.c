@@ -1578,8 +1578,3 @@ static void commit_super_block(struct nilfs_disk_info *di,
 			    NILFS_SB_BYTES);
 	raw_sb->s_sum = cpu_to_le32(sbsum);
 }
-
-
-/* Local Variables:		*/
-/* eval: (c-set-style "linux")	*/
-/* End:				*/

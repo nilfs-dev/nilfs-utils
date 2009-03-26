@@ -140,7 +140,3 @@ int nilfs_vector_delete_elements(struct nilfs_vector *vector,
 	vector->v_nelems -= nelems;
 	return 0;
 }
-
-/* Local Variables:		*/
-/* eval: (c-set-style "linux")	*/
-/* End:				*/

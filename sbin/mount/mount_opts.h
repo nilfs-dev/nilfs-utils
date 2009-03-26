@@ -39,7 +39,3 @@ extern char *fix_opts_string(int flags, const char *extra_opts, const char *user
 
 
 #endif /* _MOUNT_OPTS_H */
-
-/* Local Variables:		*/
-/* eval: (c-set-style "linux")	*/
-/* End:				*/

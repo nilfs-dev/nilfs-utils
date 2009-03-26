@@ -59,7 +59,3 @@ int nfsmount (const char *spec, const char *node, int *flags,
 #define EX_BG         256       /* retry in background (internal only) */
 
 #endif /* _SUNDRIES_H_ */
-
-/* Local Variables:		*/
-/* eval: (c-set-style "linux")	*/
-/* End:				*/

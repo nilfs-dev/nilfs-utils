@@ -304,7 +304,3 @@ int nilfs_clean_segments(struct nilfs *, struct nilfs_vdesc *, size_t,
 int nilfs_sync(const struct nilfs *, nilfs_cno_t *);
 
 #endif	/* NILFS_H */
-
-/* Local Variables:		*/
-/* eval: (c-set-style "linux")	*/
-/* End:				*/

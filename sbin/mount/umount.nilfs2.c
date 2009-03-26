@@ -419,8 +419,3 @@ umount_one(const char *spec, const char *node, const char *type,
 		complain(umnt_err, node);
 	return 1;
 }
-
-
-/* Local Variables:		*/
-/* eval: (c-set-style "linux")	*/
-/* End:				*/

@@ -82,7 +82,3 @@ inline static void nilfs_vector_sort(struct nilfs_vector *vector,
 }
 
 #endif	/* VECTOR_H */
-
-/* Local Variables:		*/
-/* eval: (c-set-style "linux")	*/
-/* End:				*/

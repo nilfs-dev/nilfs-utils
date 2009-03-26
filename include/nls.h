@@ -34,8 +34,3 @@
 # define _(Text) (Text)
 # define N_(Text) (Text)
 #endif
-
-
-/* Local Variables:		*/
-/* eval: (c-set-style "linux")	*/
-/* End:				*/

@@ -557,7 +557,3 @@ int main(int argc, char *argv[])
 	my_free(opts->extra_opts);
 	return res;
 }
-
-/* Local Variables:		*/
-/* eval: (c-set-style "linux")	*/
-/* End:				*/

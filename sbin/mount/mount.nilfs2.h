@@ -23,7 +23,3 @@ extern int stop_cleanerd(const char *, pid_t);
 extern int check_cleanerd(const char *, pid_t);
 
 #endif /* _MOUNT_NILFS2_H */
-
-/* Local Variables:		*/
-/* eval: (c-set-style "linux")	*/
-/* End:				*/

@@ -370,7 +370,3 @@ int nilfs_cldconfig_read(struct nilfs_cldconfig *config, const char *path)
 		syslog(LOG_WARNING, "%s: cannot read", path);
 	return 0;
 }
-
-/* Local Variables:		*/
-/* eval: (c-set-style "linux")	*/
-/* End:				*/

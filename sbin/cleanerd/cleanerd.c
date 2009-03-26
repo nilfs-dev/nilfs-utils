@@ -1267,7 +1267,3 @@ int main(int argc, char *argv[])
 
 	exit(status);
 }
-
-/* Local Variables:		*/
-/* eval: (c-set-style "linux")	*/
-/* End:				*/
