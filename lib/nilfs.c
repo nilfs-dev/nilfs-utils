@@ -73,6 +73,7 @@
 #include <errno.h>
 #include <assert.h>
 #include "nilfs.h"
+#include "realpath.h"
 
 
 inline static int iseol(int c)
@@ -144,6 +145,10 @@ static int nilfs_find_fs(struct nilfs *nilfs, const char *dev, const char *opt)
 	char line[LINE_MAX], *mntent[NMNTFLDS];
 	size_t len;
 	int ret, n;
+	char canonical[PATH_MAX + 2];
+
+	if (dev && myrealpath(dev, canonical, sizeof(canonical)))
+		dev = canonical;
 
 	if ((fp = fopen(PROCMOUNTS, "r")) == NULL)
 		return -1;
