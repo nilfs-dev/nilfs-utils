@@ -367,7 +367,7 @@ int main(int argc, char *argv[])
 		dev = NULL;
 	}
 
-	nilfs = nilfs_open(dev, NILFS_OPEN_RDONLY);
+	nilfs = nilfs_open(dev, NULL, NILFS_OPEN_RDONLY);
 	if (nilfs == NULL) {
 		fprintf(stderr, "%s: %s: cannot open NILFS\n",
 			progname, dev);

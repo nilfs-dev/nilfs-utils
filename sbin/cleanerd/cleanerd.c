@@ -160,7 +160,7 @@ static int nilfs_cleanerd_reconfig(struct nilfs_cleanerd *cleanerd)
  * @conffile: pathname of configuration file
  */
 static struct nilfs_cleanerd *
-nilfs_cleanerd_create(const char *dev, const char *conffile)
+nilfs_cleanerd_create(const char *dev, const char *dir, const char *conffile)
 {
 	struct nilfs_cleanerd *cleanerd;
 
@@ -168,7 +168,8 @@ nilfs_cleanerd_create(const char *dev, const char *conffile)
 	if (cleanerd == NULL)
 		return NULL;
 
-	cleanerd->c_nilfs = nilfs_open(dev, NILFS_OPEN_RAW | NILFS_OPEN_RDWR);
+	cleanerd->c_nilfs = nilfs_open(dev, dir,
+				       NILFS_OPEN_RAW | NILFS_OPEN_RDWR);
 	if (cleanerd->c_nilfs == NULL)
 		goto out_cleanerd;
 
@@ -1201,7 +1202,7 @@ static int nilfs_cleanerd_clean_loop(struct nilfs_cleanerd *cleanerd)
 int main(int argc, char *argv[])
 {
 	char *progname, *conffile;
-	const char *dev;
+	const char *dev, *dir;
 	int status, nofork, c;
 #ifdef _GNU_SOURCE
 	int option_index;
@@ -1211,8 +1212,10 @@ int main(int argc, char *argv[])
 		strrchr(argv[0], '/') + 1 : argv[0];
 	conffile = NILFS_CLEANERD_CONFFILE;
 	nofork = 0;
-	dev = NULL;
 	status = 0;
+	dev = NULL;
+	dir = NULL;
+
 #ifdef _GNU_SOURCE
 	while ((c = getopt_long(argc, argv, "c:hn",
 				long_option, &option_index)) >= 0) {
@@ -1240,6 +1243,9 @@ int main(int argc, char *argv[])
 	if (optind < argc)
 		dev = argv[optind++];
 
+	if (optind < argc)
+		dir = argv[optind++];
+
 	if (daemonize(0, 0, nofork) < 0) {
 		fprintf(stderr, "%s: %s\n", progname, strerror(errno));
 		exit(1);
@@ -1248,7 +1254,8 @@ int main(int argc, char *argv[])
 	openlog(progname, LOG_PID, LOG_DAEMON);
 	syslog(LOG_INFO, "start");
 
-	if ((nilfs_cleanerd = nilfs_cleanerd_create(dev, conffile)) == NULL) {
+	nilfs_cleanerd = nilfs_cleanerd_create(dev, dir, conffile);
+	if (nilfs_cleanerd == NULL) {
 		syslog(LOG_ERR, "cannot create cleanerd on %s", dev);
 		status = 1;
 		goto out;

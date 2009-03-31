@@ -128,7 +128,8 @@ int main(int argc, char *argv[])
 		exit(1);
 	}
 
-	if ((nilfs = nilfs_open(dev, NILFS_OPEN_RDWR)) == NULL) {
+	nilfs = nilfs_open(dev, NULL, NILFS_OPEN_RDWR);
+	if (nilfs == NULL) {
 		fprintf(stderr, "%s: %s: cannot open NILFS\n", progname, dev);
 		exit(1);
 	}

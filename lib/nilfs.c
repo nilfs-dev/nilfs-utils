@@ -139,7 +139,8 @@ static int has_mntopt(const char *opts, const char *opt)
 #endif	/* LINE_MAX */
 #define PROCMOUNTS	"/proc/mounts"
 
-static int nilfs_find_fs(struct nilfs *nilfs, const char *dev, const char *opt)
+static int nilfs_find_fs(struct nilfs *nilfs, const char *dev, const char *dir,
+			 const char *opt)
 {
 	FILE *fp;
 	char line[LINE_MAX], *mntent[NMNTFLDS];
@@ -150,17 +151,20 @@ static int nilfs_find_fs(struct nilfs *nilfs, const char *dev, const char *opt)
 	if (dev && myrealpath(dev, canonical, sizeof(canonical)))
 		dev = canonical;
 
-	if ((fp = fopen(PROCMOUNTS, "r")) == NULL)
+	fp = fopen(PROCMOUNTS, "r");
+	if (fp == NULL)
 		return -1;
 	ret = -1;
 	while (fgets(line, sizeof(line), fp) != NULL) {
 		n = tokenize(line, mntent, NMNTFLDS);
 		assert(n == NMNTFLDS);
 
-		if (((dev == NULL) || (strcmp(mntent[MNTFLD_FS], dev) == 0)) &&
-		    (strcmp(mntent[MNTFLD_TYPE], NILFS_FSTYPE) == 0) &&
+		if ((dev == NULL || strcmp(mntent[MNTFLD_FS], dev) == 0) &&
+		    (dir == NULL || strcmp(mntent[MNTFLD_DIR], dir) == 0) &&
+		    strcmp(mntent[MNTFLD_TYPE], NILFS_FSTYPE) == 0 &&
 		    has_mntopt(mntent[MNTFLD_OPTS], opt)) {
-			if ((nilfs->n_dev = strdup(mntent[MNTFLD_FS])) == NULL)
+			nilfs->n_dev = strdup(mntent[MNTFLD_FS]);
+			if (nilfs->n_dev == NULL)
 				break;
 			len = strlen(mntent[MNTFLD_DIR]) +
 				strlen(NILFS_IOC) + 2;
@@ -215,17 +219,16 @@ int nilfs_opt_test_mmap(struct nilfs *nilfs)
 /**
  * nilfs_open - create a NILFS object
  * @dev: device
+ * @dir: mount directory
  * @flags: open flags
  */
-struct nilfs *nilfs_open(const char *dev, int flags)
+struct nilfs *nilfs_open(const char *dev, const char *dir, int flags)
 {
 	struct nilfs *nilfs;
 	int oflags;
 
-	if (!(flags & (NILFS_OPEN_RAW |
-		       NILFS_OPEN_RDONLY |
-		       NILFS_OPEN_WRONLY |
-		       NILFS_OPEN_RDWR))) {
+	if (!(flags & (NILFS_OPEN_RAW | NILFS_OPEN_RDONLY |
+		       NILFS_OPEN_WRONLY | NILFS_OPEN_RDWR))) {
 		errno = EINVAL;
 		return NULL;
 	}
@@ -243,13 +246,15 @@ struct nilfs *nilfs_open(const char *dev, int flags)
 
 	if (flags & NILFS_OPEN_RAW) {
 		if (dev == NULL) {
-			if (nilfs_find_fs(nilfs, dev, MNTOPT_RW) < 0)
+			if (nilfs_find_fs(nilfs, dev, dir, MNTOPT_RW) < 0)
 				goto out_fd;
 		} else {
-			if ((nilfs->n_dev = strdup(dev)) == NULL)
+			nilfs->n_dev = strdup(dev);
+			if (nilfs->n_dev == NULL)
 				goto out_fd;
 		}
-		if ((nilfs->n_devfd = open(nilfs->n_dev, O_RDONLY)) < 0)
+		nilfs->n_devfd = open(nilfs->n_dev, O_RDONLY);
+		if (nilfs->n_devfd < 0)
 			goto out_fd;
 		if (nilfs_read_sb(nilfs) < 0)
 			goto out_fd;
@@ -257,10 +262,10 @@ struct nilfs *nilfs_open(const char *dev, int flags)
 
 	if (flags &
 	    (NILFS_OPEN_RDONLY | NILFS_OPEN_WRONLY | NILFS_OPEN_RDWR)) {
-		if (nilfs_find_fs(nilfs, dev, MNTOPT_RW) < 0) {
+		if (nilfs_find_fs(nilfs, dev, dir, MNTOPT_RW) < 0) {
 			if (!(flags & NILFS_OPEN_RDONLY))
 				goto out_nilfs;
-			if (nilfs_find_fs(nilfs, dev, MNTOPT_RO) < 0)
+			if (nilfs_find_fs(nilfs, dev, dir, MNTOPT_RO) < 0)
 				goto out_nilfs;
 		}
 		oflags = O_CREAT;
@@ -270,10 +275,10 @@ struct nilfs *nilfs_open(const char *dev, int flags)
 			oflags |= O_WRONLY;
 		else if (flags & NILFS_OPEN_RDWR)
 			oflags |= O_RDWR;
-		if ((nilfs->n_iocfd = open(nilfs->n_ioc, oflags,
-					   S_IRUSR | S_IWUSR |
-					   S_IRGRP | S_IWGRP |
-					   S_IROTH | S_IWOTH)) < 0)
+		nilfs->n_iocfd = open(nilfs->n_ioc, oflags,
+				      S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP |
+				      S_IROTH | S_IWOTH);
+		if (nilfs->n_iocfd < 0)
 			goto out_fd;
 	}
 

@@ -209,8 +209,9 @@ int main(int argc, char *argv[])
 		else
 			dev = argv[optind++];
 	}
-		
-	if ((nilfs = nilfs_open(dev, NILFS_OPEN_RAW)) == NULL) {
+
+	nilfs = nilfs_open(dev, NULL, NILFS_OPEN_RAW);
+	if (nilfs == NULL) {
 		fprintf(stderr, "%s: %s: cannot open NILFS\n", progname, dev);
 		exit(1);
 	}

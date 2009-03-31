@@ -118,7 +118,7 @@ struct nilfs {
 #define NILFS_OPT_MMAP	0x01
 
 
-struct nilfs *nilfs_open(const char *, int);
+struct nilfs *nilfs_open(const char *, const char *, int);
 void nilfs_close(struct nilfs *);
 
 const char *nilfs_get_dev(const struct nilfs *);
