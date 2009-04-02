@@ -27,6 +27,7 @@
 #ifndef PATH_MAX
 #define PATH_MAX 8192
 #endif
+#include <stdlib.h>		/* free() */
 #include <unistd.h>
 #include <string.h>
 #include <errno.h>
