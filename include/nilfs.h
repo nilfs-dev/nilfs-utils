@@ -132,7 +132,7 @@ int nilfs_parse_cno_range(const char *, nilfs_cno_t *, nilfs_cno_t *, int);
 
 struct nilfs_super_block *nilfs_get_sb(struct nilfs *);
 
-inline static int nilfs_lock(struct nilfs *nilfs, int cmd, int type,
+static inline int nilfs_lock(struct nilfs *nilfs, int cmd, int type,
 			     off_t start, int whence, off_t len)
 {
 	struct flock flock;
@@ -145,11 +145,11 @@ inline static int nilfs_lock(struct nilfs *nilfs, int cmd, int type,
 }
 
 #define NILFS_LOCK_FNS(name, type)					\
-inline static int nilfs_lock_##name(struct nilfs *nilfs)		\
+static inline int nilfs_lock_##name(struct nilfs *nilfs)		\
 {									\
 	return nilfs_lock(nilfs, F_SETLKW, type, 0, SEEK_SET, 1);	\
 }									\
-inline static int nilfs_unlock_##name(struct nilfs *nilfs)		\
+static inline int nilfs_unlock_##name(struct nilfs *nilfs)		\
 {									\
 	return nilfs_lock(nilfs, F_SETLK, F_UNLCK, 0, SEEK_SET, 1);	\
 }
@@ -246,7 +246,7 @@ void nilfs_file_init(struct nilfs_file *, const struct nilfs_psegment *);
 int nilfs_file_is_end(const struct nilfs_file *);
 void nilfs_file_next(struct nilfs_file *);
 
-inline static int nilfs_file_is_super(const struct nilfs_file *file)
+static inline int nilfs_file_is_super(const struct nilfs_file *file)
 {
 	__u64 ino;
 
@@ -264,12 +264,12 @@ void nilfs_block_init(struct nilfs_block *, const struct nilfs_file *);
 int nilfs_block_is_end(const struct nilfs_block *);
 void nilfs_block_next(struct nilfs_block *);
 
-inline static int nilfs_block_is_data(const struct nilfs_block *blk)
+static inline int nilfs_block_is_data(const struct nilfs_block *blk)
 {
 	return blk->b_index < le32_to_cpu(blk->b_file->f_finfo->fi_ndatablk);
 }
 
-inline static int nilfs_block_is_node(const struct nilfs_block *blk)
+static inline int nilfs_block_is_node(const struct nilfs_block *blk)
 {
 	return blk->b_index >= le32_to_cpu(blk->b_file->f_finfo->fi_ndatablk);
 }

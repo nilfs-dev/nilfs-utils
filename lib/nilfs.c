@@ -76,9 +76,9 @@
 #include "realpath.h"
 
 
-inline static int iseol(int c)
+static inline int iseol(int c)
 {
-	return ((c == '\n') || (c == '\0'));
+	return (c == '\n' || c == '\0');
 }
 
 static size_t tokenize(char *line, char **tokens, size_t ntoks)

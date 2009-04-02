@@ -51,17 +51,17 @@ void nilfs_vector_destroy(struct nilfs_vector *);
 void *nilfs_vector_get_new_element(struct nilfs_vector *);
 int nilfs_vector_delete_elements(struct nilfs_vector *, unsigned int, size_t);
 
-inline static void *nilfs_vector_get_data(const struct nilfs_vector *vector)
+static inline void *nilfs_vector_get_data(const struct nilfs_vector *vector)
 {
 	return vector->v_data;
 }
 
-inline static size_t nilfs_vector_get_size(const struct nilfs_vector *vector)
+static inline size_t nilfs_vector_get_size(const struct nilfs_vector *vector)
 {
 	return vector->v_nelems;
 }
 
-inline static void *nilfs_vector_get_element(struct nilfs_vector *vector,
+static inline void *nilfs_vector_get_element(struct nilfs_vector *vector,
 					     unsigned int index)
 {
 	return (index < vector->v_nelems) ?
@@ -69,13 +69,13 @@ inline static void *nilfs_vector_get_element(struct nilfs_vector *vector,
 		NULL;
 }
 
-inline static int nilfs_vector_delete_element(struct nilfs_vector *vector,
+static inline int nilfs_vector_delete_element(struct nilfs_vector *vector,
 					      unsigned int index)
 {
 	return nilfs_vector_delete_elements(vector, index, 1);
 }
 
-inline static void nilfs_vector_sort(struct nilfs_vector *vector,
+static inline void nilfs_vector_sort(struct nilfs_vector *vector,
 				     int (*compar)(const void *, const void *))
 {
 	qsort(vector->v_data, vector->v_nelems, vector->v_elemsize, compar);

@@ -320,11 +320,9 @@ static void nilfs_cldconfig_set_default(struct nilfs_cldconfig *config)
 	config->cf_log_priority = NILFS_CLDCONFIG_LOG_PRIORITY;
 }
 
-inline static int iseol(int c)
+static inline int iseol(int c)
 {
-	return ((c == '\n') ||
-		(c == '\0') ||
-		(c == NILFS_CLDCONFIG_COMMENT_CHAR));
+	return (c == '\n' || c == '\0' || c == NILFS_CLDCONFIG_COMMENT_CHAR);
 }
 
 static size_t tokenize(char *line, char **tokens, size_t ntoks)
