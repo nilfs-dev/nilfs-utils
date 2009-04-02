@@ -14,7 +14,7 @@ lib_LTLIBRARIES = libnilfs.la
 noinst_LTLIBRARIES = libnilfsmisc.la
 
 libnilfsmisc_la_SOURCES = crc32.c realpath.c
-libnilfsmisc_la_CFLAGS = -Wall
+libnilfsmisc_la_CFLAGS = -Wall -fPIC
 libnilfsmisc_la_CPPFLAGS = -I$(top_srcdir)/include
 libnilfsmisc_la_LDFLAGS = -static
 
