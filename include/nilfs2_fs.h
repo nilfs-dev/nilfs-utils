@@ -1,5 +1,5 @@
 /*
- * nilfs_fs.h - NILFS on-disk structures and common declarations.
+ * nilfs2_fs.h - NILFS2 on-disk structures and common declarations.
  *
  * Copyright (C) 2005-2008 Nippon Telegraph and Telephone Corporation.
  *

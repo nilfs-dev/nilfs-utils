@@ -54,7 +54,7 @@ typedef __u16 __le16;
 #endif
 #endif
 
-#include "nilfs_fs.h"
+#include "nilfs2_fs.h"
 
 #define NILFS_DISKHDR_SIZE 		4096 /* HDD header (MBR+superblock) */
 #define NILFS_DISK_ERASE_SIZE		1048576	/* size of first and last

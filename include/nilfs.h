@@ -74,8 +74,8 @@ typedef __u64	__be64;
 #error "unknown endian"
 #endif	/* __BYTE_ORDER */
 
-/* XXX: nilfs_fs.h requires cpu_to_le32 and le32_to_cpu */
-#include "nilfs_fs.h"
+/* XXX: nilfs2_fs.h requires cpu_to_le32 and le32_to_cpu */
+#include "nilfs2_fs.h"
 
 /* XXX: sector_t is not defined in user land */
 typedef __u64 sector_t;	// XXX: __u64 ??
@@ -246,14 +246,12 @@ void nilfs_file_init(struct nilfs_file *, const struct nilfs_psegment *);
 int nilfs_file_is_end(const struct nilfs_file *);
 void nilfs_file_next(struct nilfs_file *);
 
-/* XXX: should be defined in nilfs_fs.h */
 inline static int nilfs_file_is_super(const struct nilfs_file *file)
 {
 	__u64 ino;
 
 	ino = le64_to_cpu(file->f_finfo->fi_ino);
 	return ino == NILFS_DAT_INO;
-	//return (ino == NILFS_DAT_INO) || (ino == NILFS_DAT_CHECKPOINT) || (ino == NILFS_DAT_SUFILE);
 }
 
 #define nilfs_file_for_each(file, pseg)		\
