@@ -360,6 +360,9 @@ prepare_mount(struct nilfs_mount_info *mi, const struct mount_options *mo)
 	mi->optstr = NULL;
 	mi->mounted = mounted(mi->device, mi->mntdir);
 
+	if (mo->flags & MS_BIND)
+		return 0;
+
 	mc = find_rw_mount(mi->device);
 	if (mc == NULL)
 		return 0; /* no previous rw-mount */
@@ -450,7 +453,7 @@ static void update_mount_state(struct nilfs_mount_info *mi,
 	char *exopts;
 	int rungc;
 
-	rungc = !(mo->flags & MS_RDONLY) &&
+	rungc = !(mo->flags & MS_RDONLY) && !(mo->flags & MS_BIND) &&
 		(mi->type != RW2RW_REMOUNT || mi->gcpid == 0);
 	if (!check_mtab()) {
 		if (rungc)
