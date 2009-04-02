@@ -538,7 +538,7 @@ int main(int argc, char *argv[])
 		die(EX_USAGE, _("%s: no %s found - aborting"), progname,
 		    MOUNTED);
 
-	if (opts->flags & MS_RDONLY) {
+	if (!(opts->flags & MS_RDONLY) && !(opts->flags & MS_BIND)) {
 		res = device_is_readonly(device, &devro);
 		if (res)
 			die(EX_USAGE, _("%s: device %s not accessible: %s"),
