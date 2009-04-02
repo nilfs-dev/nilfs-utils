@@ -1,3 +1,22 @@
+nilfs-utils-2.0.12  Thu Apr  2, 2009 JST
+
+	* fix problem of libnilfs which didn't follow symbolic links for
+	  devices.
+	* fix incorrect behavior of mkfs.nilfs2 with -q option
+	* fix command line buffer overflow error for mkfs -c
+	* settle mess for bind mounts.
+	* fix a bug in device check of mount.nilfs2 which confirm device is
+	  acesssible or not.
+	* rewrite lscp command to interleavingly call nilfs_get_cpinfo()
+	  and list its result.
+	* rewrite lssu command to interleavingly call nilfs_get_suinfo()
+	  and list its result.
+	* lscp and lssu supported options which specify the start index and
+	  the number of items to be listed.
+	* revise manpages of lscp and lssu.
+	* dumpseg changed to print some details of segment header.
+	* delete style comments for emacs editor.
+
 nilfs-utils-2.0.11  Fri Mar 13, 2009 JST
 
 	* force mount.nilfs2 to print a message to warn possible

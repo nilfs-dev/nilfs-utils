@@ -8,7 +8,7 @@ dnl Written by Koji Sato <koji@osrg.net>.
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ(2.60)
-AC_INIT(NILFS utils, 2.0.11, nilfs@osrg.net)
+AC_INIT(NILFS utils, 2.0.12, nilfs@osrg.net)
 AM_INIT_AUTOMAKE
 AC_CONFIG_SRCDIR([config.h.in])
 AC_CONFIG_HEADER([config.h])
