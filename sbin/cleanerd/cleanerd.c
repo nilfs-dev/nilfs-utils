@@ -146,6 +146,8 @@ static int nilfs_cleanerd_reconfig(struct nilfs_cleanerd *cleanerd)
 			cleanerd->c_protcno = 0;
 			cleanerd->c_prottime = 0;
 		}
+		cleanerd->c_ncleansegs =
+			cleanerd->c_config.cf_nsegments_per_clean;
 	}
 	return ret;
 }
@@ -227,14 +229,12 @@ static int nilfs_comp_segimp(const void *elem1, const void *elem2)
  * @cleanerd: cleanerd object
  * @sustat: status information on segments
  * @segnums: array of segment numbers to store selected segments
- * @nsegs: size of the @segnums array
  * @prottimep: place to store lower limit of protected period
  * @oldestp: place to store the oldest mod-time
  */
 static ssize_t
 nilfs_cleanerd_select_segments(struct nilfs_cleanerd *cleanerd,
-			       struct nilfs_sustat *sustat,
-			       __u64 *segnums, size_t nsegs,
+			       struct nilfs_sustat *sustat, __u64 *segnums,
 			       __u64 *prottimep, __u64 *oldestp)
 {
 	struct nilfs *nilfs;
@@ -245,11 +245,12 @@ nilfs_cleanerd_select_segments(struct nilfs_cleanerd *cleanerd,
 	struct timeval tv;
 	__u64 prottime, oldest;
 	__u64 segnum;
-	size_t count;
+	size_t count, nsegs;
 	ssize_t nssegs, n;
 	unsigned long long imp, thr;
 	int i;
 
+	nsegs = cleanerd->c_ncleansegs;
 	nilfs = cleanerd->c_nilfs;
 	config = &cleanerd->c_config;
 
@@ -996,6 +997,9 @@ static ssize_t nilfs_cleanerd_clean_segments(struct nilfs_cleanerd *cleanerd,
 	if (ret > 0) {
 		cleanerd->c_fallback = 0;
 	} else if (ret < 0 && errno == ENOMEM) {
+		if (cleanerd->c_ncleansegs > 1)
+			cleanerd->c_ncleansegs >>= 1;
+
 		cleanerd->c_fallback = 1;
 		ret = 0;
 	}
@@ -1182,7 +1186,9 @@ static int nilfs_cleanerd_clean_loop(struct nilfs_cleanerd *cleanerd)
 	ret = nilfs_cleanerd_init_interval(cleanerd);
 	if (ret < 0)
 		return -1;
+
 	cleanerd->c_running = 1;
+	cleanerd->c_ncleansegs = cleanerd->c_config.cf_nsegments_per_clean;
 
 	while (1) {
 		if (sigprocmask(SIG_BLOCK, &sigset, NULL) < 0) {
@@ -1214,9 +1220,7 @@ static int nilfs_cleanerd_clean_loop(struct nilfs_cleanerd *cleanerd)
 		       (unsigned long long)sustat.ss_ncleansegs);
 
 		ns = nilfs_cleanerd_select_segments(
-			cleanerd, &sustat, segnums,
-			cleanerd->c_config.cf_nsegments_per_clean,
-			&prottime, &oldest);
+			cleanerd, &sustat, segnums, &prottime, &oldest);
 		if (ns < 0) {
 			syslog(LOG_ERR, "cannot select segments: %m");
 			return -1;
