@@ -219,6 +219,7 @@ static int nilfs_comp_segimp(const void *elem1, const void *elem2)
 }
 
 #define NILFS_CLEANERD_NSUINFO	512
+#define NILFS_CLEANERD_NULLTIME (~(__u64)0)
 
 /**
  * nilfs_cleanerd_select_segments - select segments to be reclaimed
@@ -226,14 +227,14 @@ static int nilfs_comp_segimp(const void *elem1, const void *elem2)
  * @sustat: status information on segments
  * @segnums: array of segment numbers to store selected segments
  * @nsegs: size of the @segnums array
- * @ts: pointer to a timespec struct to store sleep time
- * @prottimep: pointer to time to store lower limit of protected period
+ * @prottimep: place to store lower limit of protected period
+ * @oldestp: place to store the oldest mod-time
  */
 static ssize_t
 nilfs_cleanerd_select_segments(struct nilfs_cleanerd *cleanerd,
 			       struct nilfs_sustat *sustat,
 			       __u64 *segnums, size_t nsegs,
-			       struct timespec *ts, __u64 *prottimep)
+			       __u64 *prottimep, __u64 *oldestp)
 {
 	struct nilfs *nilfs;
 	struct nilfs_cldconfig *config;
@@ -312,16 +313,8 @@ nilfs_cleanerd_select_segments(struct nilfs_cleanerd *cleanerd,
 		assert(sm != NULL);
 		segnums[i] = sm->si_segnum;
 	}
-	if (nssegs == 0) {
-		ts->tv_nsec = 0;
-		if (oldest < tv.tv_sec)
-			ts->tv_sec = oldest - prottime + 1;
-		else {
-			ts->tv_sec = config->cf_protection_period + 1;
-			cleanerd->c_running = 0;
-		}
-	}
 	*prottimep = prottime;
+	*oldestp = oldest < tv.tv_sec ? oldest : NILFS_CLEANERD_NULLTIME;
 
  out:
 	nilfs_vector_destroy(smv);
@@ -915,6 +908,7 @@ static ssize_t nilfs_cleanerd_clean_segments(struct nilfs_cleanerd *cleanerd,
 {
 	struct nilfs_vector *vdescv, *bdescv, *periodv, *vblocknrv;
 	ssize_t n, ret = -1;
+	int i;
 
 	if (nsegs == 0)
 		return 0;
@@ -971,10 +965,18 @@ static ssize_t nilfs_cleanerd_clean_segments(struct nilfs_cleanerd *cleanerd,
 				   nilfs_vector_get_data(bdescv),
 				   nilfs_vector_get_size(bdescv),
 				   segnums, n);
-	if (ret < 0)
-		syslog(LOG_ERR, "%m");
-	else
+	if (ret < 0) {
+		syslog(LOG_ERR, "cannot clean segments: %m");
+	} else {
+		if (n > 0) {
+			for (i = 0; i < n; i++)
+				syslog(LOG_DEBUG, "segment %llu cleaned",
+				       (unsigned long long)segnums[i]);
+		} else {
+			syslog(LOG_DEBUG, "no segments cleaned");
+		}
 		ret = n;
+	}
 
  out_lock:
 	if (nilfs_unlock_write(cleanerd->c_nilfs) < 0)
@@ -1066,6 +1068,70 @@ do {						\
 	(ts)->tv_nsec = (tv)->tv_usec * 1000;	\
 } while (0)
 
+static int nilfs_cleanerd_init_interval(struct nilfs_cleanerd *cleanerd)
+{
+	if (gettimeofday(&cleanerd->c_target, NULL) < 0) {
+		syslog(LOG_ERR, "cannot get time: %m");
+		return -1;
+	}
+	cleanerd->c_target.tv_sec += cleanerd->c_config.cf_cleaning_interval;
+	return 0;
+}
+
+static int nilfs_cleanerd_recalc_interval(struct nilfs_cleanerd *cleanerd,
+					  int nchosen, __u64 prottime,
+					  __u64 oldest,
+					  struct timespec *timeout)
+{
+	struct nilfs_cldconfig *config = &cleanerd->c_config;
+	struct timeval curr, diff;
+
+	if (gettimeofday(&curr, NULL) < 0) {
+		syslog(LOG_ERR, "cannot get current time: %m");
+		return -1;
+	}
+
+	if (nchosen == 0) {
+		timeout->tv_nsec = 0;
+		if (oldest == NILFS_CLEANERD_NULLTIME) {
+			timeout->tv_sec = config->cf_protection_period + 1;
+			cleanerd->c_running = 0;
+		} else {
+			timeout->tv_sec = oldest - prottime + 1;
+		}
+		return 0;
+	}
+
+	/* timercmp() does not work for '>=' or '<='. */
+	/* curr >= target */
+	if (!timercmp(&curr, &cleanerd->c_target, <)) {
+		cleanerd->c_target = curr;
+		cleanerd->c_target.tv_sec += config->cf_cleaning_interval;
+		syslog(LOG_DEBUG, "adjust interval");
+		return 1; /* skip a sleep */
+	}
+	timersub(&cleanerd->c_target, &curr, &diff);
+	timeval_to_timespec(&diff, timeout);
+	cleanerd->c_target.tv_sec += config->cf_cleaning_interval;
+	return 0;
+}
+
+static int nilfs_cleanerd_sleep(struct nilfs_cleanerd *cleanerd,
+				struct timespec *timeout)
+{
+	syslog(LOG_DEBUG, "wait %ld.%09ld",
+	       timeout->tv_sec, timeout->tv_nsec);
+	if (nanosleep(timeout, NULL) < 0) {
+		if (errno != EINTR) {
+			syslog(LOG_ERR, "cannot sleep: %m");
+			return -1;
+		}
+		cleanerd->c_running = 1;
+	}
+	syslog(LOG_DEBUG, "wake up");
+	return 0;
+}
+
 /**
  * nilfs_cleanerd_clean_loop - main loop of the cleaner daemon
  * @cleanerd: cleanerd object
@@ -1073,12 +1139,11 @@ do {						\
 static int nilfs_cleanerd_clean_loop(struct nilfs_cleanerd *cleanerd)
 {
 	struct nilfs_sustat sustat;
-	struct timeval curr, target, diff;
-	struct timespec timeout;
-	__u64 prev_nongc_ctime = 0, prottime;
+	__u64 prev_nongc_ctime = 0, prottime, oldest;
 	__u64 segnums[NILFS_CLDCONFIG_NSEGMENTS_PER_CLEAN_MAX];
+	struct timespec timeout;
 	sigset_t sigset;
-	int i, ns, n;
+	int ns, ret;
 
 	sigemptyset(&sigset);
 	if (sigprocmask(SIG_SETMASK, &sigset, NULL) < 0) {
@@ -1098,11 +1163,9 @@ static int nilfs_cleanerd_clean_loop(struct nilfs_cleanerd *cleanerd)
 
 	nilfs_cleanerd_reload_config = 0;
 
-	if (gettimeofday(&target, NULL) < 0) {
-		syslog(LOG_ERR, "cannot get time: %m");
+	ret = nilfs_cleanerd_init_interval(cleanerd);
+	if (ret < 0)
 		return -1;
-	}
-	target.tv_sec += cleanerd->c_config.cf_cleaning_interval;
 	cleanerd->c_running = 1;
 
 	while (1) {
@@ -1137,65 +1200,35 @@ static int nilfs_cleanerd_clean_loop(struct nilfs_cleanerd *cleanerd)
 		ns = nilfs_cleanerd_select_segments(
 			cleanerd, &sustat, segnums,
 			cleanerd->c_config.cf_nsegments_per_clean,
-			&timeout, &prottime);
+			&prottime, &oldest);
 		if (ns < 0) {
 			syslog(LOG_ERR, "cannot select segments: %m");
 			return -1;
 		}
 		syslog(LOG_DEBUG, "%d segment%s selected to be cleaned",
 		       ns, (ns <= 1) ? "" : "s");
-
 		if (ns > 0) {
-			n = nilfs_cleanerd_clean_segments(cleanerd, &sustat,
-							  segnums, ns,
-							  prottime);
-			if (n < 0) {
-				syslog(LOG_ERR, "cannot clean segments: %m");
+			ret = nilfs_cleanerd_clean_segments(
+				cleanerd, &sustat, segnums, ns, prottime);
+			if (ret < 0)
 				return -1;
-			} else if (n > 0) {
-				for (i = 0; i < n; i++)
-					syslog(LOG_DEBUG,
-					       "segment %llu cleaned",
-					       (unsigned long long)segnums[i]);
-			} else {
-				syslog(LOG_DEBUG, "no segments cleaned");
-			}
-
-			if (gettimeofday(&curr, NULL) < 0) {
-				syslog(LOG_ERR, "cannot get current time: %m");
-				return -1;
-			}
-			/* timercmp() does not work for '>=' or '<='. */
-			/* curr >= target */
-			if (!timercmp(&curr, &target, <)) {
-				target = curr;
-				target.tv_sec +=
-					cleanerd->c_config.cf_cleaning_interval;
-				syslog(LOG_DEBUG, "adjust interval");
-				continue;
-			}
-			timersub(&target, &curr, &diff);
-			timeval_to_timespec(&diff, &timeout);
-			target.tv_sec +=
-				cleanerd->c_config.cf_cleaning_interval;
 		}
 
+		ret = nilfs_cleanerd_recalc_interval(
+			cleanerd, ns, prottime, oldest, &timeout);
+		if (ret < 0)
+			return -1;
+		else if (ret > 0)
+			continue;
  sleep:
 		if (sigprocmask(SIG_UNBLOCK, &sigset, NULL) < 0) {
 			syslog(LOG_ERR, "cannot set signal mask: %m");
 			return -1;
 		}
 
-		syslog(LOG_DEBUG, "wait %ld.%09ld",
-		       timeout.tv_sec, timeout.tv_nsec);
-		if (nanosleep(&timeout, NULL) < 0) {
-			if (errno != EINTR) {
-				syslog(LOG_ERR, "cannot sleep: %m");
-				return -1;
-			}
-			cleanerd->c_running = 1;
-		}
-		syslog(LOG_DEBUG, "wake up");
+		ret = nilfs_cleanerd_sleep(cleanerd, &timeout);
+		if (ret < 0)
+			return -1;
 	}
 }
 

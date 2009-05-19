@@ -41,6 +41,7 @@
  * @c_running: running state
  * @c_protcno: the minimum of checkpoint numbers within protection period
  * @c_prottime: start time of protection period
+ * @c_target: target time for sleeping
  */
 struct nilfs_cleanerd {
 	struct nilfs *c_nilfs;
@@ -49,6 +50,7 @@ struct nilfs_cleanerd {
 	int c_running;
 	nilfs_cno_t c_protcno;
 	__u64 c_prottime;
+	struct timeval c_target;
 };
 
 #ifndef SYSCONFDIR
