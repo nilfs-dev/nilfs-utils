@@ -184,6 +184,7 @@ nilfs_cleanerd_create(const char *dev, const char *dir, const char *conffile)
 	cleanerd->c_running = 0;
 	cleanerd->c_protcno = 0; /* means unspecified */
 	cleanerd->c_prottime = 0;
+	cleanerd->c_fallback = 0;
 
 	return cleanerd;
 
@@ -991,6 +992,13 @@ static ssize_t nilfs_cleanerd_clean_segments(struct nilfs_cleanerd *cleanerd,
 		nilfs_vector_destroy(periodv);
 	if (vblocknrv != NULL)
 		nilfs_vector_destroy(vblocknrv);
+
+	if (ret > 0) {
+		cleanerd->c_fallback = 0;
+	} else if (ret < 0 && errno == ENOMEM) {
+		cleanerd->c_fallback = 1;
+		ret = 0;
+	}
 	return ret;
 }
 
@@ -1102,6 +1110,14 @@ static int nilfs_cleanerd_recalc_interval(struct nilfs_cleanerd *cleanerd,
 		return 0;
 	}
 
+	if (cleanerd->c_fallback) {
+		cleanerd->c_target = curr;
+		cleanerd->c_target.tv_sec += config->cf_retry_interval;
+		timersub(&cleanerd->c_target, &curr, &diff);
+		timeval_to_timespec(&diff, timeout);
+		syslog(LOG_DEBUG, "retry interval");
+		return 0;
+	}
 	/* timercmp() does not work for '>=' or '<='. */
 	/* curr >= target */
 	if (!timercmp(&curr, &cleanerd->c_target, <)) {
