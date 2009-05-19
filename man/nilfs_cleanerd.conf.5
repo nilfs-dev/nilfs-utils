@@ -36,6 +36,11 @@ The default value is 2.
 .B cleaning_interval
 Specify the cleaning interval in seconds.  The default value is 5.
 .TP
+.B retry_interval
+Specify retry interval in seconds.  This value provides the retry
+interval of GC in case of resource shortages.  The default value is
+60.
+.TP
 .B use_mmap
 Specify whether to use \fBmmap\fP(2) for reading segments.  At
 present, this option is enabled if supported regardless of this

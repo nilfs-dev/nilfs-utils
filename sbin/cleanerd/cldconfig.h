@@ -52,6 +52,7 @@ struct nilfs_cldconfig {
 	time_t cf_protection_period;
 	int cf_nsegments_per_clean;
 	time_t cf_cleaning_interval;
+	time_t cf_retry_interval;
 	int cf_use_mmap;
 	int cf_log_priority;
 };
@@ -62,6 +63,7 @@ struct nilfs_cldconfig {
 #define NILFS_CLDCONFIG_PROTECTION_PERIOD		3600
 #define NILFS_CLDCONFIG_NSEGMENTS_PER_CLEAN		2
 #define NILFS_CLDCONFIG_CLEANING_INTERVAL		5
+#define NILFS_CLDCONFIG_RETRY_INTERVAL			60
 #define NILFS_CLDCONFIG_USE_MMAP			1
 #define NILFS_CLDCONFIG_LOG_PRIORITY			LOG_INFO
 

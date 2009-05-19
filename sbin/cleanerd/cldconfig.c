@@ -172,28 +172,49 @@ nilfs_cldconfig_handle_nsegments_per_clean(struct nilfs_cldconfig *config,
 }
 
 static int
-nilfs_cldconfig_handle_cleaning_interval(struct nilfs_cldconfig *config,
-					 char **tokens, size_t ntoks)
+nilfs_cldconfig_get_ulong_argument(char **tokens, size_t ntoks,
+				   unsigned long *nump)
 {
-	time_t sec;
+	unsigned long num;
 	char *endptr;
 
 	if (check_tokens(tokens, ntoks, 2, 2) < 0)
-		return 0;
+		return -1;
 
-	sec = strtoul(tokens[1], &endptr, 10);
+	num = strtoul(tokens[1], &endptr, 10);
 	if (*endptr != '\0') {
 		syslog(LOG_WARNING, "%s: %s: not a number",
 		       tokens[0], tokens[1]);
-		return 0;
+		return -1;
 	}
-	if ((sec == ULONG_MAX) && (errno == ERANGE)) {
+	if (num == ULONG_MAX && errno == ERANGE) {
 		syslog(LOG_WARNING, "%s: %s: number too large",
 		       tokens[0], tokens[1]);
-		return 0;
+		return -1;
 	}
+	*nump = num;
+	return 0;
+}
 
-	config->cf_cleaning_interval = sec;
+static int
+nilfs_cldconfig_handle_cleaning_interval(struct nilfs_cldconfig *config,
+					 char **tokens, size_t ntoks)
+{
+	unsigned long sec;
+
+	if (nilfs_cldconfig_get_ulong_argument(tokens, ntoks, &sec) == 0)
+		config->cf_cleaning_interval = sec;
+	return 0;
+}
+
+static int
+nilfs_cldconfig_handle_retry_interval(struct nilfs_cldconfig *config,
+				      char **tokens, size_t ntoks)
+{
+	unsigned long sec;
+
+	if (nilfs_cldconfig_get_ulong_argument(tokens, ntoks, &sec) == 0)
+		config->cf_retry_interval = sec;
 	return 0;
 }
 
@@ -259,6 +280,7 @@ nilfs_cldconfig_keyword_table[] = {
 	{"selection_policy",	nilfs_cldconfig_handle_selection_policy},
 	{"nsegments_per_clean",	nilfs_cldconfig_handle_nsegments_per_clean},
 	{"cleaning_interval",	nilfs_cldconfig_handle_cleaning_interval},
+	{"retry_interval",	nilfs_cldconfig_handle_retry_interval},
 	{"use_mmap",		nilfs_cldconfig_handle_use_mmap},
 	{"log_priority",	nilfs_cldconfig_handle_log_priority},
 };
@@ -293,6 +315,7 @@ static void nilfs_cldconfig_set_default(struct nilfs_cldconfig *config)
 	config->cf_protection_period = NILFS_CLDCONFIG_PROTECTION_PERIOD;
 	config->cf_nsegments_per_clean = NILFS_CLDCONFIG_NSEGMENTS_PER_CLEAN;
 	config->cf_cleaning_interval = NILFS_CLDCONFIG_CLEANING_INTERVAL;
+	config->cf_retry_interval = NILFS_CLDCONFIG_RETRY_INTERVAL;
 	config->cf_use_mmap = NILFS_CLDCONFIG_USE_MMAP;
 	config->cf_log_priority = NILFS_CLDCONFIG_LOG_PRIORITY;
 }
