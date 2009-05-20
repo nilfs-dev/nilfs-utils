@@ -75,12 +75,12 @@ static void lssu_print_header(void)
 	printf("              SEGNUM        DATE     TIME STAT     NBLOCKS\n");
 }
 
-static void lssu_print_suinfo(__u64 segnum, ssize_t nsi, int all)
+static ssize_t lssu_print_suinfo(__u64 segnum, ssize_t nsi, int all)
 {
 	struct tm tm;
 	time_t t;
 	char timebuf[LSSU_BUFSIZE];
-	ssize_t i;
+	ssize_t i, n = 0;
 
 	for (i = 0; i < nsi; i++, segnum++) {
 		if (all || !nilfs_suinfo_clean(&suinfos[i])) {
@@ -99,15 +99,17 @@ static void lssu_print_suinfo(__u64 segnum, ssize_t nsi, int all)
 			       nilfs_suinfo_dirty(&suinfos[i]) ? 'd' : '-',
 			       nilfs_suinfo_error(&suinfos[i]) ? 'e' : '-',
 			       suinfos[i].sui_nblocks);
+			n++;
 		}
 	}
+	return n;
 }
 
 static int lssu_list_suinfo(struct nilfs *nilfs, int all)
 {
 	struct nilfs_sustat sustat;
 	__u64 segnum, rest, count;
-	ssize_t nsi;
+	ssize_t nsi, n;
 
 	lssu_print_header();
 	if (nilfs_get_sustat(nilfs, &sustat) < 0)
@@ -116,15 +118,13 @@ static int lssu_list_suinfo(struct nilfs *nilfs, int all)
 	rest = param_lines && param_lines < sustat.ss_nsegs ? param_lines :
 		sustat.ss_nsegs;
 
-	for ( ; rest > 0; rest -= nsi) {
-		if (segnum >= sustat.ss_nsegs)
-			break;
+	for ( ; rest > 0 && segnum < sustat.ss_nsegs; rest -= n) {
 		count = (rest < LSSU_NSEGS) ? rest : LSSU_NSEGS;
 		nsi = nilfs_get_suinfo(nilfs, segnum, suinfos, count);
 		if (nsi < 0)
 			return 1;
 
-		lssu_print_suinfo(segnum, nsi, all);
+		n = lssu_print_suinfo(segnum, nsi, all);
 		segnum += nsi;
 	}
 
