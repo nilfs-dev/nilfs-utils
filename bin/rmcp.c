@@ -1,7 +1,7 @@
 /*
  * rmcp.c - NILFS command of removing checkpoints.
  *
- * Copyright (C) 2007 Nippon Telegraph and Telephone Corporation.
+ * Copyright (C) 2007-2009 Nippon Telegraph and Telephone Corporation.
  *
  * This file is part of NILFS.
  *
@@ -19,7 +19,8 @@
  * along with NILFS; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  *
- * Written by Koji Sato <koji@osrg.net>.
+ * Written by Koji Sato <koji@osrg.net>,
+ *            Ryusuke Konishi <ryusuke@osrg.net>.
  */
 
 #ifdef HAVE_CONFIG_H
@@ -67,32 +68,74 @@ const static struct option long_options[] = {
 #define RMCP_USAGE	"Usage: %s [-fih] [device] cno...\n"
 #endif	/* _GNU_SOURCE */
 
+#define CHCP_PROMPT							\
+	"\nTo delete snapshot(s), change them into checkpoints with\n"	\
+	"chcp command before removal.\n"
+
 #define RMCP_BASE 10
 
+static char *progname;
 
-static int rmcp_confirm(char *progname, nilfs_cno_t cno)
+static int force = 0;
+static int interactive = 0;
+
+static int nsnapshots = 0;
+
+static int rmcp_confirm(const char *arg)
 {
 	char ans[MAX_INPUT];
 
-	fprintf(stderr, "%s: remove checkpoint %llu? ",
-		progname, (unsigned long long)cno);
+	fprintf(stderr, "%s: remove checkpoint %s? ", progname, arg);
 	if (fgets(ans, MAX_INPUT, stdin) != NULL)
-		return (ans[0] == 'y') || (ans[0] == 'Y');
+		return ans[0] == 'y' || ans[0] == 'Y';
 	return 0;
+}
+
+static int rmcp_remove_range(struct nilfs *nilfs, nilfs_cno_t start,
+			     nilfs_cno_t end, size_t *ndeleted)
+{
+	nilfs_cno_t cno;
+	int nocp = 0, nd = 0;
+	int ret = 0;
+
+	for (cno = start; cno <= end; cno++) {
+		if (nilfs_delete_checkpoint(nilfs, cno) == 0) {
+			nd++;
+			continue;
+		}
+		if (errno == EBUSY || errno == EPERM) {
+			if (!force) {
+				fprintf(stderr,
+					"%s: %llu: cannot remove snapshot\n",
+					progname, (unsigned long long)cno);
+				nsnapshots++;
+				ret = 1;
+			}
+		} else if (errno == ENOENT) {
+			nocp++;
+		} else {
+			fprintf(stderr, "%s: %s\n", progname, strerror(errno));
+			return -1;
+		}
+	}
+	if (!force && nocp > 0 && nd == 0)
+		ret = 1;
+	*ndeleted = nd;
+	return ret;
 }
 
 int main(int argc, char *argv[])
 {
+	char *dev;
 	struct nilfs *nilfs;
-	nilfs_cno_t cno;
-	char *dev, *progname, *endptr;
-	int c, force, interactive, status;
+	struct nilfs_cpstat cpstat;
+	nilfs_cno_t start, end, oldest;
+	size_t ndeleted;
+	int c, status, ret;
 #ifdef _GNU_SOURCE
 	int option_index;
 #endif	/* _GNU_SOURCE */
 
-	force = 0;
-	interactive = 0;
 	opterr = 0;
 	if ((progname = strrchr(argv[0], '/')) == NULL)
 		progname = argv[0];
@@ -128,14 +171,14 @@ int main(int argc, char *argv[])
 	if (optind > argc - 1) {
 		fprintf(stderr, "%s: too few arguments\n", progname);
 		exit(1);
-	} else if (optind == argc - 1)
+	} else if (optind == argc - 1) {
 		dev = NULL;
-	else {
-		strtoul(argv[optind], &endptr, RMCP_BASE);
-		if (*endptr == '\0')
-			dev = NULL;
-		else
+	} else {
+		if (nilfs_parse_cno_range(argv[optind], &start, &end,
+					  RMCP_BASE) < 0)
 			dev = argv[optind++];
+		else
+			dev = NULL;
 	}
 
 	nilfs = nilfs_open(dev, NULL, NILFS_OPEN_RDWR);
@@ -144,45 +187,56 @@ int main(int argc, char *argv[])
 		exit(1);
 	}
 
+	if (nilfs_get_cpstat(nilfs, &cpstat) < 0) {
+		fprintf(stderr, "%s: %s: cannot get checkpoint status: %s\n",
+			progname, dev, strerror(errno));
+		exit(1);
+	}
+
 	status = 0;
-	for (; optind < argc; optind++) {
-		cno = strtoul(argv[optind], &endptr, RMCP_BASE);
-		errno = 0;
-		if (*endptr != '\0') {
-			fprintf(stderr, "%s: %s: invalid checkpoint number\n",
+	for ( ; optind < argc; optind++) {
+		if (nilfs_parse_cno_range(argv[optind], &start, &end,
+					  RMCP_BASE) < 0 ||
+		    start > end ||
+		    start < NILFS_CNO_MIN || end > NILFS_CNO_MAX) {
+			fprintf(stderr,
+				"%s: invalid checkpoint range: %s\n",
 				progname, argv[optind]);
 			status = 1;
 			continue;
-		} else if ((cno == ULONG_MAX) && (errno == ERANGE)) {
-			fprintf(stderr, "%s: %s: %s\n",
-				progname, argv[optind], strerror(errno));
-			status = 1;
+		}
+		if (interactive && !rmcp_confirm(argv[optind]))
 			continue;
+
+		if (start != end) {
+			oldest = nilfs_get_oldest_cno(nilfs);
+			if (start < oldest)
+				start = oldest;
+			if (end >= cpstat.cs_cno)
+				end = cpstat.cs_cno - 2;
 		}
 
-		if (interactive && !rmcp_confirm(progname, cno))
-			continue;
-
-		if (nilfs_delete_checkpoint(nilfs, cno) < 0) {
-			if (errno == EPERM) {
-				fprintf(stderr,	"%s: %llu: operation not permitted\n",
-					progname, (unsigned long long)cno);
-				status = 1;
-			} else if (errno == ENOENT) {
-				if (!force) {
-					fprintf(stderr, "%s: %llu: no checkpoint\n",
-						progname,
-						(unsigned long long)cno);
-					status = 1;
-				}
-			} else {
-				fprintf(stderr, "%s: %s\n",
-					progname, strerror(errno));
-				status = 1;
+		ret = rmcp_remove_range(nilfs, start, end, &ndeleted);
+		if (ret != 0) {
+			status = 1;
+			if (ret > 0)
 				break;
+			if (!force && ndeleted == 0) {
+				if (start == end) {
+					fprintf(stderr, 
+						"%s: invalid checkpoint: %s\n",
+						progname, argv[optind]);
+				} else {
+					fprintf(stderr, 
+						"%s: no valid checkpoints "
+						"found in %s\n",
+						progname, argv[optind]);
+				}
 			}
 		}
 	}
+	if (nsnapshots)
+		fprintf(stderr, CHCP_PROMPT);
 
 	nilfs_close(nilfs);
 	exit(status);

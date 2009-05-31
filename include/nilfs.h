@@ -128,6 +128,7 @@ int nilfs_opt_set_mmap(struct nilfs *);
 int nilfs_opt_test_mmap(struct nilfs *);
 
 nilfs_cno_t nilfs_get_oldest_cno(struct nilfs *);
+int nilfs_parse_cno_range(const char *, nilfs_cno_t *, nilfs_cno_t *, int);
 
 struct nilfs_super_block *nilfs_get_sb(struct nilfs *);
 
