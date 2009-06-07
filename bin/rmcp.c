@@ -219,7 +219,7 @@ int main(int argc, char *argv[])
 		ret = rmcp_remove_range(nilfs, start, end, &ndeleted);
 		if (ret != 0) {
 			status = 1;
-			if (ret > 0)
+			if (ret < 0)
 				break;
 			if (!force && ndeleted == 0) {
 				if (start == end) {
