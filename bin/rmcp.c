@@ -79,8 +79,6 @@ static char *progname;
 static int force = 0;
 static int interactive = 0;
 
-static int nsnapshots = 0;
-
 static int rmcp_confirm(const char *arg)
 {
 	char ans[MAX_INPUT];
@@ -91,11 +89,12 @@ static int rmcp_confirm(const char *arg)
 	return 0;
 }
 
-static int rmcp_remove_range(struct nilfs *nilfs, nilfs_cno_t start,
-			     nilfs_cno_t end, size_t *ndeleted)
+static int rmcp_remove_range(struct nilfs *nilfs,
+			     nilfs_cno_t start, nilfs_cno_t end,
+			     size_t *ndeleted, size_t *nsnapshots)
 {
 	nilfs_cno_t cno;
-	int nocp = 0, nd = 0;
+	int nocp = 0, nd = 0, nss = 0;
 	int ret = 0;
 
 	for (cno = start; cno <= end; cno++) {
@@ -104,23 +103,25 @@ static int rmcp_remove_range(struct nilfs *nilfs, nilfs_cno_t start,
 			continue;
 		}
 		if (errno == EBUSY || errno == EPERM) {
+			nss++;
 			if (!force) {
 				fprintf(stderr,
 					"%s: %llu: cannot remove snapshot\n",
 					progname, (unsigned long long)cno);
-				nsnapshots++;
-				ret = 1;
 			}
 		} else if (errno == ENOENT) {
 			nocp++;
 		} else {
 			fprintf(stderr, "%s: %s\n", progname, strerror(errno));
-			return -1;
+			ret = -1;
+			goto out;
 		}
 	}
-	if (!force && nocp > 0 && nd == 0)
+	if (!force && (nss > 0 || (nocp > 0 && nd == 0)))
 		ret = 1;
+ out:
 	*ndeleted = nd;
+	*nsnapshots = nss;
 	return ret;
 }
 
@@ -130,7 +131,7 @@ int main(int argc, char *argv[])
 	struct nilfs *nilfs;
 	struct nilfs_cpstat cpstat;
 	nilfs_cno_t start, end, oldest;
-	size_t ndeleted;
+	size_t nsnapshots, nss, ndel;
 	int c, status, ret;
 #ifdef _GNU_SOURCE
 	int option_index;
@@ -194,6 +195,7 @@ int main(int argc, char *argv[])
 	}
 
 	status = 0;
+	nsnapshots = 0;
 	for ( ; optind < argc; optind++) {
 		if (nilfs_parse_cno_range(argv[optind], &start, &end,
 					  RMCP_BASE) < 0 ||
@@ -214,28 +216,30 @@ int main(int argc, char *argv[])
 				start = oldest;
 			if (end >= cpstat.cs_cno)
 				end = cpstat.cs_cno - 2;
+
+			if (start > end)
+				goto warn_on_invalid_checkpoint;
 		}
 
-		ret = rmcp_remove_range(nilfs, start, end, &ndeleted);
-		if (ret != 0) {
-			status = 1;
-			if (ret < 0)
-				break;
-			if (!force && ndeleted == 0) {
-				if (start == end) {
-					fprintf(stderr, 
-						"%s: invalid checkpoint: %s\n",
-						progname, argv[optind]);
-				} else {
-					fprintf(stderr, 
-						"%s: no valid checkpoints "
-						"found in %s\n",
-						progname, argv[optind]);
-				}
-			}
-		}
+		ret = rmcp_remove_range(nilfs, start, end, &ndel, &nss);
+		nsnapshots += nss;
+		if (!ret)
+			continue;
+
+		status = 1;
+		if (ret < 0)
+			break;
+
+		if (force || ndel != 0 || end - start + 1 - nss == 0)
+			continue;
+
+ warn_on_invalid_checkpoint:
+		fprintf(stderr, start == end ?
+			"%s: invalid checkpoint: %s\n" :
+			"%s: no valid checkpoints found in %s\n",
+			progname, argv[optind]);
 	}
-	if (nsnapshots)
+	if (!force && nsnapshots)
 		fprintf(stderr, CHCP_PROMPT);
 
 	nilfs_close(nilfs);
