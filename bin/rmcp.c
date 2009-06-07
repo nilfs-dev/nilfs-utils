@@ -217,8 +217,12 @@ int main(int argc, char *argv[])
 			if (end >= cpstat.cs_cno)
 				end = cpstat.cs_cno - 2;
 
-			if (start > end)
+			if (start > end) {
+				if (force)
+					continue;
+				status = 1;
 				goto warn_on_invalid_checkpoint;
+			}
 		}
 
 		ret = rmcp_remove_range(nilfs, start, end, &ndel, &nss);
