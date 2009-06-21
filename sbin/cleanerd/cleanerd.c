@@ -172,8 +172,11 @@ nilfs_cleanerd_create(const char *dev, const char *dir, const char *conffile)
 
 	cleanerd->c_nilfs = nilfs_open(dev, dir,
 				       NILFS_OPEN_RAW | NILFS_OPEN_RDWR);
-	if (cleanerd->c_nilfs == NULL)
+	if (cleanerd->c_nilfs == NULL) {
+		syslog(LOG_ERR, "cannot open nilfs on %s: %s", dev,
+		       strerror(errno));
 		goto out_cleanerd;
+	}
 
 	cleanerd->c_conffile = strdup(conffile ? : NILFS_CLEANERD_CONFFILE);
 	if (cleanerd->c_conffile == NULL)
@@ -1309,7 +1312,8 @@ int main(int argc, char *argv[])
 
 	nilfs_cleanerd = nilfs_cleanerd_create(dev, dir, conffile);
 	if (nilfs_cleanerd == NULL) {
-		syslog(LOG_ERR, "cannot create cleanerd on %s", dev);
+		syslog(LOG_ERR, "cannot create cleanerd on %s: %s", dev,
+		       strerror(errno));
 		status = 1;
 		goto out;
 	}
