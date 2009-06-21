@@ -147,14 +147,27 @@ static int nilfs_find_fs(struct nilfs *nilfs, const char *dev, const char *dir,
 	size_t len;
 	int ret, n;
 	char canonical[PATH_MAX + 2];
+	char *cdev = NULL, *cdir = NULL;
 
-	if (dev && myrealpath(dev, canonical, sizeof(canonical)))
-		dev = canonical;
+	ret = -1;
+	if (dev && myrealpath(dev, canonical, sizeof(canonical))) {
+		cdev = strdup(canonical);
+		if (!cdev)
+			goto failed;
+		dev = cdev;
+	}
+
+	if (dir && myrealpath(dir, canonical, sizeof(canonical))) {
+		cdir = strdup(canonical);
+		if (!cdir)
+			goto failed_dev;
+		dir = cdir;
+	}
 
 	fp = fopen(PROCMOUNTS, "r");
 	if (fp == NULL)
-		return -1;
-	ret = -1;
+		goto failed_dir;
+
 	while (fgets(line, sizeof(line), fp) != NULL) {
 		n = tokenize(line, mntent, NMNTFLDS);
 		assert(n == NMNTFLDS);
@@ -181,6 +194,14 @@ static int nilfs_find_fs(struct nilfs *nilfs, const char *dev, const char *dir,
 		}
 	}
 	fclose(fp);
+
+ failed_dir:
+	free(cdir);
+
+ failed_dev:
+	free(cdev);
+
+ failed:
 	return ret;
 }
 
