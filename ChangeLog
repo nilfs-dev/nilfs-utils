@@ -1,3 +1,22 @@
+nilfs-utils-2.0.13  Mon Jun 22, 2009 JST
+
+	* fix a bug of a nilfs library function leading to the cleanerd
+	  failure on mount.  The bug typically arises when the mount
+	  directory path ends with a slash symbol.  This was caused by a
+	  lack of pathname canonicalization on the argument.
+	* fix the problem that lssu didn't display segments properly
+	  when the number of segments was specified with -n option.
+	* enhance command line parser of rmcp so that it can handle range
+	  of checkpoint numbers.
+	* change rmcp to prompt user to use chcp when rmcp is tried
+	  against snapshots.
+	* add fallback mode to cleanerd which does retries in case of
+	  memory shortage.  In the fallback mode, cleanerd does the
+	  retries decreasing the number of cleaning segments.
+	* add retry_interval directive to nilfs_cleanerd.conf which
+	  specifies the retry interval in the fallback mode.
+	* cleanup of cleanerd main loop
+
 nilfs-utils-2.0.12  Thu Apr  2, 2009 JST
 
 	* fix problem of libnilfs which didn't follow symbolic links for
