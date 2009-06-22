@@ -6,19 +6,21 @@
 nilfs_cleanerd \- NILFS2 garbage collector
 .SH SYNOPSIS
 .B nilfs_cleanerd
-[\fIoptions\fP] \fIdevice\fP
+[\fIoptions\fP] \fIdevice\fP [\fIdirectory\fP]
 .SH DESCRIPTION
 .B nilfs_cleanerd
 is a system daemon which reclaims disk space of a NILFS2 file system
 found in \fIdevice\fP.
 .PP
+The optional \fIdirectory\fP argument specifies the mount point where
+the daemon operates.  It must be an r/w-mount.
+.PP
 This program can be invoked either automatically by
-\fBmount.nilfs2\fP(8) or manually by an administrator.  However, in
-order to avoid state inconsistencies among administration tools, it is
-recommended to invoke \fBnilfs_cleanerd\fP through
-\fBmount.nilfs2\fP(8) and to shutdown it through
-\fBumount.nilfs2\fP(8), where these helper programs are usually
-executed from \fBmount\fP(8) and \fBumount\fP(8) respectively.
+\fBmount.nilfs2\fP(8) or manually by an administrator.  However, 
+users are recommended to invoke \fBnilfs_cleanerd\fP through
+\fBmount.nilfs2\fP(8) or \fBmount\fP(8) and shutdown it through
+\fBumount.nilfs2\fP(8) or \fBumount\fP(8) in order to avoid state
+inconsistencies among administration tools.
 .SH OPTIONS
 .TP
 .B \-c
@@ -26,6 +28,10 @@ Specify configuration file.
 .TP
 .B \-h
 Display help message and exit.
+.TP
+.B \-n
+invoke cleanerd without forking process. This option is intended for
+internal use from \fBmount.nilfs2\fP(8).
 .SH SIGNALS
 .B nilfs_cleanerd
 reacts to a set of signals.  You may send a signal to
@@ -61,7 +67,7 @@ See \fBnilfs_cleanerd.conf\fP(5) for details.
 Koji Sato <koji@osrg.net>
 .SH AVAILABILITY
 .B nilfs_cleanerd
-is part of the nilfs-utils package and is available from
+is part of the nilfs-utils package and available from
 http://www.nilfs.org.
 .SH SEE ALSO
 .BR nilfs (8),
