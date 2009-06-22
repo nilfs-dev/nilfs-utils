@@ -80,21 +80,24 @@ const static struct option long_option[] = {
 	{"help", no_argument, NULL, 'h'},
 	/* internal option for mount.nilfs2 only */
 	{"nofork", no_argument, NULL, 'n'},
+	{"protection-period", required_argument, NULL, 'p'},
 	{NULL, 0, NULL, 0}
 };
 #define NILFS_CLEANERD_OPTIONS	\
 	"  -c, --conffile\tspecify configuration file\n"	\
-	"  -h, --help    \tdisplay this help and exit\n"
+	"  -h, --help    \tdisplay this help and exit\n"	\
+	"  -p, --protection-period\tspecify protection period\n"
 #else	/* !_GNU_SOURCE */
 #define NILFS_CLEANERD_OPTIONS	\
 	"  -c            \tspecify configuration file\n"	\
-	"  -h            \tdisplay this help and exit\n"
+	"  -h            \tdisplay this help and exit\n"	\
+	"  -p,           \tspecify protection period\n"
 #endif	/* _GNU_SOURCE */
 
 static struct nilfs_cleanerd *nilfs_cleanerd;
 static sigjmp_buf nilfs_cleanerd_env;
 static volatile sig_atomic_t nilfs_cleanerd_reload_config;
-
+static volatile unsigned long protection_period;
 
 static void nilfs_cleanerd_usage(const char *progname)
 {
@@ -127,6 +130,11 @@ static int nilfs_cleanerd_config(struct nilfs_cleanerd *cleanerd)
 #endif	/* HAVE_MMAP */
 	nilfs_cleanerd_set_log_priority(cleanerd);
 
+	if (protection_period != ULONG_MAX) {
+		syslog(LOG_INFO, "override protection period to %lu",
+		       protection_period);
+		cleanerd->c_config.cf_protection_period = protection_period;
+	}
 	return 0;
 }
 
@@ -1259,6 +1267,7 @@ int main(int argc, char *argv[])
 {
 	char *progname, *conffile;
 	const char *dev, *dir;
+	char *endptr;
 	int status, nofork, c;
 #ifdef _GNU_SOURCE
 	int option_index;
@@ -1269,14 +1278,15 @@ int main(int argc, char *argv[])
 	conffile = NILFS_CLEANERD_CONFFILE;
 	nofork = 0;
 	status = 0;
+	protection_period = ULONG_MAX;
 	dev = NULL;
 	dir = NULL;
 
 #ifdef _GNU_SOURCE
-	while ((c = getopt_long(argc, argv, "c:hn",
+	while ((c = getopt_long(argc, argv, "c:hnp:",
 				long_option, &option_index)) >= 0) {
 #else	/* !_GNU_SOURCE */
-	while ((c = getopt(argc, argv, "c:hn")) >= 0) {
+	while ((c = getopt(argc, argv, "c:hnp:")) >= 0) {
 #endif	/* _GNU_SOURCE */
 
 		switch (c) {
@@ -1289,6 +1299,20 @@ int main(int argc, char *argv[])
 		case 'n':
 			/* internal option for mount.nilfs2 only */
 			nofork = 1;
+			break;
+		case 'p':
+			protection_period = strtoul(optarg, &endptr, 10);
+			if (endptr == optarg || *endptr != '\0') {
+				fprintf(stderr,
+					"%s: invalid protection period: %s\n",
+					progname, optarg);
+				exit(1);
+			} else if (protection_period == ULONG_MAX &&
+				   errno == ERANGE) {
+				fprintf(stderr, "%s: too large period: %s\n",
+					progname, optarg);
+				exit(1);
+			}
 			break;
 		default:
 			nilfs_cleanerd_usage(progname);
