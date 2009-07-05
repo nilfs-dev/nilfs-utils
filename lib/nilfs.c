@@ -148,6 +148,7 @@ static int nilfs_find_fs(struct nilfs *nilfs, const char *dev, const char *dir,
 	int ret, n;
 	char canonical[PATH_MAX + 2];
 	char *cdev = NULL, *cdir = NULL;
+	char *mdev, *mdir;
 
 	ret = -1;
 	if (dev && myrealpath(dev, canonical, sizeof(canonical))) {
@@ -172,20 +173,36 @@ static int nilfs_find_fs(struct nilfs *nilfs, const char *dev, const char *dir,
 		n = tokenize(line, mntent, NMNTFLDS);
 		assert(n == NMNTFLDS);
 
-		if ((dev == NULL || strcmp(mntent[MNTFLD_FS], dev) == 0) &&
-		    (dir == NULL || strcmp(mntent[MNTFLD_DIR], dir) == 0) &&
-		    strcmp(mntent[MNTFLD_TYPE], NILFS_FSTYPE) == 0 &&
-		    has_mntopt(mntent[MNTFLD_OPTS], opt)) {
+		if (strcmp(mntent[MNTFLD_TYPE], NILFS_FSTYPE) != 0)
+			continue;
+
+		if (dir != NULL) {
+			mdir = mntent[MNTFLD_DIR];
+			if (myrealpath(mdir, canonical, sizeof(canonical)))
+				mdir = canonical;
+			if (strcmp(mdir, dir) != 0)
+				continue;
+		}
+
+		if (dev != NULL) {
+			mdev = mntent[MNTFLD_FS];
+			if (myrealpath(mdev, canonical, sizeof(canonical)))
+				mdev = canonical;
+			if (strcmp(mdev, dev) != 0)
+				continue;
+		}
+
+		if (has_mntopt(mntent[MNTFLD_OPTS], opt)) {
 			nilfs->n_dev = strdup(mntent[MNTFLD_FS]);
 			if (nilfs->n_dev == NULL)
-				break;
+				goto failed_proc_mounts;
 			len = strlen(mntent[MNTFLD_DIR]) +
 				strlen(NILFS_IOC) + 2;
 			nilfs->n_ioc = malloc(sizeof(char) * len);
 			if (nilfs->n_ioc == NULL) {
 				free(nilfs->n_dev);
 				nilfs->n_dev = NULL;
-				break;
+				goto failed_proc_mounts;
 			}
 			snprintf(nilfs->n_ioc, len, "%s/%s",
 				 mntent[MNTFLD_DIR], NILFS_IOC);
@@ -193,6 +210,10 @@ static int nilfs_find_fs(struct nilfs *nilfs, const char *dev, const char *dir,
 			break;
 		}
 	}
+	if (ret < 0)
+		errno = ENOENT;
+
+ failed_proc_mounts:
 	fclose(fp);
 
  failed_dir:
