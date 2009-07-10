@@ -913,9 +913,7 @@ void nilfs_block_next(struct nilfs_block *blk)
 nilfs_cno_t nilfs_get_oldest_cno(struct nilfs *nilfs)
 {
 	struct nilfs_cpinfo cpinfo[1];
-	ssize_t n;
 	
-	n = nilfs_get_cpinfo(nilfs, nilfs->n_mincno, NILFS_CHECKPOINT,
-			     cpinfo, 1);
+	nilfs_get_cpinfo(nilfs, nilfs->n_mincno, NILFS_CHECKPOINT, cpinfo, 1);
 	return nilfs->n_mincno;
 }
