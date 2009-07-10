@@ -199,8 +199,7 @@ int main(int argc, char *argv[])
 	for ( ; optind < argc; optind++) {
 		if (nilfs_parse_cno_range(argv[optind], &start, &end,
 					  RMCP_BASE) < 0 ||
-		    start > end ||
-		    start < NILFS_CNO_MIN || end > NILFS_CNO_MAX) {
+		    start > end || start < NILFS_CNO_MIN) {
 			fprintf(stderr,
 				"%s: invalid checkpoint range: %s\n",
 				progname, argv[optind]);
