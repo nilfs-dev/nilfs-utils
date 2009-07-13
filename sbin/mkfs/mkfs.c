@@ -42,8 +42,10 @@
 #include <strings.h>
 #include <stdarg.h>
 #include <sys/ioctl.h>
+#include <sys/wait.h>
 #include <uuid/uuid.h>
 #include <string.h>
+#include <errno.h>
 #include "mkfs.h"
 
 
@@ -59,7 +61,11 @@ typedef __u64  blocknr_t;
  */
 #define MOUNTS			"/etc/mtab"
 #define LINE_BUFFER_SIZE	256  /* Line buffer size for reading mtab */
-#define COMMAND_BUFFER_SIZE     1024
+#define BLOCKSIZE_BUFFER_SIZE	100
+
+#define BADBLOCKS_NAME		"badblocks"
+
+static const char badblocks[] = "/sbin/" BADBLOCKS_NAME;
 
 /*
  * Command interface primitives
@@ -515,6 +521,7 @@ int main(int argc, char *argv[])
 	struct nilfs_disk_info diskinfo, *di = &diskinfo;
 	struct mkfs_options *opts = &options;
 	struct nilfs_segment_info *si;
+	struct stat statbuf;
 	const char *device;
 	int fd;
 
@@ -522,6 +529,11 @@ int main(int argc, char *argv[])
 	device = argv[optind];
 
 	blocksize = opts->blocksize;
+
+	if (stat(device, &statbuf) != 0)
+		perr("Error: cannot find %s: %s", device, strerror(errno));
+	else if (!S_ISREG(statbuf.st_mode) && !S_ISBLK(statbuf.st_mode))
+		perr("Error: device must be a block device or a file");
 
 	if (opts->cflag)
 		disk_scan(device, opts);  /* check the block device */
@@ -574,17 +586,56 @@ int main(int argc, char *argv[])
  */
 static void disk_scan(const char *device, struct mkfs_options *opts)
 {
-	char buf[COMMAND_BUFFER_SIZE];
-	ssize_t n;
+	struct stat statbuf;
+	pid_t pid;
+	int status;
 
-	n = snprintf(buf, COMMAND_BUFFER_SIZE, "badblocks -b %ld %s %s %s\n",
-		     opts->blocksize, opts->quiet ? "" : "-s",
-		     (opts->cflag > 1) ? "-w" : "", device);
-	if (n < 0 || n >= COMMAND_BUFFER_SIZE)
-		perr("Internal error: command line buffer overflow");
+	if (stat(badblocks, &statbuf) != 0) {
+		pinfo("Warning: %s not found.", badblocks);
+		return;
+	}
+
 	if (!opts->quiet)
 		pinfo("checking blocks");
-	system(buf);
+
+	pid = fork();
+	if (pid == 0) {
+		char bszbuf[BLOCKSIZE_BUFFER_SIZE];
+		const char *args[7];
+		ssize_t n;
+		int i = 0;
+
+		if (setgid(getgid()) < 0)
+			perr("Error: failed to drop setgid privileges");
+		if (setuid(getuid()) < 0)
+			perr("Error: failed to drop setuid privileges");
+		args[i++] = badblocks;
+		args[i++] = "-b";
+		n = snprintf(bszbuf, BLOCKSIZE_BUFFER_SIZE, "%ld",
+			     opts->blocksize);
+		if (n < 0 || n >= BLOCKSIZE_BUFFER_SIZE)
+			perr("Internal error: blocksize buffer overflow");
+		args[i++] = bszbuf;
+
+		if (!opts->quiet)
+			args[i++] = "-s";
+		if (opts->cflag > 1)
+			args[i++] = "-w";
+		args[i++] = device;
+		args[i] = NULL;
+		execv(badblocks, (char **)args);
+		exit(1); /* reach only if failed */
+	} else if (pid != -1) {
+		if (wait(&status) < 0)
+			perr("Error: cannot wait child");
+		else if (!WIFEXITED(status))
+			perr("Error: check aborted");
+		else if (WEXITSTATUS(status))
+			perr("Error: check failed with status(%d)",
+			     WEXITSTATUS(status));
+	} else {
+		perr("Error: cannot fork: %s", strerror(errno));
+	}
 }
 
 static void check_mount(int fd, const char *device)
