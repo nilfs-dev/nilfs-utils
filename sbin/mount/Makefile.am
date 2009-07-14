@@ -25,5 +25,4 @@ install-exec-hook:
 	list='$(sbin_PROGRAMS)'; \
 	for p in $$list; do \
 		chown root $(DESTDIR)$(sbindir)/$$p$(EXEEXT); \
-		chmod u+s $(DESTDIR)$(sbindir)/$$p$(EXEEXT); \
 	done
