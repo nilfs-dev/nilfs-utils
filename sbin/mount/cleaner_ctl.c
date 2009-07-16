@@ -68,8 +68,16 @@ int start_cleanerd(const char *device, const char *mntdir, pid_t *ppid)
 
 	res = fork();
 	if (res == 0) {
-		setuid(getuid());
-		setgid(getgid());
+		if (setgid(getgid()) < 0) {
+			error(_("%s: failed to drop setgid privileges"),
+			      progname);
+			exit(1);
+		}
+		if (setuid(getuid()) < 0) {
+			error(_("%s: failed to drop setuid privileges"),
+			      progname);
+			exit(1);
+		}
 		dargs[i++] = cleanerd;
 		dargs[i++] = cleanerd_nofork_opt;
 		dargs[i++] = device;
