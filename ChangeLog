@@ -1,3 +1,14 @@
+nilfs-utils-2.0.14  Mon Jul 20, 2009 JST
+
+	* fix privilege escalation vulnerability in mkfs.nilfs2
+	* make the invocation of badblocks safer
+	* fix failure of nilfs_open for devices aliased as a symlink
+	* add -p option to cleanerd which overrides protection period
+	* fix code checker warnings reported by Eric Sandeen
+	* drop suid/sgid in proper order when invoking cleaner
+	* drop other suid bits for safety
+	* code cleanups
+
 nilfs-utils-2.0.13  Mon Jun 22, 2009 JST
 
 	* fix a bug of a nilfs library function leading to the cleanerd
