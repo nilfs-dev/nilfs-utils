@@ -1170,7 +1170,7 @@ static int nilfs_cleanerd_sleep(struct nilfs_cleanerd *cleanerd,
 static int nilfs_cleanerd_clean_loop(struct nilfs_cleanerd *cleanerd)
 {
 	struct nilfs_sustat sustat;
-	__u64 prev_nongc_ctime = 0, prottime, oldest;
+	__u64 prev_nongc_ctime = 0, prottime = 0, oldest = 0;
 	__u64 segnums[NILFS_CLDCONFIG_NSEGMENTS_PER_CLEAN_MAX];
 	struct timespec timeout;
 	sigset_t sigset;
