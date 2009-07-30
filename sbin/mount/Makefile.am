@@ -20,9 +20,3 @@ mount_nilfs2_LDADD = $(top_builddir)/lib/libnilfsmisc.la
 
 umount_nilfs2_SOURCES = umount.nilfs2.c $(COMMONSOURCES) $(COMMONHEADERS)
 umount_nilfs2_LDADD = $(top_builddir)/lib/libnilfsmisc.la
-
-install-exec-hook:
-	list='$(sbin_PROGRAMS)'; \
-	for p in $$list; do \
-		chown root $(DESTDIR)$(sbindir)/$$p$(EXEEXT); \
-	done

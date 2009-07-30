@@ -14,9 +14,3 @@ nilfs_cleanerd_CPPFLAGS = -I$(top_srcdir)/include \
 nilfs_cleanerd_LDADD = $(top_builddir)/lib/libnilfs.la
 
 dist_sysconf_DATA = nilfs_cleanerd.conf
-
-install-exec-hook:
-	list='$(sbin_PROGRAMS)'; \
-	for p in $$list; do \
-		chown root $(DESTDIR)$(sbindir)/$$p$(EXEEXT); \
-	done
