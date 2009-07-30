@@ -23,6 +23,3 @@ libnilfs_la_CFLAGS = -Wall
 libnilfs_la_CPPFLAGS = -I$(top_srcdir)/include
 libnilfs_la_LDFLAGS = -version-info $(VERSIONINFO)
 libnilfs_la_LIBADD = libnilfsmisc.la
-
-install-exec-hook:
-	$(LDCONFIG) $(DESTDIR)$(libdir)
