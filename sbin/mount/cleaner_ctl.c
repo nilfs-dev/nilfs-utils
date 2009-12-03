@@ -45,6 +45,7 @@
 
 const char cleanerd[] = "/sbin/" CLEANERD_NAME;
 const char cleanerd_nofork_opt[] = "-n";
+const char cleanerd_protperiod_opt[] = "-p";
 
 extern char *progname;
 
@@ -54,12 +55,14 @@ static inline int process_is_alive(pid_t pid)
 	return (kill(pid, 0) == 0);
 }
 
-int start_cleanerd(const char *device, const char *mntdir, pid_t *ppid)
+int start_cleanerd(const char *device, const char *mntdir,
+		   unsigned long protperiod, pid_t *ppid)
 {
-	const char *dargs[5];
+	const char *dargs[7];
 	struct stat statbuf;
 	int i = 0;
 	int res;
+	char buf[256];
 
 	if (stat(cleanerd, &statbuf) != 0) {
 		error(_("Warning: %s not found"), CLEANERD_NAME);
@@ -80,6 +83,11 @@ int start_cleanerd(const char *device, const char *mntdir, pid_t *ppid)
 		}
 		dargs[i++] = cleanerd;
 		dargs[i++] = cleanerd_nofork_opt;
+		if (protperiod != ULONG_MAX) {
+			dargs[i++] = cleanerd_protperiod_opt;
+			snprintf(buf, sizeof(buf), "%lu", protperiod);
+			dargs[i++] = buf;
+		}
 		dargs[i++] = device;
 		dargs[i++] = mntdir;
 		dargs[i] = NULL;

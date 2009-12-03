@@ -102,6 +102,12 @@ errors and just mark the file system erroneous and continue, or
 remount the file system read-only, or panic and halt the system.)  The
 default is continue.
 .TP
+.BR pp=\fP\fIprotection-period\fP
+Specify the \fIprotection-period\fP for the cleaner daemon (in
+seconds). nilfs_cleanerd never deletes recent checkpoints whose
+elapsed time from its creation is smaller than
+\fIprotection-period\fP.
+.TP
 .BR order=relaxed " / " order=strict
 Specify order semantics for file data.  Metadata is always written to
 follow the POSIX semantics about the order of filesystem operations.

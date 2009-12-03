@@ -69,6 +69,9 @@ char *progname = "umount." NILFS2_FS_NAME;
 const char gcpid_opt_fmt[] = PIDOPT_NAME "=%d";
 typedef int gcpid_opt_t;
 
+const char pp_opt_fmt[] = PPOPT_NAME "=%lu";
+typedef unsigned long pp_opt_t;
+
 struct umount_options {
 	int flags;
 	int force;
@@ -317,6 +320,7 @@ umount_one(const char *spec, const char *node, const char *type,
 	int res, alive = 0;
 	const char *loopdev;
 	pid_t pid;
+	pp_opt_t prot_period;
 
 	if (streq (node, "/") || streq (node, "root"))
 		nomtab++;
@@ -349,7 +353,11 @@ umount_one(const char *spec, const char *node, const char *type,
 				      progname, spec);
 			}
 		} else if (alive && !check_cleanerd(spec, pid)) {
-			if (start_cleanerd(spec, node, &pid) == 0) {
+			if (find_opt(mc->m.mnt_opts, pp_opt_fmt, &prot_period)
+			    < 0)
+				prot_period = ULONG_MAX;
+
+			if (start_cleanerd(spec, node, prot_period, &pid) == 0) {
 				if (verbose)
 					printf(_("%s: restarted %s(pid=%d)\n"),
 					       progname, CLEANERD_NAME,
