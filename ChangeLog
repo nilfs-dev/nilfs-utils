@@ -1,3 +1,11 @@
+nilfs-utils-2.0.15  Thu Dec 31, 2009 JST
+
+	* delete install-exec-hooks to do chown to root
+	* delete install-exec-hook to run ldconfig in /lib
+	* deleted struct nilfs_dat_group_desc
+	* move definition of struct nilfs_btree_node
+	* change support email address to linux-nilfs
+
 nilfs-utils-2.0.14  Mon Jul 20, 2009 JST
 
 	* fix privilege escalation vulnerability in mkfs.nilfs2
