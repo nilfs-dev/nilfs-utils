@@ -42,6 +42,7 @@
 #include <strings.h>
 #include <stdarg.h>
 #include <sys/ioctl.h>
+#include <sys/stat.h>
 #include <sys/wait.h>
 #include <uuid/uuid.h>
 #include <string.h>
