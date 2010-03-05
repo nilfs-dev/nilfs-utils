@@ -82,14 +82,13 @@ filesystem options, see \fBmount\fP(8).
 The following options apply only to the NILFS2 filesystem.  They all
 follow the \fB\-o\fP flag.
 .TP
-.BR barrier=on " / " barrier=off
-Define whether applying barrier writes for the block I/O to a lower
+.BR nobarrier
+Disable barrier writes for the block I/O to a lower
 device.  The barrier write serves an important role to ensure
 consistency of filesystems after a system crash or power failure.
-NILFS2 is designed so as to properly issue the barrier to assure the
-reliability, and enables this option by default.  For devices not
-supporting the barrier write, it will be disabled automatically and a
-warning will be logged.
+NILFS2 uses this feature by default to assure the reliability.  For
+devices not supporting the barrier write, it will be disabled
+automatically and a warning will be logged.
 .TP
 .BR cp=\fP\fIcheckpoint-number\fP
 Specify the \fIcheckpoint-number\fP of the snapshot to be mounted.
