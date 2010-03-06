@@ -7,12 +7,12 @@
  * modify it under the terms of the GNU General Public
  * License as published by the Free Software Foundation; either
  * version 2 of the License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public
  * License along with this program; if not, write to the
  * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
@@ -457,7 +457,7 @@ do_mount_one(struct nilfs_mount_info *mi, const struct mount_options *mo)
 		      progname, fstype);
 		break;
 	default:
-		error(_("%s: Error while mounting %s on %s: %s"), 
+		error(_("%s: Error while mounting %s on %s: %s"),
 		      progname, mi->device, mi->mntdir, strerror(errsv));
 		break;
 	}
@@ -518,7 +518,7 @@ static void update_mount_state(struct nilfs_mount_info *mi,
 	exopts = fix_extra_opts_string(mo->extra_opts, pid, mi->protperiod);
 	mi->optstr = fix_opts_string(((mo->flags & ~MS_NOMTAB) | MS_NETDEV),
 				     exopts, NULL);
-		
+
 	update_mtab_entry(mi->device, mi->mntdir, fstype, mi->optstr, 0, 0,
 			  !mi->mounted);
 	my_free(exopts);
@@ -552,7 +552,7 @@ int main(int argc, char *argv[])
 {
 	struct mount_options *opts = &options;
 	char *device, *mntdir;
-	int res = 0; 
+	int res = 0;
 
 	parse_options(argc, argv, opts);
 

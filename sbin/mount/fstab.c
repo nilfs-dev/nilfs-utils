@@ -197,9 +197,8 @@ read_fstab() {
 	}
 	read_mntentchn(mfp, fnam, mc);
 }
-     
 
-/* Given the name NAME, try to find it in mtab.  */ 
+/* Given the name NAME, try to find it in mtab.  */
 struct mntentchn *
 getmntfile (const char *name) {
 	struct mntentchn *mc, *mc0;
@@ -215,7 +214,7 @@ getmntfile (const char *name) {
 /*
  * Given the directory name NAME, and the place MCPREV we found it last time,
  * try to find more occurrences.
- */ 
+ */
 struct mntentchn *
 getmntdirbackward (const char *name, struct mntentchn *mcprev) {
 	struct mntentchn *mc, *mc0;
@@ -232,7 +231,7 @@ getmntdirbackward (const char *name, struct mntentchn *mcprev) {
 /*
  * Given the device name NAME, and the place MCPREV we found it last time,
  * try to find more occurrences.
- */ 
+ */
 struct mntentchn *
 getmntdevbackward (const char *name, struct mntentchn *mcprev) {
 	struct mntentchn *mc, *mc0;
@@ -262,7 +261,7 @@ is_mounted_once(const char *name) {
 	return (ct == 1);
 }
 
-/* Given the name FILE, try to find the option "loop=FILE" in mtab.  */ 
+/* Given the name FILE, try to find the option "loop=FILE" in mtab.  */
 struct mntentchn *
 getmntoptfile (const char *file) {
 	struct mntentchn *mc, *mc0;
@@ -350,7 +349,7 @@ lock_mtab (void) {
 		sa.sa_handler = handler;
 		sa.sa_flags = 0;
 		sigfillset (&sa.sa_mask);
-  
+
 		while (sigismember (&sa.sa_mask, ++sig) != -1
 		       && sig != SIGCHLD) {
 			if (sig == SIGALRM)

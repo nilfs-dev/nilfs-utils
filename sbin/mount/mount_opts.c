@@ -194,7 +194,7 @@ parse_opt(const char *opt, int *mask, char *extra_opts, int len)
 	if ((len -= strlen(opt)) > 0)
 		strcat(extra_opts, opt);
 }
-  
+
 /* Take -o options list and compute 4th and 5th args to mount(2).  flags
    gets the standard options (indicated by bits) and extra_opts all the rest */
 void parse_opts(const char *options, int *flags, char **extra_opts)
@@ -209,7 +209,7 @@ void parse_opts(const char *options, int *flags, char **extra_opts)
 		char *opt;
 		int len = strlen(opts) + 20;
 
-		*extra_opts = xmalloc(len); 
+		*extra_opts = xmalloc(len);
 		**extra_opts = '\0';
 
 		for (opt = strtok(opts, ","); opt; opt = strtok(NULL, ","))

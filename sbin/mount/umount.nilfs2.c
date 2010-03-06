@@ -7,12 +7,12 @@
  * modify it under the terms of the GNU General Public
  * License as published by the Free Software Foundation; either
  * version 2 of the License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public
  * License along with this program; if not, write to the
  * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
@@ -126,7 +126,7 @@ static int umount_dir(const char *arg)
 	const char *mntdir;
 	struct mntentchn *mc;
 	int ret = 0;
-	
+
 	if (!*arg)
 		die(EX_USAGE, _("Cannot umount \"\"\n"));
 
@@ -135,7 +135,7 @@ static int umount_dir(const char *arg)
 	mc = getmntdirbackward(mntdir, NULL);
 	if (!mc) {
 		error(_("Could not find %s in mtab"), mntdir);
-		
+
 		ret = umount_one(arg, mntdir, fstype, arg, NULL);
 	} else {
 		if (strncmp(mc->m.mnt_type, fstype, strlen(fstype)))
@@ -152,7 +152,7 @@ static int umount_dir(const char *arg)
 int main(int argc, char *argv[])
 {
 	struct umount_options *opts = &options;
-	int ret = 0; 
+	int ret = 0;
 
 	parse_options(argc, argv, opts);
 

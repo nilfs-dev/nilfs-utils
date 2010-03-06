@@ -25,7 +25,7 @@ extern int sloppy;
 
 #define streq(s, t)	(strcmp ((s), (t)) == 0)
 
-/* Functions in sundries.c that are used in mount.c and umount.c  */ 
+/* Functions in sundries.c that are used in mount.c and umount.c  */
 void block_signals (int how);
 char *canonicalize (const char *path);
 void error (const char *fmt, ...);
