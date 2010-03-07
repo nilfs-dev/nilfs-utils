@@ -228,20 +228,6 @@ static void update_gcpid_opt(char **opts, pid_t newpid)
 	*opts = newopts;
 }
 
-static void update_pp_opt(char **opts, pp_opt_t protection_period)
-{
-	char buf[256], *newopts;
-	pp_opt_t oldpp;
-
-	*buf = 0;
-	if (protection_period != ULONG_MAX) {
-		snprintf(buf, sizeof(buf), pp_opt_fmt, protection_period);
-	}
-	newopts = change_opt(*opts, pp_opt_fmt, &oldpp, buf);
-	my_free(*opts);
-	*opts = newopts;
-}
-
 static char *fix_extra_opts_string(const char *extra_opts, pid_t gcpid,
 				   pp_opt_t protection_period)
 {
