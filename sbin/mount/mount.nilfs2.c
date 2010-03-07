@@ -392,8 +392,6 @@ prepare_mount(struct nilfs_mount_info *mi, const struct mount_options *mo)
 	mi->optstr = NULL;
 	mi->mounted = mounted(mi->device, mi->mntdir);
 	mi->protperiod = ULONG_MAX;
-	if (find_opt(mo->extra_opts, pp_opt_fmt, &prot_period) >= 0)
-		mi->protperiod = prot_period;
 
 	if (mo->flags & MS_BIND)
 		return 0;
@@ -401,6 +399,11 @@ prepare_mount(struct nilfs_mount_info *mi, const struct mount_options *mo)
 	mc = find_rw_mount(mi->device);
 	if (mc == NULL)
 		return 0; /* no previous rw-mount */
+
+	/* get the value of previous pp option if exists */
+	prot_period = ULONG_MAX;
+	if (find_opt(mc->m.mnt_opts, pp_opt_fmt, &prot_period) >= 0)
+		mi->protperiod = prot_period;
 
 	switch (mo->flags & (MS_RDONLY | MS_REMOUNT)) {
 	case 0: /* overlapping rw-mount */
@@ -411,17 +414,15 @@ prepare_mount(struct nilfs_mount_info *mi, const struct mount_options *mo)
 	case MS_RDONLY: /* ro-mount (a rw-mount exists) */
 		break;
 	case MS_REMOUNT | MS_RDONLY: /* rw->ro remount */
-		mi->type = RW2RO_REMOUNT;
-		mi->protperiod = ULONG_MAX;
-		/* fallthrough */
-	case MS_REMOUNT:
-		if (!(mo->flags & MS_RDONLY))
-			mi->type = RW2RW_REMOUNT; /* rw->rw remount */
+	case MS_REMOUNT: /* rw->rw remount */
+		mi->type = (mo->flags & MS_RDONLY) ?
+			RW2RO_REMOUNT : RW2RW_REMOUNT;
+
 		if (check_remount_dir(mc, mi->mntdir) < 0)
 			goto failed;
 		pid = 0;
 		if (find_opt(mc->m.mnt_opts, gcpid_opt_fmt, &pid) >= 0 &&
-		    !fake && stop_cleanerd(mi->device, (pid_t)pid) < 0) {
+		    stop_cleanerd(mi->device, (pid_t)pid) < 0) {
 			error(_("%s: remount failed due to %s shutdown "
 				"failure"), progname, CLEANERD_NAME);
 			goto failed;
@@ -473,7 +474,6 @@ do_mount_one(struct nilfs_mount_info *mi, const struct mount_options *mo)
 				printf(_("%s: restarted %s\n"),
 				       progname, CLEANERD_NAME);
 			update_gcpid_opt(&mi->optstr, mi->gcpid);
-			update_pp_opt(&mi->optstr, mi->protperiod);
 			update_mtab_entry(mi->device, mi->mntdir, fstype,
 					  mi->optstr, 0, 0, !mi->mounted);
 		} else {
@@ -490,32 +490,31 @@ do_mount_one(struct nilfs_mount_info *mi, const struct mount_options *mo)
 static void update_mount_state(struct nilfs_mount_info *mi,
 			       const struct mount_options *mo)
 {
-	pid_t pid = fake ? mi->gcpid : 0;
+	pid_t pid = 0;
+	pp_opt_t pp = ULONG_MAX;
 	char *exopts;
 	int rungc;
 
-	if (mo->flags & MS_RDONLY)
-		mi->protperiod = ULONG_MAX;
+	rungc = !(mo->flags & MS_RDONLY) && !(mo->flags & MS_BIND);
 
-	rungc = !(mo->flags & MS_RDONLY) && !(mo->flags & MS_BIND) &&
-		(pid == 0);
 	if (!check_mtab()) {
 		if (rungc)
 			printf(_("%s not started\n"), CLEANERD_NAME);
 		return;
 	}
+
 	if (rungc) {
-		if (start_cleanerd(mi->device, mi->mntdir, mi->protperiod,
-				   &pid) < 0)
+		if (find_opt(mo->extra_opts, pp_opt_fmt, &pp) < 0)
+			pp = mi->protperiod;
+
+		if (start_cleanerd(mi->device, mi->mntdir, pp, &pid) < 0)
 			error(_("%s aborted"), CLEANERD_NAME);
 		else if (verbose)
 			printf(_("%s: started %s\n"), progname, CLEANERD_NAME);
-	} else
-		if (!fake)
-			pid = 0;
+	}
 
 	my_free(mi->optstr);
-	exopts = fix_extra_opts_string(mo->extra_opts, pid, mi->protperiod);
+	exopts = fix_extra_opts_string(mo->extra_opts, pid, pp);
 	mi->optstr = fix_opts_string(((mo->flags & ~MS_NOMTAB) | MS_NETDEV),
 				     exopts, NULL);
 
