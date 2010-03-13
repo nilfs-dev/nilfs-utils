@@ -37,7 +37,6 @@ install-sh
 missing
 depcomp
 INSTALL
-COPYING
 aclocal.m4
 autoconf-[0-9].*
 autom4te.cache
