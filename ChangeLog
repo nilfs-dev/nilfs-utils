@@ -1,3 +1,10 @@
+nilfs-utils-2.0.16  Sat Mar 13, 2010 JST
+
+	* add pseudo mount option "-o pp=<secconds>" which sets protection
+	  period (thanks to David Smid)
+	* fix build against newer glibc
+	* update mount.nilfs2 manpage to reflect mount option changes
+
 nilfs-utils-2.0.15  Thu Dec 31, 2009 JST
 
 	* delete install-exec-hooks to do chown to root
