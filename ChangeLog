@@ -1,3 +1,8 @@
+nilfs-utils-2.0.17  Sat Mar 13, 2010 JST
+
+	* add COPYING file to prevent insertion of the GPLv3 preamble by
+	  newer automake.
+
 nilfs-utils-2.0.16  Sat Mar 13, 2010 JST
 
 	* add pseudo mount option "-o pp=<secconds>" which sets protection
