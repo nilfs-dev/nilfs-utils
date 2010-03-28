@@ -53,8 +53,8 @@ were mounted earlier with the \fB-n\fP option. It can also be used for
 invoking \fBnilfs_cleanerd\fP(8) skipped previously.
 .TP
 .B \-i
-Don't call \fBmount.nilfs2\fP.  Useful to perform NILFS2 without the
-garbage collector.
+Don't call \fBmount.nilfs2\fP.  This disables garbage collection
+and handling of pseudo mount options.
 .TP
 .B \-n
 Mount without writing in \fI/etc/mtab\fP.  This is necessary for
