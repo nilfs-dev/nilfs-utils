@@ -74,6 +74,9 @@ typedef int gcpid_opt_t;
 const char pp_opt_fmt[] = PPOPT_NAME "=%lu";
 typedef unsigned long pp_opt_t;
 
+const char nogc_opt_fmt[] = NOGCOPT_NAME;
+typedef int nogc_opt_t;
+
 struct mount_options {
 	char *fstype;
 	char *opts;
@@ -329,6 +332,7 @@ struct nilfs_mount_info {
 	int type;
 	int mounted;
 	pp_opt_t protperiod;
+	nogc_opt_t nogc;
 };
 
 static int check_mtab(void)
@@ -391,6 +395,8 @@ prepare_mount(struct nilfs_mount_info *mi, const struct mount_options *mo)
 	if (find_opt(mc->m.mnt_opts, pp_opt_fmt, &prot_period) >= 0)
 		mi->protperiod = prot_period;
 
+	mi->nogc = (find_opt(mc->m.mnt_opts, nogc_opt_fmt, NULL) >= 0);
+
 	switch (mo->flags & (MS_RDONLY | MS_REMOUNT)) {
 	case 0: /* overlapping rw-mount */
 		error(_("%s: the device already has a rw-mount on %s."
@@ -426,11 +432,13 @@ prepare_mount(struct nilfs_mount_info *mi, const struct mount_options *mo)
 static int
 do_mount_one(struct nilfs_mount_info *mi, const struct mount_options *mo)
 {
-	int res, errsv;
-	char *exopts;
+	int res, errsv, mtab_ok;
+	char *tmpexopts, *exopts;
 	pp_opt_t prot_period;
 
-	exopts = change_opt(mo->extra_opts, pp_opt_fmt, &prot_period, "");
+	tmpexopts = change_opt(mo->extra_opts, pp_opt_fmt, &prot_period, "");
+	exopts = change_opt(tmpexopts, nogc_opt_fmt, NULL, "");
+	my_free(tmpexopts);
 
 	res = mount(mi->device, mi->mntdir, fstype, mo->flags & ~MS_NOSYS,
 		    exopts);
@@ -450,9 +458,12 @@ do_mount_one(struct nilfs_mount_info *mi, const struct mount_options *mo)
 	}
 	if (mi->type != RW2RO_REMOUNT && mi->type != RW2RW_REMOUNT)
 		goto out;
+
+        mtab_ok = check_mtab();
+
 	/* Cleaner daemon was stopped and it needs to run */
 	/* because filesystem is still mounted */
-	if (check_mtab()) {
+	if (!mi->nogc && mtab_ok) {
 		/* Restarting cleaner daemon */
 		if (start_cleanerd(mi->device, mi->mntdir, mi->protperiod,
 				   &mi->gcpid) == 0) {
@@ -481,7 +492,7 @@ static void update_mount_state(struct nilfs_mount_info *mi,
 	char *exopts;
 	int rungc;
 
-	rungc = !(mo->flags & MS_RDONLY) && !(mo->flags & MS_BIND);
+	rungc = (find_opt(mo->extra_opts, nogc_opt_fmt, NULL) < 0) && !(mo->flags & MS_RDONLY) && !(mo->flags & MS_BIND);
 
 	if (!check_mtab()) {
 		if (rungc)

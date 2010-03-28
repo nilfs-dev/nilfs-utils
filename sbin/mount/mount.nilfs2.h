@@ -14,6 +14,7 @@
 #define CLEANERD_NAME		"nilfs_cleanerd"
 #define PIDOPT_NAME		"gcpid"
 #define PPOPT_NAME		"pp"
+#define NOGCOPT_NAME		"nogc"
 
 #define CLEANERD_WAIT_RETRY_COUNT	3
 #define CLEANERD_WAIT_RETRY_INTERVAL	2  /* in seconds */

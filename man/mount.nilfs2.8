@@ -108,6 +108,11 @@ seconds). nilfs_cleanerd never deletes recent checkpoints whose
 elapsed time from its creation is smaller than
 \fIprotection-period\fP.
 .TP
+.BR nogc
+Disable garbage collection. The cleaner daemon will not be started.
+It can be be started manually, but in that case it must also be
+stopped manually before unmounting.
+.TP
 .BR order=relaxed " / " order=strict
 Specify order semantics for file data.  Metadata is always written to
 follow the POSIX semantics about the order of filesystem operations.
