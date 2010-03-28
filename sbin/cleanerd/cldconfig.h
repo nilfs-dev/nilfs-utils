@@ -42,6 +42,9 @@ struct nilfs_selection_policy {
  * struct nilfs_cldconfig -
  * @cf_selection_policy:
  * @cf_protection_period:
+ * @cf_min_clean_segments:
+ * @cf_max_clean_segments:
+ * @cf_clean_check_interval:
  * @cf_nsegments_per_clean
  * @cf_cleaning_interval:
  * @cf_use_mmap:
@@ -50,6 +53,9 @@ struct nilfs_selection_policy {
 struct nilfs_cldconfig {
 	struct nilfs_selection_policy cf_selection_policy;
 	time_t cf_protection_period;
+	__u64 cf_min_clean_segments;
+	__u64 cf_max_clean_segments;
+	time_t cf_clean_check_interval;
 	int cf_nsegments_per_clean;
 	time_t cf_cleaning_interval;
 	time_t cf_retry_interval;
@@ -61,6 +67,9 @@ struct nilfs_cldconfig {
 			nilfs_cldconfig_selection_policy_timestamp
 #define NILFS_CLDCONFIG_SELECTION_POLICY_THRESHOLD	0
 #define NILFS_CLDCONFIG_PROTECTION_PERIOD		3600
+#define	NILFS_CLDCONFIG_MIN_CLEAN_SEGMENTS		100
+#define	NILFS_CLDCONFIG_MAX_CLEAN_SEGMENTS		200
+#define	NILFS_CLDCONFIG_CLEAN_CHECK_INTERVAL		60
 #define NILFS_CLDCONFIG_NSEGMENTS_PER_CLEAN		2
 #define NILFS_CLDCONFIG_CLEANING_INTERVAL		5
 #define NILFS_CLDCONFIG_RETRY_INTERVAL			60

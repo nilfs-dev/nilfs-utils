@@ -25,6 +25,23 @@ garbage collector (in seconds).  NILFS2 GC never deletes checkpoints
 and their blocks whose duration time is less than the value.  The
 default value is 3600, meaning one hour.
 .TP
+.B min_clean_segments
+Specify the minimum number of clean segments. A value of 0 means
+normal cleaner operation. A value greater than 0 means pause cleaning
+until less than min_clean_segments are available. The default value
+is 100.
+.TP
+.B max_clean_segments
+Specify the maximum number of clean segments. If min_clean_segments is
+0, this value is ignored. If more than max_clean_segments are available
+cleaning is paused until less than min_clean_segments are available.
+The default value is 200.
+.TP
+.B clean_check_interval
+Specify the interval to wait between checks of min_clean_segments.
+If min_clean_segments is 0, this value is ignored.
+The default value is 60.
+.TP
 .B selection_policy
 Specify the GC policy. At present, only the `\fBtimestamp\fP' policy,
 which reclaims segments in order from oldest to newest, is support.

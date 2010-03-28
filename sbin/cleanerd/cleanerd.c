@@ -1163,6 +1163,21 @@ static int nilfs_cleanerd_sleep(struct nilfs_cleanerd *cleanerd,
 	return 0;
 }
 
+static void nilfs_cleanerd_clean_check_pause(struct nilfs_cleanerd *cleanerd,
+					     struct timespec *timeout)
+{
+	cleanerd->c_running = 0;
+	timeout->tv_sec = cleanerd->c_config.cf_clean_check_interval;
+	timeout->tv_nsec = 0;
+	syslog(LOG_INFO, "pause (clean check)");
+}
+
+static void nilfs_cleanerd_clean_check_resume(struct nilfs_cleanerd *cleanerd)
+{
+	cleanerd->c_running = 1;
+	syslog(LOG_INFO, "resume (clean check)");
+}
+
 /**
  * nilfs_cleanerd_clean_loop - main loop of the cleaner daemon
  * @cleanerd: cleanerd object
@@ -1198,8 +1213,12 @@ static int nilfs_cleanerd_clean_loop(struct nilfs_cleanerd *cleanerd)
 	if (ret < 0)
 		return -1;
 
-	cleanerd->c_running = 1;
 	cleanerd->c_ncleansegs = cleanerd->c_config.cf_nsegments_per_clean;
+
+	if (cleanerd->c_config.cf_min_clean_segments > 0)
+		nilfs_cleanerd_clean_check_pause(cleanerd, &timeout);
+	else
+		cleanerd->c_running = 1;
 
 	while (1) {
 		if (sigprocmask(SIG_BLOCK, &sigset, NULL) < 0) {
@@ -1220,10 +1239,27 @@ static int nilfs_cleanerd_clean_loop(struct nilfs_cleanerd *cleanerd)
 			syslog(LOG_ERR, "cannot get segment usage stat: %m");
 			return -1;
 		}
+
+		if (cleanerd->c_config.cf_min_clean_segments > 0) {
+			if (cleanerd->c_running) {
+				if (sustat.ss_ncleansegs > cleanerd->c_config.cf_max_clean_segments) {
+					nilfs_cleanerd_clean_check_pause(cleanerd, &timeout);
+					goto sleep;
+				}
+			}
+			else {
+				if (sustat.ss_ncleansegs < cleanerd->c_config.cf_min_clean_segments)
+					nilfs_cleanerd_clean_check_resume(cleanerd);
+				else
+					goto sleep;
+			}
+		}
+
 		if (sustat.ss_nongc_ctime != prev_nongc_ctime) {
 			cleanerd->c_running = 1;
 			prev_nongc_ctime = sustat.ss_nongc_ctime;
 		}
+
 		if (!cleanerd->c_running)
 			goto sleep;
 

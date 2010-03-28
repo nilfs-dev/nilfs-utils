@@ -90,6 +90,87 @@ nilfs_cldconfig_handle_protection_period(struct nilfs_cldconfig *config,
 	return 0;
 }
 
+static int
+nilfs_cldconfig_handle_min_clean_segments(struct nilfs_cldconfig *config,
+					  char **tokens, size_t ntoks)
+{
+	__u64 n;
+	char *endptr;
+
+	if (check_tokens(tokens, ntoks, 2, 2) < 0)
+		return 0;
+
+	errno = 0;
+	n = strtoull(tokens[1], &endptr, 10);
+	if (*endptr != '\0') {
+		syslog(LOG_WARNING, "%s: %s: not a number",
+		       tokens[0], tokens[1]);
+		return 0;
+	}
+	if ((n == ULLONG_MAX) && (errno == ERANGE)) {
+		syslog(LOG_WARNING, "%s: %s: number too large",
+		       tokens[0], tokens[1]);
+		return 0;
+	}
+
+	config->cf_min_clean_segments = n;
+	return 0;
+}
+
+static int
+nilfs_cldconfig_handle_max_clean_segments(struct nilfs_cldconfig *config,
+					  char **tokens, size_t ntoks)
+{
+	__u64 n;
+	char *endptr;
+
+	if (check_tokens(tokens, ntoks, 2, 2) < 0)
+		return 0;
+
+	errno = 0;
+	n = strtoull(tokens[1], &endptr, 10);
+	if (*endptr != '\0') {
+		syslog(LOG_WARNING, "%s: %s: not a number",
+		       tokens[0], tokens[1]);
+		return 0;
+	}
+	if ((n == ULLONG_MAX) && (errno == ERANGE)) {
+		syslog(LOG_WARNING, "%s: %s: number too large",
+		       tokens[0], tokens[1]);
+		return 0;
+	}
+
+	config->cf_max_clean_segments = n;
+	return 0;
+}
+
+static int
+nilfs_cldconfig_handle_clean_check_interval(struct nilfs_cldconfig *config,
+					    char **tokens, size_t ntoks)
+{
+	time_t period;
+	char *endptr;
+
+	if (check_tokens(tokens, ntoks, 2, 2) < 0)
+		return 0;
+
+	errno = 0;
+	period = strtoul(tokens[1], &endptr, 10);
+	if (*endptr != '\0') {
+		syslog(LOG_WARNING, "%s: %s: not a number",
+		       tokens[0], tokens[1]);
+		return 0;
+	}
+	if ((period == ULONG_MAX) && (errno == ERANGE)) {
+		syslog(LOG_WARNING, "%s: %s: number too large",
+		       tokens[0], tokens[1]);
+		return 0;
+	}
+
+	config->cf_clean_check_interval = period;
+	return 0;
+}
+
 static unsigned long long
 nilfs_cldconfig_selection_policy_timestamp(const struct nilfs_suinfo *si)
 {
@@ -277,6 +358,9 @@ nilfs_cldconfig_handle_unknown_keyword(struct nilfs_cldconfig *config,
 static const struct nilfs_cldconfig_keyword
 nilfs_cldconfig_keyword_table[] = {
 	{"protection_period",	nilfs_cldconfig_handle_protection_period},
+	{"min_clean_segments",	nilfs_cldconfig_handle_min_clean_segments},
+	{"max_clean_segments",	nilfs_cldconfig_handle_max_clean_segments},
+	{"clean_check_interval",nilfs_cldconfig_handle_clean_check_interval},
 	{"selection_policy",	nilfs_cldconfig_handle_selection_policy},
 	{"nsegments_per_clean",	nilfs_cldconfig_handle_nsegments_per_clean},
 	{"cleaning_interval",	nilfs_cldconfig_handle_cleaning_interval},
@@ -313,6 +397,9 @@ static void nilfs_cldconfig_set_default(struct nilfs_cldconfig *config)
 	config->cf_selection_policy.p_threshold =
 		NILFS_CLDCONFIG_SELECTION_POLICY_THRESHOLD;
 	config->cf_protection_period = NILFS_CLDCONFIG_PROTECTION_PERIOD;
+	config->cf_min_clean_segments = NILFS_CLDCONFIG_MIN_CLEAN_SEGMENTS;
+	config->cf_max_clean_segments = NILFS_CLDCONFIG_MAX_CLEAN_SEGMENTS;
+	config->cf_clean_check_interval = NILFS_CLDCONFIG_CLEAN_CHECK_INTERVAL;
 	config->cf_nsegments_per_clean = NILFS_CLDCONFIG_NSEGMENTS_PER_CLEAN;
 	config->cf_cleaning_interval = NILFS_CLDCONFIG_CLEANING_INTERVAL;
 	config->cf_retry_interval = NILFS_CLDCONFIG_RETRY_INTERVAL;
