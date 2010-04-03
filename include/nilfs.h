@@ -20,6 +20,8 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  *
  * Written by Koji Sato <koji@osrg.net>.
+ *
+ * Maintained by Ryusuke Konishi <ryusuke@osrg.net> from 2008.
  */
 
 #ifndef NILFS_H
