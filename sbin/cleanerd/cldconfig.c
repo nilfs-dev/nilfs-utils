@@ -130,25 +130,9 @@ nilfs_cldconfig_handle_protection_period(struct nilfs_cldconfig *config,
 					 char **tokens, size_t ntoks)
 {
 	time_t period;
-	char *endptr;
 
-	if (check_tokens(tokens, ntoks, 2, 2) < 0)
-		return 0;
-
-	errno = 0;
-	period = strtoul(tokens[1], &endptr, 10);
-	if (*endptr != '\0') {
-		syslog(LOG_WARNING, "%s: %s: not a number",
-		       tokens[0], tokens[1]);
-		return 0;
-	}
-	if ((period == ULONG_MAX) && (errno == ERANGE)) {
-		syslog(LOG_WARNING, "%s: %s: number too large",
-		       tokens[0], tokens[1]);
-		return 0;
-	}
-
-	config->cf_protection_period = period;
+	if (nilfs_cldconfig_get_time_argument(tokens, ntoks, &period) == 0)
+		config->cf_protection_period = period;
 	return 0;
 }
 
@@ -179,25 +163,9 @@ nilfs_cldconfig_handle_clean_check_interval(struct nilfs_cldconfig *config,
 					    char **tokens, size_t ntoks)
 {
 	time_t period;
-	char *endptr;
 
-	if (check_tokens(tokens, ntoks, 2, 2) < 0)
-		return 0;
-
-	errno = 0;
-	period = strtoul(tokens[1], &endptr, 10);
-	if (*endptr != '\0') {
-		syslog(LOG_WARNING, "%s: %s: not a number",
-		       tokens[0], tokens[1]);
-		return 0;
-	}
-	if ((period == ULONG_MAX) && (errno == ERANGE)) {
-		syslog(LOG_WARNING, "%s: %s: number too large",
-		       tokens[0], tokens[1]);
-		return 0;
-	}
-
-	config->cf_clean_check_interval = period;
+	if (nilfs_cldconfig_get_time_argument(tokens, ntoks, &period) == 0)
+		config->cf_clean_check_interval = period;
 	return 0;
 }
 
