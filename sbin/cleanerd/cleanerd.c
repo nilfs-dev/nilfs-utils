@@ -1215,9 +1215,7 @@ static int nilfs_cleanerd_clean_loop(struct nilfs_cleanerd *cleanerd)
 
 	cleanerd->c_ncleansegs = cleanerd->c_config.cf_nsegments_per_clean;
 
-	r_segments = ((nilfs_cleanerd->c_nilfs->n_sb->s_nsegments * nilfs_cleanerd->c_nilfs->n_sb->s_r_segments_percentage) + 99) / 100;
-	if (r_segments < NILFS_MIN_NRSVSEGS)
-		r_segments = NILFS_MIN_NRSVSEGS;
+	r_segments = nilfs_reserved_segments(cleanerd->c_nilfs);
 
 	if (cleanerd->c_config.cf_min_clean_segments > 0)
 		nilfs_cleanerd_clean_check_pause(cleanerd, &timeout);
