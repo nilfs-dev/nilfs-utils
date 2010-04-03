@@ -1,0 +1,50 @@
+PRIMARY AUTHORS AND MAJOR CONTRIBUTORS TO NILFS-UTILS:
+The primary authors work at Cyberspace Labs at NTT Corporation.
+
+* Ryusuke Konishi <ryusuke@osrg.net>
+- Primary maintainer (02/2008-Present)
+- Implemented mkfs.nilfs2, mount.nilfs2
+- Enhanced snapshot/checkpoint tools, cleanerd, and libraries.
+- Fixed many bugs
+- Wrote man pages
+- Initial development
+
+* Koji Sato
+- Primary designer of nilfs2 garbage collector
+- Implemented cleanerd, nilfs library, and snapshot/checkpoint tools
+- Wrote autoconf files
+- Initial development
+
+* Naruhiko Kamimura
+- Fixed libnilfs so that it follows symlink
+- Enhanced lscp to allow specifying range of checkpoints
+- Enhanced lssu to allow specifying range of segments
+
+* Seiji Kihara
+- Initial development
+
+* Yoshiji Amagai
+- Initial development
+
+* Hisashi Hifumi
+- Initial development
+
+* Satoshi Moriai
+- Initial development
+
+Other contributors:
+* David Arendt <admin@prnet.org>
+March 29, 2010: added cleaning functions based on the number of free segments
+March 29, 2010: added mount option to disable garbage collection
+
+* David Smid <david@unity-linux.org>
+December 3, 2009: introduced pp (protection period) mount option
+
+* Eric Sandeen <sandeen@redhat.com>
+February 13, 2010: fix build against newer glibc
+
+* Jiro SEKIBA <jir@unicus.jp>
+November 9, 2009: expose struct nilfs_btree_node
+
+And this software is realized and maintained by many other
+contributions and helps.
