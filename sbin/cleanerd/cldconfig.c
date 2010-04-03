@@ -113,6 +113,18 @@ static int nilfs_cldconfig_get_ullong_argument(char **tokens, size_t ntoks,
 	return 0;
 }
 
+static int nilfs_cldconfig_get_time_argument(char **tokens, size_t ntoks,
+					     time_t *t)
+{
+	unsigned long num;
+	int ret;
+
+	ret = nilfs_cldconfig_get_ulong_argument(tokens, ntoks, &num);
+	if (ret == 0)
+		*t = (time_t)num;
+	return ret;
+}
+
 static int
 nilfs_cldconfig_handle_protection_period(struct nilfs_cldconfig *config,
 					 char **tokens, size_t ntoks)
