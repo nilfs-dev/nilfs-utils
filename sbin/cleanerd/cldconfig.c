@@ -144,26 +144,10 @@ static int
 nilfs_cldconfig_handle_min_clean_segments(struct nilfs_cldconfig *config,
 					  char **tokens, size_t ntoks)
 {
-	__u64 n;
-	char *endptr;
+	unsigned long long n;
 
-	if (check_tokens(tokens, ntoks, 2, 2) < 0)
-		return 0;
-
-	errno = 0;
-	n = strtoull(tokens[1], &endptr, 10);
-	if (*endptr != '\0') {
-		syslog(LOG_WARNING, "%s: %s: not a number",
-		       tokens[0], tokens[1]);
-		return 0;
-	}
-	if ((n == ULLONG_MAX) && (errno == ERANGE)) {
-		syslog(LOG_WARNING, "%s: %s: number too large",
-		       tokens[0], tokens[1]);
-		return 0;
-	}
-
-	config->cf_min_clean_segments = n;
+	if (nilfs_cldconfig_get_ullong_argument(tokens, ntoks, &n) == 0)
+		config->cf_min_clean_segments = n;
 	return 0;
 }
 
@@ -171,26 +155,10 @@ static int
 nilfs_cldconfig_handle_max_clean_segments(struct nilfs_cldconfig *config,
 					  char **tokens, size_t ntoks)
 {
-	__u64 n;
-	char *endptr;
+	unsigned long long n;
 
-	if (check_tokens(tokens, ntoks, 2, 2) < 0)
-		return 0;
-
-	errno = 0;
-	n = strtoull(tokens[1], &endptr, 10);
-	if (*endptr != '\0') {
-		syslog(LOG_WARNING, "%s: %s: not a number",
-		       tokens[0], tokens[1]);
-		return 0;
-	}
-	if ((n == ULLONG_MAX) && (errno == ERANGE)) {
-		syslog(LOG_WARNING, "%s: %s: number too large",
-		       tokens[0], tokens[1]);
-		return 0;
-	}
-
-	config->cf_max_clean_segments = n;
+	if (nilfs_cldconfig_get_ullong_argument(tokens, ntoks, &n) == 0)
+		config->cf_max_clean_segments = n;
 	return 0;
 }
 
