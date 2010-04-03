@@ -222,24 +222,11 @@ static int
 nilfs_cldconfig_handle_nsegments_per_clean(struct nilfs_cldconfig *config,
 					   char **tokens, size_t ntoks)
 {
-	char *endptr;
-	int n;
+	unsigned long n;
 
-	if (check_tokens(tokens, ntoks, 2, 2) < 0)
+	if (nilfs_cldconfig_get_ulong_argument(tokens, ntoks, &n) < 0)
 		return 0;
 
-	errno = 0;
-	n = strtoul(tokens[1], &endptr, 10);
-	if (*endptr != '\0') {
-		syslog(LOG_WARNING, "%s: %s: not a number",
-		       tokens[0], tokens[1]);
-		return 0;
-	}
-	if (n == 0) {
-		syslog(LOG_WARNING, "%s: %s: invalid number",
-		       tokens[0], tokens[1]);
-		return 0;
-	}
 	if (n > NILFS_CLDCONFIG_NSEGMENTS_PER_CLEAN_MAX) {
 		syslog(LOG_WARNING, "%s: %s: too large, use the maximum value",
 		       tokens[0], tokens[1]);
