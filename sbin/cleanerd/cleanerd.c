@@ -178,6 +178,8 @@ nilfs_cleanerd_create(const char *dev, const char *dir, const char *conffile)
 	if (cleanerd == NULL)
 		return NULL;
 
+	memset(cleanerd, 0, sizeof(*cleanerd));
+
 	cleanerd->c_nilfs = nilfs_open(dev, dir,
 				       NILFS_OPEN_RAW | NILFS_OPEN_RDWR);
 	if (cleanerd->c_nilfs == NULL) {
@@ -194,11 +196,6 @@ nilfs_cleanerd_create(const char *dev, const char *dir, const char *conffile)
 		goto out_conffile;
 
 	/* success */
-	cleanerd->c_running = 0;
-	cleanerd->c_protcno = 0; /* means unspecified */
-	cleanerd->c_prottime = 0;
-	cleanerd->c_fallback = 0;
-
 	return cleanerd;
 
 	/* error */
@@ -1209,6 +1206,11 @@ static int nilfs_cleanerd_clean_loop(struct nilfs_cleanerd *cleanerd)
 
 	nilfs_cleanerd_reload_config = 0;
 
+	cleanerd->c_running = 1;
+	cleanerd->c_protcno = 0; /* means unspecified */
+	cleanerd->c_prottime = 0;
+	cleanerd->c_fallback = 0;
+
 	ret = nilfs_cleanerd_init_interval(cleanerd);
 	if (ret < 0)
 		return -1;
@@ -1219,8 +1221,6 @@ static int nilfs_cleanerd_clean_loop(struct nilfs_cleanerd *cleanerd)
 
 	if (cleanerd->c_config.cf_min_clean_segments > 0)
 		nilfs_cleanerd_clean_check_pause(cleanerd, &timeout);
-	else
-		cleanerd->c_running = 1;
 
 	while (1) {
 		if (sigprocmask(SIG_BLOCK, &sigset, NULL) < 0) {
