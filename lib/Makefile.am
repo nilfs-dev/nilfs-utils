@@ -1,9 +1,4 @@
 ## Makefile.am
-##
-## Copyright (C) 2007-2009 Nippon Telegraph and Telephone Corporation.
-##
-## Written by Koji Sato <koji@osrg.net>,
-##            Ryusuke Konishi <ryusuke@osrg.net>.
 
 CURRENT = 0
 REVISION = 0

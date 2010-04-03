@@ -1,8 +1,4 @@
 ## Makefile.am
-##
-## Copyright (C) 2007-2008 Nippon Telegraph and Telephone Corporation.
-##
-## Written by Koji Sato <koji@osrg.net>.
 
 sbin_PROGRAMS = nilfs_cleanerd
 

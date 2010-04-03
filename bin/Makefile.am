@@ -1,8 +1,4 @@
 ## Makefile.am
-##
-## Copyright (C) 2007 Nippon Telegraph and Telephone Corporation.
-##
-## Written by Koji Sato <koji@osrg.net>.
 
 AM_CFLAGS = -Wall
 AM_CPPFLAGS = -I$(top_srcdir)/include
