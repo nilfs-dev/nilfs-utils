@@ -53,6 +53,39 @@
 #include "cldconfig.h"
 
 
+#define NILFS_CLDCONFIG_COMMENT_CHAR	'#'
+
+/**
+ * struct nilfs_cldconfig_keyword - keyword entry for conffile
+ * @ck_text: keyword text
+ * @ck_handler: parser routine
+ */
+struct nilfs_cldconfig_keyword {
+	const char *ck_text;
+	int (*ck_handler)(struct nilfs_cldconfig * , char **, size_t);
+};
+
+/**
+ * struct nilfs_cldconfig_polhandle - GC policy entry for conffile
+ * @cp_name: policy name
+ * @cp_handler: parser routine
+ */
+struct nilfs_cldconfig_polhandle {
+	const char *cp_name;
+	int (*cp_handler)(struct nilfs_cldconfig *, char **, size_t);
+};
+
+/**
+ * struct nilfs_cldconfig_log_priority - log priority entry
+ * @cl_name: priority name
+ * @cl_priority: priority value
+ */
+struct nilfs_cldconfig_log_priority {
+	const char *cl_name;
+	int cl_priority;
+};
+
+
 static int check_tokens(char **tokens, size_t ntoks,
 			size_t ntoksmin, size_t ntoksmax)
 {

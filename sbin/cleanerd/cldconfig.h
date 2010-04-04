@@ -80,38 +80,6 @@ struct nilfs_cldconfig {
 
 #define NILFS_CLDCONFIG_NSEGMENTS_PER_CLEAN_MAX	32
 
-/**
- * struct nilfs_cldconfig_keyword -
- * @ck_text:
- * @ck_handler:
- */
-struct nilfs_cldconfig_keyword {
-	const char *ck_text;
-	int (*ck_handler)(struct nilfs_cldconfig * , char **, size_t);
-};
-
-#define NILFS_CLDCONFIG_COMMENT_CHAR	'#'
-
-/**
- * struct nilfs_cldconfig_polhandle -
- * @cp_name:
- * @cp_handler:
- */
-struct nilfs_cldconfig_polhandle {
-	const char *cp_name;
-	int (*cp_handler)(struct nilfs_cldconfig *, char **, size_t);
-};
-
-/**
- * struct nilfs_cldconfig_log_priority -
- * @cl_name:
- * @cl_priority:
- */
-struct nilfs_cldconfig_log_priority {
-	const char *cl_name;
-	int cl_priority;
-};
-
 
 int nilfs_cldconfig_read(struct nilfs_cldconfig *, const char *);
 
