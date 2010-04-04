@@ -127,28 +127,6 @@ static int nilfs_cldconfig_get_ulong_argument(char **tokens, size_t ntoks,
 	return 0;
 }
 
-static int nilfs_cldconfig_get_ullong_argument(char **tokens, size_t ntoks,
-					       unsigned long long *nump)
-{
-	unsigned long long num;
-	char *endptr;
-
-	errno = 0;
-	num = strtoull(tokens[1], &endptr, 10);
-	if (*endptr != '\0') {
-		syslog(LOG_WARNING, "%s: %s: not a number",
-		       tokens[0], tokens[1]);
-		return -1;
-	}
-	if (num == ULLONG_MAX && errno == ERANGE) {
-		syslog(LOG_WARNING, "%s: %s: number too large",
-		       tokens[0], tokens[1]);
-		return -1;
-	}
-	*nump = num;
-	return 0;
-}
-
 static int nilfs_cldconfig_get_time_argument(char **tokens, size_t ntoks,
 					     time_t *t)
 {
