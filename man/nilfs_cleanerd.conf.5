@@ -36,6 +36,12 @@ Specify the maximum number of clean segments. If min_clean_segments is
 0, this value is ignored. If more than max_clean_segments are available
 cleaning is paused until less than min_clean_segments are available.
 The default value is 200.
+.PP
+\fBmin_clean_segments\fP and \fBmax_clean_segments\fP may be followed
+by a percent sign or the following multiplicative suffixes: kB 1000,
+K 1024, MB 1000*1000, M 1024*1024, GB 1000*1000*1000, G
+1024*1024*1024, and so on for T, P, E.  If the argument is followed by
+a percent sign, it represents a disk capacity ratio.
 .TP
 .B clean_check_interval
 Specify the interval to wait between checks of min_clean_segments.

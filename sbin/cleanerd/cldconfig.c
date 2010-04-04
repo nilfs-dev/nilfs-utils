@@ -50,6 +50,7 @@
 #include <syslog.h>
 #endif	/* HAVE_SYSLOG_H */
 
+#include <assert.h>
 #include "nilfs.h"
 #include "cldconfig.h"
 
@@ -264,15 +265,75 @@ nilfs_cldconfig_handle_protection_period(struct nilfs_cldconfig *config,
 	return 0;
 }
 
+static unsigned long long
+nilfs_convert_size_to_nsegments(struct nilfs *nilfs, struct nilfs_param *param)
+{
+	unsigned long long ret, segment_size, bytes;
+
+	if (param->unit == NILFS_SIZE_UNIT_NONE) {
+		ret = param->num;
+	} else if (param->unit == NILFS_SIZE_UNIT_PERCENT) {
+		ret = (nilfs_get_nsegments(nilfs) * param->num + 99) / 100;
+	} else {
+		bytes = param->num;
+
+		switch (param->unit) {
+		case NILFS_SIZE_UNIT_KB:
+			bytes *= 1000ULL;
+			break;
+		case NILFS_SIZE_UNIT_KIB:
+			bytes <<= 10;
+			break;
+		case NILFS_SIZE_UNIT_MB:
+			bytes *= 1000000ULL;
+			break;
+		case NILFS_SIZE_UNIT_MIB:
+			bytes <<= 20;
+			break;
+		case NILFS_SIZE_UNIT_GB:
+			bytes *= 1000000000ULL;
+			break;
+		case NILFS_SIZE_UNIT_GIB:
+			bytes <<= 30;
+			break;
+		case NILFS_SIZE_UNIT_TB:
+			bytes *= 1000000000000ULL;
+			break;
+		case NILFS_SIZE_UNIT_TIB:
+			bytes <<= 40;
+			break;
+		case NILFS_SIZE_UNIT_PB:
+			bytes *= 1000000000000000ULL;
+			break;
+		case NILFS_SIZE_UNIT_PIB:
+			bytes <<= 50;
+			break;
+		case NILFS_SIZE_UNIT_EB:
+			bytes *= 1000000000000000000ULL;
+			break;
+		case NILFS_SIZE_UNIT_EIB:
+			bytes <<= 60;
+			break;
+		default:
+			assert(0);
+		}
+		segment_size = nilfs_get_block_size(nilfs) *
+			nilfs_get_blocks_per_segment(nilfs);
+		ret = (bytes + segment_size - 1) / segment_size;
+	}
+	return ret;
+}
+
 static int
 nilfs_cldconfig_handle_min_clean_segments(struct nilfs_cldconfig *config,
 					  char **tokens, size_t ntoks,
 					  struct nilfs *nilfs)
 {
-	unsigned long long n;
+	struct nilfs_param param;
 
-	if (nilfs_cldconfig_get_ullong_argument(tokens, ntoks, &n) == 0)
-		config->cf_min_clean_segments = n;
+	if (nilfs_cldconfig_get_size_argument(tokens, ntoks, &param) == 0)
+		config->cf_min_clean_segments =
+			nilfs_convert_size_to_nsegments(nilfs, &param);
 	return 0;
 }
 
@@ -281,10 +342,11 @@ nilfs_cldconfig_handle_max_clean_segments(struct nilfs_cldconfig *config,
 					  char **tokens, size_t ntoks,
 					  struct nilfs *nilfs)
 {
-	unsigned long long n;
+	struct nilfs_param param;
 
-	if (nilfs_cldconfig_get_ullong_argument(tokens, ntoks, &n) == 0)
-		config->cf_max_clean_segments = n;
+	if (nilfs_cldconfig_get_size_argument(tokens, ntoks, &param) == 0)
+		config->cf_max_clean_segments =
+			nilfs_convert_size_to_nsegments(nilfs, &param);
 	return 0;
 }
 
