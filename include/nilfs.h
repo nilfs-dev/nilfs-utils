@@ -289,6 +289,7 @@ ssize_t nilfs_get_segment(struct nilfs *, unsigned long, void **);
 int nilfs_put_segment(struct nilfs *, void *);
 size_t nilfs_get_block_size(struct nilfs *);
 __u64 nilfs_get_segment_seqnum(const struct nilfs *, void *, __u64);
+__u64 nilfs_get_reserved_segments(const struct nilfs *nilfs);
 
 int nilfs_change_cpmode(struct nilfs *, nilfs_cno_t, int);
 ssize_t nilfs_get_cpinfo(struct nilfs *, nilfs_cno_t, int,
@@ -304,16 +305,5 @@ int nilfs_clean_segments(struct nilfs *, struct nilfs_vdesc *, size_t,
 			 struct nilfs_period *, size_t, __u64 *, size_t,
 			 struct nilfs_bdesc *, size_t, __u64 *, size_t);
 int nilfs_sync(const struct nilfs *, nilfs_cno_t *);
-
-static inline __u64 nilfs_reserved_segments(struct nilfs *nilfs)
-{
-	struct nilfs_super_block *sb = nilfs->n_sb;
-	__u64 rn;
-
-	rn = (sb->s_nsegments * sb->s_r_segments_percentage + 99) / 100;
-	if (rn < NILFS_MIN_NRSVSEGS)
-		rn = NILFS_MIN_NRSVSEGS;
-	return rn;
-}
 
 #endif	/* NILFS_H */

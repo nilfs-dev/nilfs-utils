@@ -234,6 +234,18 @@ size_t nilfs_get_block_size(struct nilfs *nilfs)
 		       NILFS_SB_BLOCK_SIZE_SHIFT);
 }
 
+__u64 nilfs_get_reserved_segments(const struct nilfs *nilfs)
+{
+	const struct nilfs_super_block *sb = nilfs->n_sb;
+	__u64 rn;
+
+	rn = (le64_to_cpu(sb->s_nsegments) *
+	      le32_to_cpu(sb->s_r_segments_percentage) + 99) / 100;
+	if (rn < NILFS_MIN_NRSVSEGS)
+		rn = NILFS_MIN_NRSVSEGS;
+	return rn;
+}
+
 int nilfs_opt_set_mmap(struct nilfs *nilfs)
 {
 	long pagesize;
