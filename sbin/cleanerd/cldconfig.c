@@ -50,6 +50,7 @@
 #include <syslog.h>
 #endif	/* HAVE_SYSLOG_H */
 
+#include "nilfs.h"
 #include "cldconfig.h"
 
 
@@ -66,7 +67,8 @@ struct nilfs_cldconfig_keyword {
 	const char *ck_text;
 	size_t ck_minargs;
 	size_t ck_maxargs;
-	int (*ck_handler)(struct nilfs_cldconfig * , char **, size_t);
+	int (*ck_handler)(struct nilfs_cldconfig *, char **, size_t,
+			  struct nilfs *);
 };
 
 /**
@@ -252,7 +254,8 @@ static int nilfs_cldconfig_get_size_argument(char **tokens, size_t ntoks,
 
 static int
 nilfs_cldconfig_handle_protection_period(struct nilfs_cldconfig *config,
-					 char **tokens, size_t ntoks)
+					 char **tokens, size_t ntoks,
+					 struct nilfs *nilfs)
 {
 	time_t period;
 
@@ -263,7 +266,8 @@ nilfs_cldconfig_handle_protection_period(struct nilfs_cldconfig *config,
 
 static int
 nilfs_cldconfig_handle_min_clean_segments(struct nilfs_cldconfig *config,
-					  char **tokens, size_t ntoks)
+					  char **tokens, size_t ntoks,
+					  struct nilfs *nilfs)
 {
 	unsigned long long n;
 
@@ -274,7 +278,8 @@ nilfs_cldconfig_handle_min_clean_segments(struct nilfs_cldconfig *config,
 
 static int
 nilfs_cldconfig_handle_max_clean_segments(struct nilfs_cldconfig *config,
-					  char **tokens, size_t ntoks)
+					  char **tokens, size_t ntoks,
+					  struct nilfs *nilfs)
 {
 	unsigned long long n;
 
@@ -285,7 +290,8 @@ nilfs_cldconfig_handle_max_clean_segments(struct nilfs_cldconfig *config,
 
 static int
 nilfs_cldconfig_handle_clean_check_interval(struct nilfs_cldconfig *config,
-					    char **tokens, size_t ntoks)
+					    char **tokens, size_t ntoks,
+					    struct nilfs *nilfs)
 {
 	time_t period;
 
@@ -322,7 +328,8 @@ nilfs_cldconfig_polhandle_table[] = {
 
 static int
 nilfs_cldconfig_handle_selection_policy(struct nilfs_cldconfig *config,
-					char **tokens, size_t ntoks)
+					char **tokens, size_t ntoks,
+					struct nilfs *nilfs)
 {
 	int i;
 
@@ -339,7 +346,8 @@ nilfs_cldconfig_handle_selection_policy(struct nilfs_cldconfig *config,
 
 static int
 nilfs_cldconfig_handle_nsegments_per_clean(struct nilfs_cldconfig *config,
-					   char **tokens, size_t ntoks)
+					   char **tokens, size_t ntoks,
+					   struct nilfs *nilfs)
 {
 	unsigned long n;
 
@@ -358,7 +366,8 @@ nilfs_cldconfig_handle_nsegments_per_clean(struct nilfs_cldconfig *config,
 
 static int
 nilfs_cldconfig_handle_cleaning_interval(struct nilfs_cldconfig *config,
-					 char **tokens, size_t ntoks)
+					 char **tokens, size_t ntoks,
+					 struct nilfs *nilfs)
 {
 	unsigned long sec;
 
@@ -369,7 +378,8 @@ nilfs_cldconfig_handle_cleaning_interval(struct nilfs_cldconfig *config,
 
 static int
 nilfs_cldconfig_handle_retry_interval(struct nilfs_cldconfig *config,
-				      char **tokens, size_t ntoks)
+				      char **tokens, size_t ntoks,
+				      struct nilfs *nilfs)
 {
 	unsigned long sec;
 
@@ -379,7 +389,8 @@ nilfs_cldconfig_handle_retry_interval(struct nilfs_cldconfig *config,
 }
 
 static int nilfs_cldconfig_handle_use_mmap(struct nilfs_cldconfig *config,
-					   char **tokens, size_t ntoks)
+					   char **tokens, size_t ntoks,
+					   struct nilfs *nilfs)
 {
 	config->cf_use_mmap = 1;
 	return 0;
@@ -403,7 +414,8 @@ nilfs_cldconfig_log_priority_table[] = {
 
 static int
 nilfs_cldconfig_handle_log_priority(struct nilfs_cldconfig *config,
-				    char **tokens, size_t ntoks)
+				    char **tokens, size_t ntoks,
+				    struct nilfs *nilfs)
 {
 	int i;
 
@@ -469,7 +481,8 @@ nilfs_cldconfig_keyword_table[] = {
 	 sizeof(nilfs_cldconfig_keyword_table[0]))
 
 static int nilfs_cldconfig_handle_keyword(struct nilfs_cldconfig *config,
-					  char **tokens, size_t ntoks)
+					  char **tokens, size_t ntoks,
+					  struct nilfs *nilfs)
 {
 	const struct nilfs_cldconfig_keyword *kw;
 	int i;
@@ -483,7 +496,7 @@ static int nilfs_cldconfig_handle_keyword(struct nilfs_cldconfig *config,
 			if (check_tokens(tokens, ntoks, kw->ck_minargs,
 					 kw->ck_maxargs) < 0)
 				return 0;
-			return kw->ck_handler(config, tokens, ntoks);
+			return kw->ck_handler(config, tokens, ntoks, nilfs);
 		}
 	}
 
@@ -541,7 +554,7 @@ static size_t tokenize(char *line, char **tokens, size_t ntoks)
 #define NTOKENS_MAX	16
 
 static int nilfs_cldconfig_do_read(struct nilfs_cldconfig *config,
-				   const char *conffile)
+				   const char *conffile, struct nilfs *nilfs)
 {
 	FILE *fp;
 	char line[LINE_MAX], *tokens[NTOKENS_MAX];
@@ -559,7 +572,7 @@ static int nilfs_cldconfig_do_read(struct nilfs_cldconfig *config,
 		if ((ntoks = tokenize(line, tokens, NTOKENS_MAX)) == 0)
 			continue;
 		if ((ret = nilfs_cldconfig_handle_keyword(
-			     config, tokens, ntoks)) < 0)
+			     config, tokens, ntoks, nilfs)) < 0)
 			break;
 	}
 
@@ -571,11 +584,13 @@ static int nilfs_cldconfig_do_read(struct nilfs_cldconfig *config,
  * nilfs_cldconfig_read -
  * @config: config
  * @conffile: configuration file path
+ * @nilfs: nilfs object
  */
-int nilfs_cldconfig_read(struct nilfs_cldconfig *config, const char *path)
+int nilfs_cldconfig_read(struct nilfs_cldconfig *config, const char *path,
+			 struct nilfs *nilfs)
 {
 	nilfs_cldconfig_set_default(config);
-	if (nilfs_cldconfig_do_read(config, path) < 0)
+	if (nilfs_cldconfig_do_read(config, path, nilfs) < 0)
 		syslog(LOG_WARNING, "%s: cannot read", path);
 	return 0;
 }

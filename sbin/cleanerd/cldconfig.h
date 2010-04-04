@@ -110,7 +110,9 @@ struct nilfs_cldconfig {
 
 #define NILFS_CLDCONFIG_NSEGMENTS_PER_CLEAN_MAX	32
 
+struct nilfs;
 
-int nilfs_cldconfig_read(struct nilfs_cldconfig *, const char *);
+int nilfs_cldconfig_read(struct nilfs_cldconfig *config, const char *path,
+			 struct nilfs *nilfs);
 
 #endif	/* CLDCONFIG_H */

@@ -122,7 +122,7 @@ static void nilfs_cleanerd_set_log_priority(struct nilfs_cleanerd *cleanerd)
 static int nilfs_cleanerd_config(struct nilfs_cleanerd *cleanerd)
 {
 	if (nilfs_cldconfig_read(&cleanerd->c_config,
-				 cleanerd->c_conffile) < 0)
+				 cleanerd->c_conffile, cleanerd->c_nilfs) < 0)
 		return -1;
 #ifdef HAVE_MMAP
 	if (cleanerd->c_config.cf_use_mmap)
