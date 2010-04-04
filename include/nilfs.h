@@ -311,4 +311,9 @@ static inline __u64 nilfs_get_nsegments(const struct nilfs *nilfs)
 	return le64_to_cpu(nilfs->n_sb->s_nsegments);
 }
 
+static inline __u32 nilfs_get_blocks_per_segment(const struct nilfs *nilfs)
+{
+	return le32_to_cpu(nilfs->n_sb->s_blocks_per_segment);
+}
+
 #endif	/* NILFS_H */
