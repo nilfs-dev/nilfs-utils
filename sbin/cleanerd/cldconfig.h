@@ -41,6 +41,36 @@ struct nilfs_selection_policy {
 };
 
 /**
+ * struct nilfs_param - parameter with unit suffix
+ * @num: scanned value
+ * @unit: unit given to the parameter
+ */
+struct nilfs_param {
+	unsigned long num;
+	int unit;
+};
+
+enum nilfs_size_unit {
+	NILFS_SIZE_UNIT_NONE = 0,
+	NILFS_SIZE_UNIT_PERCENT,
+	NILFS_SIZE_UNIT_KB,	/* kilo-byte (kB) */
+	NILFS_SIZE_UNIT_KIB,	/* kibi-byte (KiB) */
+	NILFS_SIZE_UNIT_MB,	/* mega-byte (MB) */
+	NILFS_SIZE_UNIT_MIB,	/* mebi-byte (MiB) */
+	NILFS_SIZE_UNIT_GB,	/* giga-byte (GB) */
+	NILFS_SIZE_UNIT_GIB,	/* gibi-byte (GiB) */
+	NILFS_SIZE_UNIT_TB,	/* tera-byte (TB) */
+	NILFS_SIZE_UNIT_TIB,	/* tebi-byte (TiB) */
+	NILFS_SIZE_UNIT_PB,	/* peta-byte (PB) */
+	NILFS_SIZE_UNIT_PIB,	/* pebi-byte (PiB) */
+	NILFS_SIZE_UNIT_EB,	/* exa-byte (EB) */
+	NILFS_SIZE_UNIT_EIB,	/* exbi-byte (EiB) */
+
+	NILFS_MIN_BINARY_SUFFIX = NILFS_SIZE_UNIT_KB,
+	NILFS_MAX_BINARY_SUFFIX = NILFS_SIZE_UNIT_EIB,
+};
+
+/**
  * struct nilfs_cldconfig - cleanerd configuration
  * @cf_selection_policy: selection policy
  * @cf_protection_period: protection period

@@ -158,6 +158,98 @@ static int nilfs_cldconfig_get_time_argument(char **tokens, size_t ntoks,
 	return ret;
 }
 
+static int nilfs_parse_size_suffix(const char *suffix)
+{
+	const char *cp = suffix;
+	int ret = -1;
+
+	if (*cp == 'k') {
+		if (*++cp == 'B') { /* kB (SI suffix) */
+			ret = NILFS_SIZE_UNIT_KB;
+			cp++;
+		}
+	} else {
+		switch (*cp) {
+		case 'K':
+			ret = NILFS_SIZE_UNIT_KB;
+			break;
+		case 'M':
+			ret = NILFS_SIZE_UNIT_MB;
+			break;
+		case 'G':
+			ret = NILFS_SIZE_UNIT_GB;
+			break;
+		case 'T':
+			ret = NILFS_SIZE_UNIT_TB;
+			break;
+		case 'P':
+			ret = NILFS_SIZE_UNIT_PB;
+			break;
+		case 'E':
+			ret = NILFS_SIZE_UNIT_EB;
+			break;
+		}
+		if (ret > 0) {
+			cp++;
+			if (*cp == 'B') { /* ?B (SI) */
+				cp++;
+			} else if (*cp == '\0') { /* K, M, G, T, ... (IEC) */
+				ret++;
+			} else if (*cp == 'i' && cp[1] == 'B') { /* ?iB (IEC) */
+				ret++;
+				cp += 2;
+			} else { /* error */
+				ret = -1;
+			}
+		}
+	}
+	if (ret >= 0 && *cp != '\0')
+		ret = -1;
+	return ret;
+}
+
+static int nilfs_cldconfig_get_size_argument(char **tokens, size_t ntoks,
+					     struct nilfs_param *param)
+{
+	unsigned long num;
+	char *endptr;
+	int unit;
+
+	errno = 0;
+	num = strtoul(tokens[1], &endptr, 10);
+	if (endptr == tokens[1]) {
+		syslog(LOG_WARNING, "%s: %s: not a number",
+		       tokens[0], tokens[1]);
+		return -1;
+	}
+	if (num == ULONG_MAX && errno == ERANGE) {
+		syslog(LOG_WARNING, "%s: %s: number too large",
+		       tokens[0], tokens[1]);
+		return -1;
+	}
+
+	if (*endptr == '\0') {
+		unit = NILFS_SIZE_UNIT_NONE;
+	} else if (endptr[0] == '%' && endptr[1] == '\0') {
+		if (num > 100) {
+			syslog(LOG_WARNING, "%s: %s: too large ratio",
+			       tokens[0], tokens[1]);
+			return -1;
+		}
+		unit = NILFS_SIZE_UNIT_PERCENT;
+	} else {
+		unit = nilfs_parse_size_suffix(endptr);
+	}
+	if (unit < 0) {
+		syslog(LOG_WARNING, "%s: %s: bad expression",
+		       tokens[0], tokens[1]);
+		return -1;
+	}
+	param->unit = unit;
+	param->num = num;
+	return 0;
+}
+
 static int
 nilfs_cldconfig_handle_protection_period(struct nilfs_cldconfig *config,
 					 char **tokens, size_t ntoks)
