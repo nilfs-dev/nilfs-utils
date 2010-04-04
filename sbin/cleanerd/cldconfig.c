@@ -58,10 +58,14 @@
 /**
  * struct nilfs_cldconfig_keyword - keyword entry for conffile
  * @ck_text: keyword text
+ * @ck_minargs: minimum number of arguments
+ * @ck_maxargs: maximum number of arguments
  * @ck_handler: parser routine
  */
 struct nilfs_cldconfig_keyword {
 	const char *ck_text;
+	size_t ck_minargs;
+	size_t ck_maxargs;
 	int (*ck_handler)(struct nilfs_cldconfig * , char **, size_t);
 };
 
@@ -104,9 +108,6 @@ static int nilfs_cldconfig_get_ulong_argument(char **tokens, size_t ntoks,
 	unsigned long num;
 	char *endptr;
 
-	if (check_tokens(tokens, ntoks, 2, 2) < 0)
-		return -1;
-
 	errno = 0;
 	num = strtoul(tokens[1], &endptr, 10);
 	if (*endptr != '\0') {
@@ -128,9 +129,6 @@ static int nilfs_cldconfig_get_ullong_argument(char **tokens, size_t ntoks,
 {
 	unsigned long long num;
 	char *endptr;
-
-	if (check_tokens(tokens, ntoks, 2, 2) < 0)
-		return -1;
 
 	errno = 0;
 	num = strtoull(tokens[1], &endptr, 10);
@@ -214,9 +212,6 @@ static int
 nilfs_cldconfig_handle_selection_policy_timestamp(struct nilfs_cldconfig *config,
 						  char **tokens, size_t ntoks)
 {
-	if (check_tokens(tokens, ntoks, 2, 2) < 0)
-		return 0;
-
 	config->cf_selection_policy.p_importance =
 		NILFS_CLDCONFIG_SELECTION_POLICY_IMPORTANCE;
 	config->cf_selection_policy.p_threshold =
@@ -238,9 +233,6 @@ nilfs_cldconfig_handle_selection_policy(struct nilfs_cldconfig *config,
 					char **tokens, size_t ntoks)
 {
 	int i;
-
-	if (check_tokens(tokens, ntoks, 2, 3) < 0)
-		return 0;
 
 	for (i = 0; i < NILFS_CLDCONFIG_NPOLHANDLES; i++) {
 		if (strcmp(tokens[1],
@@ -297,9 +289,6 @@ nilfs_cldconfig_handle_retry_interval(struct nilfs_cldconfig *config,
 static int nilfs_cldconfig_handle_use_mmap(struct nilfs_cldconfig *config,
 					   char **tokens, size_t ntoks)
 {
-	if (check_tokens(tokens, ntoks, 1, 1) < 0)
-		return 0;
-
 	config->cf_use_mmap = 1;
 	return 0;
 }
@@ -326,9 +315,6 @@ nilfs_cldconfig_handle_log_priority(struct nilfs_cldconfig *config,
 {
 	int i;
 
-	if (check_tokens(tokens, ntoks, 2, 2) < 0)
-		return 0;
-
 	for (i = 0; i < NILFS_CLDCONFIG_NLOGPRIORITIES; i++) {
 		if (strcmp(tokens[1],
 			   nilfs_cldconfig_log_priority_table[i].cl_name) == 0) {
@@ -342,26 +328,48 @@ nilfs_cldconfig_handle_log_priority(struct nilfs_cldconfig *config,
 	return 0;
 }
 
-static int
-nilfs_cldconfig_handle_unknown_keyword(struct nilfs_cldconfig *config,
-				       char **tokens, size_t ntoks)
-{
-	syslog(LOG_WARNING, "%s: unknown keyword", tokens[0]);
-	return 0;
-}
-
 static const struct nilfs_cldconfig_keyword
 nilfs_cldconfig_keyword_table[] = {
-	{"protection_period",	nilfs_cldconfig_handle_protection_period},
-	{"min_clean_segments",	nilfs_cldconfig_handle_min_clean_segments},
-	{"max_clean_segments",	nilfs_cldconfig_handle_max_clean_segments},
-	{"clean_check_interval",nilfs_cldconfig_handle_clean_check_interval},
-	{"selection_policy",	nilfs_cldconfig_handle_selection_policy},
-	{"nsegments_per_clean",	nilfs_cldconfig_handle_nsegments_per_clean},
-	{"cleaning_interval",	nilfs_cldconfig_handle_cleaning_interval},
-	{"retry_interval",	nilfs_cldconfig_handle_retry_interval},
-	{"use_mmap",		nilfs_cldconfig_handle_use_mmap},
-	{"log_priority",	nilfs_cldconfig_handle_log_priority},
+	{
+		"protection_period", 2, 2,
+		nilfs_cldconfig_handle_protection_period
+	},
+	{
+		"min_clean_segments", 2, 2,
+		nilfs_cldconfig_handle_min_clean_segments
+	},
+	{
+		"max_clean_segments", 2, 2,
+		nilfs_cldconfig_handle_max_clean_segments
+	},
+	{
+		"clean_check_interval", 2, 2,
+		nilfs_cldconfig_handle_clean_check_interval
+	},
+	{
+		"selection_policy", 2, 3,
+		nilfs_cldconfig_handle_selection_policy
+	},
+	{
+		"nsegments_per_clean", 2, 2,
+		nilfs_cldconfig_handle_nsegments_per_clean
+	},
+	{
+		"cleaning_interval", 2, 2,
+		nilfs_cldconfig_handle_cleaning_interval
+	},
+	{
+		"retry_interval", 2, 2,
+		nilfs_cldconfig_handle_retry_interval
+	},
+	{
+		"use_mmap", 1, 1,
+		nilfs_cldconfig_handle_use_mmap
+	},
+	{
+		"log_priority", 2, 2,
+		nilfs_cldconfig_handle_log_priority
+	},
 };
 
 #define NILFS_CLDCONFIG_NKEYWORDS			\
@@ -371,18 +379,24 @@ nilfs_cldconfig_keyword_table[] = {
 static int nilfs_cldconfig_handle_keyword(struct nilfs_cldconfig *config,
 					  char **tokens, size_t ntoks)
 {
+	const struct nilfs_cldconfig_keyword *kw;
 	int i;
 
 	if (ntoks == 0)
 		return 0;
 
-	for (i = 0; i < NILFS_CLDCONFIG_NKEYWORDS; i++)
-		if (strcmp(tokens[0],
-			   nilfs_cldconfig_keyword_table[i].ck_text) == 0)
-			return (*nilfs_cldconfig_keyword_table[i].ck_handler)(
-				config, tokens, ntoks);
+	kw = nilfs_cldconfig_keyword_table;
+	for (i = 0; i < NILFS_CLDCONFIG_NKEYWORDS; i++, kw++) {
+		if (strcmp(tokens[0], kw->ck_text) == 0) {
+			if (check_tokens(tokens, ntoks, kw->ck_minargs,
+					 kw->ck_maxargs) < 0)
+				return 0;
+			return kw->ck_handler(config, tokens, ntoks);
+		}
+	}
 
-	return nilfs_cldconfig_handle_unknown_keyword(config, tokens, ntoks);
+	syslog(LOG_WARNING, "%s: unknown keyword", tokens[0]);
+	return 0;
 }
 
 static void nilfs_cldconfig_set_default(struct nilfs_cldconfig *config)
