@@ -41,16 +41,16 @@ struct nilfs_selection_policy {
 };
 
 /**
- * struct nilfs_cldconfig -
- * @cf_selection_policy:
- * @cf_protection_period:
- * @cf_min_clean_segments:
- * @cf_max_clean_segments:
- * @cf_clean_check_interval:
- * @cf_nsegments_per_clean
- * @cf_cleaning_interval:
- * @cf_use_mmap:
- * @cf_log_priority:
+ * struct nilfs_cldconfig - cleanerd configuration
+ * @cf_selection_policy: selection policy
+ * @cf_protection_period: protection period
+ * @cf_min_clean_segments: low threshold on the number of free segments
+ * @cf_max_clean_segments: high threshold on the number of free segments
+ * @cf_clean_check_interval: cleaner check interval
+ * @cf_nsegments_per_clean number of segments reclaimed per clean cycle
+ * @cf_cleaning_interval: cleaning interval
+ * @cf_use_mmap: flag that indicate using mmap
+ * @cf_log_priority: log priority level
  */
 struct nilfs_cldconfig {
 	struct nilfs_selection_policy cf_selection_policy;
