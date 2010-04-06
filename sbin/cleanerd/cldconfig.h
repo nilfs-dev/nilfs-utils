@@ -78,7 +78,11 @@ enum nilfs_size_unit {
  * @cf_max_clean_segments: high threshold on the number of free segments
  * @cf_clean_check_interval: cleaner check interval
  * @cf_nsegments_per_clean: number of segments reclaimed per clean cycle
+ * @cf_mc_nsegments_per_clean: number of segments reclaimed per clean cycle
+ * if clean segments < min_clean_segments
  * @cf_cleaning_interval: cleaning interval
+ * @cf_mc_cleaning_interval: cleaning interval
+ * if clean segments < min_clean_segments
  * @cf_use_mmap: flag that indicate using mmap
  * @cf_log_priority: log priority level
  */
@@ -89,7 +93,9 @@ struct nilfs_cldconfig {
 	__u64 cf_max_clean_segments;
 	time_t cf_clean_check_interval;
 	int cf_nsegments_per_clean;
+	int cf_mc_nsegments_per_clean;
 	time_t cf_cleaning_interval;
+	time_t cf_mc_cleaning_interval;
 	time_t cf_retry_interval;
 	int cf_use_mmap;
 	int cf_log_priority;
@@ -103,7 +109,9 @@ struct nilfs_cldconfig {
 #define	NILFS_CLDCONFIG_MAX_CLEAN_SEGMENTS		200
 #define	NILFS_CLDCONFIG_CLEAN_CHECK_INTERVAL		60
 #define NILFS_CLDCONFIG_NSEGMENTS_PER_CLEAN		2
+#define NILFS_CLDCONFIG_MC_NSEGMENTS_PER_CLEAN		4
 #define NILFS_CLDCONFIG_CLEANING_INTERVAL		5
+#define NILFS_CLDCONFIG_MC_CLEANING_INTERVAL		1
 #define NILFS_CLDCONFIG_RETRY_INTERVAL			60
 #define NILFS_CLDCONFIG_USE_MMAP			1
 #define NILFS_CLDCONFIG_LOG_PRIORITY			LOG_INFO

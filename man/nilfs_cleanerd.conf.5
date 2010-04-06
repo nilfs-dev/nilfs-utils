@@ -56,8 +56,17 @@ which reclaims segments in order from oldest to newest, is support.
 Specify the number of segments reclaimed by a single cleaning step.
 The default value is 2.
 .TP
+.B mc_nsegments_per_clean
+Specify the number of segments reclaimed by a single cleaning step
+if clean segments < min_clean_segments.
+The default value is 4.
+.TP
 .B cleaning_interval
 Specify the cleaning interval in seconds.  The default value is 5.
+.TP
+.B mc_cleaning_interval
+Specify the cleaning interval in seconds
+if clean segments < min_clean_segments.  The default value is 1.
 .TP
 .B retry_interval
 Specify retry interval in seconds.  This value provides the retry

@@ -158,6 +158,8 @@ static int nilfs_cleanerd_reconfig(struct nilfs_cleanerd *cleanerd)
 		}
 		cleanerd->c_ncleansegs =
 			cleanerd->c_config.cf_nsegments_per_clean;
+		cleanerd->c_cleaning_interval =
+			cleanerd->c_config.cf_cleaning_interval;
 	}
 	return ret;
 }
@@ -1136,13 +1138,13 @@ static int nilfs_cleanerd_recalc_interval(struct nilfs_cleanerd *cleanerd,
 	/* curr >= target */
 	if (!timercmp(&curr, &cleanerd->c_target, <)) {
 		cleanerd->c_target = curr;
-		cleanerd->c_target.tv_sec += config->cf_cleaning_interval;
+		cleanerd->c_target.tv_sec += cleanerd->c_cleaning_interval;
 		syslog(LOG_DEBUG, "adjust interval");
 		return 1; /* skip a sleep */
 	}
 	timersub(&cleanerd->c_target, &curr, &diff);
 	timeval_to_timespec(&diff, timeout);
-	cleanerd->c_target.tv_sec += config->cf_cleaning_interval;
+	cleanerd->c_target.tv_sec += cleanerd->c_cleaning_interval;
 	return 0;
 }
 
@@ -1175,6 +1177,41 @@ static void nilfs_cleanerd_clean_check_resume(struct nilfs_cleanerd *cleanerd)
 {
 	cleanerd->c_running = 1;
 	syslog(LOG_INFO, "resume (clean check)");
+}
+
+static int nilfs_cleanerd_handle_clean_check(struct nilfs_cleanerd *cleanerd,
+					     struct nilfs_sustat *sustat,
+					     int r_segments,
+					     struct timespec *timeout)
+{
+	if (cleanerd->c_running) {
+		if (sustat->ss_ncleansegs >
+		    cleanerd->c_config.cf_max_clean_segments + r_segments) {
+			nilfs_cleanerd_clean_check_pause(cleanerd, timeout);
+			return -1;
+		}
+	} else {
+		if (sustat->ss_ncleansegs <
+		    cleanerd->c_config.cf_min_clean_segments + r_segments)
+			nilfs_cleanerd_clean_check_resume(cleanerd);
+		else
+			return -1;
+	}
+
+	if (sustat->ss_ncleansegs <
+	    cleanerd->c_config.cf_min_clean_segments + r_segments) {
+		cleanerd->c_ncleansegs =
+			cleanerd->c_config.cf_mc_nsegments_per_clean;
+		cleanerd->c_cleaning_interval =
+			cleanerd->c_config.cf_mc_cleaning_interval;
+	} else {
+		cleanerd->c_ncleansegs =
+			cleanerd->c_config.cf_nsegments_per_clean;
+		cleanerd->c_cleaning_interval =
+			cleanerd->c_config.cf_cleaning_interval;
+	}
+
+	return 0;
 }
 
 /**
@@ -1218,6 +1255,7 @@ static int nilfs_cleanerd_clean_loop(struct nilfs_cleanerd *cleanerd)
 		return -1;
 
 	cleanerd->c_ncleansegs = cleanerd->c_config.cf_nsegments_per_clean;
+	cleanerd->c_cleaning_interval = cleanerd->c_config.cf_cleaning_interval;
 
 	r_segments = nilfs_get_reserved_segments(cleanerd->c_nilfs);
 
@@ -1245,18 +1283,9 @@ static int nilfs_cleanerd_clean_loop(struct nilfs_cleanerd *cleanerd)
 		}
 
 		if (cleanerd->c_config.cf_min_clean_segments > 0) {
-			if (cleanerd->c_running) {
-				if (sustat.ss_ncleansegs > cleanerd->c_config.cf_max_clean_segments + r_segments) {
-					nilfs_cleanerd_clean_check_pause(cleanerd, &timeout);
-					goto sleep;
-				}
-			}
-			else {
-				if (sustat.ss_ncleansegs < cleanerd->c_config.cf_min_clean_segments + r_segments)
-					nilfs_cleanerd_clean_check_resume(cleanerd);
-				else
-					goto sleep;
-			}
+			if (nilfs_cleanerd_handle_clean_check(
+				cleanerd, &sustat, r_segments, &timeout) < 0)
+				goto sleep;
 		}
 
 		if (sustat.ss_nongc_ctime != prev_nongc_ctime) {
