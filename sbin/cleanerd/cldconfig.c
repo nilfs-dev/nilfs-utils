@@ -584,15 +584,27 @@ static int nilfs_cldconfig_handle_keyword(struct nilfs_cldconfig *config,
 	return 0;
 }
 
-static void nilfs_cldconfig_set_default(struct nilfs_cldconfig *config)
+static void nilfs_cldconfig_set_default(struct nilfs_cldconfig *config,
+					struct nilfs *nilfs)
 {
+	struct nilfs_param param;
+
 	config->cf_selection_policy.p_importance =
 		NILFS_CLDCONFIG_SELECTION_POLICY_IMPORTANCE;
 	config->cf_selection_policy.p_threshold =
 		NILFS_CLDCONFIG_SELECTION_POLICY_THRESHOLD;
 	config->cf_protection_period = NILFS_CLDCONFIG_PROTECTION_PERIOD;
-	config->cf_min_clean_segments = NILFS_CLDCONFIG_MIN_CLEAN_SEGMENTS;
-	config->cf_max_clean_segments = NILFS_CLDCONFIG_MAX_CLEAN_SEGMENTS;
+
+	param.num = NILFS_CLDCONFIG_MIN_CLEAN_SEGMENTS;
+	param.unit = NILFS_CLDCONFIG_MIN_CLEAN_SEGMENTS_UNIT;
+	config->cf_min_clean_segments =
+		nilfs_convert_size_to_nsegments(nilfs, &param);
+
+	param.num = NILFS_CLDCONFIG_MAX_CLEAN_SEGMENTS;
+	param.unit = NILFS_CLDCONFIG_MAX_CLEAN_SEGMENTS_UNIT;
+	config->cf_max_clean_segments =
+		nilfs_convert_size_to_nsegments(nilfs, &param);
+
 	config->cf_clean_check_interval = NILFS_CLDCONFIG_CLEAN_CHECK_INTERVAL;
 	config->cf_nsegments_per_clean = NILFS_CLDCONFIG_NSEGMENTS_PER_CLEAN;
 	config->cf_mc_nsegments_per_clean =
@@ -672,7 +684,7 @@ static int nilfs_cldconfig_do_read(struct nilfs_cldconfig *config,
 int nilfs_cldconfig_read(struct nilfs_cldconfig *config, const char *path,
 			 struct nilfs *nilfs)
 {
-	nilfs_cldconfig_set_default(config);
+	nilfs_cldconfig_set_default(config, nilfs);
 	if (nilfs_cldconfig_do_read(config, path, nilfs) < 0)
 		syslog(LOG_WARNING, "%s: cannot read", path);
 	return 0;
