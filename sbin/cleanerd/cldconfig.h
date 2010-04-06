@@ -77,7 +77,7 @@ enum nilfs_size_unit {
  * @cf_min_clean_segments: low threshold on the number of free segments
  * @cf_max_clean_segments: high threshold on the number of free segments
  * @cf_clean_check_interval: cleaner check interval
- * @cf_nsegments_per_clean number of segments reclaimed per clean cycle
+ * @cf_nsegments_per_clean: number of segments reclaimed per clean cycle
  * @cf_cleaning_interval: cleaning interval
  * @cf_use_mmap: flag that indicate using mmap
  * @cf_log_priority: log priority level
