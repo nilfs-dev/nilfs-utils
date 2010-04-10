@@ -1,3 +1,11 @@
+nilfs-utils-2.0.18  Sat Apr 10, 2010 JST
+
+	* allow cleanerd to suspend GC based on the number of free
+	  segments (thanks to David Arendt)
+	* add mount option to disable garbage collection
+	* add AUTHORS file
+	* do cleanup for conf-file parser of cleanerd
+
 nilfs-utils-2.0.17  Sat Mar 13, 2010 JST
 
 	* add COPYING file to prevent insertion of the GPLv3 preamble by
