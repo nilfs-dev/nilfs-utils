@@ -80,12 +80,12 @@ AC_SUBST([sysconfdir], [/etc])
 AC_SUBST([localstatedir], [/var])
 
 AC_CONFIG_FILES([Makefile
-                 bin/Makefile
+		 bin/Makefile
 		 include/Makefile
-                 lib/Makefile
-                 man/Makefile
-                 sbin/Makefile
-                 sbin/cleanerd/Makefile
-                 sbin/mkfs/Makefile
+		 lib/Makefile
+		 man/Makefile
+		 sbin/Makefile
+		 sbin/cleanerd/Makefile
+		 sbin/mkfs/Makefile
 		 sbin/mount/Makefile])
 AC_OUTPUT
