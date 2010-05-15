@@ -16,6 +16,10 @@
  * GNU Library Public License for more details.
  */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif	/* HAVE_CONFIG_H */
+
 #define resolve_symlinks
 
 /*
@@ -23,13 +27,26 @@
  * since the libc version has some security flaws.
  */
 
+#if HAVE_LIMITS_H
 #include <limits.h>		/* for PATH_MAX */
+#endif	/* HAVE_LIMITS_H */
+
 #ifndef PATH_MAX
 #define PATH_MAX 8192
 #endif
+
+#if HAVE_STDLIB_H
 #include <stdlib.h>		/* free() */
+#endif	/* HAVE_STDLIB_H */
+
+#if HAVE_UNISTD_H
 #include <unistd.h>
+#endif	/* HAVE_UNISTD_H */
+
+#if HAVE_STRINGS_H
 #include <string.h>
+#endif	/* HAVE_STRINGS_H */
+
 #include <errno.h>
 #include "realpath.h"
 
