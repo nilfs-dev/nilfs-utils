@@ -3,9 +3,21 @@
  *
  * Code borrowed from util-linux-2.12r/mount/xmalloc.c
  */
+
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif	/* HAVE_CONFIG_H */
+
 #include <stdio.h>
+
+#if HAVE_STDLIB_H
 #include <stdlib.h>
+#endif	/* HAVE_STDLIB_H */
+
+#if HAVE_STRING_H
 #include <string.h>	/* strdup() */
+#endif	/* HAVE_STRING_H */
+
 #include "xmalloc.h"
 #include "nls.h"	/* _() */
 #include "sundries.h"	/* EX_SYSERR */

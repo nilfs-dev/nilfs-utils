@@ -8,10 +8,22 @@
  * - added Native Language Support
  */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif	/* HAVE_CONFIG_H */
+
 #include <stdio.h>
+
+#if HAVE_STRING_H
 #include <string.h>		/* for index */
+#endif	/* HAVE_STRING_H */
+
 #include <ctype.h>		/* for isdigit */
+
+#if HAVE_SYS_STAT_H
 #include <sys/stat.h>		/* for umask */
+#endif	/* HAVE_SYS_STAT_H */
+
 #include "mntent.h"
 #include "sundries.h"		/* for xmalloc */
 #include "nls.h"

@@ -27,22 +27,55 @@
  *  - my_free()
  */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif	/* HAVE_CONFIG_H */
+
 #define _LARGEFILE64_SOURCE
 #define _XOPEN_SOURCE 600
 
+#if HAVE_SYS_TYPES_H
 #include <sys/types.h>
+#endif	/* HAVE_SYS_TYPES_H */
+
 #include <stdio.h>
+
+#if HAVE_STDLIB_H
 #include <stdlib.h>
+#endif	/* HAVE_STDLIB_H */
+
+#if HAVE_UNISTD_H
 #include <unistd.h>
+#endif	/* HAVE_UNISTD_H */
+
+#if HAVE_FCNTL_H
 #include <fcntl.h>
+#endif	/* HAVE_FCNTL_H */
+
+#if HAVE_STRINGS_H
 #include <strings.h>
+#endif	/* HAVE_STRINGS_H */
+
 #include <stdarg.h>
+
+#if HAVE_STRING_H
 #include <string.h>
+#endif	/* HAVE_STRING_H */
+
+#if HAVE_SYS_MOUNT_H
 #include <sys/mount.h>
+#endif	/* HAVE_SYS_MOUNT_H */
+
+#if HAVE_SYS_STAT_H
 #include <sys/stat.h>
+#endif	/* HAVE_SYS_STAT_H */
+
 #include <signal.h>
 #include <errno.h>
+
+#if HAVE_SYSLOG_H
 #include <syslog.h>
+#endif	/* HAVE_SYSLOG_H */
 
 #include "fstab.h"
 #include "paths.h"

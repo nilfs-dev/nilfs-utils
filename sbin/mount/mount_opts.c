@@ -9,11 +9,17 @@
  * Modifications by many people. Distributed under GPL.
  */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif	/* HAVE_CONFIG_H */
+
 #include <stdio.h>
-//#include <stdlib.h>
+
+#if HAVE_STRING_H
 #include <string.h>
+#endif	/* HAVE_STRING_H */
+
 #include <ctype.h>		/* for isdigit */
-//#include <sys/mount.h>
 
 #include <pwd.h>
 #include <grp.h>

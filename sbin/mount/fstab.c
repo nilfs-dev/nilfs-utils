@@ -9,12 +9,27 @@
  * - fixed strerr(errno) in gettext calls
  */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif	/* HAVE_CONFIG_H */
+
+#if HAVE_UNISTD_H
 #include <unistd.h>
+#endif	/* HAVE_UNISTD_H */
+
 #include <errno.h>
 #include <stdio.h>
+
+#if HAVE_STRING_H
 #include <string.h>
+#endif	/* HAVE_STRING_H */
+
 #include <sys/stat.h>
+
+#if HAVE_MNTENT_H
 #include <mntent.h>		/* for MNTTYPE_IGNORE */
+#endif	/* HAVE_MNTENT_H */
+
 #include "mntent.h"
 #include "fstab.h"
 #include "sundries.h"
