@@ -24,6 +24,10 @@
  * Revised by Ryusuke Konishi <ryusuke@osrg.net>.
  */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif	/* HAVE_CONFIG_H */
+
 #define _FILE_OFFSET_BITS 64
 //#define _LARGEFILE_SOURCE
 #define _LARGEFILE64_SOURCE
@@ -35,18 +39,47 @@
 #undef CONFIG_SKETCH_FILE
 
 #include <stdio.h>
+
+#if HAVE_STDLIB_H
 #include <stdlib.h>
+#endif	/* HAVE_STDLIB_H */
+
 #include <assert.h>
+
+#if HAVE_UNISTD_H
 #include <unistd.h>
+#endif	/* HAVE_UNISTD_H */
+
+#if HAVE_FCNTL_H
 #include <fcntl.h>
+#endif	/* HAVE_FCNTL_H */
+
+#if HAVE_STRINGS_H
 #include <strings.h>
+#endif	/* HAVE_STRINGS_H */
+
 #include <stdarg.h>
+
+#if HAVE_SYS_IOCTL_H
 #include <sys/ioctl.h>
+#endif	/* HAVE_SYS_IOCTL_H */
+
+#if HAVE_SYS_STAT_H
 #include <sys/stat.h>
+#endif	/* HAVE_SYS_STAT_H */
+
+#if HAVE_SYS_WAIT_H
 #include <sys/wait.h>
+#endif	/* HAVE_SYS_WAIT_H */
+
 #include <uuid/uuid.h>
+
+#if HAVE_STRING_H
 #include <string.h>
+#endif	/* HAVE_STRING_H */
+
 #include <errno.h>
+
 #include "mkfs.h"
 
 
