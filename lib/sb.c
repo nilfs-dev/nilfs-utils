@@ -57,7 +57,11 @@
 #endif	/* HAVE_LINUX_TYPES_H */
 
 #include <linux/fs.h>
+
+#if HAVE_SYS_IOCTL_H
 #include <sys/ioctl.h>
+#endif	/* HAVE_SYS_IOCTL_H */
+
 #include <errno.h>
 #include <assert.h>
 #include "nilfs.h"
