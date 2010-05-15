@@ -26,8 +26,18 @@
  * Version 2.  See the file COPYING for more details.
  */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif	/* HAVE_CONFIG_H */
+
+#if HAVE_SYS_TYPES_H
 #include <sys/types.h>
+#endif	/* HAVE_SYS_TYPES_H */
+
+#if HAVE_LINUX_TYPES_H
 #include <linux/types.h>
+#endif	/* HAVE_LINUX_TYPES_H */
+
 #include <endian.h>
 #include <byteswap.h>
 
