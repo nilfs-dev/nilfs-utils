@@ -1509,6 +1509,7 @@ static void prepare_segment(struct nilfs_segment_info *si)
 	nilfs.segsum->ss_nblocks = cpu_to_le32(si->nblocks);
 	nilfs.segsum->ss_nfinfo = cpu_to_le32(si->nfinfo);
 	nilfs.segsum->ss_sumbytes = cpu_to_le32(si->sumbytes);
+	nilfs.segsum->ss_cno = cpu_to_le64(nilfs.cno);
 
 	/* initialize super root */
 	nilfs.super_root = map_disk_buffer(si->start + si->nblocks - 1, 1);
