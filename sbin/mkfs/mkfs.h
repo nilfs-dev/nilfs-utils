@@ -54,6 +54,10 @@ typedef __u16 __le16;
 #endif
 #endif
 
+#ifndef BUG
+#define BUG()	abort()
+#endif
+
 #include "nilfs2_fs.h"
 
 #define NILFS_DISKHDR_SIZE 		4096 /* HDD header (MBR+superblock) */

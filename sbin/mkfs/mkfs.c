@@ -1064,7 +1064,7 @@ static void inc_link_count(int ino)
 
 static struct nilfs_dir_entry *next_dir_entry(struct nilfs_dir_entry *de)
 {
-	return (void *)de + le16_to_cpu(de->rec_len);
+	return (void *)de + nilfs_rec_len_from_disk(de->rec_len);
 }
 
 #if 0 /* prepared for future use */
@@ -1090,7 +1090,7 @@ add_dir_entry(ino_t dir_ino, ino_t ino, const char *name)
 	/* search the last entry */
 	while ((void *)de <= dir_end - reclen) {
 		name_len = NILFS_DIR_REC_LEN(de->name_len);
-		rec_len = le16_to_cpu(de->rec_len);
+		rec_len = nilfs_rec_len_from_disk(de->rec_len);
 		if (!de->inode && rec_len >= reclen)
 			goto got_it;
 		if (rec_len >= name_len + reclen)
@@ -1102,8 +1102,8 @@ add_dir_entry(ino_t dir_ino, ino_t ino, const char *name)
  got_it:
 	if (de->inode) {
 		struct nilfs_dir_entry *de2 = (void *)de + name_len;
-		de2->rec_len = cpu_to_le16(rec_len - name_len);
-		de->rec_len = cpu_to_le16(name_len);
+		de2->rec_len = nilfs_rec_len_to_disk(rec_len - name_len);
+		de->rec_len = nilfs_rec_len_to_disk(name_len);
 		de = de2;
 	}
 	de->inode = cpu_to_le64(ino);
@@ -1134,7 +1134,7 @@ static void make_empty_dir(ino_t dir_ino, ino_t parent_ino)
 	de->inode = cpu_to_le64(dir_ino);
 	de->name_len = 1;
 	rec_len2 = rec_len = NILFS_DIR_REC_LEN(1);
-	de->rec_len = cpu_to_le16(rec_len);
+	de->rec_len = nilfs_rec_len_to_disk(rec_len);
 	de->file_type = NILFS_FT_DIR;
 	memcpy(de->name, ".\0\0\0\0\0\0", 8);
 
@@ -1142,7 +1142,7 @@ static void make_empty_dir(ino_t dir_ino, ino_t parent_ino)
 	de->inode = cpu_to_le64(parent_ino);
 	de->name_len = 2;
 	rec_len2 += (rec_len = NILFS_DIR_REC_LEN(2));
-	de->rec_len = cpu_to_le16(rec_len);
+	de->rec_len = nilfs_rec_len_to_disk(rec_len);
 	de->file_type = NILFS_FT_DIR;
 	memcpy(de->name, "..\0\0\0\0\0", 8);
 //	rec_len += de->rec_len;
@@ -1152,7 +1152,7 @@ static void make_empty_dir(ino_t dir_ino, ino_t parent_ino)
 	de->inode = cpu_to_le64(NILFS_SKETCH_INO);
 	de->name_len = 7;
 	rec_len2 += (rec_len = NILFS_DIR_REC_LEN(7));
-	de->rec_len = cpu_to_le16(rec_len);
+	de->rec_len = nilfs_rec_len_to_disk(rec_len);
 	de->file_type = NILFS_FT_REG_FILE;
 	memcpy(de->name, ".sketch", 8);
 //	rec_len += de->rec_len;
@@ -1161,7 +1161,7 @@ static void make_empty_dir(ino_t dir_ino, ino_t parent_ino)
 	de = next_dir_entry(de);
 	de->inode = cpu_to_le64(NILFS_NILFS_INO);
 	de->name_len = 6;
-	de->rec_len = cpu_to_le16(blocksize - rec_len2);
+	de->rec_len = nilfs_rec_len_to_disk(blocksize - rec_len2);
 	de->file_type = NILFS_FT_REG_FILE;
 	memcpy(de->name, ".nilfs\0", 8);
 }

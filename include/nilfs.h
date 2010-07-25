@@ -28,6 +28,7 @@
 #define NILFS_H
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <unistd.h>
 #include <fcntl.h>
 #include <time.h>
@@ -76,7 +77,10 @@ typedef __u64	__be64;
 #error "unknown endian"
 #endif	/* __BYTE_ORDER */
 
-/* XXX: nilfs2_fs.h requires cpu_to_le32 and le32_to_cpu */
+#ifndef BUG
+#define BUG()	abort()
+#endif
+
 #include "nilfs2_fs.h"
 
 /* XXX: sector_t is not defined in user land */
