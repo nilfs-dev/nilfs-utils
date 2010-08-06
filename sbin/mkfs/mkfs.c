@@ -112,7 +112,7 @@ struct mkfs_options {
 	long r_segments_percentage;
 	int quiet, cflag, nflag;
 	time_t ctime;
-	char volume_label[16];
+	char volume_label[80];
 };
 
 extern char *optarg;
