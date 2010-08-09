@@ -100,7 +100,8 @@ that the read-only mount option must be specified together.
 Define the behaviour when an error is encountered.  (Eigher ignore
 errors and just mark the file system erroneous and continue, or
 remount the file system read-only, or panic and halt the system.)  The
-default is continue.
+default is remount-ro.  In earlier kernels than Linux 2.6.35, continue
+was the default.
 .TP
 .BR pp=\fP\fIprotection-period\fP
 Specify the \fIprotection-period\fP for the cleaner daemon (in
