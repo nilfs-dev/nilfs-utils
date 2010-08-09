@@ -1,3 +1,13 @@
+nilfs-utils-2.0.19  Mon Aug  9, 2010 JST
+
+	* add uhelper option support.  This is required to control nilfs2
+	  partitions from udisks/palimpsest.
+	* enlarge maximum size of volume name to 80 bytes
+	* update man pages; described new mount options (norecovery and
+	  discard) and change on the default of errors= mount option.
+	* import changes in nilfs2_fs.h upto kernel 2.6.35.
+	* extend the range of application of autoconf
+
 nilfs-utils-2.0.18  Sat Apr 10, 2010 JST
 
 	* allow cleanerd to suspend GC based on the number of free
