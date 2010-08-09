@@ -281,6 +281,7 @@ int nilfs_opt_test_mmap(struct nilfs *nilfs)
 struct nilfs *nilfs_open(const char *dev, const char *dir, int flags)
 {
 	struct nilfs *nilfs;
+	__u64 features;
 	int oflags;
 
 	if (!(flags & (NILFS_OPEN_RAW | NILFS_OPEN_RDONLY |
@@ -314,6 +315,13 @@ struct nilfs *nilfs_open(const char *dev, const char *dir, int flags)
 			goto out_fd;
 		if (nilfs_read_sb(nilfs) < 0)
 			goto out_fd;
+
+		features = le64_to_cpu(nilfs->n_sb->s_feature_incompat) &
+			~NILFS_FEATURE_INCOMPAT_SUPP;
+		if (features) {
+			errno = ENOTSUP;
+			goto out_fd;
+		}
 	}
 
 	if (flags &
