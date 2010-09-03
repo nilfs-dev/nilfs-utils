@@ -94,6 +94,10 @@ typedef __u64 nilfs_cno_t;
 #define NILFS_CNO_MIN	((nilfs_cno_t)1)
 #define NILFS_CNO_MAX	(~(nilfs_cno_t)0)
 
+#define NILFS_SB_LABEL			0x0001
+#define NILFS_SB_UUID			0x0002
+#define NILFS_SB_COMMIT_INTERVAL	0x4000
+#define NILFS_SB_BLOCK_MAX		0x8000
 
 /**
  * struct nilfs - nilfs object
@@ -286,6 +290,9 @@ static inline int nilfs_block_is_node(const struct nilfs_block *blk)
 	     nilfs_block_next(blk))
 
 #define NILFS_SB_BLOCK_SIZE_SHIFT	10
+
+struct nilfs_super_block *nilfs_sb_read(int devfd);
+int nilfs_sb_write(int devfd, struct nilfs_super_block *sbp, int mask);
 
 int nilfs_read_sb(struct nilfs *);
 
