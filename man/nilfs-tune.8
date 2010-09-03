@@ -1,0 +1,56 @@
+.\"  Copyright (C) 2010 Jiro SEKIBA <jir@unicus.jp>
+.\"
+.TH NILFS-TUNE 8 "Sep 2010" "nilfs-utils version 2.0"
+.SH NAME
+nilfs-tune \- adjust tunable file system parameters on NILFS file system
+.SH SYNOPSIS
+.B nilfs-tune
+[\fIoptions\fP] \fIdevice\fP
+.SH DESCRIPTION
+.B nilfs-tune
+is a utility to modify tunable file system parameters on NILFS2 file
+system in \fIdevice\fP.
+.PP
+This command is valid for inactive NILFS2 file systems.
+Modifying active mounts may cause severe damage.
+.SH OPTIONS
+.TP
+.B \-f
+Force to modify even the specified file system is mounted.
+.TP
+.B \-i \fIinterval\fP
+Set the commit interval of segment.
+.TP
+.B \-m \fIblock-max\fP
+Set the threshold of the data amount of the segment construction.
+.TP
+.B \-l
+List the contents of the file system superblock, including the current
+values of the parameters that can be set via this program.
+.TP
+.B \-L \fIvolume-label\fP
+Set the volume label of the file system.  NILFS2 file system labels
+can be at most 80 bytes long.  If volume-label is longer than 80 bytes,
+nilfs-tune will truncate it.  The volume label can be used mount(8) and
+/etc/fstab(5) (and possibly others) by specifying \fBLABEL\fP=volume-label
+instead of a block special device name like /dev/sda5.
+.TP
+.B \-U \fIUUID\fP
+Set the universally unique identifier (UUID) of the file system to UUID.
+The format of the UUID is a series of hex digits separated by hyphens,
+like this: "c1b9d5a2-f162-11cf-9ece-0020afc76f16".
+.TP
+.B \-h
+Display help message and exit.
+.SH AUTHOR
+Jiro SEKIBA <jir@unicus.jp>
+.SH AVAILABILITY
+.B nilfs-tune
+is part of the nilfs-utils package and is available from
+http://www.nilfs.org.
+.SH SEE ALSO
+.BR nilfs (8),
+.BR lscp (1),
+.BR chcp (8),
+.BR mkcp (8),
+.BR rmcp (8).

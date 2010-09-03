@@ -1,3 +1,3 @@
 ## Makefile.am
 
-SUBDIRS = cleanerd mkfs mount
+SUBDIRS = cleanerd mkfs mount nilfs-tune

@@ -37,7 +37,7 @@ AC_HEADER_STDC
 AC_HEADER_SYS_WAIT
 AC_CHECK_HEADERS([fcntl.h libintl.h limits.h locale.h mntent.h paths.h \
 		  stdlib.h string.h strings.h sys/ioctl.h sys/mount.h \
-		  sys/time.h syslog.h unistd.h linux/types.h])
+		  sys/time.h syslog.h unistd.h linux/types.h grp.h pwd.h])
 
 # Checks for typedefs, structures, and compiler characteristics.
 AC_C_CONST
@@ -68,7 +68,7 @@ AC_FUNC_STRFTIME
 AC_FUNC_VPRINTF
 AC_CHECK_FUNCS([alarm atexit ftruncate getcwd gettimeofday localtime_r \
 		memmove memset munmap strchr strdup strerror strrchr strstr \
-		strtoul])
+		strtoul getgrgid getpwuid])
 
 # Checks for system services
 AC_SYS_LARGEFILE
@@ -87,5 +87,6 @@ AC_CONFIG_FILES([Makefile
 		 sbin/Makefile
 		 sbin/cleanerd/Makefile
 		 sbin/mkfs/Makefile
-		 sbin/mount/Makefile])
+		 sbin/mount/Makefile
+		 sbin/nilfs-tune/Makefile])
 AC_OUTPUT
