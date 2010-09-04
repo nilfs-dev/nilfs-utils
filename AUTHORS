@@ -45,6 +45,8 @@ February 13, 2010: fix build against newer glibc
 
 * Jiro SEKIBA <jir@unicus.jp>
 November 9, 2009: expose struct nilfs_btree_node
+September 3, 2010: enhanced super block read/write routines
+September 3, 2010: implemented nilfs-tune
 
 And this software is realized and maintained by many other
 contributions and helps.
