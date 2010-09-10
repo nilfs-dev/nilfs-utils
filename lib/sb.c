@@ -161,7 +161,7 @@ struct nilfs_super_block *nilfs_sb_read(int devfd)
 	struct nilfs_super_block *sbp[2];
 
 	if (__nilfs_sb_read(devfd, sbp, NULL))
-		return -1;
+		return NULL;
 
 	if (!sbp[0]) {
 		sbp[0] = sbp[1];
