@@ -58,6 +58,11 @@
 #include <pwd.h>
 #endif	/* HAVE_PWD_H */
 
+#ifdef HAVE_MNTENT_H
+#include <mntent.h>
+#endif
+
+#include <sys/stat.h>
 #include <ctype.h>
 
 #include <errno.h>
@@ -444,26 +449,57 @@ int modify_nilfs(char *device, struct nilfs_tune_options *opts)
 	return ret;
 }
 
-/* Code borrowed from nilfs2-util/sbin/mkfs/mkfs.c */
+/* check_mount() checks whether DEVICE is a mounted file system.
+   Returns 0 if the DEVICE is *not* mounted (which we consider a
+   successful outcome), and -1 if DEVICE is mounted or if the mount
+   status cannot be determined.
+
+   Derived from e2fsprogs/lib/ext2fs/ismounted.c
+   Copyright (C) 1995,1996,1997,1998,1999,2000 Theodore Ts'o,
+   LGPL v2
+*/
 static int check_mount(const char *device)
 {
-	FILE *fp;
-	char line[LINE_BUFFER_SIZE];
+	struct mntent *mnt;
+	struct stat st_buf;
+	FILE *f;
+	dev_t file_dev = 0, file_rdev = 0;
+	ino_t file_ino = 0;
 
-	fp = fopen(MOUNTS, "r");
-	if (fp == NULL) {
+	f = setmntent(MOUNTS, "r");
+	if (f == NULL) {
 		fprintf(stderr, "Error: cannot open %s!", MOUNTS);
-		return 1;
+		return -1;
 	}
 
-	while (fgets(line, LINE_BUFFER_SIZE, fp) != NULL) {
-		if (strncmp(strtok(line, " "), device, strlen(device)) == 0) {
-			fclose(fp);
-			return 1;
+	if (stat(device, &st_buf) == 0) {
+		if (S_ISBLK(st_buf.st_mode)) {
+			file_rdev = st_buf.st_rdev;
+		} else {
+			file_dev = st_buf.st_dev;
+			file_ino = st_buf.st_ino;
 		}
 	}
-	fclose(fp);
-	return 0;
+
+	while ((mnt = getmntent(f)) != NULL) {
+		if (mnt->mnt_fsname[0] != '/')
+			continue;
+		if (strcmp(device, mnt->mnt_fsname) == 0)
+			break;
+		if (stat(mnt->mnt_fsname, &st_buf) == 0) {
+			if (S_ISBLK(st_buf.st_mode)) {
+				if (file_rdev && (file_rdev == st_buf.st_rdev))
+					break;
+			} else {
+				if (file_dev && ((file_dev == st_buf.st_dev) &&
+						 (file_ino == st_buf.st_ino)))
+					break;
+			}
+		}
+	}
+
+	endmntent(f);
+	return (mnt == NULL) ? 0 : -1;
 }
 
 int main(int argc, char *argv[])
@@ -486,12 +522,13 @@ int main(int argc, char *argv[])
 		exit(EXIT_FAILURE);
 	}
 
-	if (!opts.force && opts.flags == O_RDWR && check_mount(device)) {
-		fprintf(stderr, "Warning: %s is currently mounted.\n"
+	if (!opts.force && opts.flags == O_RDWR && (check_mount(device) < 0)) {
+		fprintf(stderr, "ERROR: %s is currently mounted.  "
+			"Aborting execution.\n"
 			"Running nilfs-tune on a mounted file system "
 			"may cause SEVERE damage.\n"
-			"You can force to modify file system by "
-			"\"-f\" option.\n",
+			"You can use the \"-f\" option to force this "
+			"operation.\n",
 			device);
 		exit(EXIT_SUCCESS);
 	}

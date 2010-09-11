@@ -37,7 +37,8 @@ AC_HEADER_STDC
 AC_HEADER_SYS_WAIT
 AC_CHECK_HEADERS([fcntl.h libintl.h limits.h locale.h mntent.h paths.h \
 		  stdlib.h string.h strings.h sys/ioctl.h sys/mount.h \
-		  sys/time.h syslog.h unistd.h linux/types.h grp.h pwd.h])
+		  sys/time.h syslog.h unistd.h linux/types.h grp.h pwd.h \
+		  mntent.h])
 
 # Checks for typedefs, structures, and compiler characteristics.
 AC_C_CONST
