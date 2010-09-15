@@ -399,10 +399,12 @@ int modify_nilfs(char *device, struct nilfs_tune_options *opts)
 	struct nilfs_super_block *sbp;
 	__u64 features;
 
+	errno = 0;
 	devfd = open(device, opts->flags);
 
 	if (devfd == -1) {
-		fprintf(stderr, "%s: cannot open NILFS\n", device);
+		fprintf(stderr, "cannot open device %s: %s\n",
+			device, strerror(errno));
 		ret = EXIT_FAILURE;
 		goto out;
 	}
