@@ -7,12 +7,15 @@ mount.nilfs2 \- mount a NILFS2 file system
 .SH SYNOPSIS
 .B mount -t nilfs2
 [\fB\-finrvw\fP] [\fB\-o\fP \fIoptions\fP [\fB,\fP...]] \fIdevice\fP \fIdir\fP
-.sp
+.br
 .B mount -t nilfs2
 [\fB\-finrvw\fP] [\fB\-o\fP \fIoptions\fP [\fB,\fP...]] \fIdevice\fP | \fIdir\fP
 .sp
 .B mount.nilfs2
 [\fB\-fnrvw\fP] [\fB\-o\fP \fIoptions\fP [\fB,\fP...]] \fIdevice\fP \fIdir\fP
+.sp
+.B mount.nilfs2
+[\fB\-V\fP]
 .SH DESCRIPTION
 .B mount.nilfs2
 serves to attach a NILFS2 file system on the specified directory
@@ -45,6 +48,9 @@ applying a \fB\-r\fP or \fB\-w\fP option, when present.
 .PP
 See \fBmount\fP(8) for the full set of options.  Commonly used options
 are as follows:
+.TP
+.B \-V
+Output version.
 .TP
 .B \-f
 Fakes mounting the file system, meaning that the actual system call

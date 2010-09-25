@@ -177,11 +177,16 @@ static int device_is_readonly(const char *device, int *ro)
 	return 0;
 }
 
+static void show_version(void)
+{
+	printf("%s (%s %s)\n", progname, PACKAGE, PACKAGE_VERSION);
+}
+
 static void parse_options(int argc, char *argv[], struct mount_options *opts)
 {
-	int c;
+	int c, show_version_only = 0;
 
-	while ((c = getopt(argc, argv, "fvnt:o:rw")) != EOF) {
+	while ((c = getopt(argc, argv, "fvnt:o:rwV")) != EOF) {
 		switch (c) {
 		case 'f':
 			fake++;
@@ -208,9 +213,17 @@ static void parse_options(int argc, char *argv[], struct mount_options *opts)
 		case 'w':
 			readwrite++;
 			break;
+		case 'V':
+			show_version_only++;
+			break;
 		default:
 			break;
 		}
+	}
+
+	if (show_version_only) {
+		show_version();
+		exit(0);
 	}
 
 	parse_opts(opts->opts, &opts->flags, &opts->extra_opts);
@@ -583,13 +596,13 @@ int main(int argc, char *argv[])
 	char *device, *mntdir;
 	int res = 0;
 
-	parse_options(argc, argv, opts);
-
 	if (argc > 0) {
 		char *cp = strrchr(argv[0], '/');
 
 		progname = (cp ? cp + 1 : argv[0]);
 	}
+
+	parse_options(argc, argv, opts);
 
 	umask(022);
 
