@@ -965,8 +965,8 @@ static void usage(void)
 {
 	fprintf(stderr,
 		"Usage: %s [-b block-size] [-B blocks-per-segment] [-c] \n"
-		"[-L volume-label] [-q] [-r revision-level]\n"
-		"[-m reserved-segments-percentage] [-V] device\n",
+		"[-L volume-label] [-m reserved-segments-percentage] [-n] \n"
+		"[-q] [-V] device\n",
 		progname);
 	exit(1);
 }
