@@ -53,14 +53,16 @@
 #include <getopt.h>
 const static struct option long_option[] = {
 	{"help", no_argument, NULL, 'h'},
+	{"version", no_argument, NULL, 'V'},
 	{NULL, 0, NULL, 0}
 };
 
 #define DUMPSEG_USAGE	\
 	"Usage: %s [OPTION]... [DEVICE] SEGNUM...\n"	\
-	"  -h, --help\t\tdisplay this help and exit\n"
+	"  -h, --help\t\tdisplay this help and exit\n"	\
+	"  -V, --version\tdisplay version and exit\n"
 #else	/* !_GNU_SOURCE */
-#define DUMPSEG_USAGE	"Usage: %s [device] segnum...\n"
+#define DUMPSEG_USAGE	"Usage: %s [-h] [-V] [device] segnum...\n"
 #endif	/* _GNU_SOURCE */
 
 
@@ -184,15 +186,19 @@ int main(int argc, char *argv[])
 		progname++;
 
 #ifdef _GNU_SOURCE
-	while ((c = getopt_long(argc, argv, "h",
+	while ((c = getopt_long(argc, argv, "hV",
 				long_option, &option_index)) >= 0) {
 #else	/* !_GNU_SOURCE */
-	while ((c = getopt(argc, argv, "h")) >= 0) {
+	while ((c = getopt(argc, argv, "hV")) >= 0) {
 #endif	/* _GNU_SOURCE */
 
 		switch (c) {
 		case 'h':
 			fprintf(stderr, DUMPSEG_USAGE, progname);
+			exit(0);
+		case 'V':
+			printf("%s (%s %s)\n", progname, PACKAGE,
+			       PACKAGE_VERSION);
 			exit(0);
 		default:
 			fprintf(stderr, "%s: invalid option -- %c\n",

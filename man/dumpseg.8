@@ -6,9 +6,10 @@
 dumpseg \- print segment information of NILFS2
 .SH SYNOPSIS
 .B dumpseg
-[\fIdevice\fP] \fIsegment-number\fP ...
+[\fB\-hV\fP]
 .sp
-.B dumpseg \-h
+.B dumpseg
+[\fIdevice\fP] \fIsegment-number\fP ...
 .SH DESCRIPTION
 The
 .B dumpseg
@@ -26,6 +27,9 @@ of segments, \fBlssu\fP(1) is available instead.
 .TP
 .B \-h
 Display help message and exit.
+.TP
+.B \-V
+Display version and exit.
 .SH "FIELD DESCRIPTION"
 .B dumpseg
 shows the configuration of each log with the following fields, where
