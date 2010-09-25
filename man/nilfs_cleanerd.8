@@ -6,6 +6,9 @@
 nilfs_cleanerd \- NILFS2 garbage collector
 .SH SYNOPSIS
 .B nilfs_cleanerd
+[\fB\-hV\fP]
+.sp
+.B nilfs_cleanerd
 [\fIoptions\fP] \fIdevice\fP [\fIdirectory\fP]
 .SH DESCRIPTION
 .B nilfs_cleanerd
@@ -23,11 +26,14 @@ users are recommended to invoke \fBnilfs_cleanerd\fP through
 inconsistencies among administration tools.
 .SH OPTIONS
 .TP
-.B \-c
-Specify configuration file.
+.B \-V
+Display version and exit.
 .TP
 .B \-h
 Display help message and exit.
+.TP
+.B \-c
+Specify configuration file.
 .TP
 .B \-n
 invoke cleanerd without forking process. This option is intended for

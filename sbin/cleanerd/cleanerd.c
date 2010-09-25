@@ -83,23 +83,31 @@ const static struct option long_option[] = {
 	/* internal option for mount.nilfs2 only */
 	{"nofork", no_argument, NULL, 'n'},
 	{"protection-period", required_argument, NULL, 'p'},
+	{"version", no_argument, NULL, 'V'},
 	{NULL, 0, NULL, 0}
 };
 #define NILFS_CLEANERD_OPTIONS	\
 	"  -c, --conffile\tspecify configuration file\n"	\
 	"  -h, --help    \tdisplay this help and exit\n"	\
-	"  -p, --protection-period\tspecify protection period\n"
+	"  -p, --protection-period\tspecify protection period\n" \
+	"  -V, --version \tprint version and exit\n"
 #else	/* !_GNU_SOURCE */
 #define NILFS_CLEANERD_OPTIONS	\
 	"  -c            \tspecify configuration file\n"	\
 	"  -h            \tdisplay this help and exit\n"	\
-	"  -p,           \tspecify protection period\n"
+	"  -p            \tspecify protection period\n"		\
+	"  -V            \tprint version and exit\n"
 #endif	/* _GNU_SOURCE */
 
 static struct nilfs_cleanerd *nilfs_cleanerd;
 static sigjmp_buf nilfs_cleanerd_env;
 static volatile sig_atomic_t nilfs_cleanerd_reload_config;
 static volatile unsigned long protection_period;
+
+static void nilfs_cleanerd_version(const char *progname)
+{
+	printf("%s (%s %s)\n", progname, PACKAGE, PACKAGE_VERSION);
+}
 
 static void nilfs_cleanerd_usage(const char *progname)
 {
@@ -1352,10 +1360,10 @@ int main(int argc, char *argv[])
 	dir = NULL;
 
 #ifdef _GNU_SOURCE
-	while ((c = getopt_long(argc, argv, "c:hnp:",
+	while ((c = getopt_long(argc, argv, "c:hnp:V",
 				long_option, &option_index)) >= 0) {
 #else	/* !_GNU_SOURCE */
-	while ((c = getopt(argc, argv, "c:hnp:")) >= 0) {
+	while ((c = getopt(argc, argv, "c:hnp:V")) >= 0) {
 #endif	/* _GNU_SOURCE */
 
 		switch (c) {
@@ -1383,6 +1391,9 @@ int main(int argc, char *argv[])
 				exit(1);
 			}
 			break;
+		case 'V':
+			nilfs_cleanerd_version(progname);
+			exit(0);
 		default:
 			nilfs_cleanerd_usage(progname);
 			exit(1);
