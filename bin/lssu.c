@@ -57,10 +57,10 @@ const static struct option long_option[] = {
 
 #define LSSU_USAGE	"Usage: %s [OPTION]... [DEVICE]\n"		\
 			"  -a, --all\t\tdo not hide clean segments\n"	\
-			"  -i, --index\tstart index\n"			\
-			"  -n, --lines\toutput lines\n"			\
+			"  -i, --index\t\tstart index\n"		\
+			"  -n, --lines\t\toutput lines\n"		\
 			"  -h, --help\t\tdisplay this help and exit\n"	\
-			"  -V, --version\tdisplay version and exit\n"
+			"  -V, --version\t\tdisplay version and exit\n"
 #else	/* !_GNU_SOURCE */
 #include <unistd.h>
 #define LSSU_USAGE	"Usage: %s [-ahV] [-i index] [-n lines] [device]\n"

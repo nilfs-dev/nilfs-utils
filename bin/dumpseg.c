@@ -60,7 +60,7 @@ const static struct option long_option[] = {
 #define DUMPSEG_USAGE	\
 	"Usage: %s [OPTION]... [DEVICE] SEGNUM...\n"	\
 	"  -h, --help\t\tdisplay this help and exit\n"	\
-	"  -V, --version\tdisplay version and exit\n"
+	"  -V, --version\t\tdisplay version and exit\n"
 #else	/* !_GNU_SOURCE */
 #define DUMPSEG_USAGE	"Usage: %s [-h] [-V] [device] segnum...\n"
 #endif	/* _GNU_SOURCE */

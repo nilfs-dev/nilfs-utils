@@ -59,7 +59,7 @@ const static struct option long_option[] = {
 #define MKCP_USAGE	"Usage: %s [OPTION] [DEVICE]\n"			\
 			"  -s, --snapshot\tcreate a snapshot\n"		\
 			"  -h, --help\t\tdisplay this help and exit\n"	\
-			"  -V, --version\tdisplay version and exit\n"
+			"  -V, --version\t\tdisplay version and exit\n"
 #else	/* !_GNU_SOURCE */
 #define MKCP_USAGE	"Usage: %s [-shV] [device]\n"
 #endif	/* _GNU_SOURCE */

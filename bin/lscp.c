@@ -68,7 +68,7 @@ const static struct option long_option[] = {
 			"  -i, --index\t\tcp/ss index\n"		\
 			"  -n, --lines\t\tlines\n"			\
 			"  -h, --help\t\tdisplay this help and exit\n"	\
-			"  -V, --version\tdisplay version and exit\n"
+			"  -V, --version\t\tdisplay version and exit\n"
 #else
 #define LSCP_USAGE	"Usage: %s [-rshV] [-i cno] [-n lines] [device]\n"
 #endif	/* _GNU_SOURCE */

@@ -62,10 +62,10 @@ const static struct option long_options[] = {
 };
 #define RMCP_USAGE							\
 	"Usage: %s [OPTION]... [DEVICE] CNO...\n"			\
-	"  -f, --force\tignore snapshots or nonexistent checkpoints"	\
-	"  -i, --interactive\t prompt before any removal\n"		\
+	"  -f, --force\t\tignore snapshots or nonexistent checkpoints\n" \
+	"  -i, --interactive\tprompt before any removal\n"		\
 	"  -h, --help\t\tdisplay this help and exit\n"			\
-	"  -V, --version\tdisplay version and exit\n"
+	"  -V, --version\t\tdisplay version and exit\n"
 #else	/* !_GNU_SOURCE */
 #define RMCP_USAGE	"Usage: %s [-fihV] [device] cno...\n"
 #endif	/* _GNU_SOURCE */
