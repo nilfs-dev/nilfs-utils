@@ -57,15 +57,17 @@ const static struct option long_options[] = {
 	{"force", no_argument, NULL, 'f'},
 	{"interactive", no_argument, NULL, 'i'},
 	{"help", no_argument, NULL, 'h'},
+	{"version", no_argument, NULL, 'V'},
 	{NULL, 0, NULL, 0}
 };
 #define RMCP_USAGE							\
 	"Usage: %s [OPTION]... [DEVICE] CNO...\n"			\
 	"  -f, --force\tignore snapshots or nonexistent checkpoints"	\
 	"  -i, --interactive\t prompt before any removal\n"		\
-	"  -h, --help\t\tdisplay this help and exit\n"
+	"  -h, --help\t\tdisplay this help and exit\n"			\
+	"  -V, --version\tdisplay version and exit\n"
 #else	/* !_GNU_SOURCE */
-#define RMCP_USAGE	"Usage: %s [-fih] [device] cno...\n"
+#define RMCP_USAGE	"Usage: %s [-fihV] [device] cno...\n"
 #endif	/* _GNU_SOURCE */
 
 #define CHCP_PROMPT							\
@@ -144,10 +146,10 @@ int main(int argc, char *argv[])
 		progname++;
 
 #ifdef _GNU_SOURCE
-	while ((c = getopt_long(argc, argv, "fih",
+	while ((c = getopt_long(argc, argv, "fihV",
 				long_options, &option_index)) >= 0) {
 #else	/* !_GNU_SOURCE */
-	while ((c = getopt(argc, argv, "fih")) >= 0) {
+	while ((c = getopt(argc, argv, "fihV")) >= 0) {
 #endif	/* _GNU_SOURCE */
 
 		switch (c) {
@@ -161,6 +163,10 @@ int main(int argc, char *argv[])
 			break;
 		case 'h':
 			fprintf(stderr, RMCP_USAGE, progname);
+			exit(0);
+		case 'V':
+			printf("%s (%s %s)\n", progname, PACKAGE,
+			       PACKAGE_VERSION);
 			exit(0);
 		default:
 			fprintf(stderr, "%s: invalid option -- %c\n",
