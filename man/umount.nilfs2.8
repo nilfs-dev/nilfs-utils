@@ -10,6 +10,9 @@ umount.nilfs2 \- unmount NILFS2 file systems
 .sp
 .B umount.nilfs2
 [\fB\-nrv\fP] \fIdir\fP [...]
+.sp
+.B umount.nilfs2
+[\fB\-V\fP]
 .SH DESCRIPTION
 .B umount.nilfs2
 detaches the NILFS2 file system(s) mentioned from the file hierarchy.
@@ -19,6 +22,9 @@ should be invoked through \fBumount\fP(8).
 .SH OPTIONS
 See \fBumount\fP(8) for the full set of options.  Commonly used options
 with NILFS2 are as follows:
+.TP
+.B \-V
+Print version and exit.
 .TP
 .B \-i
 Don't call \fBumount.nilfs2\fP.  Valid for \fBumount\fP(8).

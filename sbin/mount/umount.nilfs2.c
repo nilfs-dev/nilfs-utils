@@ -124,11 +124,16 @@ struct umount_options options = {
 /*
  * Other routines
  */
+static void show_version(void)
+{
+	printf("%s (%s %s)\n", progname, PACKAGE, PACKAGE_VERSION);
+}
+
 static void parse_options(int argc, char *argv[], struct umount_options *opts)
 {
-	int c;
+	int c, show_version_only = 0;
 
-	while ((c = getopt(argc, argv, "nlfvr")) != EOF) {
+	while ((c = getopt(argc, argv, "nlfvrV")) != EOF) {
 		switch (c) {
 		case 'n':
 			nomtab++;
@@ -145,9 +150,17 @@ static void parse_options(int argc, char *argv[], struct umount_options *opts)
 		case 'r':
 			opts->remount++;
 			break;
+		case 'V':
+			show_version_only++;
+			break;
 		default:
 			break;
 		}
+	}
+
+	if (show_version_only) {
+		show_version();
+		exit(0);
 	}
 }
 
@@ -187,13 +200,13 @@ int main(int argc, char *argv[])
 	struct umount_options *opts = &options;
 	int ret = 0;
 
-	parse_options(argc, argv, opts);
-
 	if (argc > 0) {
 		char *cp = strrchr(argv[0], '/');
 
 		progname = (cp ? cp + 1 : argv[0]);
 	}
+
+	parse_options(argc, argv, opts);
 
 	umask(022);
 
