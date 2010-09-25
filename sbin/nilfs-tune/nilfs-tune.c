@@ -188,6 +188,7 @@ do {				\
 	}			\
 } while (0)
 
+#if 0 /* filesystem check is not implemented yet */
 static const char *interval_string(unsigned int secs)
 {
 	static char buf[512], tmp[128];
@@ -212,6 +213,7 @@ static const char *interval_string(unsigned int secs)
 
 	return buf;
 }
+#endif
 
 static const char *user_string(uid_t uid)
 {
