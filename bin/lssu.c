@@ -51,6 +51,7 @@ const static struct option long_option[] = {
 	{"index",required_argument, NULL, 'i'},
 	{"lines",required_argument, NULL, 'n'},
 	{"help", no_argument, NULL, 'h'},
+	{"version", no_argument, NULL, 'V'},
 	{NULL, 0, NULL, 0}
 };
 
@@ -58,10 +59,11 @@ const static struct option long_option[] = {
 			"  -a, --all\t\tdo not hide clean segments\n"	\
 			"  -i, --index\tstart index\n"			\
 			"  -n, --lines\toutput lines\n"			\
-			"  -h, --help\t\tdisplay this help and exit\n"
+			"  -h, --help\t\tdisplay this help and exit\n"	\
+			"  -V, --version\tdisplay version and exit\n"
 #else	/* !_GNU_SOURCE */
 #include <unistd.h>
-#define LSSU_USAGE	"Usage: %s [-ah] [-i index] [-n lines] [device]\n"
+#define LSSU_USAGE	"Usage: %s [-ahV] [-i index] [-n lines] [device]\n"
 #endif	/* _GNU_SOURCE */
 
 #define LSSU_BUFSIZE	128
@@ -151,10 +153,10 @@ int main(int argc, char *argv[])
 		progname++;
 
 #ifdef _GNU_SOURCE
-	while ((c = getopt_long(argc, argv, "ai:n:h",
+	while ((c = getopt_long(argc, argv, "ai:n:hV",
 				long_option, &option_index)) >= 0) {
 #else	/* !_GNU_SOURCE */
-	while ((c = getopt(argc, argv, "ai:n:h")) >= 0) {
+	while ((c = getopt(argc, argv, "ai:n:hV")) >= 0) {
 #endif	/* _GNU_SOURCE */
 
 		switch (c) {
@@ -169,6 +171,10 @@ int main(int argc, char *argv[])
 			break;
 		case 'h':
 			fprintf(stderr, LSSU_USAGE, progname);
+			exit(0);
+		case 'V':
+			printf("%s (%s %s)\n", progname, PACKAGE,
+			       PACKAGE_VERSION);
 			exit(0);
 		default:
 			fprintf(stderr, "%s: invalid option -- %c\n",
