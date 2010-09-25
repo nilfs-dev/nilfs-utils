@@ -26,20 +26,20 @@ users are recommended to invoke \fBnilfs_cleanerd\fP through
 inconsistencies among administration tools.
 .SH OPTIONS
 .TP
-.B \-V
+\fB\-V\fR, \fB\-\-version\fR
 Display version and exit.
 .TP
-.B \-h
+\fB\-h\fR, \fB\-\-help\fR
 Display help message and exit.
 .TP
-.B \-c
+\fB\-c \fIfile\fR, \fB\-\-conf\fR=\fIfile\fR
 Specify configuration file.
 .TP
-.B \-n
+\fB\-n\fR, \fB\-\-nofork\fR
 invoke cleanerd without forking process. This option is intended for
 internal use from \fBmount.nilfs2\fP(8).
 .TP
-.B \-p
+\fB\-p \fIinterval\fR, \fB\-\-protection-period\fR=\fIinterval\fR
 Override protection period with the specified number of seconds.
 .SH SIGNALS
 .B nilfs_cleanerd
