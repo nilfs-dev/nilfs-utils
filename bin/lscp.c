@@ -59,6 +59,7 @@ const static struct option long_option[] = {
 	{"index", required_argument, NULL, 'i'},
 	{"lines", required_argument, NULL, 'n'},
 	{"help", no_argument, NULL, 'h'},
+	{"version", no_argument, NULL, 'V'},
 	{NULL, 0, NULL, 0}
 };
 #define LSCP_USAGE	"Usage: %s [OPTION]... [DEVICE]\n"		\
@@ -66,9 +67,10 @@ const static struct option long_option[] = {
 			"  -s, --snapshot\tlist only snapshots\n"	\
 			"  -i, --index\t\tcp/ss index\n"		\
 			"  -n, --lines\t\tlines\n"			\
-			"  -h, --help\t\tdisplay this help and exit\n"
+			"  -h, --help\t\tdisplay this help and exit\n"	\
+			"  -V, --version\tdisplay version and exit\n"
 #else
-#define LSCP_USAGE	"Usage: %s [-rsh] [-i cno] [-n lines] [device]\n"
+#define LSCP_USAGE	"Usage: %s [-rshV] [-i cno] [-n lines] [device]\n"
 #endif	/* _GNU_SOURCE */
 
 #define LSCP_BUFSIZE	128
@@ -331,10 +333,10 @@ int main(int argc, char *argv[])
 
 
 #ifdef _GNU_SOURCE
-	while ((c = getopt_long(argc, argv, "rsi:n:h",
+	while ((c = getopt_long(argc, argv, "rsi:n:hV",
 				long_option, &option_index)) >= 0) {
 #else
-	while ((c = getopt(argc, argv, "rsi:n:h")) >= 0) {
+	while ((c = getopt(argc, argv, "rsi:n:hV")) >= 0) {
 #endif	/* _GNU_SOURCE */
 
 		switch (c) {
@@ -352,6 +354,10 @@ int main(int argc, char *argv[])
 			break;
 		case 'h':
 			fprintf(stderr, LSCP_USAGE, progname);
+			exit(EXIT_SUCCESS);
+		case 'V':
+			printf("%s (%s %s)\n", progname, PACKAGE,
+			       PACKAGE_VERSION);
 			exit(EXIT_SUCCESS);
 		default:
 			fprintf(stderr, "%s: invalid option -- %c\n",
