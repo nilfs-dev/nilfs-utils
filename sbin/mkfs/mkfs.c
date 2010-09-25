@@ -973,8 +973,7 @@ static void usage(void)
 
 static void show_version(void)
 {
-	fprintf(stderr, "%s ver %d.%d\n", progname, NILFS_CURRENT_REV,
-		NILFS_MINOR_REV);
+	fprintf(stderr, "%s (%s %s)\n", progname, PACKAGE, PACKAGE_VERSION);
 }
 
 static void pinfo(const char *fmt, ...)
