@@ -28,7 +28,6 @@
 #include "config.h"
 #endif	/* HAVE_CONFIG_H */
 
-#define _FILE_OFFSET_BITS 64
 //#define _LARGEFILE_SOURCE
 #define _LARGEFILE64_SOURCE
 #define __USE_FILE_OFFSET64
