@@ -78,6 +78,7 @@ int main(int argc, char *argv[])
 	nilfs_cno_t cno;
 	char *dev, *modestr, *progname, *endptr;
 	int c, mode, status;
+	unsigned long val;
 #ifdef _GNU_SOURCE
 	int option_index;
 #endif	/* _GNU_SOURCE */
@@ -119,7 +120,7 @@ int main(int argc, char *argv[])
 		dev = NULL;
 	} else {
 		modestr = argv[optind++];
-		strtoul(argv[optind], &endptr, CHCP_BASE);
+		val = strtoul(argv[optind], &endptr, CHCP_BASE);
 		if (*endptr == '\0')
 			dev = NULL;
 		else

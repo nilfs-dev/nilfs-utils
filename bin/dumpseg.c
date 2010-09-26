@@ -174,6 +174,7 @@ int main(int argc, char *argv[])
 	void *seg;
 	ssize_t segsize;
 	int c, i, status;
+	unsigned long val;
 #ifdef _GNU_SOURCE
 	int option_index;
 #endif	/* _GNU_SOURCE */
@@ -211,7 +212,7 @@ int main(int argc, char *argv[])
 		fprintf(stderr, "%s: too few arguments\n", progname);
 		exit(1);
 	} else {
-		strtoul(argv[optind], &endptr, DUMPSEG_BASE);
+		val = strtoul(argv[optind], &endptr, DUMPSEG_BASE);
 		if (*endptr == '\0')
 			dev = NULL;
 		else
