@@ -480,6 +480,7 @@ update_mtab (const char *dir, struct my_mntent *instead) {
 	const char *fnam = MOUNTED;
 	struct mntentchn mtabhead;	/* dummy */
 	struct mntentchn *mc, *mc0, *absent = NULL;
+	int ret;
 
 	if (mtab_does_not_exist() || mtab_is_a_symlink())
 		return;
@@ -570,7 +571,7 @@ update_mtab (const char *dir, struct my_mntent *instead) {
 	   */
 	    struct stat sbuf;
 	    if (stat (MOUNTED, &sbuf) == 0)
-		chown (MOUNTED_TEMP, sbuf.st_uid, sbuf.st_gid);
+		ret = chown(MOUNTED_TEMP, sbuf.st_uid, sbuf.st_gid);
 	}
 
 	/* rename mtemp to mtab */
