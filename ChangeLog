@@ -1,3 +1,17 @@
+nilfs-utils-2.0.20  Sun Sep 26, 2010 JST
+
+	* add tune tool, nilfs-tune. (thanks to Jiro SEKIBA)
+	* add write routines of super blocks to nilfs library
+	* add version option to every utility
+	* enable long style options for bin directory utilities
+	* apply workaround of rec_len overflow with 64KB block size to
+	  mkfs.nilfs2
+	* extend super block to support feature tests
+	* insert feature compatibility check in nilfs library
+	* replace lseek64 and off64_t with lseek and off_t respectively;
+	  AC_SYS_LARGEFILE autoconf macro is applied to make the latters
+	  properly detect and use 64-bit implementation.
+
 nilfs-utils-2.0.19  Mon Aug  9, 2010 JST
 
 	* add uhelper option support.  This is required to control nilfs2
