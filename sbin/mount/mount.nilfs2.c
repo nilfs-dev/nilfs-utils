@@ -31,8 +31,6 @@
 #include "config.h"
 #endif	/* HAVE_CONFIG_H */
 
-#define _XOPEN_SOURCE 600
-
 #if HAVE_SYS_TYPES_H
 #include <sys/types.h>
 #endif	/* HAVE_SYS_TYPES_H */

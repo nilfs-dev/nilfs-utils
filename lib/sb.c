@@ -24,8 +24,6 @@
 #include "config.h"
 #endif	/* HAVE_CONFIG_H */
 
-#define _XOPEN_SOURCE 600
-
 #include <stdio.h>
 
 #if HAVE_STDLIB_H

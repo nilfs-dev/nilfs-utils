@@ -28,9 +28,6 @@
 #include "config.h"
 #endif	/* HAVE_CONFIG_H */
 
-#define _XOPEN_SOURCE 600
-
-
 #undef CONFIG_ATIME_FILE
 #undef CONFIG_SKETCH_FILE
 
