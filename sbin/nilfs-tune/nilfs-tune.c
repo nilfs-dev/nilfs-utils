@@ -434,9 +434,13 @@ int modify_nilfs(char *device, struct nilfs_tune_options *opts)
 	if (opts->mask & NILFS_SB_BLOCK_MAX)
 		sbp->s_c_block_max = cpu_to_le32(opts->c_block_max);
 
-	if (opts->mask)
-		nilfs_sb_write(devfd, sbp, opts->mask);
-
+	if (opts->mask) {
+		if (nilfs_sb_write(devfd, sbp, opts->mask) < 0) {
+			fprintf(stderr, "%s: cannot write super blocks\n",
+				device);
+			ret = EXIT_FAILURE;
+		}
+	}
 	if (opts->display)
 		show_nilfs_sb(sbp);
 

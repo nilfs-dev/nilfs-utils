@@ -171,7 +171,8 @@ int nilfs_sb_write(int devfd, struct nilfs_super_block *sbp, int mask)
 {
 	__u64 offsets[2];
 	struct nilfs_super_block *sbps[2];
-	int i;
+	ssize_t count;
+	int i, ret;
 	__u32 crc;
 
 	assert(devfd >= 0);
@@ -182,6 +183,7 @@ int nilfs_sb_write(int devfd, struct nilfs_super_block *sbp, int mask)
 	if (__nilfs_sb_read(devfd, sbps, offsets))
 		return -1;
 
+	ret = 0;
 	for (i = 0; i < 2; i++) {
 		if (!sbps[i])
 			continue;
@@ -202,12 +204,17 @@ int nilfs_sb_write(int devfd, struct nilfs_super_block *sbp, int mask)
 
 		crc = nilfs_sb_check_sum(sbps[i]);
 		sbps[i]->s_sum = cpu_to_le32(crc);
-		if (lseek(devfd, offsets[i], SEEK_SET) > 0)
-			write(devfd, sbps[i], NILFS_MAX_SB_SIZE);
+		if (lseek(devfd, offsets[i], SEEK_SET) > 0) {
+			count = write(devfd, sbps[i], NILFS_MAX_SB_SIZE);
+			if (count < NILFS_MAX_SB_SIZE) {
+				ret = -1;
+				break;
+			}
+		}
 	}
 
 	free(sbps[0]);
 	free(sbps[1]);
 
-	return 0;
+	return ret;
 }
