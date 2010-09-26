@@ -24,9 +24,6 @@
 #include "config.h"
 #endif	/* HAVE_CONFIG_H */
 
-#undef _LARGEFILE_SOURCE
-#define _LARGEFILE64_SOURCE
-#define __USE_FILE_OFFSET64
 #define _XOPEN_SOURCE 600
 
 #include <stdio.h>
@@ -113,7 +110,7 @@ static int __nilfs_sb_read(int devfd, struct nilfs_super_block **sbp,
 	if (ioctl(devfd, BLKGETSIZE64, &devsize) != 0)
 		goto failed;
 
-	if (lseek64(devfd, NILFS_SB_OFFSET_BYTES, SEEK_SET) < 0 ||
+	if (lseek(devfd, NILFS_SB_OFFSET_BYTES, SEEK_SET) < 0 ||
 	    read(devfd, sbp[0], NILFS_MAX_SB_SIZE) < 0 ||
 	    !nilfs_sb_is_valid(sbp[0], 0)) {
 		free(sbp[0]);
@@ -126,7 +123,7 @@ static int __nilfs_sb_read(int devfd, struct nilfs_super_block **sbp,
 		offsets[1] = sb2_offset;
 	}
 
-	if (lseek64(devfd, sb2_offset, SEEK_SET) < 0 ||
+	if (lseek(devfd, sb2_offset, SEEK_SET) < 0 ||
 	    read(devfd, sbp[1], NILFS_MAX_SB_SIZE) < 0 ||
 	    !nilfs_sb_is_valid(sbp[1], 0))
 		goto sb2_failed;

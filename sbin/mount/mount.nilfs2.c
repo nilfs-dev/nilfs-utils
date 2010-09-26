@@ -31,7 +31,6 @@
 #include "config.h"
 #endif	/* HAVE_CONFIG_H */
 
-#define _LARGEFILE64_SOURCE
 #define _XOPEN_SOURCE 600
 
 #if HAVE_SYS_TYPES_H

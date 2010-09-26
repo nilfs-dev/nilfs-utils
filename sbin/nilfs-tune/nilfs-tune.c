@@ -23,8 +23,6 @@
 #include "config.h"
 #endif	/* HAVE_CONFIG_H */
 
-#define _LARGEFILE64_SOURCE
-#define __USE_FILE_OFFSET64
 #define _XOPEN_SOURCE 600
 
 #include <stdio.h>

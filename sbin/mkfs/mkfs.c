@@ -28,9 +28,6 @@
 #include "config.h"
 #endif	/* HAVE_CONFIG_H */
 
-//#define _LARGEFILE_SOURCE
-#define _LARGEFILE64_SOURCE
-#define __USE_FILE_OFFSET64
 #define _XOPEN_SOURCE 600
 
 
@@ -741,7 +738,7 @@ static void read_disk_header(int fd, const char *device)
 {
 	int i, hdr_blocks = ROUNDUP_DIV(NILFS_SB_OFFSET_BYTES, blocksize);
 
-	lseek64(fd, 0, SEEK_SET);
+	lseek(fd, 0, SEEK_SET);
 	for (i = 0; i < hdr_blocks; i++) {
 		if (read(fd, map_disk_buffer(i, 0), blocksize) < 0)
 			cannot_rw_device(fd, device, 1);
@@ -750,7 +747,7 @@ static void read_disk_header(int fd, const char *device)
 
 #define MAX_NBLOCKS_CLEAR_BUFFER	8
 
-static int erase_disk_range(int fd, off64_t offset, size_t count)
+static int erase_disk_range(int fd, off_t offset, size_t count)
 {
 	void *buffer;
 	size_t size, bufsz;
@@ -767,7 +764,7 @@ static int erase_disk_range(int fd, off64_t offset, size_t count)
 
 	memset(buffer, 0, bufsz);
 
-	if (lseek64(fd, offset, SEEK_SET) < 0)
+	if (lseek(fd, offset, SEEK_SET) < 0)
 		goto failed;
 
 	while (count > 0) {
@@ -821,7 +818,7 @@ static void write_disk(int fd, struct nilfs_disk_info *di,
 
 		/* Writing segments */
 		for (i = 0, si = di->seginfo; i < di->nseginfo; i++, si++) {
-			lseek64(fd, si->start * blocksize, SEEK_SET);
+			lseek(fd, si->start * blocksize, SEEK_SET);
 			for (blocknr = si->start;
 			     blocknr < si->start + si->nblocks; blocknr++) {
 				if (write(fd, map_disk_buffer(blocknr, 1),
@@ -833,13 +830,13 @@ static void write_disk(int fd, struct nilfs_disk_info *di,
 			goto failed_to_write;
 
 		/* Writing primary super block */
-		if (lseek64(fd, NILFS_SB_OFFSET_BYTES, SEEK_SET) < 0 ||
+		if (lseek(fd, NILFS_SB_OFFSET_BYTES, SEEK_SET) < 0 ||
 		    write(fd, raw_sb, sizeof(*raw_sb)) < 0)
 			goto failed_to_write;
 
 		/* Writing secondary super block */
-		if (lseek64(fd, NILFS_SB2_OFFSET_BYTES(di->dev_size),
-			    SEEK_SET) < 0 ||
+		if (lseek(fd, NILFS_SB2_OFFSET_BYTES(di->dev_size),
+			  SEEK_SET) < 0 ||
 		    write(fd, raw_sb, sizeof(*raw_sb)) < 0)
 			goto failed_to_write;
 
