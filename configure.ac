@@ -68,6 +68,8 @@ AC_TYPE_SIGNAL
 AC_FUNC_STAT
 AC_FUNC_STRFTIME
 AC_FUNC_VPRINTF
+AC_CHECK_FUNC(posix_memalign,,
+	      [AC_MSG_ERROR([cannot find posix_memalign() function])])
 AC_CHECK_FUNCS([alarm atexit ftruncate getcwd gettimeofday localtime_r \
 		memmove memset munmap strchr strdup strerror strrchr strstr \
 		strtoul getgrgid getpwuid])
