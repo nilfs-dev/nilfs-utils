@@ -1,0 +1,17 @@
+* How to compile
+
+ $ ./configure
+ $ make
+
+* How to get development sources
+
+ $ cd your-work-directory
+ $ git clone http://git.nilfs.org/nilfs2-utils.git
+
+Before compiling the development sources, you need to run
+autoconf/automake tools.  This is not required for packaged sources
+unless you changed the configuration.
+ 
+ $ cd nilfs2-utils
+ $ aclocal && autoheader && libtoolize -c --force && automake -a -c && autoconf
+
