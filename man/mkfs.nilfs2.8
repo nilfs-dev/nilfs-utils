@@ -18,6 +18,9 @@ mkfs.nilfs2 \- create a NILFS2 filesystem
 .B \-c
 ]
 [
+.B \-K
+]
+[
 .B \-L
 .I volume-label
 ]
@@ -50,6 +53,9 @@ mkfs.nilfs2 \- create a NILFS2 filesystem
 ]
 [
 .B \-c
+]
+[
+.B \-K
 ]
 [
 .B \-L
@@ -99,6 +105,11 @@ number of blocks per segment is 2048 (= 8MB with 4KB blocks).
 .TP
 .B \-c
 Check the device for bad blocks before building the filesystem.
+.TP
+.BI \-K
+Keep, do not attempt to discard blocks at mkfs time (discarding blocks
+initially is useful on solid state drives and sparse /
+thinly-provisioned storage).
 .TP
 .BI \-L " new-volume-label"
 Set the volume label for the filesystem to

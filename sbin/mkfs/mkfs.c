@@ -109,6 +109,7 @@ static int quiet = 0;
 static int cflag = 0;
 static int nflag = 0;
 static int verbose = 0;
+static int discard = 1;
 static unsigned long blocksize = NILFS_DEF_BLOCKSIZE;
 static unsigned long blocks_per_segment = NILFS_DEF_BLKS_PER_SEG;
 static unsigned long r_segments_percentage = NILFS_DEF_RESERVED_SEGMENTS;
@@ -288,6 +289,55 @@ static void cannot_allocate_memory(void);
 static void too_small_segment(unsigned long, unsigned long);
 
 /* I/O routines */
+#ifdef __linux__
+
+#ifndef BLKDISCARD
+#define BLKDISCARD	_IO(0x12,119)
+#endif
+
+#ifndef BLKDISCARDZEROES
+#define BLKDISCARDZEROES _IO(0x12,124)
+#endif
+
+/**
+ * nilfs_mkfs_discard_range - issue discard command to the device
+ * @fd: file descriptor of the device
+ * @start: start offset of the region to discard (in bytes)
+ * @len: length of the region to discard (in bytes)
+ *
+ * Returns zero if the discard succeeds.  Otherwise, -1 is returned.
+ */
+static int nilfs_mkfs_discard_range(int fd, __u64 start, __u64 len)
+{
+	__u64 range[2] = { start, len };
+	int ret;
+
+	ret = ioctl(fd, BLKDISCARD, &range);
+	if (verbose) {
+		pinfo("Discard device from %llu to %llu: %s.",
+		      (unsigned long long)start,
+		      (unsigned long long)start + len,
+		      ret ? "failed" : "succeeded");
+	}
+	return ret;
+}
+
+/**
+ * nilfs_mkfs_discard_zeroes_data - get if discarded blocks are zeroed or not
+ * @fd: file descriptor of the device
+ */
+static int nilfs_mkfs_discard_zeroes_data(int fd)
+{
+	int discard_zeroes_data = 0;
+
+	ioctl(fd, BLKDISCARDZEROES, &discard_zeroes_data);
+	return discard_zeroes_data;
+}
+#else
+#define nilfs_mkfs_discard_range(fd, start, len)	1
+#define nilfs_mkfs_discard_zeroes_data(fd)		0
+#endif
+
 static void disk_scan(const char *device);
 static void check_mount(int fd, const char *device);
 
@@ -760,20 +810,39 @@ static int erase_disk_range(int fd, off_t offset, size_t count)
 
 static int erase_disk(int fd, struct nilfs_disk_info *di)
 {
+	const unsigned int sector_size = 512;
+	off_t start, end;
 	int ret;
 
-	BUG_ON(di->dev_size < NILFS_DISK_ERASE_SIZE ||
-	       di->dev_size - NILFS_DISK_ERASE_SIZE < NILFS_SB_OFFSET_BYTES);
+	/*
+	 * Define range of the partition that nilfs uses.  This should
+	 * not depend on the type of underlying device.
+	 */
+	start = NILFS_SB_OFFSET_BYTES;
+	end = di->dev_size & ~((__u64)sector_size - 1);
+
+	BUG_ON(end < NILFS_DISK_ERASE_SIZE ||
+	       end - NILFS_DISK_ERASE_SIZE < start);
+
+	if (discard) {
+		ret = nilfs_mkfs_discard_range(fd, start, end - start);
+		if (!ret && nilfs_mkfs_discard_zeroes_data(fd)) {
+			if (verbose)
+				pinfo("Discard succeeded and will return 0s "
+				      " - skip wiping");
+			goto out;
+		}
+	}
 
 	/* Erase tail of partition */
-	ret = erase_disk_range(fd, di->dev_size - NILFS_DISK_ERASE_SIZE,
+	ret = erase_disk_range(fd, end - NILFS_DISK_ERASE_SIZE,
 			       NILFS_DISK_ERASE_SIZE);
 	if (ret == 0) {
 		/* Erase head of partition */
-		ret = erase_disk_range(fd, NILFS_SB_OFFSET_BYTES,
-				       NILFS_DISK_ERASE_SIZE -
-				       NILFS_SB_OFFSET_BYTES);
+		ret = erase_disk_range(fd, start,
+				       NILFS_DISK_ERASE_SIZE - start);
 	}
+out:
 	return ret;
 }
 
@@ -877,7 +946,7 @@ static void parse_options(int argc, char *argv[])
 {
 	int c, show_version_only = 0;
 
-	while ((c = getopt(argc, argv, "b:B:cL:m:nqvVP:")) != EOF) {
+	while ((c = getopt(argc, argv, "b:B:cKL:m:nqvVP:")) != EOF) {
 		switch (c) {
 		case 'b':
 			blocksize = atol(optarg);
@@ -888,6 +957,9 @@ static void parse_options(int argc, char *argv[])
 			break;
 		case 'c':
 			cflag++;
+			break;
+		case 'K':
+			discard = 0;
 			break;
 		case 'L':
 			strncpy(volume_label, optarg, sizeof(volume_label));
@@ -945,7 +1017,7 @@ static void usage(void)
 	fprintf(stderr,
 		"Usage: %s [-b block-size] [-B blocks-per-segment] [-c] \n"
 		"[-L volume-label] [-m reserved-segments-percentage] \n"
-		"[-nqvV] device\n",
+		"[-nqvKV] device\n",
 		progname);
 	exit(1);
 }
