@@ -108,6 +108,7 @@ char *progname = "mkfs.nilfs2";
 static int quiet = 0;
 static int cflag = 0;
 static int nflag = 0;
+static int verbose = 0;
 static unsigned long blocksize = NILFS_DEF_BLOCKSIZE;
 static unsigned long blocks_per_segment = NILFS_DEF_BLKS_PER_SEG;
 static unsigned long r_segments_percentage = NILFS_DEF_RESERVED_SEGMENTS;
@@ -876,7 +877,7 @@ static void parse_options(int argc, char *argv[])
 {
 	int c, show_version_only = 0;
 
-	while ((c = getopt(argc, argv, "b:B:cL:m:nqVP:")) != EOF) {
+	while ((c = getopt(argc, argv, "b:B:cL:m:nqvVP:")) != EOF) {
 		switch (c) {
 		case 'b':
 			blocksize = atol(optarg);
@@ -900,6 +901,9 @@ static void parse_options(int argc, char *argv[])
 		case 'q':
 			quiet = 1;
 			break;
+		case 'v':
+			verbose++;
+			break;
 		case 'V':
 			show_version_only = 1;
 			break;
@@ -911,6 +915,10 @@ static void parse_options(int argc, char *argv[])
 			usage();
 		}
 	}
+
+	if (quiet)
+		verbose = 0;
+
 	if ((optind == argc) && !show_version_only)
 		usage();
 
@@ -936,8 +944,8 @@ static void usage(void)
 {
 	fprintf(stderr,
 		"Usage: %s [-b block-size] [-B blocks-per-segment] [-c] \n"
-		"[-L volume-label] [-m reserved-segments-percentage] [-n] \n"
-		"[-q] [-V] device\n",
+		"[-L volume-label] [-m reserved-segments-percentage] \n"
+		"[-nqvV] device\n",
 		progname);
 	exit(1);
 }
