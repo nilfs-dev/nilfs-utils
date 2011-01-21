@@ -47,6 +47,7 @@ February 13, 2010: fix build against newer glibc
 November 9, 2009: expose struct nilfs_btree_node
 September 3, 2010: enhanced super block read/write routines
 September 3, 2010: implemented nilfs-tune
+November 19, 2010: replaced crc32 implementation
 
 * Matteo Frigo <athena@fftw.org>
 September 11, 2010: compare device number for mount check
