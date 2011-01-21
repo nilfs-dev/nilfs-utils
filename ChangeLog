@@ -1,3 +1,12 @@
+nilfs-utils-2.0.21  Fri Jan 21, 2011 JST
+
+	* get rid of the warning telling disk format is unstable
+	* change license of libraries and header files to LGPL; crc was
+	  replaced with an LGPL implementation along with this.
+	* discard blocks at mkfs time
+	* add verbose option to mkfs.nilfs2
+	* kill gcc warnings
+
 nilfs-utils-2.0.20  Sun Sep 26, 2010 JST
 
 	* add tune tool, nilfs-tune. (thanks to Jiro SEKIBA)
