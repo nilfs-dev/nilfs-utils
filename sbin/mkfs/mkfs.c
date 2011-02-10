@@ -150,8 +150,7 @@ static void parse_options(int argc, char *argv[]);
 static const unsigned group_desc_blocks_per_group = 1;
 static const unsigned bitmap_blocks_per_group = 1;
 static const unsigned nr_initial_segments = 2; /* initial segment + next */
-static const unsigned nr_initial_inodes = 3;  /* root directory + .sketch +
-						 .nilfs */
+static const unsigned nr_initial_inodes = 2;  /* root directory + .nilfs */
 static const __u64 first_cno = 1; /* Number of the first checkpoint */
 
 /* Segment layout information (per partial segment) */
