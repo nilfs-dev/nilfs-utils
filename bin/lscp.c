@@ -54,6 +54,8 @@
 #ifdef _GNU_SOURCE
 #include <getopt.h>
 const static struct option long_option[] = {
+	{"show-block-count", no_argument, NULL, 'b'},
+	{"show-increment", no_argument, NULL, 'g'},
 	{"reverse", no_argument, NULL, 'r'},
 	{"snapshot", no_argument, NULL, 's'},
 	{"index", required_argument, NULL, 'i'},
@@ -63,6 +65,8 @@ const static struct option long_option[] = {
 	{NULL, 0, NULL, 0}
 };
 #define LSCP_USAGE	"Usage: %s [OPTION]... [DEVICE]\n"		\
+			"  -b, --show-block-count\t\tshow block count\n"\
+			"  -g, --show-increment\t\tshow increment count\n"\
 			"  -r, --reverse\t\treverse order\n"		\
 			"  -s, --snapshot\tlist only snapshots\n"	\
 			"  -i, --index\t\tcp/ss index\n"		\
@@ -70,7 +74,7 @@ const static struct option long_option[] = {
 			"  -h, --help\t\tdisplay this help and exit\n"	\
 			"  -V, --version\t\tdisplay version and exit\n"
 #else
-#define LSCP_USAGE	"Usage: %s [-rshV] [-i cno] [-n lines] [device]\n"
+#define LSCP_USAGE	"Usage: %s [-bgrshV] [-i cno] [-n lines] [device]\n"
 #endif	/* _GNU_SOURCE */
 
 #define LSCP_BUFSIZE	128
@@ -81,11 +85,13 @@ const static struct option long_option[] = {
 static __u64 param_index;
 static __u64 param_lines;
 static struct nilfs_cpinfo cpinfos[LSCP_NCPINFO];
+static int show_block_count = 0;
 
 static void lscp_print_header(void)
 {
-	printf("                 CNO        DATE     TIME  MODE  FLG   NBLKINC"
-	       "       ICNT\n");
+	printf("                 CNO        DATE     TIME  MODE  FLG     %s"
+	       "       ICNT\n",
+	       show_block_count ? " BLKCNT" : "NBLKINC");
 }
 
 static void lscp_print_cpinfo(struct nilfs_cpinfo *cpinfo)
@@ -98,11 +104,13 @@ static void lscp_print_cpinfo(struct nilfs_cpinfo *cpinfo)
 	localtime_r(&t, &tm);
 	strftime(timebuf, LSCP_BUFSIZE, "%F %T", &tm);
 
-	printf("%20llu  %s   %s    %s %10llu %10llu\n",
+	printf("%20llu  %s   %s    %s %12llu %10llu\n",
 	       (unsigned long long)cpinfo->ci_cno, timebuf,
 	       nilfs_cpinfo_snapshot(cpinfo) ? "ss" : "cp",
 	       nilfs_cpinfo_minor(cpinfo) ? "i" : "-",
-	       (unsigned long long)cpinfo->ci_nblk_inc,
+	       (unsigned long long)(show_block_count ?
+				    cpinfo->ci_blocks_count :
+				    cpinfo->ci_nblk_inc),
 	       (unsigned long long)cpinfo->ci_inodes_count);
 }
 
@@ -333,13 +341,19 @@ int main(int argc, char *argv[])
 
 
 #ifdef _GNU_SOURCE
-	while ((c = getopt_long(argc, argv, "rsi:n:hV",
+	while ((c = getopt_long(argc, argv, "bgrsi:n:hV",
 				long_option, &option_index)) >= 0) {
 #else
-	while ((c = getopt(argc, argv, "rsi:n:hV")) >= 0) {
+	while ((c = getopt(argc, argv, "bgrsi:n:hV")) >= 0) {
 #endif	/* _GNU_SOURCE */
 
 		switch (c) {
+		case 'b':
+			show_block_count = 1;
+			break;
+		case 'g':
+			show_block_count = 0;
+			break;
 		case 'r':
 			rvs = 1;
 			break;

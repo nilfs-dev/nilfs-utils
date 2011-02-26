@@ -17,6 +17,13 @@ This command will fail if the \fIdevice\fP has no active mounts of a
 NILFS2 file system.
 .SH OPTIONS
 .TP
+\fB\-b\fR, \fB\-\-show\-block\-count\fR
+Show number of used blocks instead of appended blocks.
+.TP
+\fB\-g\fR, \fB\-\-show\-increment\fR
+Show number of appended blocks instead of used blocks.  This is the
+default mode.
+.TP
 \fB\-r\fR, \fB\-\-reverse\fR
 Reverse order.
 .TP
@@ -59,6 +66,11 @@ checkpoint mode change, or other change of internal state.  Otherwise
 .TP
 .B NBLKINC
 Number of blocks appended by the checkpoint.
+.TP
+.B BLKCNT
+Number of blocks used by the checkpoint.  The \fBNBLKINC\fR field
+and the \fBBLKCNT\fR field is selective.  This field is displayed
+only if the \fB\-b\fR option is specified.
 .TP
 .B ICNT
 Number of inodes included in the entire file system at the time
