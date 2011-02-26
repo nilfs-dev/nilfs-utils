@@ -173,7 +173,6 @@ struct nilfs_segment_info {
 	struct nilfs_file_info files[MAX_FILES];
 
 	unsigned        nvblocknrs;
-	unsigned        nblocks_used;
 	/* + super root (1 block)*/
 };
 
@@ -533,7 +532,6 @@ static void fix_disk_layout(struct nilfs_disk_info *di)
 		struct nilfs_segment_info *si = &di->seginfo[i];
 		blocknr_t blocknr = si->start + si->nblk_sum;
 
-		si->nblocks_used = (di->nblocks_used += si->nblocks);
 		si->nblocks += si->nblk_sum + 1 /* summary and super root */;
 		if (si->nblocks > di->blocks_per_segment)
 			too_small_segment(di->blocks_per_segment, si->nblocks);
@@ -545,6 +543,11 @@ static void fix_disk_layout(struct nilfs_disk_info *di)
 				continue;
 			fi->start = blocknr;
 			blocknr += fi->nblocks;
+
+			if (fi->ino != NILFS_DAT_INO &&
+			    fi->ino != NILFS_SUFILE_INO &&
+			    fi->ino != NILFS_CPFILE_INO)
+				di->nblocks_used += fi->nblocks;
 		}
 		if (di->nblocks_to_write < si->start + si->nblocks)
 			di->nblocks_to_write = si->start + si->nblocks;
