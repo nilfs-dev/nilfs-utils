@@ -29,7 +29,6 @@
 #endif	/* HAVE_CONFIG_H */
 
 #undef CONFIG_ATIME_FILE
-#undef CONFIG_SKETCH_FILE
 
 #include <stdio.h>
 
@@ -266,7 +265,6 @@ static void init_nilfs(struct nilfs_disk_info *di);
 static void prepare_segment(struct nilfs_segment_info *);
 static void commit_segment(void);
 static void make_rootdir(void);
-static void make_sketch(void);
 static void make_dot_nilfs(void);
 static void make_reserved_files(void);
 
@@ -607,12 +605,12 @@ int main(int argc, char *argv[])
 	si = new_segment(di);
 
 	add_file(si, NILFS_ROOT_INO, 1, 0);
-	add_file(si, NILFS_SKETCH_INO, 0, 0);
 	add_file(si, NILFS_NILFS_INO, 0, 0);
 	add_file(si, NILFS_ATIME_INO, 0, 0);
 	add_file(si, 1, 0, 0);
 	add_file(si, 8, 0, 0);
 	add_file(si, 9, 0, 0);
+	add_file(si, 10, 0, 0);
 	add_file(si, NILFS_IFILE_INO, count_ifile_blocks(), 0);
 	add_file(si, NILFS_CPFILE_INO, count_cpfile_blocks(), 0);
 	add_file(si, NILFS_SUFILE_INO, count_sufile_blocks(), 0);
@@ -628,7 +626,6 @@ int main(int argc, char *argv[])
 	init_nilfs(di);
 
 	prepare_segment(&di->seginfo[0]);
-	make_sketch();   /* Make sketch file */
 	make_dot_nilfs(); /* Make .nilfs */
 	make_rootdir();  /* Make root directory */
 	make_reserved_files();
@@ -1197,18 +1194,6 @@ static void make_empty_dir(ino_t dir_ino, ino_t parent_ino)
 	de->rec_len = nilfs_rec_len_to_disk(rec_len);
 	de->file_type = NILFS_FT_DIR;
 	memcpy(de->name, "..\0\0\0\0\0", 8);
-//	rec_len += de->rec_len;
-
-#if defined(CONFIG_SKETCH_FILE)
-	de = next_dir_entry(de);
-	de->inode = cpu_to_le64(NILFS_SKETCH_INO);
-	de->name_len = 7;
-	rec_len2 += (rec_len = NILFS_DIR_REC_LEN(7));
-	de->rec_len = nilfs_rec_len_to_disk(rec_len);
-	de->file_type = NILFS_FT_REG_FILE;
-	memcpy(de->name, ".sketch", 8);
-//	rec_len += de->rec_len;
-#endif
 
 	de = next_dir_entry(de);
 	de->inode = cpu_to_le64(NILFS_NILFS_INO);
@@ -1227,11 +1212,6 @@ static void make_rootdir(void)
 	inc_link_count(ino);
 }
 
-static void make_sketch(void)
-{
-	init_inode(NILFS_SKETCH_INO, DT_REG, 0644, 0);
-}
-
 static void make_dot_nilfs(void)
 {
 	init_inode(NILFS_NILFS_INO, DT_REG, 0644, 0);
@@ -1243,6 +1223,7 @@ static void make_reserved_files(void)
 	init_inode(1, DT_REG, 0, 0);
 	init_inode(8, DT_REG, 0, 0);
 	init_inode(9, DT_REG, 0, 0);
+	init_inode(10, DT_REG, 0, 0);
 }
 
 static void *
