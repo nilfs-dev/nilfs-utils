@@ -264,9 +264,9 @@ static struct nilfs_fs_info nilfs;
 static void init_nilfs(struct nilfs_disk_info *di);
 static void prepare_segment(struct nilfs_segment_info *);
 static void commit_segment(void);
-static void make_rootdir(void);
-static void make_dot_nilfs(void);
-static void make_reserved_files(void);
+static void nilfs_mkfs_make_rootdir(void);
+static void nilfs_mkfs_make_dot_nilfs(void);
+static void nilfs_mkfs_make_reserved_files(void);
 
 
 static inline struct nilfs_segment_ref *get_last_segment(void)
@@ -626,9 +626,9 @@ int main(int argc, char *argv[])
 	init_nilfs(di);
 
 	prepare_segment(&di->seginfo[0]);
-	make_dot_nilfs(); /* Make .nilfs */
-	make_rootdir();  /* Make root directory */
-	make_reserved_files();
+	nilfs_mkfs_make_dot_nilfs(); /* Make .nilfs */
+	nilfs_mkfs_make_rootdir();  /* Make root directory */
+	nilfs_mkfs_make_reserved_files();
 	commit_segment();
 
 	commit_super_block(di, get_last_segment());
@@ -1116,81 +1116,27 @@ static struct nilfs_dir_entry *next_dir_entry(struct nilfs_dir_entry *de)
 	return (void *)de + nilfs_rec_len_from_disk(de->rec_len);
 }
 
-#if 0 /* prepared for future use */
-static void
-add_dir_entry(ino_t dir_ino, ino_t ino, const char *name)
+static void nilfs_mkfs_make_rootdir(void)
 {
-	struct nilfs_file_info *fi = nilfs.files[dir_ino];
-	unsigned namelen = strlen(name);
-	unsigned reclen = NILFS_DIR_REC_LEN(namelen);
-	unsigned name_len, rec_len;
-	struct nilfs_dir_entry *de;
-	void *dir_end;
-	struct nilfs_inode *raw_inode = nilfs.files[ino]->raw_inode;
-	int type;
+	void *dirbuf = map_disk_buffer(nilfs.files[NILFS_ROOT_INO]->start, 1);
+	volatile struct nilfs_dir_entry *de = dirbuf;
+		/* volatile keyword is inserted to prevent failure of
+		   substitution to de->inode on a certain environment. */
+	unsigned rec_len, rec_end;
 
-	if (NILFS_NAME_LEN < namelen)
-		perr("Internal error: too long directory entry name: %s",
-		     name);
+	init_inode(NILFS_ROOT_INO, DT_DIR, 0755, blocksize);
 
-	de = map_disk_buffer(fi->start, 1);
-	dir_end = (void *)de + blocksize;
-
-	/* search the last entry */
-	while ((void *)de <= dir_end - reclen) {
-		name_len = NILFS_DIR_REC_LEN(de->name_len);
-		rec_len = nilfs_rec_len_from_disk(de->rec_len);
-		if (!de->inode && rec_len >= reclen)
-			goto got_it;
-		if (rec_len >= name_len + reclen)
-			goto got_it;
-		de = next_dir_entry(de);
-	} 
-	perr("Internal error: too many directory entry");
-	return;
- got_it:
-	if (de->inode) {
-		struct nilfs_dir_entry *de2 = (void *)de + name_len;
-		de2->rec_len = nilfs_rec_len_to_disk(rec_len - name_len);
-		de->rec_len = nilfs_rec_len_to_disk(name_len);
-		de = de2;
-	}
-	de->inode = cpu_to_le64(ino);
-	de->name_len = namelen & 0xff;
-	memcpy(de->name, name, NILFS_NAME_LEN);
-	
-	type = (le16_to_cpu(raw_inode->i_mode) >> 12) & 0xf;
-	switch (type) {
-	case DT_DIR:
-		de->file_type = NILFS_FT_DIR;
-		inc_link_count(dir_ino);
-		break;
-	case DT_REG:
-		de->file_type = NILFS_FT_REG_FILE;
-		break;
-	default:
-		perr("Internal error: file type (%d) not supported", type);
-	}
-}
-#endif
-
-static void make_empty_dir(ino_t dir_ino, ino_t parent_ino)
-{
-	struct nilfs_file_info *fi = nilfs.files[dir_ino];
-	struct nilfs_dir_entry *de = map_disk_buffer(fi->start, 1);
-	unsigned rec_len, rec_len2;
-
-	de->inode = cpu_to_le64(dir_ino);
+	de->inode = cpu_to_le64(NILFS_ROOT_INO);
 	de->name_len = 1;
-	rec_len2 = rec_len = NILFS_DIR_REC_LEN(1);
+	rec_end = rec_len = NILFS_DIR_REC_LEN(1);
 	de->rec_len = nilfs_rec_len_to_disk(rec_len);
 	de->file_type = NILFS_FT_DIR;
 	memcpy(de->name, ".\0\0\0\0\0\0", 8);
 
 	de = next_dir_entry(de);
-	de->inode = cpu_to_le64(parent_ino);
+	de->inode = cpu_to_le64(NILFS_ROOT_INO);
 	de->name_len = 2;
-	rec_len2 += (rec_len = NILFS_DIR_REC_LEN(2));
+	rec_end += (rec_len = NILFS_DIR_REC_LEN(2));
 	de->rec_len = nilfs_rec_len_to_disk(rec_len);
 	de->file_type = NILFS_FT_DIR;
 	memcpy(de->name, "..\0\0\0\0\0", 8);
@@ -1198,26 +1144,19 @@ static void make_empty_dir(ino_t dir_ino, ino_t parent_ino)
 	de = next_dir_entry(de);
 	de->inode = cpu_to_le64(NILFS_NILFS_INO);
 	de->name_len = 6;
-	de->rec_len = nilfs_rec_len_to_disk(blocksize - rec_len2);
+	de->rec_len = nilfs_rec_len_to_disk(blocksize - rec_end);
 	de->file_type = NILFS_FT_REG_FILE;
 	memcpy(de->name, ".nilfs\0", 8);
+
+	inc_link_count(NILFS_ROOT_INO);
 }
 
-static void make_rootdir(void)
-{
-	const ino_t ino = NILFS_ROOT_INO;
-
-	init_inode(ino, DT_DIR, 0755, blocksize);
-	make_empty_dir(ino, ino);
-	inc_link_count(ino);
-}
-
-static void make_dot_nilfs(void)
+static void nilfs_mkfs_make_dot_nilfs(void)
 {
 	init_inode(NILFS_NILFS_INO, DT_REG, 0644, 0);
 }
 
-static void make_reserved_files(void)
+static void nilfs_mkfs_make_reserved_files(void)
 {
 	init_inode(NILFS_ATIME_INO, DT_REG, 0, 0);
 	init_inode(1, DT_REG, 0, 0);
