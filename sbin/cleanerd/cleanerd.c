@@ -1343,6 +1343,7 @@ static int nilfs_cleanerd_clean_loop(struct nilfs_cleanerd *cleanerd)
 int main(int argc, char *argv[])
 {
 	char *progname, *conffile;
+	char canonical[PATH_MAX + 2];
 	const char *dev, *dir;
 	char *endptr;
 	int status, nofork, c;
@@ -1405,6 +1406,22 @@ int main(int argc, char *argv[])
 
 	if (optind < argc)
 		dir = argv[optind++];
+
+	if (dev && myrealpath(dev, canonical, sizeof(canonical))) {
+		dev = strdup(canonical);
+		if (!dev) {
+			fprintf(stderr, "%s: %s\n", progname, strerror(ENOMEM));
+			exit(1);
+		}
+	}
+
+	if (dir && myrealpath(dir, canonical, sizeof(canonical))) {
+		dir = strdup(canonical);
+		if (!dir) {
+			fprintf(stderr, "%s: %s\n", progname, strerror(ENOMEM));
+			exit(1);
+		}
+	}
 
 	if (daemonize(0, 0, nofork) < 0) {
 		fprintf(stderr, "%s: %s\n", progname, strerror(errno));
