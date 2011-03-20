@@ -1111,7 +1111,8 @@ static void inc_link_count(int ino)
 		= cpu_to_le16(le16_to_cpu(raw_inode->i_links_count) + 1);
 }
 
-static struct nilfs_dir_entry *next_dir_entry(struct nilfs_dir_entry *de)
+static volatile struct nilfs_dir_entry *
+next_dir_entry(volatile struct nilfs_dir_entry *de)
 {
 	return (void *)de + nilfs_rec_len_from_disk(de->rec_len);
 }
@@ -1131,7 +1132,7 @@ static void nilfs_mkfs_make_rootdir(void)
 	rec_end = rec_len = NILFS_DIR_REC_LEN(1);
 	de->rec_len = nilfs_rec_len_to_disk(rec_len);
 	de->file_type = NILFS_FT_DIR;
-	memcpy(de->name, ".\0\0\0\0\0\0", 8);
+	memcpy((void *)de->name, ".\0\0\0\0\0\0", 8);
 
 	de = next_dir_entry(de);
 	de->inode = cpu_to_le64(NILFS_ROOT_INO);
@@ -1139,14 +1140,14 @@ static void nilfs_mkfs_make_rootdir(void)
 	rec_end += (rec_len = NILFS_DIR_REC_LEN(2));
 	de->rec_len = nilfs_rec_len_to_disk(rec_len);
 	de->file_type = NILFS_FT_DIR;
-	memcpy(de->name, "..\0\0\0\0\0", 8);
+	memcpy((void *)de->name, "..\0\0\0\0\0", 8);
 
 	de = next_dir_entry(de);
 	de->inode = cpu_to_le64(NILFS_NILFS_INO);
 	de->name_len = 6;
 	de->rec_len = nilfs_rec_len_to_disk(blocksize - rec_end);
 	de->file_type = NILFS_FT_REG_FILE;
-	memcpy(de->name, ".nilfs\0", 8);
+	memcpy((void *)de->name, ".nilfs\0", 8);
 
 	inc_link_count(NILFS_ROOT_INO);
 }
