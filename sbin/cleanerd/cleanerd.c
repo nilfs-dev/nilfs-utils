@@ -74,6 +74,7 @@
 #include <assert.h>
 #include "vector.h"
 #include "cleanerd.h"
+#include "realpath.h"
 
 #ifdef _GNU_SOURCE
 #include <getopt.h>
