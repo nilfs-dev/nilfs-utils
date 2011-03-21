@@ -87,7 +87,6 @@ typedef __u64 sector_t;	// XXX: __u64 ??
 typedef sector_t nilfs_blkoff_t;
 typedef __u64 nilfs_cno_t;
 
-#define NILFS_IOC	".nilfs"
 #define NILFS_FSTYPE	"nilfs2"
 
 #define NILFS_CNO_MIN	((nilfs_cno_t)1)

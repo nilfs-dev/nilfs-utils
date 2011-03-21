@@ -144,7 +144,6 @@ static int nilfs_find_fs(struct nilfs *nilfs, const char *dev, const char *dir,
 {
 	FILE *fp;
 	char line[LINE_MAX], *mntent[NMNTFLDS];
-	size_t len;
 	int ret, n;
 	char canonical[PATH_MAX + 2];
 	char *cdev = NULL, *cdir = NULL;
@@ -196,16 +195,12 @@ static int nilfs_find_fs(struct nilfs *nilfs, const char *dev, const char *dir,
 			nilfs->n_dev = strdup(mntent[MNTFLD_FS]);
 			if (nilfs->n_dev == NULL)
 				goto failed_proc_mounts;
-			len = strlen(mntent[MNTFLD_DIR]) +
-				strlen(NILFS_IOC) + 2;
-			nilfs->n_ioc = malloc(sizeof(char) * len);
+			nilfs->n_ioc = strdup(mntent[MNTFLD_DIR]);
 			if (nilfs->n_ioc == NULL) {
 				free(nilfs->n_dev);
 				nilfs->n_dev = NULL;
 				goto failed_proc_mounts;
 			}
-			snprintf(nilfs->n_ioc, len, "%s/%s",
-				 mntent[MNTFLD_DIR], NILFS_IOC);
 			ret = 0;
 			break;
 		}
@@ -315,7 +310,6 @@ struct nilfs *nilfs_open(const char *dev, const char *dir, int flags)
 {
 	struct nilfs *nilfs;
 	__u64 features;
-	int oflags;
 
 	if (!(flags & (NILFS_OPEN_RAW | NILFS_OPEN_RDONLY |
 		       NILFS_OPEN_WRONLY | NILFS_OPEN_RDWR))) {
@@ -366,16 +360,7 @@ struct nilfs *nilfs_open(const char *dev, const char *dir, int flags)
 			if (nilfs_find_fs(nilfs, dev, dir, MNTOPT_RO) < 0)
 				goto out_nilfs;
 		}
-		oflags = O_CREAT;
-		if (flags & NILFS_OPEN_RDONLY)
-			oflags |= O_RDONLY;
-		else if (flags & NILFS_OPEN_WRONLY)
-			oflags |= O_WRONLY;
-		else if (flags & NILFS_OPEN_RDWR)
-			oflags |= O_RDWR;
-		nilfs->n_iocfd = open(nilfs->n_ioc, oflags,
-				      S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP |
-				      S_IROTH | S_IWOTH);
+		nilfs->n_iocfd = open(nilfs->n_ioc, O_RDONLY);
 		if (nilfs->n_iocfd < 0)
 			goto out_fd;
 	}
