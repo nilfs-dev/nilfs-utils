@@ -33,13 +33,18 @@ AC_CHECK_LIB([uuid], [uuid_generate],
 	  [Define to 1 if you have the `uuid' library (-luuid).])],
 	[AC_MSG_ERROR([UUID library not found])])
 
+AC_CHECK_LIB([pthread],[sem_open],
+	[AC_DEFINE([HAVE_LIBPTHREAD], 1,
+	  [Define to 1 if you have the `pthread' library (-lpthread).])],
+	[AC_MSG_ERROR([pthread library not found])])
+
 # Checks for header files.
 AC_HEADER_STDC
 AC_HEADER_SYS_WAIT
 AC_CHECK_HEADERS([fcntl.h libintl.h limits.h locale.h mntent.h paths.h \
 		  stdlib.h string.h strings.h sys/ioctl.h sys/mount.h \
 		  sys/time.h syslog.h unistd.h linux/types.h grp.h pwd.h \
-		  mntent.h])
+		  mntent.h semaphore.h])
 
 # Checks for typedefs, structures, and compiler characteristics.
 AC_C_CONST

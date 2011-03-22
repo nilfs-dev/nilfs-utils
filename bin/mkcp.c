@@ -115,7 +115,7 @@ int main(int argc, char *argv[])
 	else
 		dev = argv[optind];
 
-	nilfs = nilfs_open(dev, NULL, NILFS_OPEN_RDWR);
+	nilfs = nilfs_open(dev, NULL, NILFS_OPEN_RDWR | NILFS_OPEN_GCLK);
 	if (nilfs == NULL) {
 		fprintf(stderr, "%s: %s: cannot open NILFS\n", progname, dev);
 		exit(1);
@@ -128,7 +128,7 @@ int main(int argc, char *argv[])
 		goto out;
 	}
 	if (ss) {
-		if (nilfs_lock_write(nilfs) < 0) {
+		if (nilfs_lock_cleaner(nilfs) < 0) {
 			fprintf(stderr, "%s: %s\n", progname, strerror(errno));
 			status = 1;
 			goto out;
@@ -137,7 +137,7 @@ int main(int argc, char *argv[])
 			fprintf(stderr, "%s: %s\n", progname, strerror(errno));
 			status = 1;
 		}
-		if (nilfs_unlock_write(nilfs) < 0) {
+		if (nilfs_unlock_cleaner(nilfs) < 0) {
 			fprintf(stderr, "%s: %s\n", progname, strerror(errno));
 			status = 1;
 		}

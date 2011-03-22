@@ -270,6 +270,41 @@ int nilfs_opt_test_mmap(struct nilfs *nilfs)
 	return !!(nilfs->n_opts & NILFS_OPT_MMAP);
 }
 
+static int nilfs_open_sem(struct nilfs *nilfs)
+{
+	char semnambuf[NAME_MAX - 4];
+	struct stat stbuf;
+	int ret;
+
+	ret = stat(nilfs->n_dev, &stbuf);
+	if (ret < 0)
+		return -1;
+
+	if (S_ISBLK(stbuf.st_mode)) {
+		ret = snprintf(semnambuf, sizeof(semnambuf),
+			       "/nilfs-cleaner-%lu", stbuf.st_rdev);
+	} else if (S_ISREG(stbuf.st_mode) || S_ISDIR(stbuf.st_mode)) {
+		ret = snprintf(semnambuf, sizeof(semnambuf),
+			       "/nilfs-cleaner-%lu-%lu",
+			       stbuf.st_dev, stbuf.st_ino);
+	} else {
+		errno = EINVAL;
+		return -1;
+	}
+
+	if (ret < 0)
+		return -1;
+
+	assert(ret < sizeof(semnambuf));
+
+	nilfs->n_sems[0] = sem_open(semnambuf, O_CREAT, S_IRWXU, 1);
+	if (nilfs->n_sems[0] == SEM_FAILED) {
+		nilfs->n_sems[0] = NULL;
+		return -1;
+	}
+	return 0;
+}
+
 /**
  * nilfs_open - create a NILFS object
  * @dev: device
@@ -298,6 +333,7 @@ struct nilfs *nilfs_open(const char *dev, const char *dir, int flags)
 	nilfs->n_dev = NULL;
 	nilfs->n_ioc = NULL;
 	nilfs->n_mincno = NILFS_CNO_MIN;
+	memset(nilfs->n_sems, 0, sizeof(nilfs->n_sems));
 
 	if (flags & NILFS_OPEN_RAW) {
 		if (dev == NULL) {
@@ -344,11 +380,17 @@ struct nilfs *nilfs_open(const char *dev, const char *dir, int flags)
 			goto out_fd;
 	}
 
+	if (flags & NILFS_OPEN_GCLK) {
+		/* Initialize cleaner semaphore */
+		if (nilfs_open_sem(nilfs) < 0)
+			goto out_fd;
+	}
+
 	/* success */
 	return nilfs;
 
 	/* error */
- out_fd:
+out_fd:
 	if (nilfs->n_devfd >= 0)
 		close(nilfs->n_devfd);
 	if (nilfs->n_iocfd >= 0)
@@ -360,7 +402,7 @@ struct nilfs *nilfs_open(const char *dev, const char *dir, int flags)
 	if (nilfs->n_sb != NULL)
 		free(nilfs->n_sb);
 
- out_nilfs:
+out_nilfs:
 	free(nilfs);
 	return NULL;
 }
@@ -371,6 +413,8 @@ struct nilfs *nilfs_open(const char *dev, const char *dir, int flags)
  */
 void nilfs_close(struct nilfs *nilfs)
 {
+	if (nilfs->n_sems[0] != NULL)
+		sem_close(nilfs->n_sems[0]);
 	if (nilfs->n_devfd >= 0)
 		close(nilfs->n_devfd);
 	if (nilfs->n_iocfd >= 0)

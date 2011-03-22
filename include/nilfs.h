@@ -31,6 +31,7 @@
 #include <fcntl.h>
 #include <time.h>
 #include <sys/ioctl.h>
+#include <semaphore.h>
 #include <linux/types.h>
 #include <endian.h>
 #include <byteswap.h>
@@ -106,6 +107,8 @@ typedef __u64 nilfs_cno_t;
  * @n_iocfd: file descriptor of ioctl file
  * @n_opts: options
  * @n_mincno: the minimum of valid checkpoint numbers
+ * @n_sems: array of semaphores
+ *     sems[0] protects garbage collection process
  */
 struct nilfs {
 	struct nilfs_super_block *n_sb;
@@ -116,12 +119,14 @@ struct nilfs {
 	int n_iocfd;
 	int n_opts;
 	nilfs_cno_t n_mincno;
+	sem_t *n_sems[1];
 };
 
-#define NILFS_OPEN_RAW		0x01
-#define NILFS_OPEN_RDONLY	0x02
-#define NILFS_OPEN_WRONLY	0x04
-#define NILFS_OPEN_RDWR		0x08
+#define NILFS_OPEN_RAW		0x0001	/* Open RAW device */
+#define NILFS_OPEN_RDONLY	0x0002	/* Open NILFS API in read only mode */
+#define NILFS_OPEN_WRONLY	0x0004	/* Open NILFS API in write only mode */
+#define NILFS_OPEN_RDWR		0x0008	/* Open NILFS API in read/write mode */
+#define NILFS_OPEN_GCLK		0x1000	/* Open GC lock primitive */
 
 #define NILFS_OPT_MMAP	0x01
 
@@ -140,31 +145,22 @@ int nilfs_parse_cno_range(const char *, nilfs_cno_t *, nilfs_cno_t *, int);
 
 struct nilfs_super_block *nilfs_get_sb(struct nilfs *);
 
-static inline int nilfs_lock(struct nilfs *nilfs, int cmd, int type,
-			     off_t start, int whence, off_t len)
-{
-	struct flock flock;
 
-	flock.l_type = type;
-	flock.l_start = start;
-	flock.l_whence = whence;
-	flock.l_len = len;
-	return fcntl(nilfs->n_iocfd, cmd, &flock);
-}
-
-#define NILFS_LOCK_FNS(name, type)					\
+#define NILFS_LOCK_FNS(name, index)					\
 static inline int nilfs_lock_##name(struct nilfs *nilfs)		\
 {									\
-	return nilfs_lock(nilfs, F_SETLKW, type, 0, SEEK_SET, 1);	\
+	return sem_wait(nilfs->n_sems[index]);				\
+}									\
+static inline int nilfs_trylock_##name(struct nilfs *nilfs)		\
+{									\
+	return sem_trywait(nilfs->n_sems[index]);			\
 }									\
 static inline int nilfs_unlock_##name(struct nilfs *nilfs)		\
 {									\
-	return nilfs_lock(nilfs, F_SETLK, F_UNLCK, 0, SEEK_SET, 1);	\
+	return sem_post(nilfs->n_sems[index]);				\
 }
 
-NILFS_LOCK_FNS(read, F_RDLCK)
-NILFS_LOCK_FNS(write, F_WRLCK)
-
+NILFS_LOCK_FNS(cleaner, 0)
 
 /**
  * struct nilfs_psegment - partial segment iterator

@@ -194,7 +194,8 @@ nilfs_cleanerd_create(const char *dev, const char *dir, const char *conffile)
 	memset(cleanerd, 0, sizeof(*cleanerd));
 
 	cleanerd->c_nilfs = nilfs_open(dev, dir,
-				       NILFS_OPEN_RAW | NILFS_OPEN_RDWR);
+				       NILFS_OPEN_RAW | NILFS_OPEN_RDWR |
+				       NILFS_OPEN_GCLK);
 	if (cleanerd->c_nilfs == NULL) {
 		syslog(LOG_ERR, "cannot open nilfs on %s: %s", dev,
 		       strerror(errno));
@@ -955,7 +956,7 @@ static ssize_t nilfs_cleanerd_clean_segments(struct nilfs_cleanerd *cleanerd,
 	if (ret < 0)
 		goto out_vec;
 
-	ret = nilfs_lock_write(cleanerd->c_nilfs);
+	ret = nilfs_lock_cleaner(cleanerd->c_nilfs);
 	if (ret < 0)
 		goto out_vec;
 
@@ -1002,7 +1003,7 @@ static ssize_t nilfs_cleanerd_clean_segments(struct nilfs_cleanerd *cleanerd,
 	}
 
  out_lock:
-	if (nilfs_unlock_write(cleanerd->c_nilfs) < 0)
+	if (nilfs_unlock_cleaner(cleanerd->c_nilfs) < 0)
 		ret = -1;
 
  out_vec:
