@@ -82,6 +82,9 @@ typedef __u64  blocknr_t;
 #define max_t(type,x,y) \
 	({ type __x = (x); type __y = (y); __x > __y ? __x : __y; })
 
+extern __u32 crc32_le(__u32 seed, unsigned char const *data, size_t length);
+#define nilfs_crc32(seed, data, length)  crc32_le(seed, data, length)
+
 /*
  * System primitives
  */

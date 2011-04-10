@@ -240,9 +240,6 @@ void nilfs_psegment_next(struct nilfs_psegment *);
 	     !nilfs_psegment_is_end(pseg);				\
 	     nilfs_psegment_next(pseg))
 
-__u32 crc32_le(__u32, unsigned char const *, size_t);
-#define nilfs_crc32(seed, data, length)  crc32_le(seed, data, length)
-
 /* file iterator */
 void nilfs_file_init(struct nilfs_file *, const struct nilfs_psegment *);
 int nilfs_file_is_end(const struct nilfs_file *);

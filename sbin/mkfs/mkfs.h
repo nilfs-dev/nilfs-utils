@@ -102,10 +102,6 @@ extern int ext2fs_test_bit(int nr, const void * addr);
 #define BLKGETSIZE64 	_IOR(0x12, 114, size_t)
 #endif
 
-extern __u32 crc32_le(__u32, unsigned char const *, size_t);
-
-#define nilfs_crc32(seed, data, length)  crc32_le(seed, data, length)
-
 /*
  * linux/fs.h
  * File types

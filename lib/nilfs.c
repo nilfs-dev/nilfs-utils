@@ -75,6 +75,7 @@
 #include "nilfs.h"
 #include "realpath.h"
 
+extern __u32 crc32_le(__u32 seed, unsigned char const *data, size_t length);
 
 static inline int iseol(int c)
 {
@@ -784,9 +785,9 @@ static int nilfs_psegment_is_valid(const struct nilfs_psegment *pseg)
 	offset = sizeof(pseg->p_segsum->ss_datasum) +
 		sizeof(pseg->p_segsum->ss_sumsum);
 	return le32_to_cpu(pseg->p_segsum->ss_sumsum) ==
-		nilfs_crc32(pseg->p_seed,
-			    (unsigned char *)pseg->p_segsum + offset,
-			    le32_to_cpu(pseg->p_segsum->ss_sumbytes) - offset);
+		crc32_le(pseg->p_seed,
+			 (unsigned char *)pseg->p_segsum + offset,
+			 le32_to_cpu(pseg->p_segsum->ss_sumbytes) - offset);
 }
 
 void nilfs_psegment_init(struct nilfs_psegment *pseg, __u64 segnum,
