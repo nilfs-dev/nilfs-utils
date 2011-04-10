@@ -277,11 +277,13 @@ static int nilfs_open_sem(struct nilfs *nilfs)
 
 	if (S_ISBLK(stbuf.st_mode)) {
 		ret = snprintf(semnambuf, sizeof(semnambuf),
-			       "/nilfs-cleaner-%lu", stbuf.st_rdev);
+			       "/nilfs-cleaner-%llu",
+			       (unsigned long long)stbuf.st_rdev);
 	} else if (S_ISREG(stbuf.st_mode) || S_ISDIR(stbuf.st_mode)) {
 		ret = snprintf(semnambuf, sizeof(semnambuf),
-			       "/nilfs-cleaner-%lu-%lu",
-			       stbuf.st_dev, stbuf.st_ino);
+			       "/nilfs-cleaner-%llu-%llu",
+			       (unsigned long long)stbuf.st_dev,
+			       (unsigned long long)stbuf.st_ino);
 	} else {
 		errno = EINVAL;
 		return -1;
