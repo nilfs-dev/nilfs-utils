@@ -55,6 +55,7 @@ ltmain.sh
 libtool
 stamp-h
 stamp-h1
+/m4
 
 # stgit generated dirs
 patches-*
