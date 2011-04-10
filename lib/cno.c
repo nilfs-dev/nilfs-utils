@@ -37,8 +37,7 @@
 #include <assert.h>
 #include "nilfs.h"
 
-int nilfs_parse_cno_range(const char *arg, nilfs_cno_t *start,
-			  nilfs_cno_t *end, int base)
+int nilfs_parse_cno_range(const char *arg, __u64 *start, __u64 *end, int base)
 {
 	const char *delim;
 	char *endptr;
