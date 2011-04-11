@@ -99,8 +99,6 @@ static const char badblocks[] = "/sbin/" BADBLOCKS_NAME;
 /*
  * Command interface primitives
  */
-#define _MI_  "\n       "   /* Message indent */
-
 extern char *optarg;
 extern int optind;
 
@@ -498,10 +496,10 @@ static void init_disk_layout(struct nilfs_disk_info *di, int fd,
 		di->blocks_per_segment;
 	min_nsegments = nilfs_min_nsegments(di, r_segments_percentage);
 	if (di->nsegments < min_nsegments)
-		perr("Error: too small device."
-		     _MI_ "device size=%llu bytes, required size=%llu bytes."
-		     _MI_ "Please enlarge the device, "
-		          "or shorten segments with -B option.", dev_size,
+		perr("Error: too small device.\n"
+		     "       device size=%llu bytes, required size=%llu bytes.\n"
+		     "       Please enlarge the device, "
+		     "or shorten segments with -B option.", dev_size,
 		     (unsigned long long)segment_size * min_nsegments);
 	di->nseginfo = 0;
 
@@ -856,8 +854,8 @@ static void write_disk(int fd, struct nilfs_disk_info *di)
 
 	if (!quiet) {
 		show_version();
-		pinfo("Start writing file system initial data to the device"
-		      _MI_ "Blocksize:%d  Device:%s  Device Size:%llu",
+		pinfo("Start writing file system initial data to the device\n"
+		      "       Blocksize:%d  Device:%s  Device Size:%llu",
 		      blocksize, di->device, di->dev_size);
 	}
 	if (!nflag) {
@@ -1065,9 +1063,9 @@ static void cannot_allocate_memory(void)
 static void too_small_segment(unsigned long blocks_per_segment, 
 			      unsigned long required_blocks)
 {
-	perr("Error: too small segment."
-	     _MI_ "segment size=%lu blocks, required segment size=%lu blocks."
-	     _MI_ "Please enlarge segment with -B option.",
+	perr("Error: too small segment.\n"
+	     "       segment size=%lu blocks, required segment size=%lu blocks.\n"
+	     "       Please enlarge segment with -B option.",
 	     blocks_per_segment, required_blocks);
 }
 
