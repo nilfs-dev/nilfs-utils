@@ -154,6 +154,7 @@ void parse_options(int argc, char *argv[], struct nilfs_tune_options *opts)
 			break;
 		default:
 			nilfs_tune_usage();
+			exit(EXIT_FAILURE);
 		}
 	}
 }
