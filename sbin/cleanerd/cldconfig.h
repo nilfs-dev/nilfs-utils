@@ -28,7 +28,8 @@
 #define CLDCONFIG_H
 
 #include <syslog.h>
-#include "nilfs.h"
+
+struct nilfs_suinfo;
 
 /**
  * struct nilfs_selection_policy -
