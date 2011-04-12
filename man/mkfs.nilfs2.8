@@ -32,6 +32,10 @@ mkfs.nilfs2 \- create a NILFS2 filesystem
 .B \-n
 ]
 [
+.B \-O
+.IR feature [,...]
+]
+[
 .B \-q
 ]
 [
@@ -67,6 +71,10 @@ mkfs.nilfs2 \- create a NILFS2 filesystem
 ]
 [
 .B \-n
+]
+[
+.B \-O
+.IR feature [,...]
 ]
 [
 .B \-q
@@ -125,6 +133,20 @@ Cause
 .B mkfs.nilfs2
 to not actually create a filesystem, but display
 what it would be do if it were to create a filesystem.
+.TP
+.B "\-O \fIfeature\fR[,...]"
+Create a filesystem with the given features (filesystem options),
+overriding the default filesystem options.
+.sp
+The filesystem feature set is comprised of a list of features, separated
+by commas, that are to be enabled.  To disable a feature, simply
+prefix the feature name with a caret ('^') character.  The
+pseudo-filesystem feature "none" will clear all filesystem features.
+.RS
+.TP
+.B block_count
+Enable block count per checkpoint.
+.RE
 .TP
 .B \-q
 Quiet execution.  Useful if

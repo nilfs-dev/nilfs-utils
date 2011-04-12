@@ -35,6 +35,24 @@ nilfs-tune will truncate it.  The volume label can be used mount(8) and
 /etc/fstab(5) (and possibly others) by specifying \fBLABEL\fP=volume-label
 instead of a block special device name like /dev/sda5.
 .TP
+.BR \-O " [^]\fIfeature\fR[,...]"
+Set or clear the indicated filesystem features (options) in the filesystem.
+More than one filesystem feature can be cleared or set by separating
+features with commas.  Filesystem features prefixed with a
+caret character ('^') will be cleared in the filesystem's superblock;
+filesystem features without a prefix character
+will be added to the filesystem.
+.IP
+The following filesystem feature can be set or cleared using
+.BR nilfs-tune :
+.RS
+.TP
+.B block_count
+Enable block count per checkpoint.
+After setting this option, fsck should be run on the filesystem to
+make the counts right, but no fsck tool is available yet, sorry.
+.RE
+.TP
 .B \-U \fIUUID\fP
 Set the universally unique identifier (UUID) of the file system to UUID.
 The format of the UUID is a series of hex digits separated by hyphens,

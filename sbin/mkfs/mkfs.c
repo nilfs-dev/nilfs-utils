@@ -73,6 +73,7 @@
 #include <errno.h>
 
 #include "mkfs.h"
+#include "nilfs_feature.h"
 
 
 typedef __u64  blocknr_t;
@@ -116,6 +117,14 @@ static unsigned long r_segments_percentage = NILFS_DEF_RESERVED_SEGMENTS;
 
 static time_t creation_time = 0;
 static char volume_label[80] = {0};
+static __u64 compat_array[NILFS_MAX_FEATURE_TYPES] = {
+	/* Compat */
+	0,
+	/* Read-only compat */
+	0,
+	/* Incompat */
+	0
+};
 
 static void parse_options(int argc, char *argv[]);
 
@@ -942,11 +951,28 @@ static inline void check_ctime(time_t ctime)
 	}
 }
 
+const static __u64 ok_features[NILFS_MAX_FEATURE_TYPES] = {
+	/* Compat */
+	0,
+	/* Read-only compat */
+	NILFS_FEATURE_COMPAT_RO_BLOCK_COUNT,
+	/* Incompat */
+	0
+};
+
+static void nilfs_mkfs_edit_feature(const char *str)
+{
+	if (nilfs_edit_feature(str, compat_array, ok_features, NULL, NULL,
+			       NULL) < 0)
+		perr("Error: invalid feature set option: %s", str);
+}
+
 static void parse_options(int argc, char *argv[])
 {
 	int c, show_version_only = 0;
+	char *fs_features = NULL;
 
-	while ((c = getopt(argc, argv, "b:B:cKL:m:nqvVP:")) != EOF) {
+	while ((c = getopt(argc, argv, "b:B:cKL:m:nqvO:P:V")) != EOF) {
 		switch (c) {
 		case 'b':
 			blocksize = atol(optarg);
@@ -976,12 +1002,15 @@ static void parse_options(int argc, char *argv[])
 		case 'v':
 			verbose++;
 			break;
-		case 'V':
-			show_version_only = 1;
+		case 'O':
+			fs_features = optarg;
 			break;
 		case 'P': /* Passive mode */
 			creation_time = atol(optarg);
 			check_ctime(creation_time);
+			break;
+		case 'V':
+			show_version_only = 1;
 			break;
 		default:
 			usage();
@@ -1002,6 +1031,9 @@ static void parse_options(int argc, char *argv[])
 	check_blocks_per_segment(blocks_per_segment);
 	check_reserved_segments_percentage(r_segments_percentage);
 
+	if (fs_features)
+		nilfs_mkfs_edit_feature(fs_features);
+
         if (argc > 0) {
                 char *cp = strrchr(argv[0], '/');
 
@@ -1017,6 +1049,7 @@ static void usage(void)
 	fprintf(stderr,
 		"Usage: %s [-b block-size] [-B blocks-per-segment] [-c] \n"
 		"[-L volume-label] [-m reserved-segments-percentage] \n"
+		"[-O feature[,...]] \n"
 		"[-nqvKV] device\n",
 		progname);
 	exit(1);
@@ -1611,6 +1644,13 @@ static void prepare_super_block(struct nilfs_disk_info *di)
 		cpu_to_le16(sizeof(struct nilfs_checkpoint));
 	raw_sb->s_segment_usage_size =
 		cpu_to_le16(sizeof(struct nilfs_segment_usage));
+
+	raw_sb->s_feature_compat =
+		cpu_to_le64(compat_array[NILFS_FEATURE_TYPE_COMPAT]);
+	raw_sb->s_feature_compat_ro =
+		cpu_to_le64(compat_array[NILFS_FEATURE_TYPE_COMPAT_RO]);
+	raw_sb->s_feature_incompat =
+		cpu_to_le64(compat_array[NILFS_FEATURE_TYPE_INCOMPAT]);
 
 	uuid_generate(raw_sb->s_uuid);	/* set uuid using libuuid */
 	memcpy(raw_sb->s_volume_name, volume_label, sizeof(volume_label));

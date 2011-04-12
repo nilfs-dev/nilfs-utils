@@ -94,6 +94,7 @@ typedef __u64 nilfs_cno_t;
 
 #define NILFS_SB_LABEL			0x0001
 #define NILFS_SB_UUID			0x0002
+#define NILFS_SB_FEATURES		0x0004
 #define NILFS_SB_COMMIT_INTERVAL	0x4000
 #define NILFS_SB_BLOCK_MAX		0x8000
 

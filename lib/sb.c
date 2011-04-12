@@ -204,6 +204,12 @@ int nilfs_sb_write(int devfd, struct nilfs_super_block *sbp, int mask)
 			memcpy(sbps[i]->s_uuid, sbp->s_uuid,
 			       sizeof(sbp->s_uuid));
 
+		if (mask & NILFS_SB_FEATURES) {
+			sbps[i]->s_feature_compat = sbp->s_feature_compat;
+			sbps[i]->s_feature_compat_ro = sbp->s_feature_compat_ro;
+			sbps[i]->s_feature_incompat = sbp->s_feature_incompat;
+		}
+
 		crc = nilfs_sb_check_sum(sbps[i]);
 		sbps[i]->s_sum = cpu_to_le32(crc);
 		if (lseek(devfd, offsets[i], SEEK_SET) > 0) {

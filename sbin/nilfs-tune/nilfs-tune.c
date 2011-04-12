@@ -59,9 +59,10 @@
 
 #include <sys/stat.h>
 #include <ctype.h>
-
+#include <assert.h>
 #include <errno.h>
 #include "nilfs.h"
+#include "nilfs_feature.h"
 
 #define MOUNTS			"/etc/mtab"
 #define LINE_BUFFER_SIZE	256  /* Line buffer size for reading mtab */
@@ -75,13 +76,33 @@ struct nilfs_tune_options {
 	__u32 c_block_max;
 	char label[80];
 	__u8 uuid[16];
+	char *fs_features;
 };
 
 static void nilfs_tune_usage(void)
 {
 	printf("Usage: nilfs-tune [-h] [-l] [-i interval] [-L volume_name]\n"
-	       "                  [-m block_max] [-U UUID] device\n");
+	       "                  [-m block_max] [-O [^]feature[,...]]\n"
+	       "                  [-U UUID] device\n");
 }
+
+const static __u64 ok_features[NILFS_MAX_FEATURE_TYPES] = {
+	/* Compat */
+	0,
+	/* Read-only compat */
+	NILFS_FEATURE_COMPAT_RO_BLOCK_COUNT,
+	/* Incompat */
+	0
+};
+
+const static __u64 clear_ok_features[NILFS_MAX_FEATURE_TYPES] = {
+	/* Compat */
+	0,
+	/* Read-only compat */
+	NILFS_FEATURE_COMPAT_RO_BLOCK_COUNT,
+	/* Incompat */
+	0
+};
 
 int parse_uuid(const char *uuid_string, __u8 *uuid)
 {
@@ -116,8 +137,9 @@ void parse_options(int argc, char *argv[], struct nilfs_tune_options *opts)
 	opts->display = 0;
 	opts->mask = 0;
 	opts->force = 0;
+	opts->fs_features = NULL;
 
-	while ((c = getopt(argc, argv, "flhi:L:m:U:")) != EOF) {
+	while ((c = getopt(argc, argv, "flhi:L:m:O:U:")) != EOF) {
 		switch (c) {
 		case 'f':
 			opts->force = 1;
@@ -143,6 +165,17 @@ void parse_options(int argc, char *argv[], struct nilfs_tune_options *opts)
 			break;
 		case 'l':
 			opts->display = 1;
+			break;
+		case 'O':
+			if (opts->fs_features) {
+				fprintf(stderr,
+					"-O may only be specified once\n");
+				nilfs_tune_usage();
+				exit(EXIT_FAILURE);
+			}
+			opts->fs_features = optarg;
+			opts->mask |= NILFS_SB_FEATURES;
+			opts->flags = O_RDWR;
 			break;
 		case 'U':
 			if (parse_uuid(optarg, opts->uuid)) {
@@ -293,6 +326,33 @@ static char *time_string(time_t t)
 	return ctime(&t);
 }
 
+static void print_features(FILE *f, struct nilfs_super_block *sbp)
+{
+	__le64 *feature_p[3] = {
+		&sbp->s_feature_compat,
+		&sbp->s_feature_compat_ro,
+		&sbp->s_feature_incompat
+	};
+	int printed = 0;
+	int i, j;
+
+	fputs("Filesystem features:     ", f);
+	for (i = 0; i < 3; i++) {
+		__u64 b, mask = le64_to_cpu(*(feature_p[i]));
+
+		for (j = 0, b = 1; j < 64; j++, b <<= 1) {
+			if (mask & b) {
+				fputc(' ', f);
+				fputs(nilfs_feature2string(i, b), f);
+				printed++;
+			}
+		}
+	}
+	if (!printed)
+		fputs(" (none)", f);
+	fputs("\n", f);
+}
+
 void show_nilfs_sb(struct nilfs_super_block *sbp)
 {
 	char label[sizeof(sbp->s_volume_name) + 1];
@@ -311,6 +371,8 @@ void show_nilfs_sb(struct nilfs_super_block *sbp)
 	printf("Filesystem revision #:\t  %d.%d\n",
 	       le32_to_cpu(sbp->s_rev_level),
 	       le32_to_cpu(sbp->s_minor_rev_level));
+
+	print_features(stdout, sbp);
 
 	/* sbp->s_flags is not used */
 
@@ -390,6 +452,49 @@ void show_nilfs_sb(struct nilfs_super_block *sbp)
 	printf("CRC check data size:\t  0x%08x\n", le32_to_cpu(sbp->s_bytes));
 }
 
+static int update_feature_set(struct nilfs_super_block *sbp,
+			      struct nilfs_tune_options *opts)
+{
+	__u64 features[NILFS_MAX_FEATURE_TYPES];
+	__u64 bad_mask;
+	int bad_type;
+	int ret;
+
+	features[NILFS_FEATURE_TYPE_COMPAT] =
+		le64_to_cpu(sbp->s_feature_compat);
+	features[NILFS_FEATURE_TYPE_COMPAT_RO] =
+		le64_to_cpu(sbp->s_feature_compat_ro);
+	features[NILFS_FEATURE_TYPE_INCOMPAT] =
+		le64_to_cpu(sbp->s_feature_incompat);
+
+	assert(opts->fs_features != NULL);
+	ret = nilfs_edit_feature(opts->fs_features, features, ok_features,
+				 clear_ok_features, &bad_type, &bad_mask);
+	if (ret < 0) {
+		if (!bad_type) {
+			fprintf(stderr, "cannot parse features: %s\n",
+				strerror(errno));
+		} else if (bad_type & NILFS_FEATURE_TYPE_NEGATE_FLAG) {
+			bad_type &= NILFS_FEATURE_TYPE_MASK;
+			fprintf(stderr,
+				"feature %s is not allowed to be cleared\n",
+				nilfs_feature2string(bad_type, bad_mask));
+		} else {
+			fprintf(stderr,
+				"feature %s is not allowed to be set\n",
+				nilfs_feature2string(bad_type, bad_mask));
+		}
+	} else {
+		sbp->s_feature_compat =
+			cpu_to_le64(features[NILFS_FEATURE_TYPE_COMPAT]);
+		sbp->s_feature_compat_ro =
+			cpu_to_le64(features[NILFS_FEATURE_TYPE_COMPAT_RO]);
+		sbp->s_feature_incompat =
+			cpu_to_le64(features[NILFS_FEATURE_TYPE_INCOMPAT]);
+	}
+	return ret;
+}
+
 int modify_nilfs(char *device, struct nilfs_tune_options *opts)
 {
 	int devfd;
@@ -434,6 +539,12 @@ int modify_nilfs(char *device, struct nilfs_tune_options *opts)
 		sbp->s_c_interval = cpu_to_le32(opts->c_interval);
 	if (opts->mask & NILFS_SB_BLOCK_MAX)
 		sbp->s_c_block_max = cpu_to_le32(opts->c_block_max);
+	if (opts->mask & NILFS_SB_FEATURES) {
+		if (update_feature_set(sbp, opts) < 0) {
+			ret = EXIT_FAILURE;
+			goto free_sb;
+		}
+	}
 
 	if (opts->mask) {
 		if (nilfs_sb_write(devfd, sbp, opts->mask) < 0) {
@@ -445,11 +556,11 @@ int modify_nilfs(char *device, struct nilfs_tune_options *opts)
 	if (opts->display)
 		show_nilfs_sb(sbp);
 
+free_sb:
 	free(sbp);
-
- close_fd:
+close_fd:
 	close(devfd);
- out:
+out:
 	return ret;
 }
 
