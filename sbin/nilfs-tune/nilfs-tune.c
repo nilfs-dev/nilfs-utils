@@ -362,7 +362,7 @@ void show_nilfs_sb(struct nilfs_super_block *sbp)
 	memset(label, 0, sizeof(label));
 	memcpy(label, sbp->s_volume_name, sizeof(sbp->s_volume_name));
 	if (!label[0])
-		strcpy(label, "<none>");
+		strcpy(label, "(none)");
 
 	printf("Filesystem volume name:\t  %s\n", label);
 	printf("Filesystem UUID:\t  %s\n", uuid_string(sbp->s_uuid));
