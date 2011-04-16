@@ -1,3 +1,27 @@
+nilfs-utils-2.0.22  Sat Apr 16, 2011 JST
+
+	* use root directory instead of .nilfs file to issue NILFS API
+	  ioctls.
+	* use posix semaphore instead of advisory lock against .nilfs file
+	  to make nilfs tools and cleanerd exclusive; this and the previous
+	  change make the .nilfs file unnecessary.
+	* allow lscp command to display per-checkpoint block count.
+	* do not include blocks of dat, cpfile and sufile in the block
+	  count of initial checkpoint; the block count feature of the
+	  upcoming kernel (2.6.39) is per check point, and these three
+	  meta data files do not belong to any checkpoints.
+	* support option to manipulate fs-features in mkfs.nilfs2 and
+	  nilfs-tune.
+	* support relative pathnames in command line of nilfs_cleanerd.
+	* include crc function in libnilfs library to make it
+	  self-contained.
+	* fix incorrect initial value of number of inodes.
+	* fix message duplication in nilfs-tune for invalid options.
+	* update nilfs2_fs.h header file
+	* uniform the style of commentary outputs in nilfs-tune.
+	* fix a few warnings reported by the recent libtoolize.
+	* cleanups
+
 nilfs-utils-2.0.21  Fri Jan 21, 2011 JST
 
 	* get rid of the warning telling disk format is unstable
