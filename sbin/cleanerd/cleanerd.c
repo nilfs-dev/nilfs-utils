@@ -243,6 +243,12 @@ static int nilfs_comp_segimp(const void *elem1, const void *elem2)
 	return (segimp1->si_segnum < segimp2->si_segnum) ? -1 : 1;
 }
 
+static int nilfs_suinfo_reclaimable(const struct nilfs_suinfo *si)
+{
+	return nilfs_suinfo_dirty(si) &&
+		!nilfs_suinfo_active(si) && !nilfs_suinfo_error(si);
+}
+
 #define NILFS_CLEANERD_NSUINFO	512
 #define NILFS_CLEANERD_NULLTIME (~(__u64)0)
 
@@ -302,9 +308,7 @@ nilfs_cleanerd_select_segments(struct nilfs_cleanerd *cleanerd,
 			goto out;
 		}
 		for (i = 0; i < n; i++) {
-			if (nilfs_suinfo_dirty(&si[i]) &&
-			    !nilfs_suinfo_active(&si[i]) &&
-			    !nilfs_suinfo_error(&si[i]) &&
+			if (nilfs_suinfo_reclaimable(&si[i]) &&
 			    ((imp = (*config->cf_selection_policy.p_importance)(&si[i])) < thr)) {
 				if (si[i].sui_lastmod < oldest)
 					oldest = si[i].sui_lastmod;
@@ -549,6 +553,18 @@ static ssize_t nilfs_cleanerd_acc_blocks(struct nilfs_cleanerd *cleanerd,
 	while (i < n) {
 		if (nilfs_get_suinfo(nilfs, segnums[i], &si, 1) < 0)
 			return -1;
+
+		if (!nilfs_suinfo_reclaimable(&si)) {
+			/*
+			 * Recheck status of the segment and drop it
+			 * if not reclaimable.  This prevents the
+			 * target segments from being cleaned twice or
+			 * more by duplicate cleaner daemons.
+			 */
+			n = nilfs_deselect_segment(segnums, n, i);
+			continue;
+		}
+
 		if (nilfs_get_segment(nilfs, segnums[i], &segment) < 0)
 			return -1;
 
@@ -945,20 +961,20 @@ static ssize_t nilfs_cleanerd_clean_segments(struct nilfs_cleanerd *cleanerd,
 	    vblocknrv == NULL)
 		goto out_vec;
 
+	ret = nilfs_lock_cleaner(cleanerd->c_nilfs);
+	if (ret < 0)
+		goto out_vec;
+
 	n = nilfs_cleanerd_acc_blocks(cleanerd, sustat, segnums, nsegs,
 				      vdescv, bdescv);
 	if (n <= 0) {
 		ret = n;
-		goto out_vec;
+		goto out_lock;
 	}
 
 	ret = nilfs_cleanerd_get_vdesc(cleanerd, vdescv);
 	if (ret < 0)
-		goto out_vec;
-
-	ret = nilfs_lock_cleaner(cleanerd->c_nilfs);
-	if (ret < 0)
-		goto out_vec;
+		goto out_lock;
 
 	ret = nilfs_cleanerd_update_prottime(cleanerd, prottime);
 	if (ret < 0)
