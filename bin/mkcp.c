@@ -43,6 +43,7 @@
 #endif	/* HAVE_STRING_H */
 
 #include <errno.h>
+#include <signal.h>
 #include "nilfs.h"
 
 
@@ -74,6 +75,7 @@ int main(int argc, char *argv[])
 #ifdef _GNU_SOURCE
 	int option_index;
 #endif	/* _GNU_SOURCE */
+	sigset_t sigset, oldset;
 
 	ss = 0;
 	opterr = 0;
@@ -127,11 +129,20 @@ int main(int argc, char *argv[])
 		status = 1;
 		goto out;
 	}
+
+	sigfillset(&sigset);
+	if (sigprocmask(SIG_BLOCK, &sigset, &oldset) < 0) {
+		fprintf(stderr, "%s: cannot block signals: %s\n",
+			progname, strerror(errno));
+		status = 1;
+		goto out;
+	}
+
 	if (ss) {
 		if (nilfs_lock_cleaner(nilfs) < 0) {
 			fprintf(stderr, "%s: %s\n", progname, strerror(errno));
 			status = 1;
-			goto out;
+			goto out_unblock_signal;
 		}
 		if (nilfs_change_cpmode(nilfs, cno, NILFS_SNAPSHOT) < 0) {
 			fprintf(stderr, "%s: %s\n", progname, strerror(errno));
@@ -143,7 +154,9 @@ int main(int argc, char *argv[])
 		}
 	}
 
- out:
+out_unblock_signal:
+	sigprocmask(SIG_SETMASK, &oldset, NULL);
+out:
 	nilfs_close(nilfs);
 	exit(status);
 }

@@ -947,6 +947,7 @@ static ssize_t nilfs_cleanerd_clean_segments(struct nilfs_cleanerd *cleanerd,
 					     __u64 prottime)
 {
 	struct nilfs_vector *vdescv, *bdescv, *periodv, *vblocknrv;
+	sigset_t sigset, oldset, waitset;
 	ssize_t n, ret = -1;
 	int i;
 
@@ -961,9 +962,16 @@ static ssize_t nilfs_cleanerd_clean_segments(struct nilfs_cleanerd *cleanerd,
 	    vblocknrv == NULL)
 		goto out_vec;
 
+	sigfillset(&sigset);
+	ret = sigprocmask(SIG_BLOCK, &sigset, &oldset);
+	if (ret < 0) {
+		syslog(LOG_ERR, "cannot block signals: %m");
+		goto out_vec;
+	}
+
 	ret = nilfs_lock_cleaner(cleanerd->c_nilfs);
 	if (ret < 0)
-		goto out_vec;
+		goto out_sig;
 
 	n = nilfs_cleanerd_acc_blocks(cleanerd, sustat, segnums, nsegs,
 				      vdescv, bdescv);
@@ -995,6 +1003,16 @@ static ssize_t nilfs_cleanerd_clean_segments(struct nilfs_cleanerd *cleanerd,
 	if (ret < 0)
 		goto out_lock;
 
+	ret = sigpending(&waitset);
+	if (ret < 0) {
+		syslog(LOG_ERR, "cannot test signals: %m");
+		goto out_lock;
+	}
+	if (sigismember(&waitset, SIGINT) || sigismember(&waitset, SIGTERM)) {
+		syslog(LOG_DEBUG, "interrupted");
+		goto out_lock;
+	}
+
 	ret = nilfs_clean_segments(cleanerd->c_nilfs,
 				   nilfs_vector_get_data(vdescv),
 				   nilfs_vector_get_size(vdescv),
@@ -1018,11 +1036,14 @@ static ssize_t nilfs_cleanerd_clean_segments(struct nilfs_cleanerd *cleanerd,
 		ret = n;
 	}
 
- out_lock:
+out_lock:
 	if (nilfs_unlock_cleaner(cleanerd->c_nilfs) < 0)
 		ret = -1;
 
- out_vec:
+out_sig:
+	sigprocmask(SIG_SETMASK, &oldset, NULL);
+
+out_vec:
 	if (vdescv != NULL)
 		nilfs_vector_destroy(vdescv);
 	if (bdescv != NULL)

@@ -47,6 +47,7 @@
 #endif	/* HAVE_LIMITS_H */
 
 #include <errno.h>
+#include <signal.h>
 #include "nilfs.h"
 
 
@@ -82,6 +83,7 @@ int main(int argc, char *argv[])
 #ifdef _GNU_SOURCE
 	int option_index;
 #endif	/* _GNU_SOURCE */
+	sigset_t sigset, oldset;
 
 	opterr = 0;
 
@@ -145,13 +147,36 @@ int main(int argc, char *argv[])
 
 	status = 0;
 
-	if (nilfs_lock_cleaner(nilfs) < 0) {
-		fprintf(stderr, "%s: cannot lock NILFS\n", progname);
+	sigfillset(&sigset);
+	if (sigprocmask(SIG_BLOCK, &sigset, &oldset) < 0) {
+		fprintf(stderr, "%s: cannot block signals: %s\n",
+			progname, strerror(errno));
 		status = 1;
 		goto out;
 	}
 
+	if (nilfs_lock_cleaner(nilfs) < 0) {
+		fprintf(stderr, "%s: cannot lock NILFS\n", progname);
+		status = 1;
+		goto out_unblock_signal;
+	}
+
 	for (; optind < argc; optind++) {
+		sigset_t waitset;
+
+		if (sigpending(&waitset) < 0) {
+			fprintf(stderr, "%s: cannot test signals: %s\n",
+				progname, strerror(errno));
+			status = 1;
+			break;
+		}
+		if (sigismember(&waitset, SIGINT) ||
+		    sigismember(&waitset, SIGTERM)) {
+			fprintf(stderr,	"%s: interrupted\n", progname);
+			status = 1;
+			break;
+		}
+
 		cno = strtoul(argv[optind], &endptr, CHCP_BASE);
 		if (*endptr != '\0') {
 			fprintf(stderr, "%s: %s: invalid checkpoint number\n",
@@ -179,7 +204,9 @@ int main(int argc, char *argv[])
 
 	nilfs_unlock_cleaner(nilfs);
 
- out:
+out_unblock_signal:
+	sigprocmask(SIG_SETMASK, &oldset, NULL);
+out:
 	nilfs_close(nilfs);
 	exit(status);
 }
