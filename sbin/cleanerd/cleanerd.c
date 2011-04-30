@@ -962,7 +962,9 @@ static ssize_t nilfs_cleanerd_clean_segments(struct nilfs_cleanerd *cleanerd,
 	    vblocknrv == NULL)
 		goto out_vec;
 
-	sigfillset(&sigset);
+	sigemptyset(&sigset);
+	sigaddset(&sigset, SIGINT);
+	sigaddset(&sigset, SIGTERM);
 	ret = sigprocmask(SIG_BLOCK, &sigset, &oldset);
 	if (ret < 0) {
 		syslog(LOG_ERR, "cannot block signals: %m");

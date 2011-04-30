@@ -130,7 +130,9 @@ int main(int argc, char *argv[])
 		goto out;
 	}
 
-	sigfillset(&sigset);
+	sigemptyset(&sigset);
+	sigaddset(&sigset, SIGINT);
+	sigaddset(&sigset, SIGTERM);
 	if (sigprocmask(SIG_BLOCK, &sigset, &oldset) < 0) {
 		fprintf(stderr, "%s: cannot block signals: %s\n",
 			progname, strerror(errno));
