@@ -748,6 +748,16 @@ static int nilfs_vdesc_is_live(const struct nilfs_vdesc *vdesc,
 	long low, high, index;
 	int s;
 
+	if (vdesc->vd_cno == 0) {
+		/*
+		 * live/dead judge for sufile and cpfile should not
+		 * depend on protection period and snapshots.  Without
+		 * this check, gc will cause buffer conflict error
+		 * because their checkpoint number is always zero.
+		 */
+		return vdesc->vd_period.p_end == NILFS_CNO_MAX;
+	}
+
 	if (vdesc->vd_period.p_end == NILFS_CNO_MAX ||
 	    vdesc->vd_period.p_end > protect)
 		return 1;
