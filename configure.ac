@@ -34,10 +34,10 @@ AC_CHECK_LIB([uuid], [uuid_generate],
 	  [Define to 1 if you have the `uuid' library (-luuid).])],
 	[AC_MSG_ERROR([UUID library not found])])
 
-AC_CHECK_LIB([pthread],[sem_open],
-	[AC_DEFINE([HAVE_LIBPTHREAD], 1,
-	  [Define to 1 if you have the `pthread' library (-lpthread).])],
-	[AC_MSG_ERROR([pthread library not found])])
+AC_CHECK_LIB([rt],[sem_open],
+	[AC_DEFINE([HAVE_LIBRT], 1,
+	  [Define to 1 if you have the `rt' library (-lrt).])],
+	[AC_MSG_ERROR([rt library not found])])
 
 # Checks for header files.
 AC_HEADER_STDC

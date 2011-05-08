@@ -1,8 +1,8 @@
 ## Makefile.am
 
-AM_CFLAGS = -Wall -pthread
+AM_CFLAGS = -Wall
 AM_CPPFLAGS = -I$(top_srcdir)/include
-LDADD = $(top_builddir)/lib/libnilfs.la -lpthread
+LDADD = $(top_builddir)/lib/libnilfs.la -lrt
 
 bin_PROGRAMS = chcp dumpseg lscp lssu mkcp rmcp
 
