@@ -42,6 +42,14 @@
 #include <sys/stat.h>
 #endif	/* HAVE_SYS_STAT_H */
 
+#if HAVE_SYS_TIME_H
+#include <sys/time.h>	/* timeradd */
+#endif	/* HAVE_SYS_TIME */
+
+#if HAVE_TIME_H
+#include <time.h>
+#endif	/* HAVE_TIME_H */
+
 #if HAVE_SYS_WAIT_H
 #include <sys/wait.h>
 #endif	/* HAVE_SYS_WAIT_H */
@@ -54,11 +62,18 @@
 #include <syslog.h>
 #endif	/* HAVE_SYSLOG_H */
 
+#if HAVE_MQUEUE_H
+#include <mqueue.h>
+#endif	/* HAVE_MQUEUE_H */
+
 #include <signal.h>
 #include <stdarg.h>
 #include <errno.h>
+#include <assert.h>
+#include <uuid/uuid.h>
 
 #include "nilfs_cleaner.h"
+#include "cleaner_msg.h"
 #include "nls.h"
 #include "realpath.h"
 
@@ -68,6 +83,10 @@ struct nilfs_cleaner {
 	char *mountdir;
 	dev_t dev_id;
 	ino_t dev_ino; /* optional (in case of directory or regular file) */
+	mqd_t sendq;
+	mqd_t recvq;
+	char *recvq_name;
+	uuid_t client_uuid;
 };
 
 #define CLEANERD_WAIT_RETRY_COUNT	3
@@ -428,6 +447,81 @@ out:
 	return ret;
 }
 
+static int nilfs_cleaner_open_queue(struct nilfs_cleaner *cleaner)
+{
+	char nambuf[NAME_MAX - 4];
+	char uuidbuf[36 + 1];
+	struct mq_attr attr = {
+		.mq_maxmsg = 3,
+		.mq_msgsize = sizeof(struct nilfs_cleaner_response)
+	};
+	int ret;
+
+	uuid_generate(cleaner->client_uuid);
+	uuid_unparse_lower(cleaner->client_uuid, uuidbuf);
+
+	/* receive queue */
+	ret = snprintf(nambuf, sizeof(nambuf), "/nilfs-cleanerq-%s", uuidbuf);
+	if (ret < 0)
+		goto failed;
+
+	assert(ret < sizeof(nambuf));
+	cleaner->recvq_name = strdup(nambuf);
+	if (!cleaner->recvq_name)
+		goto failed;
+
+	cleaner->recvq = mq_open(nambuf, O_RDONLY | O_CREAT | O_EXCL, 0600,
+				 &attr);
+	if (cleaner->recvq < 0) {
+		free(cleaner->recvq_name);
+		goto failed;
+	}
+	/* send queue */
+	if (cleaner->dev_ino == 0) {
+		ret = snprintf(nambuf, sizeof(nambuf),
+			       "/nilfs-cleanerq-%llu",
+			       (unsigned long long)cleaner->dev_id);
+	} else {
+		ret = snprintf(nambuf, sizeof(nambuf),
+			       "/nilfs-cleanerq-%llu-%llu",
+			       (unsigned long long)cleaner->dev_id,
+			       (unsigned long long)cleaner->dev_ino);
+	}
+	if (ret < 0)
+		goto failed_close;
+
+	assert(ret < sizeof(nambuf));
+
+	cleaner->sendq = mq_open(nambuf, O_WRONLY);
+	if (cleaner->sendq < 0)
+		goto failed_close;
+
+	return 0;
+
+failed_close:
+	mq_close(cleaner->recvq);
+	cleaner->recvq = -1;
+	mq_unlink(cleaner->recvq_name);
+	free(cleaner->recvq_name);
+failed:
+	return -1;
+}
+
+static void nilfs_cleaner_close_queue(struct nilfs_cleaner *cleaner)
+{
+	if (cleaner->recvq >= 0) {
+		mq_close(cleaner->recvq);
+		mq_unlink(cleaner->recvq_name);
+		free(cleaner->recvq_name);
+		cleaner->recvq = -1;
+		cleaner->recvq_name = NULL;
+	}
+	if (cleaner->sendq >= 0) {
+		mq_close(cleaner->sendq);
+		cleaner->sendq = -1;
+	}
+}
+
 struct nilfs_cleaner *nilfs_cleaner_launch(const char *device,
 					   const char *mntdir,
 					   unsigned long protperiod)
@@ -438,6 +532,8 @@ struct nilfs_cleaner *nilfs_cleaner_launch(const char *device,
 	if (!cleaner)
 		goto error;
 	memset(cleaner, 0, sizeof(*cleaner));
+	cleaner->sendq = -1;
+	cleaner->recvq = -1;
 
 	cleaner->device = strdup(device);
 	cleaner->mountdir = strdup(mntdir);
@@ -473,6 +569,8 @@ struct nilfs_cleaner *nilfs_cleaner_open(const char *device,
 	if (!cleaner)
 		goto error;
 	memset(cleaner, 0, sizeof(*cleaner));
+	cleaner->sendq = -1;
+	cleaner->recvq = -1;
 
 	if (nilfs_cleaner_find_fs(cleaner, device, mntdir) < 0)
 		goto abort;
@@ -483,6 +581,14 @@ struct nilfs_cleaner *nilfs_cleaner_open(const char *device,
 	if ((oflag & NILFS_CLEANER_OPEN_GCPID) && cleaner->cleanerd_pid == 0) {
 		nilfs_cleaner_logger(LOG_ERR,
 				     _("Error: cannot get cleanerd pid"));
+		goto abort;
+	}
+
+	if ((oflag & NILFS_CLEANER_OPEN_QUEUE) &&
+	    nilfs_cleaner_open_queue(cleaner) < 0) {
+		nilfs_cleaner_logger(LOG_ERR,
+				     _("Error: cannot open cleaner on %s"),
+				     cleaner->device);
 		goto abort;
 	}
 
@@ -516,6 +622,7 @@ const char *nilfs_cleaner_device(const struct nilfs_cleaner *cleaner)
 
 void nilfs_cleaner_close(struct nilfs_cleaner *cleaner)
 {
+	nilfs_cleaner_close_queue(cleaner);
 	free(cleaner->device);
 	free(cleaner->mountdir);
 	free(cleaner);
@@ -533,5 +640,321 @@ int nilfs_cleaner_shutdown(struct nilfs_cleaner *cleaner)
 					      cleaner->cleanerd_pid);
 	}
 	nilfs_cleaner_close(cleaner);
+	return ret;
+}
+
+
+static int nilfs_cleaner_clear_queueu(struct nilfs_cleaner *cleaner)
+{
+	struct nilfs_cleaner_response res;
+	struct mq_attr attr;
+	unsigned count;
+
+	assert(cleaner->recvq >= 0);
+
+	if (mq_getattr(cleaner->recvq, &attr) < 0)
+		goto failed;
+
+	while (attr.mq_curmsgs > 0) {
+		count = attr.mq_curmsgs;
+		do {
+			if (mq_receive(cleaner->recvq, (char *)&res,
+				       sizeof(res), NULL) < 0)
+				goto failed;
+		} while (--count > 0);
+
+		if (mq_getattr(cleaner->recvq, &attr) < 0)
+			goto failed;
+	}
+	return 0;
+
+failed:
+	nilfs_cleaner_logger(LOG_ERR,
+			     _("Error: cannot clear message queue: %s"),
+			     strerror(errno));
+	return -1;
+}
+
+int nilfs_cleaner_get_status(struct nilfs_cleaner *cleaner, int *status)
+{
+	struct nilfs_cleaner_request req;
+	struct nilfs_cleaner_response res;
+	int bytes, ret = -1;
+
+	if (cleaner->sendq < 0 || cleaner->recvq < 0) {
+		errno = EBADF;
+		goto out;
+	}
+	if (nilfs_cleaner_clear_queueu(cleaner) < 0)
+		goto out;
+
+	req.cmd = NILFS_CLEANER_CMD_GET_STATUS;
+	req.argsize = 0;
+	uuid_copy(req.client_uuid, cleaner->client_uuid);
+
+	ret = mq_send(cleaner->sendq, (char *)&req, sizeof(req),
+		      NILFS_CLEANER_PRIO_NORMAL);
+	if (ret < 0)
+		goto out;
+
+	bytes = mq_receive(cleaner->recvq, (char *)&res, sizeof(res), NULL);
+	if (bytes < sizeof(res)) {
+		if (bytes >= 0)
+			errno = EIO;
+		ret = -1;
+		goto out;
+	}
+	if (res.result == NILFS_CLEANER_RSP_ACK) {
+		*status = res.status;
+	} else if (res.result == NILFS_CLEANER_RSP_NACK) {
+		ret = -1;
+		errno = res.err;
+	}
+out:
+	return ret;
+}
+
+int nilfs_cleaner_run(struct nilfs_cleaner *cleaner,
+		      const struct nilfs_cleaner_args *args,
+		      uint32_t *jobid)
+{
+	struct nilfs_cleaner_request_with_args req;
+	struct nilfs_cleaner_response res;
+	int bytes, ret = -1;
+
+	if (cleaner->sendq < 0 || cleaner->recvq < 0) {
+		errno = EBADF;
+		goto out;
+	}
+	if (nilfs_cleaner_clear_queueu(cleaner) < 0)
+		goto out;
+
+	req.hdr.cmd = NILFS_CLEANER_CMD_RUN;
+	req.hdr.argsize = sizeof(req.args);
+	uuid_copy(req.hdr.client_uuid, cleaner->client_uuid);
+	memcpy(&req.args, args, sizeof(req.args));
+
+	ret = mq_send(cleaner->sendq, (char *)&req, sizeof(req),
+		      NILFS_CLEANER_PRIO_NORMAL);
+	if (ret < 0)
+		goto out;
+
+	bytes = mq_receive(cleaner->recvq, (char *)&res, sizeof(res), NULL);
+	if (bytes < sizeof(res)) {
+		if (bytes >= 0)
+			errno = EIO;
+		ret = -1;
+		goto out;
+	}
+	if (res.result == NILFS_CLEANER_RSP_ACK) {
+		if (jobid)
+			*jobid = res.jobid;
+	} else if (res.result == NILFS_CLEANER_RSP_NACK) {
+		ret = -1;
+		errno = res.err;
+	}
+out:
+	return ret;
+}
+
+int nilfs_cleaner_suspend(struct nilfs_cleaner *cleaner)
+{
+	struct nilfs_cleaner_request req;
+	struct nilfs_cleaner_response res;
+	int bytes, ret = -1;
+
+	if (cleaner->sendq < 0 || cleaner->recvq < 0) {
+		errno = EBADF;
+		goto out;
+	}
+	if (nilfs_cleaner_clear_queueu(cleaner) < 0)
+		goto out;
+
+	req.cmd = NILFS_CLEANER_CMD_SUSPEND;
+	req.argsize = 0;
+	uuid_copy(req.client_uuid, cleaner->client_uuid);
+
+	ret = mq_send(cleaner->sendq, (char *)&req, sizeof(req),
+		      NILFS_CLEANER_PRIO_NORMAL);
+	if (ret < 0)
+		goto out;
+
+	bytes = mq_receive(cleaner->recvq, (char *)&res, sizeof(res), NULL);
+	if (bytes < sizeof(res)) {
+		if (bytes >= 0)
+			errno = EIO;
+		ret = -1;
+		goto out;
+	}
+	if (res.result == NILFS_CLEANER_RSP_NACK) {
+		ret = -1;
+		errno = res.err;
+	}
+out:
+	return ret;
+}
+
+int nilfs_cleaner_resume(struct nilfs_cleaner *cleaner)
+{
+	struct nilfs_cleaner_request req;
+	struct nilfs_cleaner_response res;
+	int bytes, ret = -1;
+
+	if (cleaner->sendq < 0 || cleaner->recvq < 0) {
+		errno = EBADF;
+		goto out;
+	}
+	if (nilfs_cleaner_clear_queueu(cleaner) < 0)
+		goto out;
+
+	req.cmd = NILFS_CLEANER_CMD_RESUME;
+	req.argsize = 0;
+	uuid_copy(req.client_uuid, cleaner->client_uuid);
+
+	ret = mq_send(cleaner->sendq, (char *)&req, sizeof(req),
+		      NILFS_CLEANER_PRIO_NORMAL);
+	if (ret < 0)
+		goto out;
+
+	bytes = mq_receive(cleaner->recvq, (char *)&res, sizeof(res), NULL);
+	if (bytes < sizeof(res)) {
+		if (bytes >= 0)
+			errno = EIO;
+		ret = -1;
+		goto out;
+	}
+	if (res.result == NILFS_CLEANER_RSP_NACK) {
+		ret = -1;
+		errno = res.err;
+	}
+out:
+	return ret;
+}
+
+int nilfs_cleaner_tune(struct nilfs_cleaner *cleaner,
+		       const struct nilfs_cleaner_args *args)
+{
+	struct nilfs_cleaner_request_with_args req;
+	struct nilfs_cleaner_response res;
+	int bytes, ret = -1;
+
+	if (cleaner->sendq < 0 || cleaner->recvq < 0) {
+		errno = EBADF;
+		goto out;
+	}
+	if (nilfs_cleaner_clear_queueu(cleaner) < 0)
+		goto out;
+
+	req.hdr.cmd = NILFS_CLEANER_CMD_TUNE;
+	req.hdr.argsize = sizeof(req.args);
+	uuid_copy(req.hdr.client_uuid, cleaner->client_uuid);
+	memcpy(&req.args, args, sizeof(req.args));
+
+	ret = mq_send(cleaner->sendq, (char *)&req, sizeof(req),
+		      NILFS_CLEANER_PRIO_NORMAL);
+	if (ret < 0)
+		goto out;
+
+	bytes = mq_receive(cleaner->recvq, (char *)&res, sizeof(res), NULL);
+	if (bytes < sizeof(res)) {
+		if (bytes >= 0)
+			errno = EIO;
+		ret = -1;
+		goto out;
+	}
+	if (res.result == NILFS_CLEANER_RSP_NACK) {
+		ret = -1;
+		errno = res.err;
+	}
+out:
+	return ret;
+}
+
+int nilfs_cleaner_reload(struct nilfs_cleaner *cleaner, const char *conffile)
+{
+	struct nilfs_cleaner_request_with_path req;
+	struct nilfs_cleaner_response res;
+	size_t pathlen, reqsz;
+	int bytes, ret = -1;
+
+	if (cleaner->sendq < 0 || cleaner->recvq < 0) {
+		errno = EBADF;
+		goto out;
+	}
+	if (nilfs_cleaner_clear_queueu(cleaner) < 0)
+		goto out;
+
+	if (conffile) {
+		if (myrealpath(conffile, req.pathname,
+			       NILFS_CLEANER_MSG_MAX_PATH) == NULL)
+			goto out;
+
+		pathlen = strlen(req.pathname);
+		req.hdr.argsize = pathlen + 1;
+		reqsz = sizeof(req.hdr) + pathlen + 1;
+	} else {
+		req.hdr.argsize = 0;
+		reqsz = sizeof(req.hdr);
+	}
+	req.hdr.cmd = NILFS_CLEANER_CMD_RELOAD;
+	uuid_copy(req.hdr.client_uuid, cleaner->client_uuid);
+
+	ret = mq_send(cleaner->sendq, (char *)&req, reqsz,
+		      NILFS_CLEANER_PRIO_NORMAL);
+	if (ret < 0)
+		goto out;
+
+	bytes = mq_receive(cleaner->recvq, (char *)&res, sizeof(res), NULL);
+	if (bytes < sizeof(res)) {
+		if (bytes >= 0)
+			errno = EIO;
+		ret = -1;
+		goto out;
+	}
+	if (res.result == NILFS_CLEANER_RSP_NACK) {
+		ret = -1;
+		errno = res.err;
+	}
+out:
+	return ret;
+}
+
+int nilfs_cleaner_wait(struct nilfs_cleaner *cleaner, uint32_t jobid,
+		       const struct timespec *abs_timeout)
+{
+	struct nilfs_cleaner_request_with_jobid req;
+	struct nilfs_cleaner_response res;
+	int bytes, ret = -1;
+
+	if (cleaner->sendq < 0 || cleaner->recvq < 0) {
+		errno = EBADF;
+		goto out;
+	}
+	if (nilfs_cleaner_clear_queueu(cleaner) < 0)
+		goto out;
+
+	req.hdr.cmd = NILFS_CLEANER_CMD_WAIT;
+	req.hdr.argsize = 0;
+	uuid_copy(req.hdr.client_uuid, cleaner->client_uuid);
+	req.jobid = jobid;
+
+	ret = mq_send(cleaner->sendq, (char *)&req, sizeof(req),
+		      NILFS_CLEANER_PRIO_NORMAL);
+	if (ret < 0)
+		goto out; /* ETIMEDOUT will be returned in case of timeout */
+
+	bytes = mq_timedreceive(cleaner->recvq, (char *)&res, sizeof(res),
+				NULL, abs_timeout);
+	if (bytes < sizeof(res)) {
+		if (bytes >= 0)
+			errno = EIO;
+		ret = -1;
+		goto out;
+	}
+	if (res.result == NILFS_CLEANER_RSP_NACK) {
+		ret = -1;
+		errno = res.err;
+	}
+out:
 	return ret;
 }

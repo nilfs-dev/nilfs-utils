@@ -33,4 +33,4 @@ libnilfsgc_la_LIBADD = libnilfs.la -lrt
 libnilfscleaner_la_SOURCES = cleaner_ctl.c
 libnilfscleaner_la_CFLAGS = -Wall -fPIC
 libnilfscleaner_la_CPPFLAGS = -I$(top_srcdir)/include
-libnilfscleaner_la_LDFLAGS = -static -lrt
+libnilfscleaner_la_LDFLAGS = -static -lrt -luuid
