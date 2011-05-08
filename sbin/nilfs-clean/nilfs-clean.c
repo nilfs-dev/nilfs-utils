@@ -81,13 +81,16 @@ const static struct option long_option[] = {
 };
 #define NILFS_CLEAN_USAGE						\
 	"Usage: %s [options] [device]\n"				\
-	"  -c, --reload[=CONFFILE]\t\treload config\n"			\
+	"  -c, --reload[=CONFFILE]\n"					\
+	"            \t\treload config\n"				\
 	"  -h, --help\t\tdisplay this help and exit\n"			\
 	"  -l, --status\t\tdisplay cleaner status\n"			\
-	"  -p, --protection-period=SECONDS\tspecify protection period\n"\
+	"  -p, --protection-period=SECONDS\n"				\
+	"               \t\tspecify protection period\n"		\
 	"  -r, --resume\t\tresume cleaner\n"				\
 	"  -s, --stop,--suspend\tsuspend cleaner\n"			\
-	"  -S, --speed=COUNT[/SECONDS]\t\tset GC speed\n"		\
+	"  -S, --speed=COUNT[/SECONDS]\n"				\
+	"               \t\tset GC speed\n"				\
 	"  -v, --verbose\t\tverbose mode\n"				\
 	"  -V, --version\t\tdisplay version and exit\n"
 #else
