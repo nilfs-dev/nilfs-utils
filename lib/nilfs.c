@@ -673,6 +673,40 @@ int nilfs_sync(const struct nilfs *nilfs, nilfs_cno_t *cnop)
 	return ret;
 }
 
+/**
+ * nilfs_resize - resize the filesystem
+ * @nilfs: nilfs object
+ * @size: new partition size
+ */
+int nilfs_resize(struct nilfs *nilfs, off_t size)
+{
+	__u64 range = size;
+
+	if (nilfs->n_iocfd < 0) {
+		errno = EBADF;
+		return -1;
+	}
+
+	return ioctl(nilfs->n_iocfd, NILFS_IOCTL_RESIZE, &range);
+}
+
+/**
+ * nilfs_set_alloc_range - limit range of segments to be allocated
+ * @nilfs: nilfs object
+ * @start: lower limit of segments in bytes (inclusive)
+ * @end: upper limit of segments in bytes (inclusive)
+ */
+int nilfs_set_alloc_range(struct nilfs *nilfs, off_t start, off_t end)
+{
+	__u64 range[2] = { start, end };
+
+	if (nilfs->n_iocfd < 0) {
+		errno = EBADF;
+		return -1;
+	}
+
+	return ioctl(nilfs->n_iocfd, NILFS_IOCTL_SET_ALLOC_RANGE, range);
+}
 
 /* raw */
 
