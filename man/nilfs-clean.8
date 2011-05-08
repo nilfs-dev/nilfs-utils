@@ -1,0 +1,76 @@
+.\"  Copyright (C) 2011 Nippon Telegraph and Telephone Corporation.
+.\"  Written by Ryusuke Konishi <konishi.ryusuke@lab.ntt.co.jp>
+.\"
+.TH NILFS-CLEAN 8 "May 2011" "nilfs-utils version 2.0"
+.SH NAME
+nilfs-clean \- run garbage collector on NILFS file system
+.SH SYNOPSIS
+.B nilfs-clean
+[\fIoptions\fP] [\fIdevice\fP]
+.SH DESCRIPTION
+The \fBnilfs-clean\fP program communicates with
+\fBnilfs_cleanerd\fP(8) program and controls execution of garbage
+collection (GC) on NILFS2 file systems.  It can be used to manually
+run garbage collection of a file system mounted on \fIdevice\fP to
+increase the free space.
+.PP
+If no commands are specified by the following options,
+\fBnilfs-clean\fP triggers a 1-pass cleaning.  If a GC command is
+specified by an option, the command is sent to and performed on the
+\fBnilfs_cleanerd\fP(8) program instead.
+.PP
+When \fIdevice\fP is ommitted, \fBnilfs-clean\fP automatically selects
+an active NILFS2 file system in the system.
+.PP
+This command is valid only for mounted NILFS2 file systems, and
+will fail if the \fIdevice\fP has no active mounts.
+.SH OPTIONS
+.TP
+\fB\-c\fR, \fB\-\-reload\fR[=\fIconffile\fR]
+Request reloading config file to cleaner process.  If an optional
+configuration file is given, the file is read by
+\fBnilfs_cleanerd\fP(8) program and cleaner configuration is reset to
+the information.  If no argument is given, a configuration file
+selected by \fBnilfs_cleanerd\fP(8) will be reloaded.
+.TP
+\fB\-l\fR, \fB\-\-status\fR
+Display cleaner status.
+.TP
+\fB\-h\fR, \fB\-\-help\fR
+Display help message and exit.
+.TP
+\fB\-p\fR, \fB\-\-protection-period=\fIinterval\fR
+Set protection period for a cleaner run.  The \fIinterval\fR parameter
+is an interger value and specifies the minimum time that deleted or
+overrode data will be preserved in the file system.  Smaller values will
+increase free space made by garbage collection.  Optionally, the
+\fIinterval\fP parameter may be suffixed by one of the following the
+units designators: \'s\', \'m\', \'h\', \'d\',\'w\',\'M\', or \'Y\',
+for seconds, minutes, hours, days, weeks, months, or years,
+respectively.
+.TP
+\fB\-r\fR, \fB\-\-resume\fR
+Resume garbage collection.
+.TP
+\fB\-s\fR, \fB\-\-stop\fR, \fB\-\-suspend\fR
+Suspend garbage collection.  Note that if users manually suspend
+garbage collection with this option, it will not restart automatically
+until user resumes the garbage collection.
+.TP
+\fB\-S\fR, \fB\-\-speed=\fICOUNT[/SECONDS]\fR
+Set garbage collection speed for a cleaner run.
+.TP
+\fB\-v\fR, \fB\-\-verbose\fR
+Verbose mode.
+.TP
+\fB\-V\fR, \fB\-\-version\fR
+Display version and exit.
+.SH AUTHOR
+Ryusuke Konishi <konishi.ryusuke@lab.ntt.co.jp>
+.SH AVAILABILITY
+.B nilfs-clean
+is part of the nilfs-utils package and is available from
+http://www.nilfs.org.
+.SH SEE ALSO
+.BR nilfs (8),
+.BR nilfs_cleanerd (8).
