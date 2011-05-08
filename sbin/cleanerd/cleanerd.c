@@ -682,8 +682,8 @@ static int nilfs_cleanerd_init_interval(struct nilfs_cleanerd *cleanerd)
 }
 
 static int nilfs_cleanerd_recalc_interval(struct nilfs_cleanerd *cleanerd,
-					  int nchosen, __u64 prottime,
-					  __u64 oldest)
+					  int nchosen, int ndone,
+					  __u64 prottime, __u64 oldest)
 {
 	struct timeval curr, *interval;
 
@@ -692,20 +692,25 @@ static int nilfs_cleanerd_recalc_interval(struct nilfs_cleanerd *cleanerd,
 		return -1;
 	}
 
-	if (nchosen == 0) {
+	if (nchosen == 0 || (!cleanerd->fallback && ndone == 0)) {
+		unsigned long pt;
+
 		/* no segment were cleaned */
-		cleanerd->timeout.tv_usec = 0;
 		if (oldest == NILFS_CLEANERD_NULLTIME) {
+			/* no reclaimable segments */
 			if (cleanerd->running == 2)
 				nilfs_cleanerd_manual_end(cleanerd);
-			else if (cleanerd->running == 1)
-				nilfs_cleanerd_clean_check_pause(cleanerd);
+			else if (cleanerd->running)
+				cleanerd->running = 0;
 
-			cleanerd->timeout.tv_sec =
-				nilfs_cleanerd_protection_period(cleanerd) + 1;
+			pt = nilfs_cleanerd_protection_period(cleanerd) + 1;
 		} else {
-			cleanerd->timeout.tv_sec = oldest - prottime + 1;
+			pt = oldest - prottime + 1;
 		}
+		cleanerd->timeout.tv_sec = max_t(
+			unsigned long, pt,
+			cleanerd->config.cf_clean_check_interval);
+		cleanerd->timeout.tv_usec = 0;
 		return 0;
 	}
 
@@ -1199,7 +1204,7 @@ static int nilfs_cleanerd_clean_loop(struct nilfs_cleanerd *cleanerd)
 	__u64 prottime = 0, oldest = 0;
 	__u64 segnums[NILFS_CLDCONFIG_NSEGMENTS_PER_CLEAN_MAX];
 	sigset_t sigset;
-	int ns, ret;
+	int ns, ndone, ret;
 
 	sigemptyset(&sigset);
 	if (sigprocmask(SIG_SETMASK, &sigset, NULL) < 0) {
@@ -1270,16 +1275,16 @@ static int nilfs_cleanerd_clean_loop(struct nilfs_cleanerd *cleanerd)
 		syslog(LOG_DEBUG, "%d segment%s selected to be cleaned",
 		       ns, (ns <= 1) ? "" : "s");
 		if (ns > 0) {
-			ret = nilfs_cleanerd_clean_segments(
+			ndone = nilfs_cleanerd_clean_segments(
 				cleanerd, segnums, ns, sustat.ss_prot_seq,
 				prottime);
-			if (ret < 0)
+			if (ndone < 0)
 				return -1;
 		}
 		/* done */
 
 		ret = nilfs_cleanerd_recalc_interval(
-			cleanerd, ns, prottime, oldest);
+			cleanerd, ns, ndone, prottime, oldest);
 		if (ret < 0)
 			return -1;
 		else if (ret > 0)
