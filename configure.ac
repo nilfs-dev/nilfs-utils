@@ -99,5 +99,6 @@ AC_CONFIG_FILES([Makefile
 		 sbin/mkfs/Makefile
 		 sbin/mount/Makefile
 		 sbin/nilfs-tune/Makefile
-		 sbin/nilfs-clean/Makefile])
+		 sbin/nilfs-clean/Makefile
+		 sbin/nilfs-resize/Makefile])
 AC_OUTPUT
