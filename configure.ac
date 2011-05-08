@@ -78,7 +78,7 @@ AC_CHECK_FUNC(posix_memalign,,
 	      [AC_MSG_ERROR([cannot find posix_memalign() function])])
 AC_CHECK_FUNCS([alarm atexit ftruncate getcwd gettimeofday localtime_r \
 		memmove memset munmap strchr strdup strerror strrchr strstr \
-		strtoul getgrgid getpwuid strcasecmp])
+		strtoul getgrgid getpwuid strcasecmp getmntent_r strtok_r])
 
 # Checks for system services
 AC_SYS_LARGEFILE

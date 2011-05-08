@@ -1,6 +1,6 @@
 ## Makefile.am
 
-lib_LTLIBRARIES = libnilfs.la libnilfsgc.la
+lib_LTLIBRARIES = libnilfs.la libnilfsgc.la libnilfscleaner.la
 noinst_LTLIBRARIES = libnilfsmisc.la
 
 libnilfsmisc_la_SOURCES = realpath.c cno.c feature.c ismounted.c
@@ -29,3 +29,8 @@ libnilfsgc_la_CFLAGS = -Wall -fPIC
 libnilfsgc_la_CPPFLAGS = -I$(top_srcdir)/include
 libnilfsgc_la_LDFLAGS = -version-info $(nilfsgc_VERSIONINFO)
 libnilfsgc_la_LIBADD = libnilfs.la -lrt
+
+libnilfscleaner_la_SOURCES = cleaner_ctl.c
+libnilfscleaner_la_CFLAGS = -Wall -fPIC
+libnilfscleaner_la_CPPFLAGS = -I$(top_srcdir)/include
+libnilfscleaner_la_LDFLAGS = -static -lrt

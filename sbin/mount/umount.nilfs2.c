@@ -55,8 +55,6 @@
 #include <strings.h>
 #endif	/* HAVE_STRINGS_H */
 
-#include <stdarg.h>
-
 #if HAVE_STRING_H
 #include <string.h>
 #endif	/* HAVE_STRING_H */
@@ -73,7 +71,12 @@
 #include <sys/wait.h>
 #endif	/* HAVE_SYS_WAIT_H */
 
+#if HAVE_SYSLOG_H
+#include <syslog.h>
+#endif	/* HAVE_SYSLOG_H */
+
 #include <signal.h>
+#include <stdarg.h>
 #include <errno.h>
 
 #include "fstab.h"
@@ -83,6 +86,7 @@
 #include "mntent.h"
 #include "mount_constants.h"
 #include "mount.nilfs2.h"
+#include "nilfs_cleaner.h"
 #include "nls.h"
 
 
@@ -121,6 +125,19 @@ struct umount_options options = {
 /*
  * Other routines
  */
+static void nilfs_umount_logger(int priority, const char *fmt, ...)
+{
+	va_list args;
+
+	if ((verbose && priority > LOG_INFO) || priority >= LOG_INFO)
+		return;
+	va_start(args, fmt);
+	fprintf(stderr, "%s: ", progname);
+	vfprintf(stderr, fmt, args);
+	fputs(_("\n"), stderr);
+	va_end(args);
+}
+
 static void show_version(void)
 {
 	printf("%s (%s %s)\n", progname, PACKAGE, PACKAGE_VERSION);
@@ -202,6 +219,8 @@ int main(int argc, char *argv[])
 
 		progname = (cp ? cp + 1 : argv[0]);
 	}
+
+	nilfs_cleaner_logger = nilfs_umount_logger;
 
 	parse_options(argc, argv, opts);
 
@@ -371,8 +390,8 @@ umount_one(const char *spec, const char *node, const char *type,
 	if (mc) {
 		if (!read_only_mount_point(mc) &&
 		    (pid = get_mtab_gcpid(mc)) != 0) {
-			alive = check_cleanerd(spec, pid);
-			stop_cleanerd(spec, pid);
+			alive = nilfs_ping_cleanerd(pid);
+			nilfs_shutdown_cleanerd(spec, pid);
 		}
 	}
 
@@ -395,22 +414,23 @@ umount_one(const char *spec, const char *node, const char *type,
 				error(_("%s: could not remount %s read-only"),
 				      progname, spec);
 			}
-		} else if (alive && !check_cleanerd(spec, pid)) {
+		} else if (alive && !nilfs_ping_cleanerd(pid)) {
 			if (find_opt(mc->m.mnt_opts, pp_opt_fmt, &prot_period)
 			    < 0)
 				prot_period = ULONG_MAX;
 
-			if (start_cleanerd(spec, node, prot_period, &pid) == 0) {
+			if (nilfs_launch_cleanerd(spec, node, prot_period,
+						  &pid) == 0) {
 				if (verbose)
 					printf(_("%s: restarted %s(pid=%d)\n"),
-					       progname, CLEANERD_NAME,
+					       progname, NILFS_CLEANERD_NAME,
 					       (int)pid);
 				change_mtab_opt(spec, node, type,
 						change_gcpid_opt(opts, pid));
 				goto out;
 			} else
 				error(_("%s: failed to restart %s"),
-				      progname, CLEANERD_NAME);
+				      progname, NILFS_CLEANERD_NAME);
 		}
 	}
 

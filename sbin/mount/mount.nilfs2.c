@@ -53,8 +53,6 @@
 #include <strings.h>
 #endif	/* HAVE_STRINGS_H */
 
-#include <stdarg.h>
-
 #if HAVE_STRING_H
 #include <string.h>
 #endif	/* HAVE_STRING_H */
@@ -67,12 +65,13 @@
 #include <sys/stat.h>
 #endif	/* HAVE_SYS_STAT_H */
 
-#include <signal.h>
-#include <errno.h>
-
 #if HAVE_SYSLOG_H
 #include <syslog.h>
 #endif	/* HAVE_SYSLOG_H */
+
+#include <signal.h>
+#include <stdarg.h>
+#include <errno.h>
 
 #include "fstab.h"
 #include "paths.h"
@@ -82,8 +81,10 @@
 #include "mount_constants.h"
 #include "mount_opts.h"
 #include "mount.nilfs2.h"
+#include "nilfs_cleaner.h"
 #include "nls.h"
 
+/* mount options */
 int verbose = 0;
 int mount_quiet = 0;
 int readonly = 0;
@@ -92,6 +93,7 @@ static int nomtab = 0;
 static int devro = 0;
 static int fake = 0;
 
+/* global variables */
 extern char *optarg;
 extern int optind;
 
@@ -115,6 +117,19 @@ struct mount_options {
 };
 struct mount_options options;
 
+
+static void nilfs_mount_logger(int priority, const char *fmt, ...)
+{
+	va_list args;
+
+	if ((verbose && priority > LOG_INFO) || priority >= LOG_INFO)
+		return;
+	va_start(args, fmt);
+	fprintf(stderr, "%s: ", progname);
+	vfprintf(stderr, fmt, args);
+	fputs(_("\n"), stderr);
+	va_end(args);
+}
 
 /* Report on a single mount.  */
 static void print_one (const struct my_mntent *me)
@@ -444,9 +459,9 @@ prepare_mount(struct nilfs_mount_info *mi, const struct mount_options *mo)
 			goto failed;
 		pid = 0;
 		if (find_opt(mc->m.mnt_opts, gcpid_opt_fmt, &pid) >= 0 &&
-		    stop_cleanerd(mi->device, (pid_t)pid) < 0) {
+		    nilfs_shutdown_cleanerd(mi->device, (pid_t)pid) < 0) {
 			error(_("%s: remount failed due to %s shutdown "
-				"failure"), progname, CLEANERD_NAME);
+				"failure"), progname, NILFS_CLEANERD_NAME);
 			goto failed;
 		}
 		mi->gcpid = pid;
@@ -495,20 +510,20 @@ do_mount_one(struct nilfs_mount_info *mi, const struct mount_options *mo)
 	/* because filesystem is still mounted */
 	if (!mi->nogc && mtab_ok) {
 		/* Restarting cleaner daemon */
-		if (start_cleanerd(mi->device, mi->mntdir, mi->protperiod,
-				   &mi->gcpid) == 0) {
+		if (nilfs_launch_cleanerd(mi->device, mi->mntdir,
+					  mi->protperiod, &mi->gcpid)) {
 			if (verbose)
 				printf(_("%s: restarted %s\n"),
-				       progname, CLEANERD_NAME);
+				       progname, NILFS_CLEANERD_NAME);
 			update_gcpid_opt(&mi->optstr, mi->gcpid);
 			update_mtab_entry(mi->device, mi->mntdir, fstype,
 					  mi->optstr, 0, 0, !mi->mounted);
 		} else {
 			error(_("%s: failed to restart %s"),
-			      progname, CLEANERD_NAME);
+			      progname, NILFS_CLEANERD_NAME);
 		}
 	} else
-		printf(_("%s not restarted\n"), CLEANERD_NAME);
+		printf(_("%s not restarted\n"), NILFS_CLEANERD_NAME);
  out:
 	my_free(exopts);
 	return res;
@@ -526,18 +541,19 @@ static void update_mount_state(struct nilfs_mount_info *mi,
 
 	if (!check_mtab()) {
 		if (rungc)
-			printf(_("%s not started\n"), CLEANERD_NAME);
+			printf(_("%s not started\n"), NILFS_CLEANERD_NAME);
 		return;
 	}
 
 	if (rungc) {
 		if (find_opt(mo->extra_opts, pp_opt_fmt, &pp) < 0)
 			pp = mi->protperiod;
-
-		if (start_cleanerd(mi->device, mi->mntdir, pp, &pid) < 0)
-			error(_("%s aborted"), CLEANERD_NAME);
+		if (nilfs_launch_cleanerd(mi->device, mi->mntdir, pp,
+					  &pid) < 0)
+			error(_("%s aborted"), NILFS_CLEANERD_NAME);
 		else if (verbose)
-			printf(_("%s: started %s\n"), progname, CLEANERD_NAME);
+			printf(_("%s: started %s\n"), progname,
+			       NILFS_CLEANERD_NAME);
 	}
 
 	my_free(mi->optstr);
@@ -583,6 +599,8 @@ int main(int argc, char *argv[])
 
 		progname = (cp ? cp + 1 : argv[0]);
 	}
+
+	nilfs_cleaner_logger = nilfs_mount_logger;
 
 	parse_options(argc, argv, opts);
 
