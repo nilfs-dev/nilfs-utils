@@ -73,6 +73,8 @@
 #include <setjmp.h>
 #include <assert.h>
 #include "vector.h"
+#include "nilfs_gc.h"
+#include "cnoconv.h"
 #include "cleanerd.h"
 #include "realpath.h"
 
@@ -161,10 +163,9 @@ static int nilfs_cleanerd_reconfig(struct nilfs_cleanerd *cleanerd)
 
 	ret = nilfs_cleanerd_config(cleanerd);
 	if (!ret) {
-		if (config->cf_protection_period > prev_prot_period) {
-			cleanerd->c_protcno = 0;
-			cleanerd->c_prottime = 0;
-		}
+		if (config->cf_protection_period > prev_prot_period)
+			nilfs_cnoconv_reset(cleanerd->c_cnoconv);
+
 		cleanerd->c_ncleansegs =
 			cleanerd->c_config.cf_nsegments_per_clean;
 		cleanerd->c_cleaning_interval =
@@ -197,14 +198,19 @@ nilfs_cleanerd_create(const char *dev, const char *dir, const char *conffile)
 				       NILFS_OPEN_RAW | NILFS_OPEN_RDWR |
 				       NILFS_OPEN_GCLK);
 	if (cleanerd->c_nilfs == NULL) {
-		syslog(LOG_ERR, "cannot open nilfs on %s: %s", dev,
-		       strerror(errno));
+		syslog(LOG_ERR, "cannot open nilfs on %s: %m", dev);
 		goto out_cleanerd;
+	}
+
+	cleanerd->c_cnoconv = nilfs_cnoconv_create(cleanerd->c_nilfs);
+	if (cleanerd->c_cnoconv == NULL) {
+		syslog(LOG_ERR, "cannot create open nilfs on %s: %m", dev);
+		goto out_nilfs;
 	}
 
 	cleanerd->c_conffile = strdup(conffile ? : NILFS_CLEANERD_CONFFILE);
 	if (cleanerd->c_conffile == NULL)
-		goto out_nilfs;
+		goto out_cnoconv;
 
 	if (nilfs_cleanerd_config(cleanerd) < 0)
 		goto out_conffile;
@@ -213,13 +219,14 @@ nilfs_cleanerd_create(const char *dev, const char *dir, const char *conffile)
 	return cleanerd;
 
 	/* error */
- out_conffile:
+out_conffile:
 	free(cleanerd->c_conffile);
-
- out_nilfs:
+out_cnoconv:
+	nilfs_cnoconv_destroy(cleanerd->c_cnoconv);
+out_nilfs:
 	nilfs_close(cleanerd->c_nilfs);
 
- out_cleanerd:
+out_cleanerd:
 	free(cleanerd);
 	return NULL;
 }
@@ -227,6 +234,7 @@ nilfs_cleanerd_create(const char *dev, const char *dir, const char *conffile)
 static void nilfs_cleanerd_destroy(struct nilfs_cleanerd *cleanerd)
 {
 	free(cleanerd->c_conffile);
+	nilfs_cnoconv_destroy(cleanerd->c_cnoconv);
 	nilfs_close(cleanerd->c_nilfs);
 	free(cleanerd);
 }
@@ -241,12 +249,6 @@ static int nilfs_comp_segimp(const void *elem1, const void *elem2)
 		return 1;
 
 	return (segimp1->si_segnum < segimp2->si_segnum) ? -1 : 1;
-}
-
-static int nilfs_suinfo_reclaimable(const struct nilfs_suinfo *si)
-{
-	return nilfs_suinfo_dirty(si) &&
-		!nilfs_suinfo_active(si) && !nilfs_suinfo_error(si);
 }
 
 #define NILFS_CLEANERD_NSUINFO	512
@@ -347,734 +349,6 @@ nilfs_cleanerd_select_segments(struct nilfs_cleanerd *cleanerd,
  out:
 	nilfs_vector_destroy(smv);
 	return nssegs;
-}
-
-static int nilfs_comp_vdesc_blocknr(const void *elem1, const void *elem2)
-{
-	const struct nilfs_vdesc *vdesc1 = elem1, *vdesc2 = elem2;
-
-	return (vdesc1->vd_blocknr < vdesc2->vd_blocknr) ? -1 : 1;
-}
-
-static int nilfs_comp_vdesc_vblocknr(const void *elem1, const void *elem2)
-{
-	const struct nilfs_vdesc *vdesc1 = elem1, *vdesc2 = elem2;
-
-	return (vdesc1->vd_vblocknr < vdesc2->vd_vblocknr) ? -1 : 1;
-}
-
-static int nilfs_comp_period(const void *elem1, const void *elem2)
-{
-	const struct nilfs_period *period1 = elem1, *period2 = elem2;
-
-	return (period1->p_start < period2->p_start) ? -1 :
-		(period1->p_start == period2->p_start) ? 0 : 1;
-}
-
-static int nilfs_comp_bdesc(const void *elem1, const void *elem2)
-{
-	const struct nilfs_bdesc *bdesc1 = elem1, *bdesc2 = elem2;
-
-	if (bdesc1->bd_ino < bdesc2->bd_ino)
-		return -1;
-	else if (bdesc1->bd_ino > bdesc2->bd_ino)
-		return 1;
-
-	if (bdesc1->bd_level < bdesc2->bd_level)
-		return -1;
-	else if (bdesc1->bd_level > bdesc2->bd_level)
-		return 1;
-
-	if (bdesc1->bd_offset < bdesc2->bd_offset)
-		return -1;
-	else if (bdesc1->bd_offset > bdesc2->bd_offset)
-		return 1;
-	else
-		return 0;
-}
-
-/**
- * nilfs_cleanerd_acc_blocks_file - collect summary of blocks in a file
- * @cleanerd: cleanerd object
- * @file: file object
- * @vdescv: vector object to store (descriptors of) virtual block numbers
- * @bdescv: vector object to store (descriptors of) disk block numbers
- */
-static int nilfs_cleanerd_acc_blocks_file(struct nilfs_cleanerd *cleanerd,
-					  struct nilfs_file *file,
-					  struct nilfs_vector *vdescv,
-					  struct nilfs_vector *bdescv)
-{
-	struct nilfs_block blk;
-	struct nilfs_vdesc *vdesc;
-	struct nilfs_bdesc *bdesc;
-	union nilfs_binfo *binfo;
-	ino_t ino;
-	nilfs_cno_t cno;
-
-	ino = le64_to_cpu(file->f_finfo->fi_ino);
-	if (nilfs_file_is_super(file)) {
-		nilfs_block_for_each(&blk, file) {
-			bdesc = nilfs_vector_get_new_element(bdescv);
-			if (bdesc == NULL)
-				return -1;
-			bdesc->bd_ino = ino;
-			bdesc->bd_oblocknr = blk.b_blocknr;
-			if (nilfs_block_is_data(&blk)) {
-				bdesc->bd_offset =
-					le64_to_cpu(*(__le64 *)blk.b_binfo);
-				bdesc->bd_level = 0;
-			} else {
-				binfo = blk.b_binfo;
-				bdesc->bd_offset =
-					le64_to_cpu(binfo->bi_dat.bi_blkoff);
-				bdesc->bd_level = binfo->bi_dat.bi_level;
-			}
-		}
-	} else {
-		cno = le64_to_cpu(file->f_finfo->fi_cno);
-		nilfs_block_for_each(&blk, file) {
-			vdesc = nilfs_vector_get_new_element(vdescv);
-			if (vdesc == NULL)
-				return -1;
-			vdesc->vd_ino = ino;
-			vdesc->vd_cno = cno;
-			vdesc->vd_blocknr = blk.b_blocknr;
-			if (nilfs_block_is_data(&blk)) {
-				binfo = blk.b_binfo;
-				vdesc->vd_vblocknr =
-					le64_to_cpu(binfo->bi_v.bi_vblocknr);
-				vdesc->vd_offset =
-					le64_to_cpu(binfo->bi_v.bi_blkoff);
-				vdesc->vd_flags = 0;	/* data */
-			} else {
-				vdesc->vd_vblocknr =
-					le64_to_cpu(*(__le64 *)blk.b_binfo);
-				vdesc->vd_flags = 1;	/* node */
-			}
-		}
-	}
-	return 0;
-}
-
-/**
- * nilfs_cleanerd_acc_blocks_psegment - collect summary of blocks in a log
- * @cleanerd: cleanerd object
- * @psegment: partial segment object
- * @vdescv: vector object to store (descriptors of) virtual block numbers
- * @bdescv: vector object to store (descriptors of) disk block numbers
- */
-static int nilfs_cleanerd_acc_blocks_psegment(struct nilfs_cleanerd *cleanerd,
-					      struct nilfs_psegment *psegment,
-					      struct nilfs_vector *vdescv,
-					      struct nilfs_vector *bdescv)
-{
-	struct nilfs_file file;
-
-	nilfs_file_for_each(&file, psegment) {
-		if (nilfs_cleanerd_acc_blocks_file(
-			    cleanerd, &file, vdescv, bdescv) < 0)
-			return -1;
-	}
-	return 0;
-}
-
-/**
- * nilfs_cleanerd_acc_blocks_segment - collect summary of blocks in a segment
- * @cleanerd: cleanerd object
- * @segnum: segment number to be parsed
- * @segment: start address of segment data
- * @nblocks: size of valid logs in the segment (per block)
- * @vdescv: vector object to store (descriptors of) virtual block numbers
- * @bdescv: vector object to store (descriptors of) disk block numbers
- */
-static int nilfs_cleanerd_acc_blocks_segment(struct nilfs_cleanerd *cleanerd,
-					     __u64 segnum,
-					     void *segment,
-					     size_t nblocks,
-					     struct nilfs_vector *vdescv,
-					     struct nilfs_vector *bdescv)
-{
-	struct nilfs_psegment psegment;
-
-	nilfs_psegment_for_each(&psegment, segnum, segment, nblocks,
-				cleanerd->c_nilfs) {
-		if (nilfs_cleanerd_acc_blocks_psegment(
-			    cleanerd, &psegment, vdescv, bdescv) < 0)
-			return -1;
-	}
-	return 0;
-}
-
-/**
- * nilfs_deselect_segment - deselect a segment
- * @segnums: array of selected segments
- * @nsegs: size of @segnums array
- * @nr: index number for @segnums array to be deselected
- */
-static ssize_t nilfs_deselect_segment(__u64 *segnums, size_t nsegs, int nr)
-{
-	if (nr >= nsegs || nsegs == 0)
-		return -1;
-	else if (nr < nsegs - 1) {
-		__u64 tn = segnums[nr];
-
-		memmove(&segnums[nr], &segnums[nr + 1],
-			sizeof(__u64) * (nsegs - 1 - nr));
-		segnums[nsegs - 1] = tn;
-	}
-	return nsegs - 1;
-}
-
-#define nilfs_cnt64_ge(a, b)	((__s64)(a) - (__s64)(b) >= 0)
-
-/**
- * nilfs_cleanerd_acc_blocks - collect summary of blocks contained in segments
- * @cleanerd: cleanerd object
- * @sustat: status information on segments
- * @segnums: array of selected segments
- * @nsegs: size of @segnums array
- * @vdescv: vector object to store (descriptors of) virtual block numbers
- * @bdescv: vector object to store (descriptors of) disk block numbers
- */
-static ssize_t nilfs_cleanerd_acc_blocks(struct nilfs_cleanerd *cleanerd,
-					 struct nilfs_sustat *sustat,
-					 __u64 *segnums, size_t nsegs,
-					 struct nilfs_vector *vdescv,
-					 struct nilfs_vector *bdescv)
-{
-	struct nilfs_suinfo si;
-	struct nilfs *nilfs = cleanerd->c_nilfs;
-	void *segment;
-	int ret, i = 0;
-	ssize_t n = nsegs;
-	__u64 segseq;
-
-	while (i < n) {
-		if (nilfs_get_suinfo(nilfs, segnums[i], &si, 1) < 0)
-			return -1;
-
-		if (!nilfs_suinfo_reclaimable(&si)) {
-			/*
-			 * Recheck status of the segment and drop it
-			 * if not reclaimable.  This prevents the
-			 * target segments from being cleaned twice or
-			 * more by duplicate cleaner daemons.
-			 */
-			n = nilfs_deselect_segment(segnums, n, i);
-			continue;
-		}
-
-		if (nilfs_get_segment(nilfs, segnums[i], &segment) < 0)
-			return -1;
-
-		segseq = nilfs_get_segment_seqnum(nilfs, segment, segnums[i]);
-		if (nilfs_cnt64_ge(segseq, sustat->ss_prot_seq)) {
-			n = nilfs_deselect_segment(segnums, n, i);
-			if (nilfs_put_segment(nilfs, segment) < 0)
-				return -1;
-			continue;
-		}
-		ret = nilfs_cleanerd_acc_blocks_segment(
-			cleanerd, segnums[i], segment, si.sui_nblocks,
-			vdescv, bdescv);
-		if (nilfs_put_segment(nilfs, segment) < 0 || ret < 0)
-			return -1;
-		i++;
-	}
-	return n;
-}
-
-#define NILFS_CLEANERD_NVINFO		512
-
-/**
- * nilfs_cleanerd_get_vdesc - get information on virtual block addresses
- * @cleanerd: cleanerd object
- * @vdescv: vector object storing (descriptors of) virtual block numbers
- */
-static int nilfs_cleanerd_get_vdesc(struct nilfs_cleanerd *cleanerd,
-				    struct nilfs_vector *vdescv)
-{
-	struct nilfs_vdesc *vdesc;
-	struct nilfs_vinfo vinfo[NILFS_CLEANERD_NVINFO];
-	ssize_t n;
-	int i, j;
-
-	nilfs_vector_sort(vdescv, nilfs_comp_vdesc_vblocknr);
-
-	for (i = 0; i < nilfs_vector_get_size(vdescv); i += n) {
-		for (j = 0;
-		     (j < NILFS_CLEANERD_NVINFO) &&
-			     (i + j < nilfs_vector_get_size(vdescv));
-		     j++) {
-			vdesc = nilfs_vector_get_element(vdescv, i + j);
-			assert(vdesc != NULL);
-			vinfo[j].vi_vblocknr = vdesc->vd_vblocknr;
-		}
-		if ((n = nilfs_get_vinfo(cleanerd->c_nilfs, vinfo, j)) < 0)
-			return -1;
-		for (j = 0; j < n; j++) {
-			vdesc = nilfs_vector_get_element(vdescv, i + j);
-			assert((vdesc != NULL) &&
-			       (vdesc->vd_vblocknr == vinfo[j].vi_vblocknr));
-			vdesc->vd_period.p_start = vinfo[j].vi_start;
-			vdesc->vd_period.p_end = vinfo[j].vi_end;
-		}
-	}
-
-	return 0;
-}
-
-#define NILFS_CLEANERD_NCPINFO	512
-
-/**
- * nilfs_cleanerd_get_snapshot - get checkpoint numbers of snapshots
- * @cleanerd: cleanerd object
- * @ssp: pointer to store array of checkpoint numbers which are snapshots
- */
-static ssize_t
-nilfs_cleanerd_get_snapshot(const struct nilfs_cleanerd *cleanerd,
-			    nilfs_cno_t **ssp)
-{
-	struct nilfs_cpstat cpstat;
-	struct nilfs_cpinfo cpinfo[NILFS_CLEANERD_NCPINFO];
-	nilfs_cno_t cno, *ss;
-	ssize_t n;
-	__u64 nss = 0;
-	int i, j;
-
-	if (nilfs_get_cpstat(cleanerd->c_nilfs, &cpstat) < 0)
-		return -1;
-	if (cpstat.cs_nsss == 0)
-		return 0;
-
-	ss = malloc(sizeof(*ss) * cpstat.cs_nsss);
-	if (ss == NULL)
-		return -1;
-
-	cno = 0;
-	for (i = 0; i < cpstat.cs_nsss; i += n) {
-		if ((n = nilfs_get_cpinfo(
-			     cleanerd->c_nilfs, cno, NILFS_SNAPSHOT,
-			     cpinfo, NILFS_CLEANERD_NCPINFO)) < 0) {
-			free(ss);
-			return -1;
-		}
-		if (n == 0)
-			break;
-		for (j = 0; j < n; j++)
-			ss[i + j] = cpinfo[j].ci_cno;
-		nss += n;
-		cno = cpinfo[n - 1].ci_next;
-		if (cno == 0)
-			break;
-	}
-	if (cpstat.cs_nsss != nss)
-		syslog(LOG_WARNING, "snapshot count mismatch: %llu != %llu",
-		       (unsigned long long)cpstat.cs_nsss,
-		       (unsigned long long)nss);
-	*ssp = ss;
-	return nss;
-}
-
-/**
- * nilfs_cleanerd_update_prottime - update the minimum of protected CNOs
- * @cleanerd: cleanerd object
- * @prottime: new protection time
- */
-static int nilfs_cleanerd_update_prottime(struct nilfs_cleanerd *cleanerd,
-					  __u64 prottime)
-{
-	struct nilfs_cpstat cpstat;
-	struct nilfs_cpinfo cpinfo[NILFS_CLEANERD_NCPINFO];
-	nilfs_cno_t cno;
-	size_t count;
-	ssize_t n;
-	int i;
-
-	if (nilfs_get_cpstat(cleanerd->c_nilfs, &cpstat) < 0)
-		return -1;
-
-	if (cleanerd->c_prottime > prottime) {
-		syslog(LOG_WARNING, "protection time rewinded: "
-		       "old period >= %llu, new period >= %llu",
-		       (unsigned long long)cleanerd->c_prottime,
-		       (unsigned long long)prottime);
-		cleanerd->c_protcno = 0;
-	} else if (cleanerd->c_prottime == prottime)
-		return 0; /* protection time unchanged */
-
-	cno = (cleanerd->c_protcno == 0) ? NILFS_CNO_MIN : cleanerd->c_protcno;
-	while (cno < cpstat.cs_cno) {
-		count = (cpstat.cs_cno - cno < NILFS_CLEANERD_NCPINFO) ?
-			cpstat.cs_cno - cno : NILFS_CLEANERD_NCPINFO;
-		n = nilfs_get_cpinfo(cleanerd->c_nilfs, cno, NILFS_CHECKPOINT,
-				     cpinfo, count);
-		if (n < 0)
-			return -1;
-		if (n == 0)
-			break;
-
-		for (i = 0; i < n; i++) {
-			if (cpinfo[i].ci_create >= prottime) {
-				cleanerd->c_protcno = cpinfo[i].ci_cno;
-				goto out;
-			}
-		}
-		cno = cpinfo[n - 1].ci_cno + 1;
-	}
-	cleanerd->c_protcno = cno;
- out:
-	cleanerd->c_prottime = prottime;
-	syslog(LOG_DEBUG, "protected checkpoints = [%llu,%llu] "
-	       "(protection period >= %llu)",
-	       (unsigned long long)cleanerd->c_protcno,
-	       (unsigned long long)cpstat.cs_cno,
-	       (unsigned long long)prottime);
-	return 0;
-}
-
-/*
- * nilfs_vdesc_is_live - judge if a virtual block address is live or dead
- * @vdesc: descriptor object of the virtual block address
- * @protect: the minimum of checkpoint numbers to be protected
- * @ss: checkpoint numbers of snapshots
- * @n: size of @ss array
- */
-static int nilfs_vdesc_is_live(const struct nilfs_vdesc *vdesc,
-			       nilfs_cno_t protect, const nilfs_cno_t *ss,
-			       size_t n)
-{
-	long low, high, index;
-	int s;
-
-	if (vdesc->vd_cno == 0) {
-		/*
-		 * live/dead judge for sufile and cpfile should not
-		 * depend on protection period and snapshots.  Without
-		 * this check, gc will cause buffer conflict error
-		 * because their checkpoint number is always zero.
-		 */
-		return vdesc->vd_period.p_end == NILFS_CNO_MAX;
-	}
-
-	if (vdesc->vd_period.p_end == NILFS_CNO_MAX ||
-	    vdesc->vd_period.p_end > protect)
-		return 1;
-
-	if (n == 0 || vdesc->vd_period.p_start > ss[n - 1] ||
-	    vdesc->vd_period.p_end <= ss[0])
-		return 0;
-
-	low = 0;
-	high = n - 1;
-	index = 0;
-	s = 0;
-	while (low <= high) {
-		index = (low + high) / 2;
-		if (ss[index] == vdesc->vd_period.p_start) {
-			goto out;
-		} else if (ss[index] < vdesc->vd_period.p_start) {
-			s = -1;
-			low = index + 1;
-		} else {
-			s = 1;
-			high = index - 1;
-		}
-	}
-	/* adjust index */
-	if (s < 0)
-		index++;
-
- out:
-	return ss[index] < vdesc->vd_period.p_end;
-}
-
-/**
- * nilfs_cleanerd_toss_vdescs - deselect deletable virtual block numbers
- * @cleanerd: cleanerd object
- * @vdescv: vector object storing (descriptors of) virtual block numbers
- * @periodv: vector object to store deletable checkpoint numbers (periods)
- * @vblocknrv: vector object to store deletable virtual block numbers
- *
- * nilfs_cleanerd_toss_vdescs() deselects virtual block numbers of files
- * other than the DAT file.
- */
-static int nilfs_cleanerd_toss_vdescs(struct nilfs_cleanerd *cleanerd,
-				      struct nilfs_vector *vdescv,
-				      struct nilfs_vector *periodv,
-				      struct nilfs_vector *vblocknrv)
-{
-	struct nilfs_vdesc *vdesc;
-	struct nilfs_period *periodp;
-	__u64 *vblocknrp;
-	nilfs_cno_t *ss;
-	ssize_t n;
-	int i, j, ret;
-
-	ss = NULL;
-	if ((n = nilfs_cleanerd_get_snapshot(cleanerd, &ss)) < 0)
-		return n;
-
-	for (i = 0; i < nilfs_vector_get_size(vdescv); i++) {
-		for (j = i; j < nilfs_vector_get_size(vdescv); j++) {
-			vdesc = nilfs_vector_get_element(vdescv, j);
-			assert(vdesc != NULL);
-			if (nilfs_vdesc_is_live(vdesc, cleanerd->c_protcno,
-						ss, n)) {
-				break;
-			}
-			if ((periodp =
-			     nilfs_vector_get_new_element(periodv)) == NULL ||
-			    (vblocknrp =
-			     nilfs_vector_get_new_element(vblocknrv)) == NULL) {
-				ret = -1;
-				goto out;
-			}
-			*periodp = vdesc->vd_period;
-			*vblocknrp = vdesc->vd_vblocknr;
-		}
-		if (j > i)
-			nilfs_vector_delete_elements(vdescv, i, j - i);
-	}
-
-	ret = 0;
-
- out:
-	if (ss != NULL)
-		free(ss);
-	return ret;
-}
-
-/**
- * nilfs_cleanerd_unify_period - unify periods of checkpoint numbers
- * @cleanerd: cleanerd object
- * @periodv: vector object storing checkpoint numbers
- */
-static void nilfs_cleanerd_unify_period(struct nilfs_cleanerd *cleanerd,
-					struct nilfs_vector *periodv)
-{
-	struct nilfs_period *base, *target;
-	int i, j;
-
-	nilfs_vector_sort(periodv, nilfs_comp_period);
-
-	for (i = 0; i < nilfs_vector_get_size(periodv); i++) {
-		base = nilfs_vector_get_element(periodv, i);
-		assert(base != NULL);
-		for (j = i + 1; j < nilfs_vector_get_size(periodv); j++) {
-			target = nilfs_vector_get_element(periodv, j);
-			assert(target != NULL);
-			if (base->p_end < target->p_start)
-				break;
-			if (base->p_end < target->p_end)
-				base->p_end = target->p_end;
-		}
-
-		if (j > i + 1)
-			nilfs_vector_delete_elements(periodv, i + 1,
-						     j - i - 1);
-	}
-}
-
-#define NILFS_CLEANERD_NBDESCS	512
-
-/**
- * nilfs_cleanerd_get_bdescs - get information on disk block addresses
- * @cleanerd: cleanerd object
- * @bdescv: vector object storing (descriptors of) disk block numbers
- */
-static int nilfs_cleanerd_get_bdescs(struct nilfs_cleanerd *cleanerd,
-				     struct nilfs_vector *bdescv)
-{
-	struct nilfs_bdesc *bdescs;
-	size_t nbdescs, count;
-	ssize_t n;
-	int i;
-
-	nilfs_vector_sort(bdescv, nilfs_comp_bdesc);
-
-	bdescs = nilfs_vector_get_data(bdescv);
-	nbdescs = nilfs_vector_get_size(bdescv);
-	for (i = 0; i < nbdescs; i += n) {
-		count = (nbdescs - i < NILFS_CLEANERD_NBDESCS) ?
-			(nbdescs - i) : NILFS_CLEANERD_NBDESCS;
-		if ((n = nilfs_get_bdescs(cleanerd->c_nilfs,
-					  bdescs + i, count)) < 0)
-			return -1;
-	}
-
-	return 0;
-}
-
-/**
- * nilfs_bdesc_is_live - judge if a disk block address is live or dead
- * @bdesc: descriptor object of the disk block address
- */
-static int nilfs_bdesc_is_live(struct nilfs_bdesc *bdesc)
-{
-	return bdesc->bd_oblocknr == bdesc->bd_blocknr;
-}
-
-/**
- * nilfs_cleanerd_toss_bdescs - deselect deletable disk block numbers
- * @cleanerd: cleanerd object
- * @bdescv: vector object storing (descriptors of) disk block numbers
- *
- * nilfs_cleanerd_toss_bdescs() deselects disk block numbers of the DAT file
- * which don't belong to the latest DAT file.
- */
-static int nilfs_cleanerd_toss_bdescs(struct nilfs_cleanerd *cleanerd,
-				      struct nilfs_vector *bdescv)
-{
-	struct nilfs_bdesc *bdesc;
-	int i, j;
-
-	for (i = 0; i < nilfs_vector_get_size(bdescv); i++) {
-		for (j = i; j < nilfs_vector_get_size(bdescv); j++) {
-			bdesc = nilfs_vector_get_element(bdescv, j);
-			assert(bdesc != NULL);
-			if (nilfs_bdesc_is_live(bdesc))
-				break;
-		}
-		if (j > i)
-			nilfs_vector_delete_elements(bdescv, i, j - i);
-	}
-	return 0;
-}
-
-/**
- * nilfs_cleanerd_clean_segments - reclaim segments
- * @cleanerd: cleanerd object
- * @sustat: status information on segments
- * @segnums: array of segment numbers storing selected segments
- * @nsegs: size of the @segnums array
- * @prottime: lower limit of protected period
- */
-static ssize_t nilfs_cleanerd_clean_segments(struct nilfs_cleanerd *cleanerd,
-					     struct nilfs_sustat *sustat,
-					     __u64 *segnums, size_t nsegs,
-					     __u64 prottime)
-{
-	struct nilfs_vector *vdescv, *bdescv, *periodv, *vblocknrv;
-	sigset_t sigset, oldset, waitset;
-	ssize_t n, ret = -1;
-	int i;
-
-	if (nsegs == 0)
-		return 0;
-
-	vdescv = nilfs_vector_create(sizeof(struct nilfs_vdesc));
-	bdescv = nilfs_vector_create(sizeof(struct nilfs_bdesc));
-	periodv = nilfs_vector_create(sizeof(struct nilfs_period));
-	vblocknrv = nilfs_vector_create(sizeof(__u64));
-	if (vdescv == NULL || bdescv == NULL || periodv == NULL ||
-	    vblocknrv == NULL)
-		goto out_vec;
-
-	sigemptyset(&sigset);
-	sigaddset(&sigset, SIGINT);
-	sigaddset(&sigset, SIGTERM);
-	ret = sigprocmask(SIG_BLOCK, &sigset, &oldset);
-	if (ret < 0) {
-		syslog(LOG_ERR, "cannot block signals: %m");
-		goto out_vec;
-	}
-
-	ret = nilfs_lock_cleaner(cleanerd->c_nilfs);
-	if (ret < 0)
-		goto out_sig;
-
-	n = nilfs_cleanerd_acc_blocks(cleanerd, sustat, segnums, nsegs,
-				      vdescv, bdescv);
-	if (n <= 0) {
-		ret = n;
-		goto out_lock;
-	}
-
-	ret = nilfs_cleanerd_get_vdesc(cleanerd, vdescv);
-	if (ret < 0)
-		goto out_lock;
-
-	ret = nilfs_cleanerd_update_prottime(cleanerd, prottime);
-	if (ret < 0)
-		goto out_lock;
-
-	ret = nilfs_cleanerd_toss_vdescs(cleanerd, vdescv, periodv, vblocknrv);
-	if (ret < 0)
-		goto out_lock;
-
-	nilfs_vector_sort(vdescv, nilfs_comp_vdesc_blocknr);
-	nilfs_cleanerd_unify_period(cleanerd, periodv);
-
-	ret = nilfs_cleanerd_get_bdescs(cleanerd, bdescv);
-	if (ret < 0)
-		goto out_lock;
-
-	ret = nilfs_cleanerd_toss_bdescs(cleanerd, bdescv);
-	if (ret < 0)
-		goto out_lock;
-
-	ret = sigpending(&waitset);
-	if (ret < 0) {
-		syslog(LOG_ERR, "cannot test signals: %m");
-		goto out_lock;
-	}
-	if (sigismember(&waitset, SIGINT) || sigismember(&waitset, SIGTERM)) {
-		syslog(LOG_DEBUG, "interrupted");
-		goto out_lock;
-	}
-
-	ret = nilfs_clean_segments(cleanerd->c_nilfs,
-				   nilfs_vector_get_data(vdescv),
-				   nilfs_vector_get_size(vdescv),
-				   nilfs_vector_get_data(periodv),
-				   nilfs_vector_get_size(periodv),
-				   nilfs_vector_get_data(vblocknrv),
-				   nilfs_vector_get_size(vblocknrv),
-				   nilfs_vector_get_data(bdescv),
-				   nilfs_vector_get_size(bdescv),
-				   segnums, n);
-	if (ret < 0) {
-		syslog(LOG_ERR, "cannot clean segments: %m");
-	} else {
-		if (n > 0) {
-			for (i = 0; i < n; i++)
-				syslog(LOG_DEBUG, "segment %llu cleaned",
-				       (unsigned long long)segnums[i]);
-		} else {
-			syslog(LOG_DEBUG, "no segments cleaned");
-		}
-		ret = n;
-	}
-
-out_lock:
-	if (nilfs_unlock_cleaner(cleanerd->c_nilfs) < 0)
-		ret = -1;
-
-out_sig:
-	sigprocmask(SIG_SETMASK, &oldset, NULL);
-
-out_vec:
-	if (vdescv != NULL)
-		nilfs_vector_destroy(vdescv);
-	if (bdescv != NULL)
-		nilfs_vector_destroy(bdescv);
-	if (periodv != NULL)
-		nilfs_vector_destroy(periodv);
-	if (vblocknrv != NULL)
-		nilfs_vector_destroy(vblocknrv);
-
-	if (ret > 0) {
-		cleanerd->c_fallback = 0;
-	} else if (ret < 0 && errno == ENOMEM) {
-		if (cleanerd->c_ncleansegs > 1)
-			cleanerd->c_ncleansegs >>= 1;
-
-		cleanerd->c_fallback = 1;
-		ret = 0;
-	}
-	return ret;
 }
 
 #define DEVNULL	"/dev/null"
@@ -1273,6 +547,41 @@ static int nilfs_cleanerd_handle_clean_check(struct nilfs_cleanerd *cleanerd,
 	return 0;
 }
 
+static ssize_t nilfs_cleanerd_clean_segments(struct nilfs_cleanerd *cleanerd,
+					     __u64 *segnums, size_t nsegs,
+					     __u64 protseq, __u64 prottime)
+{
+	nilfs_cno_t protcno;
+	int ret, i;
+
+	ret = nilfs_cnoconv_time2cno(cleanerd->c_cnoconv, prottime, &protcno);
+	if (ret < 0) {
+		syslog(LOG_ERR, "cannot convert protection time to checkpoint "
+		       "number: %m");
+		goto out;
+	}
+
+	ret = nilfs_reclaim_segment(cleanerd->c_nilfs, segnums, nsegs,
+				    protseq, protcno);
+	if (ret > 0) {
+		for (i = 0; i < ret; i++)
+			syslog(LOG_DEBUG, "segment %llu cleaned",
+			       (unsigned long long)segnums[i]);
+		cleanerd->c_fallback = 0;
+	} else if (ret == 0) {
+		syslog(LOG_DEBUG, "no segments cleaned");
+
+	} else if (ret < 0 && errno == ENOMEM) {
+		if (cleanerd->c_ncleansegs > 1)
+			cleanerd->c_ncleansegs >>= 1;
+
+		cleanerd->c_fallback = 1;
+		ret = 0;
+	}
+out:
+	return ret;
+}
+
 /**
  * nilfs_cleanerd_clean_loop - main loop of the cleaner daemon
  * @cleanerd: cleanerd object
@@ -1305,9 +614,9 @@ static int nilfs_cleanerd_clean_loop(struct nilfs_cleanerd *cleanerd)
 	nilfs_cleanerd_reload_config = 0;
 
 	cleanerd->c_running = 1;
-	cleanerd->c_protcno = 0; /* means unspecified */
-	cleanerd->c_prottime = 0;
 	cleanerd->c_fallback = 0;
+	nilfs_cnoconv_reset(cleanerd->c_cnoconv);
+	nilfs_gc_logger = syslog;
 
 	ret = nilfs_cleanerd_init_interval(cleanerd);
 	if (ret < 0)
@@ -1367,8 +676,10 @@ static int nilfs_cleanerd_clean_loop(struct nilfs_cleanerd *cleanerd)
 		syslog(LOG_DEBUG, "%d segment%s selected to be cleaned",
 		       ns, (ns <= 1) ? "" : "s");
 		if (ns > 0) {
+			__u64 protseq = sustat.ss_prot_seq;
+
 			ret = nilfs_cleanerd_clean_segments(
-				cleanerd, &sustat, segnums, ns, prottime);
+				cleanerd, segnums, ns, protseq, prottime);
 			if (ret < 0)
 				return -1;
 		}

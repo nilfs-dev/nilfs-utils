@@ -34,10 +34,12 @@
 #include "nilfs.h"
 #include "cldconfig.h"
 
+struct nilfs_cnoconv;
 
 /**
  * struct nilfs_cleanerd - nilfs cleaner daemon
- * @c_nilfs: nilfs
+ * @c_nilfs: nilfs object
+ * @c_cnoconv: checkpoint number converter
  * @c_config: config structure
  * @c_conffile: configuration file name
  * @c_running: running state
@@ -50,14 +52,13 @@
  */
 struct nilfs_cleanerd {
 	struct nilfs *c_nilfs;
+	struct nilfs_cnoconv *c_cnoconv;
 	struct nilfs_cldconfig c_config;
 	char *c_conffile;
 	int c_running;
 	int c_fallback;
 	int c_ncleansegs;
 	time_t c_cleaning_interval;
-	nilfs_cno_t c_protcno;
-	__u64 c_prottime;
 	struct timeval c_target;
 };
 
