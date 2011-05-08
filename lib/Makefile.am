@@ -8,7 +8,7 @@ VERSIONINFO = $(CURRENT):$(REVISION):$(AGE)
 lib_LTLIBRARIES = libnilfs.la
 noinst_LTLIBRARIES = libnilfsmisc.la
 
-libnilfsmisc_la_SOURCES = realpath.c cno.c feature.c
+libnilfsmisc_la_SOURCES = realpath.c cno.c feature.c ismounted.c
 libnilfsmisc_la_CFLAGS = -Wall -fPIC -pthread
 libnilfsmisc_la_CPPFLAGS = -I$(top_srcdir)/include
 libnilfsmisc_la_LDFLAGS = -static -lpthread
