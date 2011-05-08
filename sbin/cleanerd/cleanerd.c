@@ -726,9 +726,11 @@ static int nilfs_cleanerd_recalc_interval(struct nilfs_cleanerd *cleanerd,
 	/* timercmp() does not work for '>=' or '<='. */
 	/* curr >= target */
 	if (!timercmp(&curr, &cleanerd->target, <)) {
+		cleanerd->timeout.tv_sec = 0;
+		cleanerd->timeout.tv_usec = 0;
 		timeradd(&curr, interval, &cleanerd->target);
 		syslog(LOG_DEBUG, "adjust interval");
-		return 1; /* skip a sleep */
+		return 0;
 	}
 	timersub(&cleanerd->target, &curr, &cleanerd->timeout);
 	timeradd(&cleanerd->target, interval, &cleanerd->target);
@@ -993,7 +995,7 @@ static int nilfs_cleanerd_wait(struct nilfs_cleanerd *cleanerd)
 
 	syslog(LOG_DEBUG, "wait %ld.%06ld",
 	       timeout->tv_sec, timeout->tv_usec);
-	
+
 	if (gettimeofday(&curr, NULL) < 0) {
 		syslog(LOG_ERR, "cannot get current time: %m");
 		return -1;
@@ -1287,9 +1289,8 @@ static int nilfs_cleanerd_clean_loop(struct nilfs_cleanerd *cleanerd)
 			cleanerd, ns, ndone, prottime, oldest);
 		if (ret < 0)
 			return -1;
-		else if (ret > 0)
-			continue;
- sleep:
+
+	sleep:
 		if (sigprocmask(SIG_UNBLOCK, &sigset, NULL) < 0) {
 			syslog(LOG_ERR, "cannot set signal mask: %m");
 			return -1;
