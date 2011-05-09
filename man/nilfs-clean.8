@@ -14,13 +14,14 @@ collection (GC) on NILFS2 file systems.  It can be used to manually
 run garbage collection of a file system mounted on \fIdevice\fP to
 increase the free space.
 .PP
-If no commands are specified by the following options,
-\fBnilfs-clean\fP triggers a 1-pass cleaning.  If a GC command is
-specified by an option, the command is sent to and performed on the
-\fBnilfs_cleanerd\fP(8) program instead.
+If a GC command is specified by one of the following options
+(i.e. \'\-c\',\'\-s\',\'\-r\', and \'\-l\' options), the command is
+sent to and performed on the \fBnilfs_cleanerd\fP(8) program.  If no
+commands are specified, \fBnilfs-clean\fP just triggers a one-pass
+cleaning.
 .PP
-When \fIdevice\fP is ommitted, \fBnilfs-clean\fP automatically selects
-an active NILFS2 file system in the system.
+When \fIdevice\fP is ommitted, \fBnilfs-clean\fP selects an active
+NILFS2 file system in the system.
 .PP
 This command is valid only for mounted NILFS2 file systems, and
 will fail if the \fIdevice\fP has no active mounts.
