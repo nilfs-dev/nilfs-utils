@@ -232,7 +232,8 @@ static int nilfs_cleaner_find_fs(struct nilfs_cleaner *cleaner,
 
 	fp = fopen(MTAB, "r");
 	if (fp == NULL) {
-		nilfs_cleaner_logger(LOG_ERR, _("Error: cannot open " MTAB));
+		nilfs_cleaner_logger(LOG_ERR, _("Error: cannot open " MTAB
+						"."));
 		goto abort;
 	}
 
@@ -293,7 +294,8 @@ static int nilfs_cleaner_find_fs(struct nilfs_cleaner *cleaner,
 	}
 	if (nfound == 0) {
 		nilfs_cleaner_logger(LOG_ERR,
-				     _("Error: cannot find valid mount"));
+				     _("Error: no valid nilfs mountpoint "
+				       "found."));
 		goto abort;
 	}
 	if (last_match_dir)
@@ -306,7 +308,8 @@ static int nilfs_cleaner_find_fs(struct nilfs_cleaner *cleaner,
 	endmntent(fp);
 	return 0;
 error:
-	nilfs_cleaner_logger(LOG_ERR,  _("Error: %s"), strerror(errno));
+	nilfs_cleaner_logger(LOG_ERR,  _("Error: failed to find fs: %s."),
+			     strerror(errno));
 abort:
 	free(last_match_dir); /* free(NULL) is just ignored */
 	free(last_match_dev);
@@ -463,18 +466,22 @@ static int nilfs_cleaner_open_queue(struct nilfs_cleaner *cleaner)
 	/* receive queue */
 	ret = snprintf(nambuf, sizeof(nambuf), "/nilfs-cleanerq-%s", uuidbuf);
 	if (ret < 0)
-		goto failed;
+		goto error;
 
 	assert(ret < sizeof(nambuf));
 	cleaner->recvq_name = strdup(nambuf);
 	if (!cleaner->recvq_name)
-		goto failed;
+		goto error;
 
 	cleaner->recvq = mq_open(nambuf, O_RDONLY | O_CREAT | O_EXCL, 0600,
 				 &attr);
 	if (cleaner->recvq < 0) {
+		nilfs_cleaner_logger(LOG_ERR,
+				     _("Error: cannot create receive queue: "
+				       "%s."),
+				     strerror(errno));
 		free(cleaner->recvq_name);
-		goto failed;
+		goto abort;
 	}
 	/* send queue */
 	if (cleaner->dev_ino == 0) {
@@ -488,22 +495,38 @@ static int nilfs_cleaner_open_queue(struct nilfs_cleaner *cleaner)
 			       (unsigned long long)cleaner->dev_ino);
 	}
 	if (ret < 0)
-		goto failed_close;
+		goto error;
 
 	assert(ret < sizeof(nambuf));
 
 	cleaner->sendq = mq_open(nambuf, O_WRONLY);
-	if (cleaner->sendq < 0)
-		goto failed_close;
+	if (cleaner->sendq < 0) {
+		if (errno == ENOENT) {
+			nilfs_cleaner_logger(LOG_NOTICE,
+					     _("No cleaner found on %s."),
+					     cleaner->device);
+		} else {
+			nilfs_cleaner_logger(LOG_ERR,
+					     _("Error: cannot open cleaner on "
+					       "%s: %s."),
+					     cleaner->device, strerror(errno));
+		}
+		goto abort;
+	}
 
 	return 0;
 
-failed_close:
-	mq_close(cleaner->recvq);
-	cleaner->recvq = -1;
-	mq_unlink(cleaner->recvq_name);
-	free(cleaner->recvq_name);
-failed:
+error:
+	nilfs_cleaner_logger(LOG_ERR,
+			     _("Error: fatal error during queue setting: %s."),
+			     strerror(errno));
+abort:
+	if (cleaner->recvq >= 0) {
+		mq_close(cleaner->recvq);
+		cleaner->recvq = -1;
+		mq_unlink(cleaner->recvq_name);
+		free(cleaner->recvq_name);
+	}
 	return -1;
 }
 
@@ -585,12 +608,8 @@ struct nilfs_cleaner *nilfs_cleaner_open(const char *device,
 	}
 
 	if ((oflag & NILFS_CLEANER_OPEN_QUEUE) &&
-	    nilfs_cleaner_open_queue(cleaner) < 0) {
-		nilfs_cleaner_logger(LOG_ERR,
-				     _("Error: cannot open cleaner on %s"),
-				     cleaner->device);
+	    nilfs_cleaner_open_queue(cleaner) < 0)
 		goto abort;
-	}
 
 	return cleaner;
 
