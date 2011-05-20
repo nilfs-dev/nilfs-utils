@@ -27,6 +27,9 @@ This command is valid only for mounted NILFS2 file systems, and
 will fail if the \fIdevice\fP has no active mounts.
 .SH OPTIONS
 .TP
+\fB\-b\fR, \fB\-\-break\fR, \fB\-\-stop\fR
+Stop garbage collection.
+.TP
 \fB\-c\fR, \fB\-\-reload\fR[=\fIconffile\fR]
 Request reloading config file to cleaner process.  If an optional
 configuration file is given, the file is read by
@@ -53,7 +56,7 @@ respectively.
 \fB\-r\fR, \fB\-\-resume\fR
 Resume garbage collection.
 .TP
-\fB\-s\fR, \fB\-\-stop\fR, \fB\-\-suspend\fR
+\fB\-s\fR, \fB\-\-suspend\fR
 Suspend garbage collection.  Note that if users manually suspend
 garbage collection with this option, it will not restart automatically
 until user resumes the garbage collection.

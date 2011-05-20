@@ -201,7 +201,8 @@ static volatile sig_atomic_t nilfs_cleanerd_reload_config; /* reload flag */
 static char nilfs_cleanerd_msgbuf[NILFS_CLEANER_MSG_MAX_REQSZ];
 
 static const char *nilfs_cleaner_cmd_name[] = {
-	"get-status", "run", "suspend", "resume", "tune", "reload", "wait"
+	"get-status", "run", "suspend", "resume", "tune", "reload", "wait",
+	"stop"
 };
 
 static void nilfs_cleanerd_version(const char *progname)
@@ -671,6 +672,14 @@ static void nilfs_cleanerd_manual_end(struct nilfs_cleanerd *cleanerd)
 	syslog(LOG_INFO, "manual run completed");
 }
 
+static void nilfs_cleanerd_manual_stop(struct nilfs_cleanerd *cleanerd)
+{
+	cleanerd->running = 0;
+	cleanerd->timeout.tv_sec = cleanerd->config.cf_clean_check_interval;
+	cleanerd->timeout.tv_usec = 0;
+	syslog(LOG_INFO, "manual run aborted");
+}
+
 static int nilfs_cleanerd_init_interval(struct nilfs_cleanerd *cleanerd)
 {
 	if (gettimeofday(&cleanerd->target, NULL) < 0) {
@@ -939,6 +948,18 @@ static int nilfs_cleanerd_cmd_wait(struct nilfs_cleanerd *cleanerd,
 	return nilfs_cleanerd_nak(cleanerd, req, EOPNOTSUPP);
 }
 
+static int nilfs_cleanerd_cmd_stop(struct nilfs_cleanerd *cleanerd,
+				   struct nilfs_cleaner_request *req,
+				   size_t argsize)
+{
+	struct nilfs_cleaner_response res = {0};
+
+	if (cleanerd->running == 2 || cleanerd->running == -1)
+		nilfs_cleanerd_manual_stop(cleanerd);
+	res.result = NILFS_CLEANER_RSP_ACK;
+	return nilfs_cleanerd_respond(cleanerd, req, &res);
+}
+
 static int nilfs_cleanerd_handle_message(struct nilfs_cleanerd *cleanerd,
 					 void *msgbuf, size_t bytes)
 {
@@ -977,6 +998,9 @@ static int nilfs_cleanerd_handle_message(struct nilfs_cleanerd *cleanerd,
 		break;
 	case NILFS_CLEANER_CMD_WAIT:
 		ret = nilfs_cleanerd_cmd_wait(cleanerd, req, argsize);
+		break;
+	case NILFS_CLEANER_CMD_STOP:
+		ret = nilfs_cleanerd_cmd_stop(cleanerd, req, argsize);
 		break;
 	default:
 		syslog(LOG_DEBUG, "received unknown command: %d", req->cmd);

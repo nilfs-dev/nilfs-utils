@@ -694,6 +694,43 @@ failed:
 	return -1;
 }
 
+static int nilfs_cleaner_command(struct nilfs_cleaner *cleaner, int cmd)
+{
+	struct nilfs_cleaner_request req;
+	struct nilfs_cleaner_response res;
+	int bytes, ret = -1;
+
+	if (cleaner->sendq < 0 || cleaner->recvq < 0) {
+		errno = EBADF;
+		goto out;
+	}
+	if (nilfs_cleaner_clear_queueu(cleaner) < 0)
+		goto out;
+
+	req.cmd = cmd;
+	req.argsize = 0;
+	uuid_copy(req.client_uuid, cleaner->client_uuid);
+
+	ret = mq_send(cleaner->sendq, (char *)&req, sizeof(req),
+		      NILFS_CLEANER_PRIO_NORMAL);
+	if (ret < 0)
+		goto out;
+
+	bytes = mq_receive(cleaner->recvq, (char *)&res, sizeof(res), NULL);
+	if (bytes < sizeof(res)) {
+		if (bytes >= 0)
+			errno = EIO;
+		ret = -1;
+		goto out;
+	}
+	if (res.result == NILFS_CLEANER_RSP_NACK) {
+		ret = -1;
+		errno = res.err;
+	}
+out:
+	return ret;
+}
+
 int nilfs_cleaner_get_status(struct nilfs_cleaner *cleaner, int *status)
 {
 	struct nilfs_cleaner_request req;
@@ -778,76 +815,12 @@ out:
 
 int nilfs_cleaner_suspend(struct nilfs_cleaner *cleaner)
 {
-	struct nilfs_cleaner_request req;
-	struct nilfs_cleaner_response res;
-	int bytes, ret = -1;
-
-	if (cleaner->sendq < 0 || cleaner->recvq < 0) {
-		errno = EBADF;
-		goto out;
-	}
-	if (nilfs_cleaner_clear_queueu(cleaner) < 0)
-		goto out;
-
-	req.cmd = NILFS_CLEANER_CMD_SUSPEND;
-	req.argsize = 0;
-	uuid_copy(req.client_uuid, cleaner->client_uuid);
-
-	ret = mq_send(cleaner->sendq, (char *)&req, sizeof(req),
-		      NILFS_CLEANER_PRIO_NORMAL);
-	if (ret < 0)
-		goto out;
-
-	bytes = mq_receive(cleaner->recvq, (char *)&res, sizeof(res), NULL);
-	if (bytes < sizeof(res)) {
-		if (bytes >= 0)
-			errno = EIO;
-		ret = -1;
-		goto out;
-	}
-	if (res.result == NILFS_CLEANER_RSP_NACK) {
-		ret = -1;
-		errno = res.err;
-	}
-out:
-	return ret;
+	return nilfs_cleaner_command(cleaner, NILFS_CLEANER_CMD_SUSPEND);
 }
 
 int nilfs_cleaner_resume(struct nilfs_cleaner *cleaner)
 {
-	struct nilfs_cleaner_request req;
-	struct nilfs_cleaner_response res;
-	int bytes, ret = -1;
-
-	if (cleaner->sendq < 0 || cleaner->recvq < 0) {
-		errno = EBADF;
-		goto out;
-	}
-	if (nilfs_cleaner_clear_queueu(cleaner) < 0)
-		goto out;
-
-	req.cmd = NILFS_CLEANER_CMD_RESUME;
-	req.argsize = 0;
-	uuid_copy(req.client_uuid, cleaner->client_uuid);
-
-	ret = mq_send(cleaner->sendq, (char *)&req, sizeof(req),
-		      NILFS_CLEANER_PRIO_NORMAL);
-	if (ret < 0)
-		goto out;
-
-	bytes = mq_receive(cleaner->recvq, (char *)&res, sizeof(res), NULL);
-	if (bytes < sizeof(res)) {
-		if (bytes >= 0)
-			errno = EIO;
-		ret = -1;
-		goto out;
-	}
-	if (res.result == NILFS_CLEANER_RSP_NACK) {
-		ret = -1;
-		errno = res.err;
-	}
-out:
-	return ret;
+	return nilfs_cleaner_command(cleaner, NILFS_CLEANER_CMD_RESUME);
 }
 
 int nilfs_cleaner_tune(struct nilfs_cleaner *cleaner,
@@ -976,4 +949,9 @@ int nilfs_cleaner_wait(struct nilfs_cleaner *cleaner, uint32_t jobid,
 	}
 out:
 	return ret;
+}
+
+int nilfs_cleaner_stop(struct nilfs_cleaner *cleaner)
+{
+	return nilfs_cleaner_command(cleaner, NILFS_CLEANER_CMD_STOP);
 }

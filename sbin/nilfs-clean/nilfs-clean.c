@@ -67,12 +67,13 @@
 #ifdef _GNU_SOURCE
 #include <getopt.h>
 const static struct option long_option[] = {
+	{"break", no_argument, NULL, 'b'},
 	{"reload", optional_argument, NULL, 'c'},
 	{"help", no_argument, NULL, 'h'},
 	{"status", no_argument, NULL, 'l'},
 	{"protection-period", required_argument, NULL, 'p'},
 	{"resume", no_argument, NULL, 'r'},
-	{"stop", no_argument, NULL, 's'},
+	{"stop", no_argument, NULL, 'b'},
 	{"suspend", no_argument, NULL, 's'},
 	{"speed", required_argument, NULL, 'S'},
 	{"verbose", no_argument, NULL, 'v'},
@@ -81,6 +82,7 @@ const static struct option long_option[] = {
 };
 #define NILFS_CLEAN_USAGE						\
 	"Usage: %s [options] [device]\n"				\
+	"  -b, --break,--stop\tstop running cleaner\n"			\
 	"  -c, --reload[=CONFFILE]\n"					\
 	"            \t\treload config\n"				\
 	"  -h, --help\t\tdisplay this help and exit\n"			\
@@ -88,14 +90,14 @@ const static struct option long_option[] = {
 	"  -p, --protection-period=SECONDS\n"				\
 	"               \t\tspecify protection period\n"		\
 	"  -r, --resume\t\tresume cleaner\n"				\
-	"  -s, --stop,--suspend\tsuspend cleaner\n"			\
+	"  -s, --suspend\t\tsuspend cleaner\n"				\
 	"  -S, --speed=COUNT[/SECONDS]\n"				\
 	"               \t\tset GC speed\n"				\
 	"  -v, --verbose\t\tverbose mode\n"				\
 	"  -V, --version\t\tdisplay version and exit\n"
 #else
 #define NILFS_CLEAN_USAGE						\
-	"Usage: %s [-c [conffile]] [-h] [-l] [-p protection-period]"	\
+	"Usage: %s [-b] [-c [conffile]] [-h] [-l] [-p protection-period]" \
 	"          [-r] [-s] [-S gc-speed] [-v] [-V] [device]\n"
 #endif	/* _GNU_SOURCE */
 
@@ -106,6 +108,7 @@ enum {
 	NILFS_CLEAN_CMD_SUSPEND,
 	NILFS_CLEAN_CMD_RESUME,
 	NILFS_CLEAN_CMD_RELOAD,
+	NILFS_CLEAN_CMD_STOP,
 };
 
 /* options */
@@ -226,6 +229,15 @@ static int nilfs_clean_do_reload(struct nilfs_cleaner *cleaner)
 	return 0;
 }
 
+static int nilfs_clean_do_stop(struct nilfs_cleaner *cleaner)
+{
+	if (nilfs_cleaner_stop(cleaner) < 0) {
+		myprintf("Error: stop failed: %s\n", strerror(errno));
+		return -1;
+	}
+	return 0;
+}
+
 static int nilfs_clean_request(struct nilfs_cleaner *cleaner)
 {
 	int status = EXIT_FAILURE;
@@ -246,6 +258,9 @@ static int nilfs_clean_request(struct nilfs_cleaner *cleaner)
 		break;
 	case NILFS_CLEAN_CMD_RELOAD:
 		ret = nilfs_clean_do_reload(cleaner);
+		break;
+	case NILFS_CLEAN_CMD_STOP:
+		ret = nilfs_clean_do_stop(cleaner);
 		break;
 	default:
 		goto out;
@@ -390,12 +405,15 @@ static void nilfs_clean_parse_options(int argc, char *argv[])
 	int c;
 
 #ifdef _GNU_SOURCE
-	while ((c = getopt_long(argc, argv, "c::hlp:rsS:vV",
+	while ((c = getopt_long(argc, argv, "bc::hlp:rsS:vV",
 				long_option, &option_index)) >= 0) {
 #else
-	while ((c = getopt(argc, argv, "c::hlp:rsS:vV")) >= 0) {
+	while ((c = getopt(argc, argv, "bc::hlp:rsS:vV")) >= 0) {
 #endif	/* _GNU_SOURCE */
 		switch (c) {
+		case 'b':
+			clean_cmd = NILFS_CLEAN_CMD_STOP;
+			break;
 		case 'c':
 			if (optarg != 0)
 				conffile = optarg;
