@@ -171,7 +171,8 @@ static int nilfs_clean_do_run(struct nilfs_cleaner *cleaner)
 	}
 
 	if (nilfs_cleaner_run(cleaner, &args, NULL) < 0) {
-		myprintf("Error: cannot run cleaner: %s\n", strerror(errno));
+		myprintf(_("Error: cannot run cleaner: %s\n"),
+			 strerror(errno));
 		return -1;
 	}
 	return 0;
@@ -182,7 +183,7 @@ static int nilfs_clean_do_getinfo(struct nilfs_cleaner *cleaner)
 	int cleaner_status;
 
 	if (nilfs_cleaner_get_status(cleaner, &cleaner_status) < 0) {
-		myprintf("Error: cannot get cleaner status: %s\n",
+		myprintf(_("Error: cannot get cleaner status: %s\n"),
 			 strerror(errno));
 		return -1;
 	}
@@ -205,7 +206,7 @@ static int nilfs_clean_do_getinfo(struct nilfs_cleaner *cleaner)
 static int nilfs_clean_do_suspend(struct nilfs_cleaner *cleaner)
 {
 	if (nilfs_cleaner_suspend(cleaner) < 0) {
-		myprintf("Error: suspend failed: %s\n", strerror(errno));
+		myprintf(_("Error: suspend failed: %s\n"), strerror(errno));
 		return -1;
 	}
 	return 0;
@@ -214,7 +215,7 @@ static int nilfs_clean_do_suspend(struct nilfs_cleaner *cleaner)
 static int nilfs_clean_do_resume(struct nilfs_cleaner *cleaner)
 {
 	if (nilfs_cleaner_resume(cleaner) < 0) {
-		myprintf("Error: resume failed: %s\n", strerror(errno));
+		myprintf(_("Error: resume failed: %s\n"), strerror(errno));
 		return -1;
 	}
 	return 0;
@@ -223,7 +224,7 @@ static int nilfs_clean_do_resume(struct nilfs_cleaner *cleaner)
 static int nilfs_clean_do_reload(struct nilfs_cleaner *cleaner)
 {
 	if (nilfs_cleaner_reload(cleaner, conffile) < 0) {
-		myprintf("Error: reload failed: %s\n", strerror(errno));
+		myprintf(_("Error: reload failed: %s\n"), strerror(errno));
 		return -1;
 	}
 	return 0;
@@ -232,7 +233,7 @@ static int nilfs_clean_do_reload(struct nilfs_cleaner *cleaner)
 static int nilfs_clean_do_stop(struct nilfs_cleaner *cleaner)
 {
 	if (nilfs_cleaner_stop(cleaner) < 0) {
-		myprintf("Error: stop failed: %s\n", strerror(errno));
+		myprintf(_("Error: stop failed: %s\n"), strerror(errno));
 		return -1;
 	}
 	return 0;
@@ -317,7 +318,7 @@ static int nilfs_clean_parse_protection_period(const char *arg)
 
 	period = strtoul(arg, &endptr, 10);
 	if (endptr == arg) {
-		myprintf("Error: invalid protection period: %s\n", arg);
+		myprintf(_("Error: invalid protection period: %s\n"), arg);
 		ret = -1;
 		goto out;
 	} else if (endptr[0] != '\0' && endptr[1] == '\0' &&
@@ -336,7 +337,7 @@ static int nilfs_clean_parse_protection_period(const char *arg)
 		}
 	} 
 	if (period >= ULONG_MAX) {
-		myprintf("Error: too large period: %s\n", arg);
+		myprintf(_("Error: too large period: %s\n"), arg);
 		errno = ERANGE;
 		ret = -1;
 		goto out;
@@ -389,11 +390,11 @@ static int nilfs_clean_parse_gcspeed(const char *arg)
 	nsegments_per_clean = nsegs;
 	return 0;
 failed:
-	myprintf("Error: invalid gc speed: %s\n", arg);
+	myprintf(_("Error: invalid gc speed: %s\n"), arg);
 	return -1;
 
 failed_too_large:
-	myprintf("Error: value too large: %s\n", arg);
+	myprintf(_("Error: value too large: %s\n"), arg);
 	return -1;
 }
 
@@ -447,7 +448,7 @@ static void nilfs_clean_parse_options(int argc, char *argv[])
 			show_version_only = 1;
 			break;
 		default:
-			myprintf("Error: invalid option -- %c\n", optopt);
+			myprintf(_("Error: invalid option -- %c\n"), optopt);
 			exit(EXIT_FAILURE);
 		}
 	}
@@ -469,7 +470,7 @@ int main(int argc, char *argv[])
 
 	nilfs_clean_parse_options(argc, argv);
 	if (show_version_only) {
-		myprintf("%s version %s\n", progname, PACKAGE_VERSION);
+		myprintf(_("%s version %s\n"), progname, PACKAGE_VERSION);
 		status = EXIT_SUCCESS;
 		goto out;
 	}
@@ -479,16 +480,16 @@ int main(int argc, char *argv[])
 		device = argv[optind++];
 
 		if (stat(device, &statbuf) < 0) {
-			myprintf("Error: cannot find %s: %s.\n", device,
+			myprintf(_("Error: cannot find %s: %s.\n"), device,
 				 strerror(errno));
 			goto out;
 		} else if (!S_ISBLK(statbuf.st_mode)) {
-			myprintf("Error: device must be a block device.\n");
+			myprintf(_("Error: device must be a block device.\n"));
 			goto out;
 		}
 	}
 	if (optind < argc) {
-		myprintf("Error: too many arguments.\n");
+		myprintf(_("Error: too many arguments.\n"));
 		goto out;
 	}
 
