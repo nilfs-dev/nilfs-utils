@@ -714,7 +714,7 @@ static int nilfs_cleanerd_recalc_interval(struct nilfs_cleanerd *cleanerd,
 
 			pt = nilfs_cleanerd_protection_period(cleanerd) + 1;
 		} else {
-			pt = oldest - prottime + 1;
+			pt = (oldest > prottime ? oldest - prottime : 0) + 1;
 		}
 		cleanerd->timeout.tv_sec = max_t(
 			unsigned long, pt,
