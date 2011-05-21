@@ -96,6 +96,8 @@
 	({ type __x = (x); type __y = (y); __x > __y ? __x : __y; })
 #endif
 
+#define nilfs_cnt64_ge(a, b)	((__s64)(a) - (__s64)(b) >= 0)
+
 #ifndef ARRAY_SIZE
 #define ARRAY_SIZE(arr) (sizeof(arr) / sizeof((arr)[0]))
 #endif
@@ -459,6 +461,25 @@ nilfs_cleanerd_reduce_ncleansegs_for_retry(struct nilfs_cleanerd *cleanerd)
 	}
 }
 
+#if 0
+static int nilfs_segment_is_protected(struct nilfs *nilfs, __u64 segnum,
+				      struct nilfs_sustat *sustat)
+{
+	void *segment;
+	__u64 segseq;
+	int ret = 0;
+
+	if (nilfs_get_segment(nilfs, segnum, &segment) < 0)
+		return -1;
+
+	segseq = nilfs_get_segment_seqnum(nilfs, segment, segnum);
+	if (nilfs_cnt64_ge(segseq, sustat->ss_prot_seq))
+		ret = 1;
+	nilfs_put_segment(nilfs, segment);
+	return ret;
+}
+#endif
+
 /**
  * nilfs_cleanerd_select_segments - select segments to be reclaimed
  * @cleanerd: cleanerd object
@@ -705,11 +726,13 @@ static int nilfs_cleanerd_recalc_interval(struct nilfs_cleanerd *cleanerd,
 		unsigned long pt;
 
 		/* no segment were cleaned */
-		if (oldest == NILFS_CLEANERD_NULLTIME) {
+		if (cleanerd->running == 2) {
+			/* Quit in the case of manual run */
+			nilfs_cleanerd_manual_end(cleanerd);
+			return 0;
+		} else if (oldest == NILFS_CLEANERD_NULLTIME) {
 			/* no reclaimable segments */
-			if (cleanerd->running == 2)
-				nilfs_cleanerd_manual_end(cleanerd);
-			else if (cleanerd->running)
+			if (cleanerd->running)
 				cleanerd->running = 0;
 
 			pt = nilfs_cleanerd_protection_period(cleanerd) + 1;
