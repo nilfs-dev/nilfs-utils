@@ -94,6 +94,11 @@ const static struct option long_option[] = {
 #define BLKGETSIZE64 	_IOR(0x12, 114, size_t)
 #endif
 
+#ifndef FIFREEZE
+#define FIFREEZE 	_IOWR('X', 119, int)
+#define FITHAW		_IOWR('X', 120, int)
+#endif
+
 /* general macros */
 #ifndef DIV_ROUND_UP
 #define DIV_ROUND_UP(n,m)   (((n) + (m) - 1) / (m))
@@ -124,6 +129,12 @@ static __u64 devsize;
 static unsigned int sector_size = 512;
 static struct nilfs_sustat sustat;
 static __u64 trunc_start, trunc_end;
+
+#define NILFS_RESIZE_NSUINFO	256
+#define NILFS_RESIZE_NSEGNUMS	256
+
+static struct nilfs_suinfo suinfo[NILFS_RESIZE_NSUINFO];
+static __u64 segnums[NILFS_RESIZE_NSEGNUMS];
 
 /* filesystem parameters */
 static __u32 blocksize;
@@ -290,6 +301,25 @@ static int nilfs_resize_update_sustat(struct nilfs *nilfs)
 	return 0;
 }
 
+static int nilfs_resize_segment_is_protected(struct nilfs *nilfs, __u64 segnum)
+{
+	void *segment;
+	__u64 segseq;
+	__u64 protseq = sustat.ss_prot_seq;
+	int ret = 0;
+
+	/* need updating sustat before testing */
+	if (nilfs_get_segment(nilfs, segnum, &segment) < 0) {
+		myprintf("Error: cannot read segment: %s\n", strerror(errno));
+		return -1;
+	}
+	segseq = nilfs_get_segment_seqnum(nilfs, segment, segnum);
+	if (nilfs_cnt64_ge(segseq, protseq))
+		ret = 1;
+	nilfs_put_segment(nilfs, segment);
+	return ret;
+}
+
 static int nilfs_resize_lock_cleaner(struct nilfs *nilfs, sigset_t *sigset)
 {
 	sigset_t newset;
@@ -358,14 +388,85 @@ static void nilfs_resize_restore_alloc_range(struct nilfs *nilfs)
 	nilfs_set_alloc_range(nilfs, 0, fs_devsize);
 }
 
-#define NILFS_RESIZE_NSUINFO	256
-#define NILFS_RESIZE_NSEGNUMS	256
+static ssize_t
+nilfs_resize_find_movable_segments(struct nilfs *nilfs, __u64 start,
+				   __u64 end, __u64 *segnumv,
+				   unsigned long maxsegnums)
+{
+	__u64 segnum, *snp;
+	unsigned long rest, count;
+	ssize_t nsi, i;
+	int ret;
+
+	assert(start <= end);
+
+	segnum = start;
+	rest = min_t(__u64, maxsegnums, end - start + 1);
+	for (snp = segnumv; rest > 0 && segnum <= end; ) {
+		count = min_t(unsigned long, rest, NILFS_RESIZE_NSUINFO);
+		nsi = nilfs_get_suinfo(nilfs, segnum, suinfo, count);
+		if (nsi < 0) {
+			myprintf("Error: operation failed during searching "
+				 "movable segments: %s\n", strerror(errno));
+			return -1;
+		}
+		for (i = 0; i < nsi; i++, segnum++) {
+			if (!nilfs_suinfo_reclaimable(&suinfo[i]))
+				continue;
+			ret = nilfs_resize_segment_is_protected(nilfs, segnum);
+			if (ret < 0)
+				return -1;
+			else if (ret)
+				continue;
+			*snp++ = segnum;
+			rest--;
+		}
+	}
+	return (snp - segnumv); /* return the number of found segments */
+}
+
+static int
+nilfs_resize_get_latest_segment(struct nilfs *nilfs, __u64 start, __u64 end,
+				__u64 *segnump)
+{
+	__u64 segnum, latest_segnum = (~(__u64)0);
+	unsigned long count;
+	ssize_t nsi, i;
+	__u64 latest_time = 0;
+	int ret = 0;
+
+	assert(start <= end);
+
+	for (segnum = start; segnum <= end; segnum += nsi) {
+		count = min_t(unsigned long, end - segnum + 1,
+			      NILFS_RESIZE_NSUINFO);
+		nsi = nilfs_get_suinfo(nilfs, segnum, suinfo, count);
+		if (nsi < 0) {
+			myprintf("Error: operation failed during searching "
+				 "latest segment: %s\n", strerror(errno));
+			return -1;
+		}
+		assert(nsi > 0);
+		for (i = 0; i < nsi; i++) {
+			if (nilfs_suinfo_dirty(&suinfo[i]) &&
+			    !nilfs_suinfo_error(&suinfo[i]) &&
+			    suinfo[i].sui_lastmod > latest_time) {
+				latest_time = suinfo[i].sui_lastmod;
+				latest_segnum = segnum + i;
+			}
+		}
+	}
+	if (latest_time > 0) {
+		*segnump = latest_segnum;
+		ret = 1;
+	}
+	return ret;
+}
 
 static ssize_t
 nilfs_resize_find_active_segments(struct nilfs *nilfs, __u64 start, __u64 end,
 				  __u64 *segnumv, unsigned long maxsegnums)
 {
-	static struct nilfs_suinfo si[NILFS_RESIZE_NSUINFO]; /* not rentrant */
 	__u64 segnum, *snp;
 	unsigned long rest, count;
 	ssize_t nsi, i;
@@ -376,15 +477,15 @@ nilfs_resize_find_active_segments(struct nilfs *nilfs, __u64 start, __u64 end,
 	rest = min_t(__u64, maxsegnums, end - start + 1);
 	for (snp = segnumv; rest > 0 && segnum <= end; ) {
 		count = min_t(unsigned long, rest, NILFS_RESIZE_NSUINFO);
-		nsi = nilfs_get_suinfo(nilfs, segnum, si, count);
+		nsi = nilfs_get_suinfo(nilfs, segnum, suinfo, count);
 		if (nsi < 0) {
 			myprintf("Error: operation failed during searching "
 				 "active segments: %s\n", strerror(errno));
 			return -1;
 		}
 		for (i = 0; i < nsi; i++, segnum++) {
-			if (nilfs_suinfo_active(&si[i]) &&
-			    !nilfs_suinfo_error(&si[i])) {
+			if (nilfs_suinfo_active(&suinfo[i]) &&
+			    !nilfs_suinfo_error(&suinfo[i])) {
 				*snp++ = segnum;
 				rest--;
 			}
@@ -397,7 +498,6 @@ static ssize_t
 nilfs_resize_find_inuse_segments(struct nilfs *nilfs, __u64 start, __u64 end,
 				 __u64 *segnumv, unsigned long maxsegnums)
 {
-	static struct nilfs_suinfo si[NILFS_RESIZE_NSUINFO]; /* not rentrant */
 	__u64 segnum, *snp;
 	unsigned long rest, count;
 	ssize_t nsi, i;
@@ -408,14 +508,14 @@ nilfs_resize_find_inuse_segments(struct nilfs *nilfs, __u64 start, __u64 end,
 	rest = min_t(__u64, maxsegnums, end - start + 1);
 	for (snp = segnumv; rest > 0 && segnum <= end; ) {
 		count = min_t(unsigned long, rest, NILFS_RESIZE_NSUINFO);
-		nsi = nilfs_get_suinfo(nilfs, segnum, si, count);
+		nsi = nilfs_get_suinfo(nilfs, segnum, suinfo, count);
 		if (nsi < 0) {
 			myprintf("Error: operation failed during searching "
 				 "in-use segments: %s\n", strerror(errno));
 			return -1;
 		}
 		for (i = 0; i < nsi; i++, segnum++) {
-			if (nilfs_suinfo_reclaimable(&si[i])) {
+			if (nilfs_suinfo_reclaimable(&suinfo[i])) {
 				*snp++ = segnum;
 				rest--;
 			}
@@ -427,7 +527,6 @@ nilfs_resize_find_inuse_segments(struct nilfs *nilfs, __u64 start, __u64 end,
 static ssize_t
 nilfs_resize_count_inuse_segments(struct nilfs *nilfs, __u64 start, __u64 end)
 {
-	static struct nilfs_suinfo si[NILFS_RESIZE_NSUINFO]; /* not rentrant */
 	__u64 segnum;
 	unsigned long rest, count;
 	ssize_t nsi, i;
@@ -439,14 +538,14 @@ nilfs_resize_count_inuse_segments(struct nilfs *nilfs, __u64 start, __u64 end)
 	rest = end - start + 1;
 	while (rest > 0 && segnum <= end) {
 		count = min_t(unsigned long, rest, NILFS_RESIZE_NSUINFO);
-		nsi = nilfs_get_suinfo(nilfs, segnum, si, count);
+		nsi = nilfs_get_suinfo(nilfs, segnum, suinfo, count);
 		if (nsi < 0) {
 			myprintf("Error: operation failed during counting "
 				 "in-use segments: %s\n", strerror(errno));
 			return -1;
 		}
 		for (i = 0; i < nsi; i++, segnum++) {
-			if (nilfs_suinfo_reclaimable(&si[i])) {
+			if (nilfs_suinfo_reclaimable(&suinfo[i])) {
 				nfound++;
 				rest--;
 			}
@@ -459,27 +558,20 @@ nilfs_resize_count_inuse_segments(struct nilfs *nilfs, __u64 start, __u64 end)
 #define NILFS_RESIZE_SEGMENT_UNRECLAIMABLE	0x02
 
 static int nilfs_resize_verify_failure(struct nilfs *nilfs,
-				       __u64 *segnumv, unsigned long nsegs,
-				       __u64 protseq)
+				       __u64 *segnumv, unsigned long nsegs)
 {
 	struct nilfs_suinfo si;
-	void *segment;
-	__u64 segseq;
 	int reason = 0;
-	int i;
+	int i, ret;
 
 	for (i = 0; i < nsegs; i++) {
 		if (nilfs_get_suinfo(nilfs, segnumv[i], &si, 1) == 1) {
 			if (!nilfs_suinfo_reclaimable(&si))
 				reason |= NILFS_RESIZE_SEGMENT_UNRECLAIMABLE;
 		}
-		if (nilfs_get_segment(nilfs, segnumv[i], &segment) >= 0) {
-			segseq = nilfs_get_segment_seqnum(nilfs, segment,
-							  segnumv[i]);
-			if (nilfs_cnt64_ge(segseq, protseq))
-				reason |= NILFS_RESIZE_SEGMENT_PROTECTED;
-			nilfs_put_segment(nilfs, segment);
-		}
+		ret = nilfs_resize_segment_is_protected(nilfs, segnumv[i]);
+		if (ret > 0)
+			reason |= NILFS_RESIZE_SEGMENT_PROTECTED;
 	}
 	return reason;
 }
@@ -519,9 +611,8 @@ static ssize_t nilfs_resize_move_segments(struct nilfs *nilfs,
 
 		/* check reason of gc failure */
 		if (ret < nc && reason)
-			rv |= nilfs_resize_verify_failure(
-				nilfs, snp + ret, nc - ret,
-				sustat.ss_prot_seq);
+			rv |= nilfs_resize_verify_failure(nilfs, snp + ret,
+							  nc - ret);
 
 		nanosleep(&clean_interval, NULL);
 	}
@@ -530,14 +621,32 @@ static ssize_t nilfs_resize_move_segments(struct nilfs *nilfs,
 	return nmoved;
 }
 
+static int nilfs_resize_try_update_log_cursor(struct nilfs *nilfs)
+{
+	int arg = 0;
+	int ret = -1;
+
+	if (ioctl(nilfs->n_iocfd, FIFREEZE, &arg) == 0 &&
+	    ioctl(nilfs->n_iocfd, FITHAW, &arg) == 0)
+		ret = 0;
+
+	sync();
+	nilfs_resize_update_sustat(nilfs);
+
+	return ret;
+}
+
 static int nilfs_resize_reclaim_nibble(struct nilfs *nilfs,
 				       unsigned long long start,
 				       unsigned long long end,
 				       unsigned long count)
 {
-	__u64 segnumv[3], segnum;
+	__u64 segnumv[2], segnum;
 	ssize_t nfound, nmoved = 0;
 	unsigned long nc;
+	unsigned long long end2 = end;
+	int freeze_thaw = 0;
+	int ret;
 
 	segnum = start;
 
@@ -546,8 +655,8 @@ retry:
 		ssize_t nm;
 
 		nc = min_t(unsigned long, count - nmoved, ARRAY_SIZE(segnumv));
-		nfound = nilfs_resize_find_inuse_segments(nilfs, segnum, end,
-							  segnumv, nc);
+		nfound = nilfs_resize_find_movable_segments(
+			nilfs, segnum, end, segnumv, nc);
 		if (nfound < 0)
 			goto failed;
 		if (nfound == 0)
@@ -557,10 +666,11 @@ retry:
 		nm = nilfs_resize_move_segments(nilfs, segnumv, nfound, NULL);
 		if (nm < 0)
 			goto failed;
+
+		sync();
 		nmoved += nm;
 		if (nmoved >= count)
 			return 0;
-		sync();
 	}
 
 	if (end >= start) {
@@ -568,7 +678,25 @@ retry:
 		end = start - 1;
 		goto retry;
 	}
-	myprintf("Error: No reclaimable segment. Cannot move segments\n");
+	if (!freeze_thaw) {
+		if (verbose)
+			myprintf("No movable segment.\n"
+				 "Trying to update log cursor to make movable "
+				 "segments ..");
+
+		ret = nilfs_resize_try_update_log_cursor(nilfs);
+		if (!ret) {
+			if (verbose)
+				myprintf(" ok.\n");
+			segnum = start;
+			end = end2;
+			freeze_thaw = 1;
+			goto retry;
+		}
+		if (verbose)
+			myprintf(" failed.\n");
+	}
+	myprintf("Error: couldn't move any segments.\n");
 	return -1;
 failed:
 	myprintf("Error: operation failed during moving segments: %s\n",
@@ -576,12 +704,87 @@ failed:
 	return -1;
 }
 
+static int nilfs_resize_move_out_active_segments(struct nilfs *nilfs,
+						 unsigned long long start,
+						 unsigned long long end)
+{
+	const static struct timespec retry_interval = { 0, 500000000 };
+							/* 500 msec */
+	__u64 segnum;
+	ssize_t nfound;
+	int latest = 0;
+	int retrycnt = 0;
+	int ret;
+
+retry:
+	if (nilfs_resize_update_sustat(nilfs) < 0)
+		return -1;
+
+	nfound = nilfs_resize_find_active_segments(
+		nilfs, start, end, segnums, NILFS_RESIZE_NSEGNUMS);
+	if (nfound < 0)
+		return -1;
+
+	if (!nfound) {
+		if (latest) {
+			/* reset the latest segment info if it was moved */
+			ret = nilfs_resize_get_latest_segment(
+				nilfs, segnum, segnum, &segnum);
+			if (ret < 0)
+				return -1;
+			else if (!ret)
+				latest = 0;
+		}
+		if (!latest) {
+			/* get the latest segment info */
+			ret = nilfs_resize_get_latest_segment(
+				nilfs, start, end, &segnum);
+			if (ret < 0)
+				return -1;
+			else if (ret)
+				latest = 1;
+		}
+		if (latest) {
+			/* test if the latest segment is protected or not */
+			ret = nilfs_resize_segment_is_protected(nilfs, segnum);
+			if (ret < 0)
+				return -1;
+			else if (ret)
+				nfound = 2;
+		}
+	}
+
+	if (nfound > 0) {
+		if (retrycnt >= 6) {
+			myprintf("Error: Failed to move active segments -- "
+				 "give up.\n");
+			return -1;
+		}
+		if (verbose && !retrycnt) {
+			myprintf("Active segments are found in the range.\n"
+				 "Trying to move them.\n");
+		}
+		if (nilfs_resize_reclaim_nibble(nilfs, start, end, nfound) < 0)
+			return -1;
+		retrycnt++;
+		nanosleep(&retry_interval, NULL);
+		goto retry;
+	}
+
+	if (retrycnt > 0 && pm_in_progress) {
+		nfound = nilfs_resize_count_inuse_segments(nilfs, start, end);
+		if (nfound >= 0) {
+			if (nfound > pm_max)
+				pm_max = nfound;
+			nilfs_resize_progress_update(pm_max - nfound);
+		}
+	}
+	return 0;
+}
+
 static int nilfs_resize_reclaim_range(struct nilfs *nilfs, __u64 newnsegs)
 {
-	static __u64 segnumv[NILFS_RESIZE_NSEGNUMS]; /* not rentrant */
-	ssize_t nfound;
 	unsigned long long start, end, segnum;
-	int retrycnt = 0;
 	int ret;
 
 	if (nilfs_resize_update_sustat(nilfs) < 0)
@@ -599,44 +802,19 @@ static int nilfs_resize_reclaim_range(struct nilfs *nilfs, __u64 newnsegs)
 	end = sustat.ss_nsegs - 1;
 
 	/* Move out active segments first */
-retry:
-	nfound = nilfs_resize_find_active_segments(
-		nilfs, start, end, segnumv, NILFS_RESIZE_NSEGNUMS);
-	if (nfound < 0)
-		return -1;
-	if (nfound > 0) {
-		if (retrycnt >= 5) {
-			myprintf("Error: Failed to move active segments -- "
-				 "give up.\n");
-			return -1;
-		}
-		if (verbose && !retrycnt) {
-			myprintf("Active segments are found in the range.\n"
-				 "Trying to move them.\n");
-		}
-		if (nilfs_resize_reclaim_nibble(nilfs, start, end, nfound) < 0)
-			return -1;
-		retrycnt++;
-		goto retry;
-	}
-
-	if (retrycnt > 0 && pm_in_progress) {
-		nfound = nilfs_resize_count_inuse_segments(nilfs, start, end);
-		if (nfound >= 0) {
-			if (nfound > pm_max)
-				pm_max = nfound;
-			nilfs_resize_progress_update(pm_max - nfound);
-		}
-	}
+	ret = nilfs_resize_move_out_active_segments(nilfs, start, end);
+	if (ret < 0)
+		goto out;
 
 	ret = -1;
 	segnum = start;
 	while (segnum <= end) {
+		ssize_t nfound;
 		ssize_t nmoved;
 		int reason = 0;
 
 		nfound = nilfs_resize_find_inuse_segments(
-			nilfs, segnum, end, segnumv, NILFS_RESIZE_NSEGNUMS);
+			nilfs, segnum, end, segnums, NILFS_RESIZE_NSEGNUMS);
 		if (nfound < 0)
 			goto out;
 
@@ -645,11 +823,11 @@ retry:
 
 		/*
 		 * Updates @segnum before calling nilfs_resize_move_segments()
-		 * because segnumv may be changed during reclamation.
+		 * because segnums may be changed during reclamation.
 		 */
-		segnum = segnumv[nfound - 1] + 1;
+		segnum = segnums[nfound - 1] + 1;
 		nmoved = nilfs_resize_move_segments(
-			nilfs, segnumv, nfound, &reason);
+			nilfs, segnums, nfound, &reason);
 		if (nmoved < 0) {
 			myprintf("Error: operation failed during moving "
 				 "in-use segments: %s\n", strerror(errno));
@@ -755,7 +933,7 @@ static int nilfs_shrink_online(struct nilfs *nilfs, const char *device,
 		nuses = nilfs_resize_count_inuse_segments(nilfs, newnsegs,
 							  sustat.ss_nsegs - 1);
 		if (nuses > 0 && show_progress) {
-			myprintf("Moving %zd in-use segment%s\n",
+			myprintf("Moving %zd in-use segment%s.\n",
 				 nuses, nuses > 1 ? "s" : "");
 			nilfs_resize_progress_init(nuses, label);
 		}
@@ -843,6 +1021,8 @@ static int nilfs_resize_online(const char *device, unsigned long long newsize)
 	struct nilfs *nilfs;
 	struct nilfs_super_block *sb;
 	int status = EXIT_FAILURE;
+
+	sync();
 
 	nilfs = nilfs_open(device, NULL,
 			   NILFS_OPEN_RAW | NILFS_OPEN_RDWR | NILFS_OPEN_GCLK);
