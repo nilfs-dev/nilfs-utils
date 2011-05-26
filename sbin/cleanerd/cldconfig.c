@@ -684,6 +684,14 @@ static int nilfs_cldconfig_do_read(struct nilfs_cldconfig *config,
 int nilfs_cldconfig_read(struct nilfs_cldconfig *config, const char *path,
 			 struct nilfs *nilfs)
 {
+	struct stat stbuf;
+
+	if (stat(path, &stbuf) < 0 || !S_ISREG(stbuf.st_mode)) {
+		syslog(LOG_ERR, "%s: bad configuration file", path);
+		errno = EINVAL;
+		return -1;
+	}
+
 	nilfs_cldconfig_set_default(config, nilfs);
 	if (nilfs_cldconfig_do_read(config, path, nilfs) < 0)
 		syslog(LOG_WARNING, "%s: cannot read", path);
