@@ -72,6 +72,7 @@ const static struct option long_option[] = {
 	{"help", no_argument, NULL, 'h'},
 	{"status", no_argument, NULL, 'l'},
 	{"protection-period", required_argument, NULL, 'p'},
+	{"quit", no_argument, NULL, 'q'},
 	{"resume", no_argument, NULL, 'r'},
 	{"stop", no_argument, NULL, 'b'},
 	{"suspend", no_argument, NULL, 's'},
@@ -89,6 +90,7 @@ const static struct option long_option[] = {
 	"  -l, --status\t\tdisplay cleaner status\n"			\
 	"  -p, --protection-period=SECONDS\n"				\
 	"               \t\tspecify protection period\n"		\
+	"  -q, --quit\t\tshutdown cleaner\n"				\
 	"  -r, --resume\t\tresume cleaner\n"				\
 	"  -s, --suspend\t\tsuspend cleaner\n"				\
 	"  -S, --speed=COUNT[/SECONDS]\n"				\
@@ -98,7 +100,7 @@ const static struct option long_option[] = {
 #else
 #define NILFS_CLEAN_USAGE						\
 	"Usage: %s [-b] [-c [conffile]] [-h] [-l] [-p protection-period]" \
-	"          [-r] [-s] [-S gc-speed] [-v] [-V] [device]\n"
+	"          [-q] [-r] [-s] [-S gc-speed] [-v] [-V] [device]\n"
 #endif	/* _GNU_SOURCE */
 
 
@@ -109,6 +111,7 @@ enum {
 	NILFS_CLEAN_CMD_RESUME,
 	NILFS_CLEAN_CMD_RELOAD,
 	NILFS_CLEAN_CMD_STOP,
+	NILFS_CLEAN_CMD_SHUTDOWN,
 };
 
 /* options */
@@ -239,6 +242,15 @@ static int nilfs_clean_do_stop(struct nilfs_cleaner *cleaner)
 	return 0;
 }
 
+static int nilfs_clean_do_shutdown(struct nilfs_cleaner *cleaner)
+{
+	if (nilfs_cleaner_shutdown(cleaner) < 0) {
+		myprintf(_("Error: shutdown failed: %s\n"), strerror(errno));
+		return -1;
+	}
+	return 0;
+}
+
 static int nilfs_clean_request(struct nilfs_cleaner *cleaner)
 {
 	int status = EXIT_FAILURE;
@@ -262,6 +274,9 @@ static int nilfs_clean_request(struct nilfs_cleaner *cleaner)
 		break;
 	case NILFS_CLEAN_CMD_STOP:
 		ret = nilfs_clean_do_stop(cleaner);
+		break;
+	case NILFS_CLEAN_CMD_SHUTDOWN:
+		ret = nilfs_clean_do_shutdown(cleaner);
 		break;
 	default:
 		goto out;
@@ -406,10 +421,10 @@ static void nilfs_clean_parse_options(int argc, char *argv[])
 	int c;
 
 #ifdef _GNU_SOURCE
-	while ((c = getopt_long(argc, argv, "bc::hlp:rsS:vV",
+	while ((c = getopt_long(argc, argv, "bc::hlp:qrsS:vV",
 				long_option, &option_index)) >= 0) {
 #else
-	while ((c = getopt(argc, argv, "bc::hlp:rsS:vV")) >= 0) {
+	while ((c = getopt(argc, argv, "bc::hlp:qrsS:vV")) >= 0) {
 #endif	/* _GNU_SOURCE */
 		switch (c) {
 		case 'b':
@@ -430,6 +445,9 @@ static void nilfs_clean_parse_options(int argc, char *argv[])
 		case 'p':
 			if (nilfs_clean_parse_protection_period(optarg) < 0)
 				exit(EXIT_FAILURE);
+			break;
+		case 'q':
+			clean_cmd = NILFS_CLEAN_CMD_SHUTDOWN;
 			break;
 		case 'r':
 			clean_cmd = NILFS_CLEAN_CMD_RESUME;
