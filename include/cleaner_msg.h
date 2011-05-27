@@ -30,6 +30,7 @@ enum {
 	NILFS_CLEANER_CMD_RELOAD,	/* reload configuration file */
 	NILFS_CLEANER_CMD_WAIT,		/* wait for completion of a job */
 	NILFS_CLEANER_CMD_STOP,		/* stop running gc */
+	NILFS_CLEANER_CMD_SHUTDOWN,	/* shutdown daemon */
 };
 
 

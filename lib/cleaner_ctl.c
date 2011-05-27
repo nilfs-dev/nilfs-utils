@@ -647,22 +647,6 @@ void nilfs_cleaner_close(struct nilfs_cleaner *cleaner)
 	free(cleaner);
 }
 
-int nilfs_cleaner_shutdown(struct nilfs_cleaner *cleaner)
-{
-	int ret = -1;
-
-	if (!cleaner->cleanerd_pid) {
-		nilfs_cleaner_logger(
-			LOG_DEBUG, _("No valid pid is set -- skip killing"));
-	} else {
-		ret = nilfs_shutdown_cleanerd(cleaner->device,
-					      cleaner->cleanerd_pid);
-	}
-	nilfs_cleaner_close(cleaner);
-	return ret;
-}
-
-
 static int nilfs_cleaner_clear_queueu(struct nilfs_cleaner *cleaner)
 {
 	struct nilfs_cleaner_response res;
@@ -954,4 +938,9 @@ out:
 int nilfs_cleaner_stop(struct nilfs_cleaner *cleaner)
 {
 	return nilfs_cleaner_command(cleaner, NILFS_CLEANER_CMD_STOP);
+}
+
+int nilfs_cleaner_shutdown(struct nilfs_cleaner *cleaner)
+{
+	return nilfs_cleaner_command(cleaner, NILFS_CLEANER_CMD_SHUTDOWN);
 }

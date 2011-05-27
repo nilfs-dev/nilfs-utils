@@ -35,7 +35,6 @@ pid_t nilfs_cleaner_pid(const struct nilfs_cleaner *cleaner);
 const char *nilfs_cleaner_device(const struct nilfs_cleaner *cleaner);
 
 void nilfs_cleaner_close(struct nilfs_cleaner *cleaner);
-int nilfs_cleaner_shutdown(struct nilfs_cleaner *cleaner);
 
 /* cleaner command arguments */
 struct nilfs_cleaner_args {
@@ -79,6 +78,7 @@ int nilfs_cleaner_reload(struct nilfs_cleaner *cleaner, const char *conffile);
 int nilfs_cleaner_wait(struct nilfs_cleaner *cleaner, uint32_t jobid,
 		       const struct timespec *abs_timeout);
 int nilfs_cleaner_stop(struct nilfs_cleaner *cleaner);
+int nilfs_cleaner_shutdown(struct nilfs_cleaner *cleaner);
 
 /* old interface for mount.nilfs2 and umount.nilfs2 */
 int nilfs_launch_cleanerd(const char *device, const char *mntdir,

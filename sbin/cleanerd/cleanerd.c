@@ -165,6 +165,7 @@ struct nilfs_cleanerd {
 	char *conffile;
 	int running;
 	int fallback;
+	int shutdown;
 	long ncleansegs;
 	struct timeval cleaning_interval;
 	struct timeval target;
@@ -204,7 +205,7 @@ static char nilfs_cleanerd_msgbuf[NILFS_CLEANER_MSG_MAX_REQSZ];
 
 static const char *nilfs_cleaner_cmd_name[] = {
 	"get-status", "run", "suspend", "resume", "tune", "reload", "wait",
-	"stop"
+	"stop", "shutdown"
 };
 
 static void nilfs_cleanerd_version(const char *progname)
@@ -983,6 +984,17 @@ static int nilfs_cleanerd_cmd_stop(struct nilfs_cleanerd *cleanerd,
 	return nilfs_cleanerd_respond(cleanerd, req, &res);
 }
 
+static int nilfs_cleanerd_cmd_shutdown(struct nilfs_cleanerd *cleanerd,
+				       struct nilfs_cleaner_request *req,
+				       size_t argsize)
+{
+	struct nilfs_cleaner_response res = {0};
+
+	cleanerd->shutdown = 1;
+	res.result = NILFS_CLEANER_RSP_ACK;
+	return nilfs_cleanerd_respond(cleanerd, req, &res);
+}
+
 static int nilfs_cleanerd_handle_message(struct nilfs_cleanerd *cleanerd,
 					 void *msgbuf, size_t bytes)
 {
@@ -1024,6 +1036,9 @@ static int nilfs_cleanerd_handle_message(struct nilfs_cleanerd *cleanerd,
 		break;
 	case NILFS_CLEANER_CMD_STOP:
 		ret = nilfs_cleanerd_cmd_stop(cleanerd, req, argsize);
+		break;
+	case NILFS_CLEANER_CMD_SHUTDOWN:
+		ret = nilfs_cleanerd_cmd_shutdown(cleanerd, req, argsize);
 		break;
 	default:
 		syslog(LOG_DEBUG, "received unknown command: %d", req->cmd);
@@ -1291,7 +1306,7 @@ static int nilfs_cleanerd_clean_loop(struct nilfs_cleanerd *cleanerd)
 	if (nilfs_cleanerd_automatic_suspend(cleanerd))
 		nilfs_cleanerd_clean_check_pause(cleanerd);
 
-	while (1) {
+	while (!cleanerd->shutdown) {
 		if (sigprocmask(SIG_BLOCK, &sigset, NULL) < 0) {
 			syslog(LOG_ERR, "cannot set signal mask: %m");
 			return -1;
@@ -1348,6 +1363,7 @@ static int nilfs_cleanerd_clean_loop(struct nilfs_cleanerd *cleanerd)
 		if (ret < 0)
 			return -1;
 	}
+	return 0;
 }
 
 int main(int argc, char *argv[])
