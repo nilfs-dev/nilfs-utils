@@ -1323,6 +1323,7 @@ static int nilfs_cleanerd_clean_loop(struct nilfs_cleanerd *cleanerd)
 		}
 		syslog(LOG_DEBUG, "%d segment%s selected to be cleaned",
 		       ns, (ns <= 1) ? "" : "s");
+		ndone = 0;
 		if (ns > 0) {
 			ndone = nilfs_cleanerd_clean_segments(
 				cleanerd, segnums, ns, sustat.ss_prot_seq,
