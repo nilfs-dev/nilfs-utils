@@ -34,6 +34,10 @@
 #include <stdlib.h>
 #endif	/* HAVE_STDLIB_H */
 
+#if HAVE_UNISTD_H
+#include <unistd.h>
+#endif	/* HAVE_UNISTD_H */
+
 #include <ctype.h>
 
 #if HAVE_STRING_H
@@ -44,12 +48,19 @@
 #include <limits.h>
 #endif	/* HAVE_LIMITS_H */
 
-#include <errno.h>
+#if HAVE_SYS_TYPES_H
+#include <sys/types.h>
+#endif	/* HAVE_SYS_TYPES_H */
+
+#if HAVE_SYS_STAT_H
+#include <sys/stat.h>
+#endif	/* HAVE_SYS_STAT_H */
 
 #if HAVE_SYSLOG_H
 #include <syslog.h>
 #endif	/* HAVE_SYSLOG_H */
 
+#include <errno.h>
 #include <assert.h>
 #include "nilfs.h"
 #include "cldconfig.h"
