@@ -17,6 +17,10 @@
 #include <stdlib.h>
 #endif	/* HAVE_STDLIB_H */
 
+#if HAVE_STRING_H
+#include <string.h>
+#endif	/* HAVE_STRING_H */
+
 #ifdef HAVE_MNTENT_H
 #include <mntent.h>
 #endif
