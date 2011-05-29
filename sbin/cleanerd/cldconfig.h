@@ -27,6 +27,7 @@
 #ifndef CLDCONFIG_H
 #define CLDCONFIG_H
 
+#include <sys/time.h>
 #include <syslog.h>
 
 struct nilfs_suinfo;
@@ -84,6 +85,7 @@ enum nilfs_size_unit {
  * @cf_cleaning_interval: cleaning interval
  * @cf_mc_cleaning_interval: cleaning interval
  * if clean segments < min_clean_segments
+ * @cf_retry_interval: retry interval
  * @cf_use_mmap: flag that indicate using mmap
  * @cf_log_priority: log priority level
  */
@@ -95,8 +97,8 @@ struct nilfs_cldconfig {
 	time_t cf_clean_check_interval;
 	int cf_nsegments_per_clean;
 	int cf_mc_nsegments_per_clean;
-	time_t cf_cleaning_interval;
-	time_t cf_mc_cleaning_interval;
+	struct timeval cf_cleaning_interval;
+	struct timeval cf_mc_cleaning_interval;
 	time_t cf_retry_interval;
 	int cf_use_mmap;
 	int cf_log_priority;

@@ -442,8 +442,10 @@ nilfs_cldconfig_handle_cleaning_interval(struct nilfs_cldconfig *config,
 {
 	unsigned long sec;
 
-	if (nilfs_cldconfig_get_ulong_argument(tokens, ntoks, &sec) == 0)
-		config->cf_cleaning_interval = sec;
+	if (nilfs_cldconfig_get_ulong_argument(tokens, ntoks, &sec) == 0) {
+		config->cf_cleaning_interval.tv_sec = sec;
+		config->cf_cleaning_interval.tv_usec = 0;
+	}
 	return 0;
 }
 
@@ -454,8 +456,10 @@ nilfs_cldconfig_handle_mc_cleaning_interval(struct nilfs_cldconfig *config,
 {
 	unsigned long sec;
 
-	if (nilfs_cldconfig_get_ulong_argument(tokens, ntoks, &sec) == 0)
-		config->cf_mc_cleaning_interval = sec;
+	if (nilfs_cldconfig_get_ulong_argument(tokens, ntoks, &sec) == 0) {
+		config->cf_mc_cleaning_interval.tv_sec = sec;
+		config->cf_mc_cleaning_interval.tv_usec = 0;
+	}
 	return 0;
 }
 
@@ -620,8 +624,10 @@ static void nilfs_cldconfig_set_default(struct nilfs_cldconfig *config,
 	config->cf_nsegments_per_clean = NILFS_CLDCONFIG_NSEGMENTS_PER_CLEAN;
 	config->cf_mc_nsegments_per_clean =
 		NILFS_CLDCONFIG_MC_NSEGMENTS_PER_CLEAN;
-	config->cf_cleaning_interval = NILFS_CLDCONFIG_CLEANING_INTERVAL;
-	config->cf_mc_cleaning_interval = NILFS_CLDCONFIG_MC_CLEANING_INTERVAL;
+	config->cf_cleaning_interval.tv_sec = NILFS_CLDCONFIG_CLEANING_INTERVAL;
+	config->cf_cleaning_interval.tv_usec = 0;
+	config->cf_mc_cleaning_interval.tv_sec = NILFS_CLDCONFIG_MC_CLEANING_INTERVAL;
+	config->cf_mc_cleaning_interval.tv_usec = 0;
 	config->cf_retry_interval = NILFS_CLDCONFIG_RETRY_INTERVAL;
 	config->cf_use_mmap = NILFS_CLDCONFIG_USE_MMAP;
 	config->cf_log_priority = NILFS_CLDCONFIG_LOG_PRIORITY;

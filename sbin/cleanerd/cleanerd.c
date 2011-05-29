@@ -269,9 +269,7 @@ static int nilfs_cleanerd_reconfig(struct nilfs_cleanerd *cleanerd,
 		syslog(LOG_ERR, "cannot configure: %m");
 	} else {
 		cleanerd->ncleansegs = config->cf_nsegments_per_clean;
-		cleanerd->cleaning_interval.tv_sec =
-			config->cf_cleaning_interval;
-		cleanerd->cleaning_interval.tv_usec = 0;
+		cleanerd->cleaning_interval = config->cf_cleaning_interval;
 		syslog(LOG_INFO, "configuration file reloaded");
 	}
 	return ret;
@@ -708,7 +706,8 @@ static int nilfs_cleanerd_init_interval(struct nilfs_cleanerd *cleanerd)
 		syslog(LOG_ERR, "cannot get time: %m");
 		return -1;
 	}
-	cleanerd->target.tv_sec += cleanerd->config.cf_cleaning_interval;
+	timeradd(&cleanerd->target, &cleanerd->config.cf_cleaning_interval,
+		 &cleanerd->target);
 	return 0;
 }
 
@@ -1118,15 +1117,11 @@ static int nilfs_cleanerd_handle_clean_check(struct nilfs_cleanerd *cleanerd,
 	    config->cf_min_clean_segments + r_segments) {
 		/* disk space is close to limit -- accelerate cleaning */
 		cleanerd->ncleansegs = config->cf_mc_nsegments_per_clean;
-		cleanerd->cleaning_interval.tv_sec =
-			config->cf_mc_cleaning_interval;
-		cleanerd->cleaning_interval.tv_usec = 0;
+		cleanerd->cleaning_interval = config->cf_mc_cleaning_interval;
 	} else {
 		/* continue to run */
 		cleanerd->ncleansegs = config->cf_nsegments_per_clean;
-		cleanerd->cleaning_interval.tv_sec =
-			config->cf_cleaning_interval;
-		cleanerd->cleaning_interval.tv_usec = 0;
+		cleanerd->cleaning_interval = config->cf_cleaning_interval;
 	}
 
 	return 0; /* do gc */
@@ -1298,9 +1293,7 @@ static int nilfs_cleanerd_clean_loop(struct nilfs_cleanerd *cleanerd)
 		return -1;
 
 	cleanerd->ncleansegs = cleanerd->config.cf_nsegments_per_clean;
-	cleanerd->cleaning_interval.tv_sec =
-		cleanerd->config.cf_cleaning_interval;
-	cleanerd->cleaning_interval.tv_usec = 0;
+	cleanerd->cleaning_interval = cleanerd->config.cf_cleaning_interval;
 
 
 	if (nilfs_cleanerd_automatic_suspend(cleanerd))
