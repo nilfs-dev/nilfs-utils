@@ -1,12 +1,28 @@
 ## Makefile.am
 
 lib_LTLIBRARIES = libnilfs.la libnilfsgc.la libnilfscleaner.la
-noinst_LTLIBRARIES = libnilfsmisc.la
+noinst_LTLIBRARIES = librealpath.la libnilfsfeature.la libcno.la \
+	libmountchk.la
 
-libnilfsmisc_la_SOURCES = realpath.c cno.c feature.c ismounted.c
-libnilfsmisc_la_CFLAGS = -Wall -fPIC
-libnilfsmisc_la_CPPFLAGS = -I$(top_srcdir)/include
-libnilfsmisc_la_LDFLAGS = -static -lrt
+librealpath_la_SOURCES = realpath.c
+librealpath_la_CFLAGS = -Wall -fPIC
+librealpath_la_CPPFLAGS = -I$(top_srcdir)/include
+librealpath_la_LDFLAGS = -static -lrt
+
+libnilfsfeature_la_SOURCES = feature.c
+libnilfsfeature_la_CFLAGS = -Wall -fPIC
+libnilfsfeature_la_CPPFLAGS = -I$(top_srcdir)/include
+libnilfsfeature_la_LDFLAGS = -static -lrt
+
+libcno_la_SOURCES = cno.c
+libcno_la_CFLAGS = -Wall -fPIC
+libcno_la_CPPFLAGS = -I$(top_srcdir)/include
+libcno_la_LDFLAGS = -static -lrt
+
+libmountchk_la_SOURCES = ismounted.c
+libmountchk_la_CFLAGS = -Wall -fPIC
+libmountchk_la_CPPFLAGS = -I$(top_srcdir)/include
+libmountchk_la_LDFLAGS = -static -lrt
 
 libnilfs_CURRENT = 1
 libnilfs_REVISION = 0
@@ -17,7 +33,7 @@ libnilfs_la_SOURCES = nilfs.c sb.c crc32.c
 libnilfs_la_CFLAGS = -Wall
 libnilfs_la_CPPFLAGS = -I$(top_srcdir)/include
 libnilfs_la_LDFLAGS = -version-info $(libnilfs_VERSIONINFO)
-libnilfs_la_LIBADD = libnilfsmisc.la -lrt
+libnilfs_la_LIBADD = librealpath.la -lrt
 
 nilfsgc_CURRENT = 0
 nilfsgc_REVISION = 0

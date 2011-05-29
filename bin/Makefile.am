@@ -17,4 +17,4 @@ lssu_SOURCES = lssu.c
 mkcp_SOURCES = mkcp.c
 
 rmcp_SOURCES = rmcp.c
-rmcp_LDADD = $(LDADD) $(top_builddir)/lib/libnilfsmisc.la
+rmcp_LDADD = $(LDADD) $(top_builddir)/lib/libcno.la

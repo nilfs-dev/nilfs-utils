@@ -7,7 +7,7 @@ COMMONHEADERS = mount.nilfs2.h fstab.h sundries.h xmalloc.h mntent.h \
 
 AM_CFLAGS = -Wall
 AM_CPPFLAGS = -I$(top_srcdir)/include
-LDADD = $(top_builddir)/lib/libnilfsmisc.la
+LDADD = $(top_builddir)/lib/librealpath.la
 
 sbin_PROGRAMS = mount.nilfs2 umount.nilfs2
 

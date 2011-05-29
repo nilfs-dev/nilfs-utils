@@ -49,7 +49,7 @@
 
 #include <errno.h>
 #include "nilfs.h"
-#include "nilfs_misc.h"  /* nilfs_parse_cno_range */
+#include "cno.h"
 
 
 #ifdef _GNU_SOURCE
