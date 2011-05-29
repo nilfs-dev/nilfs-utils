@@ -2,7 +2,7 @@
 
 lib_LTLIBRARIES = libnilfs.la libnilfsgc.la libnilfscleaner.la
 noinst_LTLIBRARIES = librealpath.la libnilfsfeature.la libcno.la \
-	libmountchk.la
+	libmountchk.la libcrc32.la
 
 librealpath_la_SOURCES = realpath.c
 librealpath_la_CFLAGS = -Wall -fPIC
@@ -24,16 +24,21 @@ libmountchk_la_CFLAGS = -Wall -fPIC
 libmountchk_la_CPPFLAGS = -I$(top_srcdir)/include
 libmountchk_la_LDFLAGS = -static -lrt
 
+libcrc32_la_SOURCES = crc32.c
+libcrc32_la_CFLAGS = -Wall -fPIC
+libcrc32_la_CPPFLAGS = -I$(top_srcdir)/include
+libcrc32_la_LDFLAGS = -static -lrt
+
 libnilfs_CURRENT = 1
 libnilfs_REVISION = 0
 libnilfs_AGE = 1
 libnilfs_VERSIONINFO = $(libnilfs_CURRENT):$(libnilfs_REVISION):$(libnilfs_AGE)
 
-libnilfs_la_SOURCES = nilfs.c sb.c crc32.c
+libnilfs_la_SOURCES = nilfs.c sb.c
 libnilfs_la_CFLAGS = -Wall
 libnilfs_la_CPPFLAGS = -I$(top_srcdir)/include
 libnilfs_la_LDFLAGS = -version-info $(libnilfs_VERSIONINFO)
-libnilfs_la_LIBADD = librealpath.la -lrt
+libnilfs_la_LIBADD = librealpath.la libcrc32.la -lrt
 
 nilfsgc_CURRENT = 0
 nilfsgc_REVISION = 0
