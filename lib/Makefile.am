@@ -2,7 +2,7 @@
 
 lib_LTLIBRARIES = libnilfs.la libnilfsgc.la libnilfscleaner.la
 noinst_LTLIBRARIES = librealpath.la libnilfsfeature.la libcno.la \
-	libmountchk.la libcrc32.la
+	libmountchk.la libcrc32.la libcleanerexec.la
 
 librealpath_la_SOURCES = realpath.c
 librealpath_la_CFLAGS = -Wall -fPIC
@@ -28,6 +28,11 @@ libcrc32_la_SOURCES = crc32.c
 libcrc32_la_CFLAGS = -Wall -fPIC
 libcrc32_la_CPPFLAGS = -I$(top_srcdir)/include
 libcrc32_la_LDFLAGS = -static -lrt
+
+libcleanerexec_la_SOURCES = cleaner_exec.c
+libcleanerexec_la_CFLAGS = -Wall -fPIC
+libcleanerexec_la_CPPFLAGS = -I$(top_srcdir)/include
+libcleanerexec_la_LDFLAGS = -static -lrt
 
 libnilfs_CURRENT = 1
 libnilfs_REVISION = 0
@@ -56,8 +61,8 @@ cleanerctl_REVISION = 0
 cleanerctl_AGE = 0
 cleanerctl_VERSIONINFO = $(cleanerctl_CURRENT):$(cleanerctl_REVISION):$(cleanerctl_AGE)
 
-libnilfscleaner_la_SOURCES = cleaner_ctl.c cleaner_exec.c
+libnilfscleaner_la_SOURCES = cleaner_ctl.c
 libnilfscleaner_la_CFLAGS = -Wall -fPIC
 libnilfscleaner_la_CPPFLAGS = -I$(top_srcdir)/include
 libnilfscleaner_la_LDFLAGS = -version-info $(cleanerctl_VERSIONINFO)
-libnilfscleaner_la_LIBADD = -lrt -luuid
+libnilfscleaner_la_LIBADD = libcleanerexec.la -lrt -luuid
