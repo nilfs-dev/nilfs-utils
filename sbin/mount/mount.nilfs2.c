@@ -81,7 +81,7 @@
 #include "mount_constants.h"
 #include "mount_opts.h"
 #include "mount.nilfs2.h"
-#include "nilfs_cleaner.h"
+#include "cleaner_exec.h"
 #include "nls.h"
 
 /* mount options */

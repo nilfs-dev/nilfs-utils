@@ -15,9 +15,6 @@
 #include <stdint.h>
 #include "nilfs.h"
 
-#define NILFS_CLEANERD_NAME "nilfs_cleanerd"
-#define PIDOPT_NAME "gcpid"
-
 struct nilfs_cleaner;
 
 #define NILFS_CLEANER_OPEN_GCPID	(1 << 0)
@@ -79,12 +76,6 @@ int nilfs_cleaner_wait(struct nilfs_cleaner *cleaner, uint32_t jobid,
 		       const struct timespec *abs_timeout);
 int nilfs_cleaner_stop(struct nilfs_cleaner *cleaner);
 int nilfs_cleaner_shutdown(struct nilfs_cleaner *cleaner);
-
-/* old interface for mount.nilfs2 and umount.nilfs2 */
-int nilfs_launch_cleanerd(const char *device, const char *mntdir,
-			  unsigned long protperiod, pid_t *ppid);
-int nilfs_ping_cleanerd(pid_t pid);
-int nilfs_shutdown_cleanerd(const char *device, pid_t pid);
 
 extern void (*nilfs_cleaner_logger)(int priority, const char *fmt, ...);
 extern void (*nilfs_cleaner_printf)(const char *fmt, ...);

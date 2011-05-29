@@ -30,7 +30,13 @@ libnilfsgc_la_CPPFLAGS = -I$(top_srcdir)/include
 libnilfsgc_la_LDFLAGS = -version-info $(nilfsgc_VERSIONINFO)
 libnilfsgc_la_LIBADD = libnilfs.la -lrt
 
-libnilfscleaner_la_SOURCES = cleaner_ctl.c
+cleanerctl_CURRENT = 0
+cleanerctl_REVISION = 0
+cleanerctl_AGE = 0
+cleanerctl_VERSIONINFO = $(cleanerctl_CURRENT):$(cleanerctl_REVISION):$(cleanerctl_AGE)
+
+libnilfscleaner_la_SOURCES = cleaner_ctl.c cleaner_exec.c
 libnilfscleaner_la_CFLAGS = -Wall -fPIC
 libnilfscleaner_la_CPPFLAGS = -I$(top_srcdir)/include
-libnilfscleaner_la_LDFLAGS = -static -lrt -luuid
+libnilfscleaner_la_LDFLAGS = -version-info $(cleanerctl_VERSIONINFO)
+libnilfscleaner_la_LIBADD = -lrt -luuid
