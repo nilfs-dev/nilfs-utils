@@ -84,6 +84,12 @@ Gives the verbosity level that is used when logging messages from
 \fBnilfs_cleanerd\fP(8).  The possible values are: \fBemerg\fP,
 \fBalert\fP, \fBcrit\fP, \fBerr\fP, \fBwarning\fP, \fBnotice\fP,
 \fBinfo\fP, and \fBdebug\fP.  The default is \fBinfo\fP.
+.PP
+Since nilfs-utils 2.1, subsecond value can be specified for time
+interval parameters in decimal fraction format.  This applies to
+\fBprotection_period\fP, \fBclean_check_interval\fP,
+\fBcleaning_interval\fP, \fBmc_cleaning_interval\fP, and
+\fBretry_interval\fP.
 .SH FILES
 .TP
 .I /etc/nilfs_cleanerd.conf

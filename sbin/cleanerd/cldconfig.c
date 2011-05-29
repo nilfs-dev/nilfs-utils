@@ -138,16 +138,42 @@ static int nilfs_cldconfig_get_ulong_argument(char **tokens, size_t ntoks,
 	return 0;
 }
 
-static int nilfs_cldconfig_get_time_argument(char **tokens, size_t ntoks,
-					     time_t *t)
+static int nilfs_cldconfig_get_timeval_argument(char **tokens, size_t ntoks,
+						struct timeval *tval)
 {
 	unsigned long num;
-	int ret;
+	double fnum;
+	char *endptr;
 
-	ret = nilfs_cldconfig_get_ulong_argument(tokens, ntoks, &num);
-	if (ret == 0)
-		*t = (time_t)num;
-	return ret;
+	errno = 0;
+	num = strtoul(tokens[1], &endptr, 10);
+	if (endptr == tokens[1])
+		goto failed;
+	if (*endptr == '.') {
+		errno = 0;
+		fnum = strtod(tokens[1], &endptr);
+		if (endptr == tokens[1] || *endptr != '\0')
+			goto failed;
+		if (errno == ERANGE)
+			goto failed_too_large;
+		tval->tv_sec = num;
+		tval->tv_usec = (fnum - num) * 1000000;
+	} else if (*endptr != '\0') {
+		goto failed;
+	} else {
+		if (num == ULONG_MAX)
+			goto failed_too_large;
+		tval->tv_sec = num;
+		tval->tv_usec = 0;
+	}
+	return 0;
+
+failed_too_large:
+	syslog(LOG_WARNING, "%s: %s: number too large", tokens[0], tokens[1]);
+	return -1;
+failed:
+	syslog(LOG_WARNING, "%s: %s: not a time value", tokens[0], tokens[1]);
+	return -1;
 }
 
 static int nilfs_parse_size_suffix(const char *suffix)
@@ -247,13 +273,8 @@ nilfs_cldconfig_handle_protection_period(struct nilfs_cldconfig *config,
 					 char **tokens, size_t ntoks,
 					 struct nilfs *nilfs)
 {
-	time_t period;
-
-	if (nilfs_cldconfig_get_time_argument(tokens, ntoks, &period) == 0) {
-		config->cf_protection_period.tv_sec = period;
-		config->cf_protection_period.tv_usec = 0;
-	}
-	return 0;
+	return nilfs_cldconfig_get_timeval_argument(
+		tokens, ntoks, &config->cf_protection_period);
 }
 
 static unsigned long long
@@ -346,13 +367,8 @@ nilfs_cldconfig_handle_clean_check_interval(struct nilfs_cldconfig *config,
 					    char **tokens, size_t ntoks,
 					    struct nilfs *nilfs)
 {
-	time_t period;
-
-	if (nilfs_cldconfig_get_time_argument(tokens, ntoks, &period) == 0) {
-		config->cf_clean_check_interval.tv_sec = period;
-		config->cf_clean_check_interval.tv_usec = 0;
-	}
-	return 0;
+	return nilfs_cldconfig_get_timeval_argument(
+		tokens, ntoks, &config->cf_clean_check_interval);
 }
 
 static unsigned long long
@@ -444,13 +460,8 @@ nilfs_cldconfig_handle_cleaning_interval(struct nilfs_cldconfig *config,
 					 char **tokens, size_t ntoks,
 					 struct nilfs *nilfs)
 {
-	unsigned long sec;
-
-	if (nilfs_cldconfig_get_ulong_argument(tokens, ntoks, &sec) == 0) {
-		config->cf_cleaning_interval.tv_sec = sec;
-		config->cf_cleaning_interval.tv_usec = 0;
-	}
-	return 0;
+	return nilfs_cldconfig_get_timeval_argument(
+		tokens, ntoks, &config->cf_cleaning_interval);
 }
 
 static int
@@ -458,13 +469,8 @@ nilfs_cldconfig_handle_mc_cleaning_interval(struct nilfs_cldconfig *config,
 					    char **tokens, size_t ntoks,
 					    struct nilfs *nilfs)
 {
-	unsigned long sec;
-
-	if (nilfs_cldconfig_get_ulong_argument(tokens, ntoks, &sec) == 0) {
-		config->cf_mc_cleaning_interval.tv_sec = sec;
-		config->cf_mc_cleaning_interval.tv_usec = 0;
-	}
-	return 0;
+	return nilfs_cldconfig_get_timeval_argument(
+		tokens, ntoks, &config->cf_mc_cleaning_interval);
 }
 
 static int
@@ -472,13 +478,8 @@ nilfs_cldconfig_handle_retry_interval(struct nilfs_cldconfig *config,
 				      char **tokens, size_t ntoks,
 				      struct nilfs *nilfs)
 {
-	unsigned long sec;
-
-	if (nilfs_cldconfig_get_ulong_argument(tokens, ntoks, &sec) == 0) {
-		config->cf_retry_interval.tv_sec = sec;
-		config->cf_retry_interval.tv_usec = 0;
-	}
-	return 0;
+	return nilfs_cldconfig_get_timeval_argument(
+		tokens, ntoks, &config->cf_retry_interval);
 }
 
 static int nilfs_cldconfig_handle_use_mmap(struct nilfs_cldconfig *config,
