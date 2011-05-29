@@ -180,7 +180,7 @@ struct nilfs_cleanerd {
 	int mm_nrestpasses;
 	long mm_nrestsegs;
 	long mm_ncleansegs;
-	long mm_protection_period;
+	struct timeval mm_protection_period;
 	struct timeval mm_cleaning_interval;
 };
 
@@ -249,7 +249,8 @@ static int nilfs_cleanerd_config(struct nilfs_cleanerd *cleanerd,
 	if (protection_period != ULONG_MAX) {
 		syslog(LOG_INFO, "override protection period to %lu",
 		       protection_period);
-		cleanerd->config.cf_protection_period = protection_period;
+		cleanerd->config.cf_protection_period.tv_sec = protection_period;
+		cleanerd->config.cf_protection_period.tv_usec = 0;
 	}
 	return 0;
 }
@@ -441,11 +442,12 @@ nilfs_cleanerd_cleaning_interval(struct nilfs_cleanerd *cleanerd)
 		&cleanerd->cleaning_interval;
 }
 
-static long nilfs_cleanerd_protection_period(struct nilfs_cleanerd *cleanerd)
+static struct timeval *
+nilfs_cleanerd_protection_period(struct nilfs_cleanerd *cleanerd)
 {
 	return cleanerd->running == 2 ?
-		cleanerd->mm_protection_period :
-		cleanerd->config.cf_protection_period;
+		&cleanerd->mm_protection_period :
+		&cleanerd->config.cf_protection_period;
 }
 
 static void
@@ -500,7 +502,7 @@ nilfs_cleanerd_select_segments(struct nilfs_cleanerd *cleanerd,
 	struct nilfs_vector *smv;
 	struct nilfs_segimp *sm;
 	struct nilfs_suinfo si[NILFS_CLEANERD_NSUINFO];
-	struct timeval tv;
+	struct timeval tv, tv2;
 	__u64 prottime, oldest;
 	__u64 segnum;
 	size_t count, nsegs;
@@ -521,7 +523,8 @@ nilfs_cleanerd_select_segments(struct nilfs_cleanerd *cleanerd,
 		nssegs = -1;
 		goto out;
 	}
-	prottime = tv.tv_sec - nilfs_cleanerd_protection_period(cleanerd);
+	timersub(&tv, nilfs_cleanerd_protection_period(cleanerd), &tv2);
+	prottime = tv2.tv_sec;
 	oldest = tv.tv_sec;
 
 	/* The segments that have larger importance than thr are not
@@ -650,8 +653,7 @@ static int set_sighup_handler(void)
 static void nilfs_cleanerd_clean_check_pause(struct nilfs_cleanerd *cleanerd)
 {
 	cleanerd->running = 0;
-	cleanerd->timeout.tv_sec = cleanerd->config.cf_clean_check_interval;
-	cleanerd->timeout.tv_usec = 0;
+	cleanerd->timeout = cleanerd->config.cf_clean_check_interval;
 	syslog(LOG_INFO, "pause (clean check)");
 }
 
@@ -665,8 +667,7 @@ static void nilfs_cleanerd_manual_suspend(struct nilfs_cleanerd *cleanerd)
 {
 	cleanerd->mm_prev_state = cleanerd->running;
 	cleanerd->running = -1;
-	cleanerd->timeout.tv_sec = cleanerd->config.cf_clean_check_interval;
-	cleanerd->timeout.tv_usec = 0;
+	cleanerd->timeout = cleanerd->config.cf_clean_check_interval;
 	syslog(LOG_INFO, "suspend (manual)");
 }
 
@@ -687,16 +688,14 @@ static void nilfs_cleanerd_manual_run(struct nilfs_cleanerd *cleanerd)
 static void nilfs_cleanerd_manual_end(struct nilfs_cleanerd *cleanerd)
 {
 	cleanerd->running = 0;
-	cleanerd->timeout.tv_sec = cleanerd->config.cf_clean_check_interval;
-	cleanerd->timeout.tv_usec = 0;
+	cleanerd->timeout = cleanerd->config.cf_clean_check_interval;
 	syslog(LOG_INFO, "manual run completed");
 }
 
 static void nilfs_cleanerd_manual_stop(struct nilfs_cleanerd *cleanerd)
 {
 	cleanerd->running = 0;
-	cleanerd->timeout.tv_sec = cleanerd->config.cf_clean_check_interval;
-	cleanerd->timeout.tv_usec = 0;
+	cleanerd->timeout = cleanerd->config.cf_clean_check_interval;
 	syslog(LOG_INFO, "manual run aborted");
 }
 
@@ -723,7 +722,7 @@ static int nilfs_cleanerd_recalc_interval(struct nilfs_cleanerd *cleanerd,
 	}
 
 	if (nchosen == 0 || (!cleanerd->fallback && ndone == 0)) {
-		unsigned long pt;
+		struct timeval pt;
 
 		/* no segment were cleaned */
 		if (cleanerd->running == 2) {
@@ -735,20 +734,23 @@ static int nilfs_cleanerd_recalc_interval(struct nilfs_cleanerd *cleanerd,
 			if (cleanerd->running)
 				cleanerd->running = 0;
 
-			pt = nilfs_cleanerd_protection_period(cleanerd) + 1;
+			pt = *(nilfs_cleanerd_protection_period(cleanerd));
 		} else {
-			pt = (oldest > prottime ? oldest - prottime : 0) + 1;
+			pt.tv_sec = (oldest > prottime ? oldest - prottime : 0) + 1;
+			pt.tv_usec = 0;
 		}
-		cleanerd->timeout.tv_sec = max_t(
-			unsigned long, pt,
-			cleanerd->config.cf_clean_check_interval);
-		cleanerd->timeout.tv_usec = 0;
+		if (timercmp(&pt,
+			     &cleanerd->config.cf_clean_check_interval, <))
+			cleanerd->timeout =
+				cleanerd->config.cf_clean_check_interval;
+		else
+			cleanerd->timeout = pt;
 		return 0;
 	}
 
 	if (cleanerd->fallback) {
-		cleanerd->target = curr;
-		cleanerd->target.tv_sec += cleanerd->config.cf_retry_interval;
+		timeradd(&curr, &cleanerd->config.cf_retry_interval,
+			 &cleanerd->target);
 		timersub(&cleanerd->target, &curr, &cleanerd->timeout);
 		syslog(LOG_DEBUG, "retry interval");
 		return 0;
@@ -854,8 +856,9 @@ static int nilfs_cleanerd_cmd_run(struct nilfs_cleanerd *cleanerd,
 	if (req2->args.valid & NILFS_CLEANER_ARG_PROTECTION_PERIOD) {
 		if (req2->args.protection_period > ULONG_MAX)
 			goto error_inval;
-		cleanerd->mm_protection_period =
+		cleanerd->mm_protection_period.tv_sec =
 			req2->args.protection_period;
+		cleanerd->mm_protection_period.tv_usec = 0;
 	} else {
 		cleanerd->mm_protection_period =
 			cleanerd->config.cf_protection_period;

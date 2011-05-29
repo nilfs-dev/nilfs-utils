@@ -91,15 +91,15 @@ enum nilfs_size_unit {
  */
 struct nilfs_cldconfig {
 	struct nilfs_selection_policy cf_selection_policy;
-	time_t cf_protection_period;
+	struct timeval cf_protection_period;
 	__u64 cf_min_clean_segments;
 	__u64 cf_max_clean_segments;
-	time_t cf_clean_check_interval;
+	struct timeval cf_clean_check_interval;
 	int cf_nsegments_per_clean;
 	int cf_mc_nsegments_per_clean;
 	struct timeval cf_cleaning_interval;
 	struct timeval cf_mc_cleaning_interval;
-	time_t cf_retry_interval;
+	struct timeval cf_retry_interval;
 	int cf_use_mmap;
 	int cf_log_priority;
 };
