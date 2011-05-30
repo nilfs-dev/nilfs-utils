@@ -1,3 +1,18 @@
+nilfs-utils-2.1.0-rc1  Mon May 30, 2011 JST
+
+	* add nilfs-clean program.
+	* add nilfs-resize program.
+	* nilfs_cleanerd: allow subsecond values for time interval parameters.
+	* lscp: hide internal checkpoint by default and add all option to
+	  show them.
+	* libnilfs: add APIs for filesystem resizing
+	* separate one shot garbage collection function to libnilfsgc library.
+	* add libnilfscleaner library which gives control function of
+	  cleaner daemon.
+	* nilfs_cleanerd: fix overflow of time out value
+	* nilfs_cleanerd: fix move block errors on cpfile and sufile
+	* nilfs-tune: move out check_mount function to library
+
 nilfs-utils-2.0.23  Sat Apr 30, 2011 JST
 
 	* make gc safe for duplicate invocation

@@ -5,6 +5,8 @@ The primary authors work at Cyberspace Labs at NTT Corporation.
 - Primary maintainer (02/2008-Present)
 - Implemented mkfs.nilfs2, mount.nilfs2
 - Enhanced snapshot/checkpoint tools, cleanerd, and libraries.
+- Wrote nilfs-resize.
+- Wrote nilfs-clean, libnilfscleaner library.
 - Fixed many bugs
 - Wrote man pages
 - Initial development
