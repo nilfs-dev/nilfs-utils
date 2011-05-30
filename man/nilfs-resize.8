@@ -9,7 +9,7 @@ nilfs-resize \- resize NILFS file system volume size
 [\fIoptions\fP] \fIdevice\fP [\fIsize\fP]
 .SH DESCRIPTION
 The \fBnilfs-resize\fP program will resize NILFS2 file systems.  It
-can be used to enlarge or shrink an mounted file system located on
+can be used to enlarge or shrink a mounted file system located on
 \fIdevice\fP.  This feature is only available on the kernel supporting
 on-line resizing.  Resizing for unmounted file systems are not
 supported at present.
@@ -30,7 +30,7 @@ by deleting the partition and recreating it with a larger size or
 using \fBlvextend\fP(8), if you are using the logical volume manager
 \fBlvm\fP(8)
 .PP
-If you wish to shrink an nilfs2 partition, first use
+If you wish to shrink a nilfs2 partition, first use
 \fBnilfs-resize\fP to shrink the size of filesystem.  Then you may use
 \fBfdisk\fP(8) to shrink the size of the partition.  When shrinking
 the size of the partition, make sure you do not make it smaller than
