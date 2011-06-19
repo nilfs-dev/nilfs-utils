@@ -40,7 +40,9 @@
 
 #include <linux/types.h>
 #include <linux/ioctl.h>
+#if HAVE_LINUX_MAGIC_H
 #include <linux/magic.h>
+#endif	/* HAVE_LINUX_MAGIC_H */
 
 
 #define NILFS_INODE_BMAP_SIZE	7
