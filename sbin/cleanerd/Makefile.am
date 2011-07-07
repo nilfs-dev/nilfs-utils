@@ -2,7 +2,7 @@
 
 sbin_PROGRAMS = nilfs_cleanerd
 LDADD = $(top_builddir)/lib/libnilfs.la $(top_builddir)/lib/libnilfsgc.la \
-	-lrt -luuid
+	$(LIB_POSIX_MQ) -luuid
 
 nilfs_cleanerd_SOURCES = cleanerd.c cldconfig.c \
 	cldconfig.h

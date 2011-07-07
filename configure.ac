@@ -32,10 +32,20 @@ AC_CHECK_LIB([uuid], [uuid_generate],
 	  [Define to 1 if you have the `uuid' library (-luuid).])],
 	[AC_MSG_ERROR([UUID library not found])])
 
-AC_CHECK_LIB([rt],[sem_open],
-	[AC_DEFINE([HAVE_LIBRT], 1,
-	  [Define to 1 if you have the `rt' library (-lrt).])],
-	[AC_MSG_ERROR([rt library not found])])
+LIB_POSIX_MQ=''
+AC_CHECK_FUNC(mq_open,,
+	[AC_CHECK_LIB(rt, mq_open, LIB_POSIX_MQ=-lrt,
+	[AC_CHECK_LIB(posix4, mq_open, LIB_POSIX_MQ=-lposix4,
+	[AC_MSG_ERROR([posix message queue not found])])])])
+AC_SUBST(LIB_POSIX_MQ)
+
+LIB_POSIX_SEM=''
+AC_CHECK_FUNC(sem_open,,
+	[AC_CHECK_LIB(rt, sem_open, LIB_POSIX_SEM=-lrt,
+	[AC_CHECK_LIB(pthread, sem_open, LIB_POSIX_SEM=-lpthread,
+	[AC_CHECK_LIB(posix4, sem_open, LIB_POSIX_SEM=-lposix4,
+	[AC_MSG_ERROR([posix semaphore not found])])])])])
+AC_SUBST(LIB_POSIX_SEM)
 
 # Checks for header files.
 AC_HEADER_STDC
