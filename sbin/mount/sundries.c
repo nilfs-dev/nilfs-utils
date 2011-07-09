@@ -31,7 +31,6 @@
 #include <mntent.h>		/* for MNTTYPE_SWAP */
 #endif	/* HAVE_MNTENT_H */
 
-#include "fstab.h"
 #include "sundries.h"
 #include "realpath.h"
 //#include "nfsmount.h"
@@ -264,74 +263,4 @@ canonicalize (const char *path) {
 		return xstrdup(canonical);
 
 	return xstrdup(path);
-}
-
-/*
- * Following part was appended by Ryusuke Konishi <ryusuke@osrg.net>
- */
-int find_opt(const char *opts, const char *token, void *varp)
-{
-	char *opts2, *opt;
-	int res = -1;
-
-	if (!opts)
-		return res;
-
-	opts2 = xstrdup(opts);
-	opt = strtok(opts2, ",");
-	if (varp) {
-		while (opt) {
-			if (sscanf(opt, token, varp) == 1) {
-				res = opt - opts2;
-				break;
-			}
-			opt = strtok(NULL, ",");
-		}
-	} else {
-		int cmplen = strlen(token) + 1;
-		while (opt) {
-			if (!strncmp(opt, token, cmplen)) {
-				res = opt - opts2;
-				break;
-			}
-			opt = strtok(NULL, ",");
-		}
-	}
-	free(opts2);
-	return res;
-}
-
-char *change_opt(const char *opts, const char *token, void *varp,
-		 const char *instead)
-{
-	int ind = find_opt(opts, token, varp);
-	const char *ep;
-	char *newopts;
-
-	if (!instead)
-		instead = "";
-	if (ind >= 0) {
-		ep = opts + ind;
-		while (*ep != ',' && *ep != '\0')
-			ep++;
-
-		if (*instead == '\0') {
-			if (*ep == ',')
-				ep++;
-			else if (ind > 0)
-				ind--;
-		}
-		newopts = xmalloc(ind + strlen(instead) + strlen(ep) + 1);
-		memcpy(newopts, opts, ind);
-		strcpy(newopts + ind, instead);
-		strcat(newopts, ep);
-	} else if (opts == NULL || *opts == '\0') {
-		newopts = xstrdup(instead);
-	} else {
-		newopts = xstrdup(opts);
-		if (*instead != '\0')
-			newopts = xstrconcat3(newopts, ",", instead);
-	}
-
-	return newopts;
 }

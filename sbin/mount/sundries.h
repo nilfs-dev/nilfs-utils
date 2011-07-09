@@ -20,8 +20,6 @@
 #endif
 
 extern int mount_quiet;
-extern int verbose;
-extern int sloppy;
 
 #define streq(s, t)	(strcmp ((s), (t)) == 0)
 
@@ -37,8 +35,6 @@ char *xstrndup (const char *s, int n);
 char *xstrconcat2 (const char *, const char *);
 char *xstrconcat3 (const char *, const char *, const char *);
 char *xstrconcat4 (const char *, const char *, const char *, const char *);
-int find_opt(const char *, const char *, void *);
-char *change_opt(const char *, const char *, void *, const char *);
 
 void die (int errcode, const char *fmt, ...);
 

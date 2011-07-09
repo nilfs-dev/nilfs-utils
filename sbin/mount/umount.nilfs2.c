@@ -85,6 +85,7 @@
 #include "xmalloc.h"
 #include "mntent.h"
 #include "mount_constants.h"
+#include "mount_opts.h"
 #include "mount.nilfs2.h"
 #include "cleaner_exec.h"
 #include "nls.h"
@@ -92,6 +93,8 @@
 
 int verbose = 0;
 int mount_quiet = 0;
+int readonly = 0;
+int readwrite = 0;
 static int nomtab = 0;
 
 extern char *optarg;

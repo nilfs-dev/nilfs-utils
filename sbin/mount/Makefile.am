@@ -1,6 +1,6 @@
 ## Makefile.am
 
-COMMONSOURCES = fstab.c sundries.c xmalloc.c mntent.c
+COMMONSOURCES = fstab.c sundries.c xmalloc.c mntent.c mount_opts.c
 COMMONHEADERS = mount.nilfs2.h fstab.h sundries.h xmalloc.h mntent.h \
 	mount_constants.h mount_opts.h paths.h
 
@@ -11,7 +11,6 @@ LDADD = $(top_builddir)/lib/librealpath.la \
 
 sbin_PROGRAMS = mount.nilfs2 umount.nilfs2
 
-mount_nilfs2_SOURCES = mount.nilfs2.c mount_opts.c \
-	$(COMMONSOURCES) $(COMMONHEADERS)
+mount_nilfs2_SOURCES = mount.nilfs2.c $(COMMONSOURCES) $(COMMONHEADERS)
 
 umount_nilfs2_SOURCES = umount.nilfs2.c $(COMMONSOURCES) $(COMMONHEADERS)

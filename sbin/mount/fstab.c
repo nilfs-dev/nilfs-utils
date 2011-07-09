@@ -41,6 +41,7 @@
 
 #define PROC_MOUNTS		"/proc/mounts"
 
+extern int verbose;
 
 /* Information about mtab. ------------------------------------*/
 static int have_mtab_info = 0;
