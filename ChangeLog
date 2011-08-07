@@ -1,3 +1,11 @@
+nilfs-utils-2.1.0-rc2  Sun Aug  7, 2011 JST
+
+	* add libmount support
+	* automate selection of libraries for posix semaphore and mqueue
+	* fix autoreconf error caused by a lack of m4 directory
+	* fix gcc warnings
+	* update README file
+
 nilfs-utils-2.1.0-rc1  Mon May 30, 2011 JST
 
 	* add nilfs-clean program.
