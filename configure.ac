@@ -26,6 +26,14 @@ AC_PATH_PROG([LDCONFIG], [ldconfig],
 	[AC_MSG_ERROR([ldconfig not found])],
 	[$PATH:/sbin])
 
+# Check for options.
+AC_ARG_ENABLE(libmount,
+	[AC_HELP_STRING([--enable-libmount=[ARG]],
+			[Link mount.nilfs2 with libmount [ARG=yes] (EXPERIMENTAL)])],
+	[enable_libmount=$enableval],
+	[enable_libmount=no; \
+	 if test -L /etc/mtab; then enable_libmount=yes; fi])
+
 # Checks for libraries.
 AC_CHECK_LIB([uuid], [uuid_generate],
 	[AC_DEFINE([HAVE_LIBUUID], 1,
@@ -54,6 +62,15 @@ AC_CHECK_HEADERS([fcntl.h libintl.h limits.h locale.h mntent.h paths.h \
 		  stdlib.h string.h strings.h sys/ioctl.h sys/mount.h \
 		  sys/time.h syslog.h unistd.h linux/types.h grp.h pwd.h \
 		  mntent.h semaphore.h ctype.h mqueue.h linux/magic.h])
+
+# Check for conditional libraries and headers.
+if test "${enable_libmount}" = "yes"; then
+   AC_CHECK_LIB(mount, mnt_context_do_mount, [LIB_MOUNT="-lmount"],
+   	AC_MSG_ERROR([libmount needed]))
+   AC_CHECK_HEADERS([libmount/libmount.h])
+fi
+AM_CONDITIONAL(CONFIG_LIBMOUNT, [test "$enable_libmount" = "yes"])
+AC_SUBST(LIB_MOUNT)
 
 # Checks for typedefs, structures, and compiler characteristics.
 AC_C_CONST

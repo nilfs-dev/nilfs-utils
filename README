@@ -3,6 +3,16 @@
  $ ./configure
  $ make
 
+To link mount.nilfs2 and umount.nilfs2 helper programs with libmount
+library, install libmount-devel package and run the configure script
+with --enable-libmount option:
+
+ $ ./configure --enable-libmount
+ $ make
+
+If /etc/mtab is a symlink to /proc/mounts in your system, this option
+is set by default.
+
 * How to get development sources
 
  $ cd your-work-directory
