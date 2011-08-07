@@ -8,10 +8,16 @@ library, install libmount-devel package and run the configure script
 with --enable-libmount option:
 
  $ ./configure --enable-libmount
- $ make
 
-If /etc/mtab is a symlink to /proc/mounts in your system, this option
-is set by default.
+This option is set by default if /etc/mtab is a symlink to
+/proc/mounts in your system.
+
+If your system is a 64-bit architecture and libraries are installed
+into /usr/lib64 instead of /usr/lib, change the library directory with
+--libdir option:
+
+ $ ./configure --libdir=/usr/lib64
+
 
 * How to get development sources
 
