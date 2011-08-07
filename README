@@ -1,3 +1,8 @@
+* Required packages
+
+ - libuuid-devel or uuid-dev
+ - libmount-devel (fedora 14 and later)
+
 * How to compile
 
  $ ./configure
