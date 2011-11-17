@@ -33,6 +33,6 @@ Before compiling the development sources, you need to run
 autoconf/automake tools.  This is not required for packaged sources
 unless you changed the configuration.
  
- $ cd nilfs2-utils
+ $ cd nilfs-utils
  $ aclocal && autoheader && libtoolize -c --force && automake -a -c && autoconf
 
