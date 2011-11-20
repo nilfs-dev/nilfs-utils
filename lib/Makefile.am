@@ -65,4 +65,4 @@ libnilfscleaner_la_SOURCES = cleaner_ctl.c
 libnilfscleaner_la_CFLAGS = -Wall -fPIC
 libnilfscleaner_la_CPPFLAGS = -I$(top_srcdir)/include
 libnilfscleaner_la_LDFLAGS = -version-info $(cleanerctl_VERSIONINFO)
-libnilfscleaner_la_LIBADD = libcleanerexec.la $(LIB_POSIX_MQ) -luuid
+libnilfscleaner_la_LIBADD = librealpath.la libcleanerexec.la $(LIB_POSIX_MQ) -luuid
