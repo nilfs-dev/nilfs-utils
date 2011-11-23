@@ -1,3 +1,9 @@
+nilfs-utils-2.1.0  Wed Nov 23, 2011 JST
+
+	* fix build error due to missing dependency to myrealpath library
+	  from libnilfscleaner library.
+	* update README file.
+
 nilfs-utils-2.1.0-rc2  Sun Aug  7, 2011 JST
 
 	* add libmount support
