@@ -1,3 +1,8 @@
+nilfs-utils-2.0.24  Mon Dec 05, 2011 JST
+
+	* fix autoreconf error caused by a lack of m4 directory
+	* nilfs_cleanerd: fix move block errors on cpfile and sufile
+
 nilfs-utils-2.0.23  Sat Apr 30, 2011 JST
 
 	* make gc safe for duplicate invocation
