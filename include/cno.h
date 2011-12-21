@@ -10,6 +10,7 @@
 #ifndef NILFS_CNO_H
 #define NILFS_CNO_H
 
+extern nilfs_cno_t nilfs_parse_cno(const char *arg, char **endptr, int base);
 extern int nilfs_parse_cno_range(const char *arg, __u64 *start, __u64 *end,
 				 int base);
 

@@ -7,7 +7,7 @@ LDADD = $(top_builddir)/lib/libnilfs.la
 bin_PROGRAMS = chcp dumpseg lscp lssu mkcp rmcp
 
 chcp_SOURCES = chcp.c
-chcp_LDADD = $(LDADD) $(LIB_POSIX_SEM)
+chcp_LDADD = $(LDADD) $(LIB_POSIX_SEM) $(top_builddir)/lib/libcno.la
 
 dumpseg_SOURCES = dumpseg.c
 

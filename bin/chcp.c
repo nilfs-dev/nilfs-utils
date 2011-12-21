@@ -49,6 +49,7 @@
 #include <errno.h>
 #include <signal.h>
 #include "nilfs.h"
+#include "cno.h"
 
 
 #define CHCP_MODE_CP	"cp"
@@ -121,7 +122,7 @@ int main(int argc, char *argv[])
 		dev = NULL;
 	} else {
 		modestr = argv[optind++];
-		strtoul(argv[optind], &endptr, CHCP_BASE);
+		nilfs_parse_cno(argv[optind], &endptr, CHCP_BASE);
 		if (*endptr == '\0')
 			dev = NULL;
 		else
@@ -178,8 +179,8 @@ int main(int argc, char *argv[])
 			break;
 		}
 
-		cno = strtoul(argv[optind], &endptr, CHCP_BASE);
-		if (*endptr != '\0') {
+		cno = nilfs_parse_cno(argv[optind], &endptr, CHCP_BASE);
+		if (cno >= NILFS_CNO_MAX || *endptr != '\0') {
 			fprintf(stderr, "%s: %s: invalid checkpoint number\n",
 				progname, argv[optind]);
 			status = 1;

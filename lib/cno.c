@@ -35,7 +35,20 @@
 #endif	/* HAVE_STRING_H */
 
 #include <assert.h>
+#include <ctype.h>
 #include "nilfs.h"
+
+nilfs_cno_t nilfs_parse_cno(const char *arg, char **endptr, int base)
+{
+	/* ensure the number we are about to parse is not negative, which
+	 * strtoull() will happily accept and cast to an unsigned value. */
+	while (isspace(*arg))
+		arg++;
+	if (*arg == '-')
+		return NILFS_CNO_MAX;
+
+	return strtoull(arg, endptr, base);
+}
 
 int nilfs_parse_cno_range(const char *arg, __u64 *start, __u64 *end, int base)
 {
@@ -49,8 +62,8 @@ int nilfs_parse_cno_range(const char *arg, __u64 *start, __u64 *end, int base)
 	if (delim && delim == arg) {
 		if (arg[2] != '\0') {
 			/* ..yyy */
-			cno = strtoull(arg + 2, &endptr, base);
-			if (*endptr == '\0') {
+			cno = nilfs_parse_cno(arg + 2, &endptr, base);
+			if (cno < NILFS_CNO_MAX && *endptr == '\0') {
 				/* ..CNO */
 				*start = NILFS_CNO_MIN;
 				*end = cno;
@@ -59,24 +72,24 @@ int nilfs_parse_cno_range(const char *arg, __u64 *start, __u64 *end, int base)
 		}
 	} else if (!delim) {
 		/* xxx */
-		cno = strtoull(arg, &endptr, base);
-		if (*endptr == '\0') {
+		cno = nilfs_parse_cno(arg, &endptr, base);
+		if (cno < NILFS_CNO_MAX && *endptr == '\0') {
 			/* CNO */
 			*start = *end = cno;
 			return 0;
 		}
 	} else {
 		/* xxx..yyy */
-		cno = strtoull(arg, &endptr, base);
-		if (endptr == delim) {
+		cno = nilfs_parse_cno(arg, &endptr, base);
+		if (cno < NILFS_CNO_MAX && endptr == delim) {
 			if (delim[2] == '\0') {
 				/* CNO.. */
 				*start = cno;
 				*end = NILFS_CNO_MAX;
 				return 0;
 			}
-			cno2 = strtoull(delim + 2, &endptr, base);
-			if (*endptr == '\0') {
+			cno2 = nilfs_parse_cno(delim + 2, &endptr, base);
+			if (cno2 < NILFS_CNO_MAX && *endptr == '\0') {
 				/* CNO..CNO */
 				*start = cno;
 				*end = cno2;
