@@ -37,7 +37,7 @@ AC_ARG_ENABLE(libmount,
 # Checks for libraries.
 AC_CHECK_LIB([uuid], [uuid_generate],
 	[AC_DEFINE([HAVE_LIBUUID], 1,
-	  [Define to 1 if you have the `uuid' library (-luuid).])],
+	  [Define to 1 if you have the 'uuid' library (-luuid).])],
 	[AC_MSG_ERROR([UUID library not found])])
 
 LIB_POSIX_MQ=''
@@ -101,9 +101,9 @@ AC_FUNC_STRFTIME
 AC_FUNC_VPRINTF
 AC_CHECK_FUNC(posix_memalign,,
 	      [AC_MSG_ERROR([cannot find posix_memalign() function])])
-AC_CHECK_FUNCS([alarm atexit ftruncate getcwd gettimeofday localtime_r \
-		memmove memset munmap strchr strdup strerror strrchr strstr \
-		strtoul getgrgid getpwuid strcasecmp getmntent_r strtok_r])
+AC_CHECK_FUNCS([alarm atexit ftruncate getcwd getgrgid getmntent_r getpwuid \
+		gettimeofday localtime_r memmove memset munmap strcasecmp strchr \
+		strdup strerror strrchr strstr strtok_r strtoul strtoull])
 
 # Checks for system services
 AC_SYS_LARGEFILE
