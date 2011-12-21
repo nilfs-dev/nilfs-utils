@@ -183,8 +183,6 @@ static void complain(int err, const char *dev)
 		error(_("%s: %s: I/O error while unmounting"), progname, dev);
 		break;
 	case EBUSY:
-		/* Let us hope fstab has a line "proc /proc ..."
-		   and not "none /proc ..."*/
 		error(_("%s: %s: device is busy"), progname, dev);
 		break;
 	case ENOENT:
@@ -284,7 +282,7 @@ static int nilfs_umount_one(struct nilfs_umount_info *umi)
 	if (!mnt_context_is_fake(umi->cxt)) {
 		res = nilfs_do_umount_one(umi);
 		if (res) {
-			complain(-res, mnt_context_get_source(umi->cxt));
+			complain(res, mnt_context_get_source(umi->cxt));
 			goto failed;
 		}
 	}
