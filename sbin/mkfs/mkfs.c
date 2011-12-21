@@ -72,8 +72,9 @@
 
 #include <errno.h>
 
-#include "mkfs.h"
+#include "nilfs.h"
 #include "nilfs_feature.h"
+#include "mkfs.h"
 
 
 typedef __u64  blocknr_t;

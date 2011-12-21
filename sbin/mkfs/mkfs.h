@@ -24,7 +24,6 @@
  * Revised by Ryusuke Konishi <ryusuke@osrg.net>.
  */
 
-#include "kern_compat.h"
 #include "nilfs2_fs.h"
 
 #define NILFS_DISKHDR_SIZE 		4096 /* HDD header (MBR+superblock) */
@@ -40,9 +39,6 @@
 							  interval: 180 days */
 #define NILFS_DEF_RESERVED_SEGMENTS     5    /* default percentage of reserved
 						segments: 5% */
-
-#define NILFS_CNO_MIN   1
-#define NILFS_CNO_MAX   (~(__u64)0)
 
 #define NILFS_MAX_BMAP_ROOT_PTRS	(NILFS_INODE_BMAP_SIZE - 1)
 #define NILFS_MIN_BLOCKSIZE		1024
