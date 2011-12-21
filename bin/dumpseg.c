@@ -211,7 +211,7 @@ int main(int argc, char *argv[])
 		fprintf(stderr, "%s: too few arguments\n", progname);
 		exit(1);
 	} else {
-		strtoul(argv[optind], &endptr, DUMPSEG_BASE);
+		strtoull(argv[optind], &endptr, DUMPSEG_BASE);
 		if (*endptr == '\0')
 			dev = NULL;
 		else
@@ -229,7 +229,7 @@ int main(int argc, char *argv[])
 
 	status = 0;
 	for (i = optind; i < argc; i++) {
-		segnum = strtoul(argv[i], &endptr, DUMPSEG_BASE);
+		segnum = strtoull(argv[i], &endptr, DUMPSEG_BASE);
 		if (*endptr != '\0') {
 			fprintf(stderr, "%s: %s: invalid segment number\n",
 				progname, argv[i]);

@@ -331,7 +331,7 @@ static int nilfs_clean_parse_protection_period(const char *arg)
 	char *endptr;
 	int ret = 0;
 
-	period = strtoul(arg, &endptr, 10);
+	period = strtoull(arg, &endptr, 10);
 	if (endptr == arg) {
 		myprintf(_("Error: invalid protection period: %s\n"), arg);
 		ret = -1;
