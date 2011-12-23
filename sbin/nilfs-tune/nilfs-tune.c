@@ -187,6 +187,12 @@ static void parse_options(int argc, char *argv[],
 			exit(EXIT_FAILURE);
 		}
 	}
+
+	if (optind == argc)
+	{
+		nilfs_tune_usage();
+		exit(EXIT_FAILURE);
+	}
 }
 
 #define MINUTE	(60)
