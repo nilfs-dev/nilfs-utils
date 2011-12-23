@@ -100,7 +100,7 @@ const static __u64 clear_ok_features[NILFS_MAX_FEATURE_TYPES] = {
 	0
 };
 
-int parse_uuid(const char *uuid_string, __u8 *uuid)
+static int parse_uuid(const char *uuid_string, __u8 *uuid)
 {
 	int i;
 	char p[3];
@@ -126,7 +126,8 @@ int parse_uuid(const char *uuid_string, __u8 *uuid)
 	return 0;
 }
 
-void parse_options(int argc, char *argv[], struct nilfs_tune_options *opts)
+static void parse_options(int argc, char *argv[],
+		struct nilfs_tune_options *opts)
 {
 	int c;
 	opts->flags = O_RDONLY;
@@ -274,7 +275,7 @@ static const char *group_string(gid_t gid)
 	return buf;
 }
 
-static const char *uuid_string(unsigned char *uuid)
+static const char *uuid_string(const unsigned char *uuid)
 {
 	static char buf[256];
 
@@ -349,7 +350,7 @@ static void print_features(FILE *f, struct nilfs_super_block *sbp)
 	fputs("\n", f);
 }
 
-void show_nilfs_sb(struct nilfs_super_block *sbp)
+static void show_nilfs_sb(struct nilfs_super_block *sbp)
 {
 	char label[sizeof(sbp->s_volume_name) + 1];
 	gid_t gid;
@@ -491,7 +492,7 @@ static int update_feature_set(struct nilfs_super_block *sbp,
 	return ret;
 }
 
-int modify_nilfs(char *device, struct nilfs_tune_options *opts)
+static int modify_nilfs(const char *device, struct nilfs_tune_options *opts)
 {
 	int devfd;
 	int ret = EXIT_SUCCESS;
@@ -563,7 +564,7 @@ out:
 int main(int argc, char *argv[])
 {
 	struct nilfs_tune_options opts;
-	char *device;
+	const char *device;
 
 	printf("nilfs-tune %s\n", VERSION);
 	if (argc < 2) {
