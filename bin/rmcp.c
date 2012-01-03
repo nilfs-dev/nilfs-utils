@@ -105,7 +105,7 @@ static int rmcp_remove_range(struct nilfs *nilfs,
 			nd++;
 			continue;
 		}
-		if (errno == EBUSY || errno == EPERM) {
+		if (errno == EBUSY) {
 			nss++;
 			if (!force) {
 				fprintf(stderr,
@@ -115,7 +115,10 @@ static int rmcp_remove_range(struct nilfs *nilfs,
 		} else if (errno == ENOENT) {
 			nocp++;
 		} else {
-			fprintf(stderr, "%s: %s\n", progname, strerror(errno));
+			fprintf(stderr,
+				"%s: %llu: cannot remove checkpoint: %s\n",
+				progname, (unsigned long long)cno,
+				strerror(errno));
 			ret = -1;
 			goto out;
 		}
@@ -237,8 +240,10 @@ int main(int argc, char *argv[])
 			continue;
 
 		status = 1;
-		if (ret < 0)
+		if (ret < 0) {
+			fprintf(stderr, "Remaining checkpoints were not removed.\n");
 			break;
+		}
 
 		if (force || ndel != 0 || end - start + 1 - nss == 0)
 			continue;
