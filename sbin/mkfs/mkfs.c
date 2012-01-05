@@ -647,7 +647,7 @@ int main(int argc, char *argv[])
 	write_disk(fd, di); /* Writing to the device */
 
 	close(fd);
-	exit(0);
+	exit(EXIT_SUCCESS);
 }
 
 /*
@@ -692,7 +692,7 @@ static void disk_scan(const char *device)
 		args[i++] = device;
 		args[i] = NULL;
 		execv(badblocks, (char **)args);
-		exit(1); /* reach only if failed */
+		exit(EXIT_FAILURE); /* reach only if failed */
 	} else if (pid != -1) {
 		if (wait(&status) < 0)
 			perr("Error: cannot wait child");
@@ -973,7 +973,7 @@ static void parse_options(int argc, char *argv[])
 	int c, show_version_only = 0;
 	char *fs_features = NULL;
 
-	while ((c = getopt(argc, argv, "b:B:cKL:m:nqvO:P:V")) != EOF) {
+	while ((c = getopt(argc, argv, "b:B:chKL:m:nqvO:P:V")) != EOF) {
 		switch (c) {
 		case 'b':
 			blocksize = atol(optarg);
@@ -985,6 +985,9 @@ static void parse_options(int argc, char *argv[])
 		case 'c':
 			cflag++;
 			break;
+		case 'h':
+			usage();
+			exit(EXIT_SUCCESS);
 		case 'K':
 			discard = 0;
 			break;
@@ -1015,6 +1018,7 @@ static void parse_options(int argc, char *argv[])
 			break;
 		default:
 			usage();
+			exit(EXIT_FAILURE);
 		}
 	}
 
@@ -1022,11 +1026,15 @@ static void parse_options(int argc, char *argv[])
 		verbose = 0;
 
 	if ((optind == argc) && !show_version_only)
+	{
+		printf("%d %d\n", optind, argc);
 		usage();
+		exit(EXIT_FAILURE);
+	}
 
 	if (show_version_only) {
 		show_version();
-		exit(0);
+		exit(EXIT_SUCCESS);
 	}
 
 	check_blocks_per_segment(blocks_per_segment);
@@ -1049,11 +1057,10 @@ static void usage(void)
 {
 	fprintf(stderr,
 		"Usage: %s [-b block-size] [-B blocks-per-segment] [-c] \n"
-		"[-L volume-label] [-m reserved-segments-percentage] \n"
-		"[-O feature[,...]] \n"
-		"[-nqvKV] device\n",
+		"       [-L volume-label] [-m reserved-segments-percentage] \n"
+		"       [-O feature[,...]] \n"
+		"       [-hnqvKV] device\n",
 		progname);
-	exit(1);
 }
 
 static void show_version(void)
@@ -1080,7 +1087,7 @@ static void perr(const char *fmt, ...)
 	vfprintf(stderr, fmt, args);
 	fprintf(stderr, "\n");
 	va_end(args);
-	exit(1);
+	exit(EXIT_FAILURE);
 }
 
 static void cannot_rw_device(int fd, const char *device, int rw)
