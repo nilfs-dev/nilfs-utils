@@ -203,7 +203,7 @@ nilfs-utils-2.0.8  Thu Feb 19, 2009 JST
 	* cleanerd uses a sequence counter instead of volatile active
 	  state of segments to checks whether a given segment is not
 	  unreclaimable.
-	
+
 nilfs-utils-2.0.7  Wed Feb 11, 2009 JST
 
 	* fix possible infinite loop in lscp.
@@ -242,7 +242,7 @@ nilfs-utils-2.0.4  Fri Jun 20, 2008 JST
 	* apply the patch that renames a member prefix of struct nilfs_suinfo
 	  in nilfs_fs.h, which was required to avoid a compile-time error
 	  of the nilfs2 kernel module on IA64 machines.
-	
+
 nilfs-utils-2.0.3  Thu May 22, 2008 JST
 
 	* fix the problem of 'make dist-bzip2' that it produces a tarball
@@ -284,10 +284,10 @@ nilfs-utils-2.0.0-testing-9  Wed Feb 13, 2008 JST
 nilfs-utils-2.0.0-testing-8  Thu Dec 27, 2007 JST
 
 nilfs-utils-2.0.0-testing-7  Thu Nov 29, 2007 JST
-	
+
 	* add cast for 64bit environment.
 	* modify some error messages.
-	
+
 nilfs-utils-2.0.0-testing-6  Mon Oct 22, 2007 JST
 
 	* Changed the message of "No such device" error printed by mount.nilfs2
@@ -314,12 +314,12 @@ nilfs-utils-2.0.0-testing-3  Tue Jul 24, 2007 JST
 	  Signed-off-by: Thomas Petazzoni <thomas.petazzoni@enix.org>
 
 nilfs-utils-2.0.0-testing-2  Tue Jun 20, 2007 JST
-	
+
 	* Fixed a problem that the lscp and other userland tools might
 	  fail on Ubuntu 6 if a samba mounted partition exists.
 
 nilfs-utils-2.0.0-testing  Wed Jun 13, 2007 JST
-	
+
 	* The first release.
 	* Implemented the Garbage Collector.
 	* Rewrote almost all of the source code.
