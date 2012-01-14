@@ -6,7 +6,7 @@ dnl Copyright (C) 2007-2011 Nippon Telegraph and Telephone Corporation.
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ(2.60)
-AC_INIT(NILFS utils, 2.1.0, linux-nilfs@vger.kernel.org)
+AC_INIT(NILFS utils, 2.1.1, linux-nilfs@vger.kernel.org)
 AM_INIT_AUTOMAKE
 AC_CONFIG_SRCDIR([config.h.in])
 AC_CONFIG_HEADER([config.h])

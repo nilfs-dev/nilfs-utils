@@ -1,3 +1,15 @@
+nilfs-utils-2.1.1  Sat Jan 14, 2012 JST
+
+	* umount.nilfs2 (libmount): send proper error code to complain function
+	* rmcp: print sensible error message on permission failure
+	* nilfs-tune: catch and handle missing device argument
+	* correct parser function use for 64-bit integer inputs
+	* rmcp/chcp: sanity check for positive checkpoint number
+	* mkfs.nilfs2: support -h command line option
+	* Add .gitignore rules for generated binaries
+	* Remove kern_compat.h
+	* cleanups
+
 nilfs-utils-2.1.0  Wed Nov 23, 2011 JST
 
 	* fix build error due to missing dependency to myrealpath library
