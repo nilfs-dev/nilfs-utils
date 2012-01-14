@@ -35,6 +35,16 @@ The primary authors work at Cyberspace Labs at NTT Corporation.
 - Initial development
 
 Other contributors:
+* Dan McGee <dan@archlinux.org>
+Dec 21, 2011: bunch of fixes and cleanups including:
+    - corrected error code propagation of umount.nilfs2 (libmount version)
+    - improved error message for permission failure of rmcp command
+    - sanity check for positive checkpoint number
+    - proper parser routine use for 64-bit integer inputs
+    - removal of kern_compat.h
+    - and so forth.
+Jan 5, 2012: add -h command line option to mkfs.nilfs2
+
 * David Arendt <admin@prnet.org>
 March 29, 2010: added cleaning functions based on the number of free segments
 March 29, 2010: added mount option to disable garbage collection
