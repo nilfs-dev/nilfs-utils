@@ -377,7 +377,8 @@ nilfs_cleanerd_create(const char *dev, const char *dir, const char *conffile)
 
 	cleanerd->cnoconv = nilfs_cnoconv_create(cleanerd->nilfs);
 	if (cleanerd->cnoconv == NULL) {
-		syslog(LOG_ERR, "cannot create open nilfs on %s: %m", dev);
+		syslog(LOG_ERR, "failed to create checkpoint number converter "
+		       ": %m");
 		goto out_nilfs;
 	}
 
