@@ -266,7 +266,7 @@ char *fix_opts_string(int flags, const char *extra_opts, const char *user)
 }
 
 /*
- * Following part was appended by Ryusuke Konishi <ryusuke@osrg.net>
+ * Following part was appended by Ryusuke Konishi <konishi.ryusuke@lab.ntt.co.jp>
  */
 int find_opt(const char *opts, const char *token, void *varp)
 {

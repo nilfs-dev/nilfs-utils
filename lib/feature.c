@@ -1,7 +1,7 @@
 /*
  * feature.c - NILFS features set routines
  *
- * Copyright (C) 2011 Nippon Telegraph and Telephone Corporation.
+ * Copyright (C) 2011-2012 Nippon Telegraph and Telephone Corporation.
  *
  * This program can be redistributed under the terms of the GNU Lesser
  * General Public License.

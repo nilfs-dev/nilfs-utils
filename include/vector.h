@@ -1,7 +1,7 @@
 /*
  * vector.h - resizable array
  *
- * Copyright (C) 2007-2011 Nippon Telegraph and Telephone Corporation.
+ * Copyright (C) 2007-2012 Nippon Telegraph and Telephone Corporation.
  *
  * Licensed under LGPLv2: the complete text of the GNU Lesser General
  * Public License can be found in COPYING file of the nilfs-utils

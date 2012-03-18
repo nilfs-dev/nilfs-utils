@@ -1,7 +1,7 @@
 /*
  * mount_attrs.c - NILFS mount attribute functions for libmount version
  *
- * Copyright (C) 2011 Nippon Telegraph and Telephone Corporation.
+ * Copyright (C) 2011-2012 Nippon Telegraph and Telephone Corporation.
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public

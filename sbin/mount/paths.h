@@ -3,7 +3,7 @@
  *
  * Code borrowed from util-linux-2.12r/mount/paths.h
  *
- * modified by Ryusuke Konishi <ryusuke@osrg.net>
+ * modified by Ryusuke Konishi <konishi.ryusuke@lab.ntt.co.jp>
  */
 
 #ifndef _MY_PATHS_H

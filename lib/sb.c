@@ -1,7 +1,7 @@
 /*
  * sb.c - NILFS super block access library
  *
- * Copyright (C) 2005-2010 Nippon Telegraph and Telephone Corporation.
+ * Copyright (C) 2005-2012 Nippon Telegraph and Telephone Corporation.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published
@@ -17,7 +17,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  *
- * Written by Ryusuke Konishi <ryusuke@osrg.net>.
+ * Written by Ryusuke Konishi <konishi.ryusuke@lab.ntt.co.jp>.
  */
 
 #ifdef HAVE_CONFIG_H

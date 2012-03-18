@@ -1,6 +1,6 @@
 dnl configure.ac
 dnl
-dnl Copyright (C) 2007-2011 Nippon Telegraph and Telephone Corporation.
+dnl Copyright (C) 2007-2012 Nippon Telegraph and Telephone Corporation.
 
 #                                               -*- Autoconf -*-
 # Process this file with autoconf to produce a configure script.

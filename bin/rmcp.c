@@ -1,7 +1,7 @@
 /*
  * rmcp.c - NILFS command of removing checkpoints.
  *
- * Copyright (C) 2007-2009 Nippon Telegraph and Telephone Corporation.
+ * Copyright (C) 2007-2012 Nippon Telegraph and Telephone Corporation.
  *
  * This file is part of NILFS.
  *
@@ -20,7 +20,7 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  *
  * Written by Koji Sato <koji@osrg.net>,
- *            Ryusuke Konishi <ryusuke@osrg.net>.
+ *            Ryusuke Konishi <konishi.ryusuke@lab.ntt.co.jp>.
  */
 
 #ifdef HAVE_CONFIG_H

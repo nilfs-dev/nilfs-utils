@@ -1,7 +1,7 @@
 /*
  * mkfs.h - NILFS newfs (mkfs.nilfs2), declarations
  *
- * Copyright (C) 2005-2007 Nippon Telegraph and Telephone Corporation.
+ * Copyright (C) 2005-2012 Nippon Telegraph and Telephone Corporation.
  *
  * This file is part of NILFS.
  *
@@ -21,7 +21,7 @@
  *
  * Written by Hisashi Hifumi <hifumi@osrg.net>,
  *            Amagai Yoshiji <amagai@osrg.net>.
- * Revised by Ryusuke Konishi <ryusuke@osrg.net>.
+ * Revised by Ryusuke Konishi <konishi.ryusuke@lab.ntt.co.jp>.
  */
 
 #include "nilfs2_fs.h"

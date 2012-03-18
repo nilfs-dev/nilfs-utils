@@ -1,7 +1,7 @@
 /*
  * cldconfig.h - Configuration file of NILFS cleaner daemon.
  *
- * Copyright (C) 2007 Nippon Telegraph and Telephone Corporation.
+ * Copyright (C) 2007-2012 Nippon Telegraph and Telephone Corporation.
  *
  * This file is part of NILFS.
  *
@@ -21,7 +21,7 @@
  *
  * Written by Koji Sato <koji@osrg.net>.
  *
- * Maintained by Ryusuke Konishi <ryusuke@osrg.net> from 2008.
+ * Maintained by Ryusuke Konishi <konishi.ryusuke@lab.ntt.co.jp> from 2008.
  */
 
 #ifndef CLDCONFIG_H

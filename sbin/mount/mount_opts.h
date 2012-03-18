@@ -3,7 +3,7 @@
  *
  * Code extracted from util-linux-2.12r/mount/mount.c
  *
- * modified by Ryusuke Konishi <ryusuke@osrg.net>
+ * modified by Ryusuke Konishi <konishi.ryusuke@lab.ntt.co.jp>
  */
 #ifndef _MOUNT_OPTS_H
 #define _MOUNT_OPTS_H

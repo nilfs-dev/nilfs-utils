@@ -1,7 +1,7 @@
 /*
  * cno.h - checkpoint number library
  *
- * Copyright (C) 2005-2011 Nippon Telegraph and Telephone Corporation.
+ * Copyright (C) 2005-2012 Nippon Telegraph and Telephone Corporation.
  *
  * This program can be redistributed under the terms of the GNU Lesser
  * General Public License.

@@ -1,7 +1,7 @@
 /*
  * cleanerd.c - NILFS cleaner daemon.
  *
- * Copyright (C) 2007-2011 Nippon Telegraph and Telephone Corporation.
+ * Copyright (C) 2007-2012 Nippon Telegraph and Telephone Corporation.
  *
  * This file is part of NILFS.
  *

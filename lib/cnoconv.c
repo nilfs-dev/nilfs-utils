@@ -5,7 +5,7 @@
  * Public License can be found in COPYING file of the nilfs-utils
  * package.
  *
- * Copyright (C) 2008-2011 Nippon Telegraph and Telephone Corporation.
+ * Copyright (C) 2008-2012 Nippon Telegraph and Telephone Corporation.
  */
 #ifdef HAVE_CONFIG_H
 #include "config.h"
