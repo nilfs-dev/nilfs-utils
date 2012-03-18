@@ -88,13 +88,13 @@ filesystem options, see \fBmount\fP(8).
 The following options apply only to the NILFS2 filesystem.  They all
 follow the \fB\-o\fP flag.
 .TP
-.BR nobarrier
-Disable barrier writes for the block I/O to a lower
-device.  The barrier write serves an important role to ensure
-consistency of filesystems after a system crash or power failure.
-NILFS2 uses this feature by default to assure the reliability.  For
-devices not supporting the barrier write, it will be disabled
-automatically and a warning will be logged.
+.BR barrier " / " nobarrier
+These options enable/disable (default is enabled) barrier writes for
+the block I/O to a lower device.  The barrier write serves an
+important role to ensure consistency of filesystems after a system
+crash or power failure.  NILFS2 uses this feature by default to assure
+the reliability.  For devices not supporting the barrier write, it
+will be disabled automatically and a warning will be logged.
 .TP
 .BR cp=\fP\fIcheckpoint-number\fP
 Specify the \fIcheckpoint-number\fP of the snapshot to be mounted.
@@ -148,10 +148,11 @@ Disable recovery of the filesystem on mount.  This disables every
 write access on the device for read-only mounts or snapshots.  This
 option will fail for r/w mounts on an unclean volume.
 .TP
-.BR discard
-Enable the use of discard/TRIM commands.  The discard/TRIM commands are
-sent to the underlying block device when blocks are freed.  This is
-useful for SSD devices and sparse/thinly-provisioned LUNs. (since 2.6.34)
+.BR discard " / " nodiscard
+These options enable/disable (default is disabled) the use of
+discard/TRIM commands.  The discard/TRIM commands are sent to the
+underlying block device when blocks are freed.  This is useful for SSD
+devices and sparse/thinly-provisioned LUNs. (since 2.6.34).
 .SH RETURN CODES
 The return codes of \fBmount.nilfs2\fP conform to those of
 \fBmount\fP(8); the following codes could be returned (the bits can be
