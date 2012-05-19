@@ -378,7 +378,6 @@ static int nilfs_vdesc_is_live(const struct nilfs_vdesc *vdesc,
 			       size_t n)
 {
 	long low, high, index;
-	int s;
 
 	if (vdesc->vd_cno == 0) {
 		/*
@@ -401,25 +400,20 @@ static int nilfs_vdesc_is_live(const struct nilfs_vdesc *vdesc,
 	low = 0;
 	high = n - 1;
 	index = 0;
-	s = 0;
 	while (low <= high) {
 		index = (low + high) / 2;
-		if (ss[index] == vdesc->vd_period.p_start) {
-			goto out;
-		} else if (ss[index] < vdesc->vd_period.p_start) {
-			s = -1;
+		if (ss[index] < vdesc->vd_period.p_start) {
+			/* drop snapshot numbers ss[low] .. ss[index] */
 			low = index + 1;
-		} else {
-			s = 1;
+		} else if (ss[index] >= vdesc->vd_period.p_end) {
+			/* drop snapshot numbers ss[index] .. ss[high] */
 			high = index - 1;
+		} else {
+			/* ss[index] is in the range [p_start, p_end) */
+			return 1;
 		}
 	}
-	/* adjust index */
-	if (s < 0)
-		index++;
-
- out:
-	return ss[index] < vdesc->vd_period.p_end;
+	return 0;
 }
 
 /**
