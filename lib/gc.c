@@ -451,15 +451,30 @@ static int nilfs_toss_vdescs(struct nilfs *nilfs,
 			if (nilfs_vdesc_is_live(vdesc, protcno, ss, n)) {
 				break;
 			}
-			if ((periodp =
-			     nilfs_vector_get_new_element(periodv)) == NULL ||
-			    (vblocknrp =
-			     nilfs_vector_get_new_element(vblocknrv)) == NULL) {
+
+			/*
+			 * Add the virtual block number to the canditate
+			 * for deletion.
+			 */
+			vblocknrp = nilfs_vector_get_new_element(vblocknrv);
+			if (!vblocknrp) {
 				ret = -1;
 				goto out;
 			}
-			*periodp = vdesc->vd_period;
 			*vblocknrp = vdesc->vd_vblocknr;
+		
+			/*
+			 * Add the period to the candidate for deletion
+			 * unless the file is cpfile or sufile.
+			 */
+			if (vdesc->vd_cno != 0) {
+				periodp = nilfs_vector_get_new_element(periodv);
+				if (!periodp) {
+					ret = -1;
+					goto out;
+				}
+				*periodp = vdesc->vd_period;
+			}
 		}
 		if (j > i)
 			nilfs_vector_delete_elements(vdescv, i, j - i);
