@@ -1,3 +1,14 @@
+nilfs-utils-2.1.2  Sat Jun 2, 2012 JST
+
+	* libnilfsgc: fix broken live/dead determination function
+	* libnilfsgc: do not add live duration of cpfile/sufile to removal
+	  periods
+	* mount.nilfs2.8: add missing nobarrier/nodiscard options
+	* update years in copyright notice
+	* fix a typo in nilfs-clean manpage
+	* improve error message printed when failing to create checkpoint
+	  number converter.
+
 nilfs-utils-2.1.1  Sat Jan 14, 2012 JST
 
 	* umount.nilfs2 (libmount): send proper error code to complain function
