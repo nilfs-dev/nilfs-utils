@@ -326,7 +326,7 @@ static ssize_t nilfs_get_snapshot(struct nilfs *nilfs, nilfs_cno_t **ssp)
 {
 	struct nilfs_cpstat cpstat;
 	struct nilfs_cpinfo cpinfo[NILFS_GC_NCPINFO];
-	nilfs_cno_t cno, *ss;
+	nilfs_cno_t cno, *ss, prev = 0;
 	ssize_t n;
 	__u64 nss = 0;
 	int i, j;
@@ -350,8 +350,22 @@ static ssize_t nilfs_get_snapshot(struct nilfs *nilfs, nilfs_cno_t **ssp)
 		}
 		if (n == 0)
 			break;
-		for (j = 0; j < n; j++)
+		for (j = 0; j < n; j++) {
 			ss[i + j] = cpinfo[j].ci_cno;
+			if (prev >= ss[i + j]) {
+				nilfs_gc_logger
+					(LOG_ERR,
+					 "broken snapshot information. "
+					 "snapshot numbers apeared in a "
+					 "non-ascending order: %llu >= %llu",
+					 (unsigned long long)prev,
+					 (unsigned long long)ss[i + j]);
+				free(ss);
+				errno = EIO;
+				return -1;
+			}
+			prev = ss[i + j];
+		}
 		nss += n;
 		cno = cpinfo[n - 1].ci_next;
 		if (cno == 0)
