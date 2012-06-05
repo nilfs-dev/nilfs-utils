@@ -386,10 +386,11 @@ static ssize_t nilfs_get_snapshot(struct nilfs *nilfs, nilfs_cno_t **ssp)
  * @protect: the minimum of checkpoint numbers to be protected
  * @ss: checkpoint numbers of snapshots
  * @n: size of @ss array
+ * @last_hit: the last snapshot number hit
  */
 static int nilfs_vdesc_is_live(const struct nilfs_vdesc *vdesc,
 			       nilfs_cno_t protect, const nilfs_cno_t *ss,
-			       size_t n)
+			       size_t n, nilfs_cno_t *last_hit)
 {
 	long low, high, index;
 
@@ -411,6 +412,11 @@ static int nilfs_vdesc_is_live(const struct nilfs_vdesc *vdesc,
 	    vdesc->vd_period.p_end <= ss[0])
 		return 0;
 
+	/* Try the last hit snapshot number */
+	if (*last_hit >= vdesc->vd_period.p_start &&
+	    *last_hit < vdesc->vd_period.p_end)
+		return 1;
+
 	low = 0;
 	high = n - 1;
 	index = 0;
@@ -424,6 +430,7 @@ static int nilfs_vdesc_is_live(const struct nilfs_vdesc *vdesc,
 			high = index - 1;
 		} else {
 			/* ss[index] is in the range [p_start, p_end) */
+			*last_hit = ss[index];
 			return 1;
 		}
 	}
@@ -450,7 +457,7 @@ static int nilfs_toss_vdescs(struct nilfs *nilfs,
 	struct nilfs_vdesc *vdesc;
 	struct nilfs_period *periodp;
 	__u64 *vblocknrp;
-	nilfs_cno_t *ss;
+	nilfs_cno_t *ss, last_hit;
 	ssize_t n;
 	int i, j, ret;
 
@@ -458,13 +465,14 @@ static int nilfs_toss_vdescs(struct nilfs *nilfs,
 	if ((n = nilfs_get_snapshot(nilfs, &ss)) < 0)
 		return n;
 
+	last_hit = 0;
 	for (i = 0; i < nilfs_vector_get_size(vdescv); i++) {
 		for (j = i; j < nilfs_vector_get_size(vdescv); j++) {
 			vdesc = nilfs_vector_get_element(vdescv, j);
 			assert(vdesc != NULL);
-			if (nilfs_vdesc_is_live(vdesc, protcno, ss, n)) {
+			if (nilfs_vdesc_is_live(vdesc, protcno, ss, n,
+						&last_hit))
 				break;
-			}
 
 			/*
 			 * Add the virtual block number to the canditate
