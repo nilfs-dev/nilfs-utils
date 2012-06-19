@@ -2,6 +2,9 @@
  * fstab.h - declarations for fstab/mtab related functions
  *
  * Code borrowed from util-linux-2.12r/mount/fstab.h
+ *
+ * Jun 19 2012
+ * - merged bug fixes from util-linux-2.17.2
  */
 #include "mount_mntent.h"
 int mtab_is_writable(void);

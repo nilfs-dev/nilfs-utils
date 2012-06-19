@@ -2,6 +2,9 @@
  * fstab.c - fstab/mtab related functions
  *
  * Code borrowed from util-linux-2.12r/mount/fstab.c
+ *
+ * Jun 19 2012
+ * - merged bug fixes from util-linux-2.17.2
  */
 /* 1999-02-22 Arkadiusz Mi¶kiewicz <misiek@pld.ORG.PL>
  * - added Native Language Support
