@@ -1,3 +1,14 @@
+nilfs-utils-2.1.3  Wed Jun 20, 2012 JST
+
+	* Imported mtab fixes from util-linux-2.17.2 including mtab lock
+	  fix, memory usage fix, list logic fix in update_mtab, permission
+	  fix on locktime, and so forth.
+	* nilfs_cleanerd: try to update log cursor when gc aborted
+	  due to hitting protected segments.
+	* libnilfsgc: try the last hit snapshot number in live/dead
+	  determination
+	* libnilfsgc: insert sanity check for snapshot numbers
+
 nilfs-utils-2.1.2  Sat Jun 2, 2012 JST
 
 	* libnilfsgc: fix broken live/dead determination function
