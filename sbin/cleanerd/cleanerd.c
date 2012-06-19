@@ -140,6 +140,7 @@ const static struct option long_option[] = {
  * @conffile: configuration file name
  * @running: running state
  * @fallback: fallback state
+ * @retry_cleaning: retrying reclamation for protected segments
  * @ncleansegs: number of semgents cleaned per cycle
  * @cleaning_interval: cleaning interval
  * @target: target time for sleeping
@@ -165,6 +166,7 @@ struct nilfs_cleanerd {
 	char *conffile;
 	int running;
 	int fallback;
+	int retry_cleaning;
 	int shutdown;
 	long ncleansegs;
 	struct timeval cleaning_interval;
@@ -463,9 +465,14 @@ nilfs_cleanerd_reduce_ncleansegs_for_retry(struct nilfs_cleanerd *cleanerd)
 	}
 }
 
-#if 0
+/**
+ * nilfs_segment_is_protected - test if the segment is in protected region
+ * @nilfs: nilfs object
+ * @segnum: segment number to be tested
+ * @protseq: lower limit of sequence numbers of protected segments
+ */
 static int nilfs_segment_is_protected(struct nilfs *nilfs, __u64 segnum,
-				      struct nilfs_sustat *sustat)
+				      __u64 protseq)
 {
 	void *segment;
 	__u64 segseq;
@@ -475,12 +482,65 @@ static int nilfs_segment_is_protected(struct nilfs *nilfs, __u64 segnum,
 		return -1;
 
 	segseq = nilfs_get_segment_seqnum(nilfs, segment, segnum);
-	if (nilfs_cnt64_ge(segseq, sustat->ss_prot_seq))
+	if (nilfs_cnt64_ge(segseq, protseq))
 		ret = 1;
 	nilfs_put_segment(nilfs, segment);
 	return ret;
 }
+
+/**
+ * nilfs_segments_still_reclaimable - examine if segments are still reclaimable
+ * @nilfs: nilfs object
+ * @segnumv: array of segment numbers
+ * @nsegs: number of segment numbers stored in @segnumv
+ * @protseq: lower limit of sequence numbers of protected segments
+ */
+static int nilfs_segments_still_reclaimable(struct nilfs *nilfs,
+					    __u64 *segnumv,
+					    unsigned long nsegs,
+					    __u64 protseq)
+{
+	struct nilfs_suinfo si;
+	int i, ret;
+
+	for (i = 0; i < nsegs; i++) {
+		if (nilfs_get_suinfo(nilfs, segnumv[i], &si, 1) == 1 &&
+		    !nilfs_suinfo_reclaimable(&si))
+			continue;
+
+		ret = nilfs_segment_is_protected(nilfs, segnumv[i], protseq);
+		if (ret > 0)
+			return 1;
+	}
+	return 0;
+}
+
+#ifndef FIFREEZE
+#define FIFREEZE 	_IOWR('X', 119, int)
+#define FITHAW		_IOWR('X', 120, int)
 #endif
+
+/**
+ * nilfs_shrink_protected_region - shrink region of protected segments
+ * @nilfs: nilfs object
+ *
+ * This tries to update log cursor written in superblocks to make
+ * protected segments reclaimable.
+ */
+static int nilfs_shrink_protected_region(struct nilfs *nilfs)
+{
+	nilfs_cno_t cno;
+	int arg = 0;
+	int ret = -1;
+
+	nilfs_sync(nilfs, &cno);
+
+	if (ioctl(nilfs->n_iocfd, FIFREEZE, &arg) == 0 &&
+	    ioctl(nilfs->n_iocfd, FITHAW, &arg) == 0)
+		ret = 0;
+
+	return ret;
+}
 
 /**
  * nilfs_cleanerd_select_segments - select segments to be reclaimed
@@ -722,7 +782,8 @@ static int nilfs_cleanerd_recalc_interval(struct nilfs_cleanerd *cleanerd,
 		return -1;
 	}
 
-	if (nchosen == 0 || (!cleanerd->fallback && ndone == 0)) {
+	if (nchosen == 0 ||
+	    (!cleanerd->fallback && ndone == 0 && !cleanerd->retry_cleaning)) {
 		struct timeval pt;
 
 		/* no segment were cleaned */
@@ -1244,9 +1305,21 @@ static ssize_t nilfs_cleanerd_clean_segments(struct nilfs_cleanerd *cleanerd,
 			       (unsigned long long)segnums[i]);
 		nilfs_cleanerd_progress(cleanerd, ret);
 		cleanerd->fallback = 0;
-	
+		cleanerd->retry_cleaning = 0;
+
 	} else if (ret == 0) {
 		syslog(LOG_DEBUG, "no segments cleaned");
+
+		if (!cleanerd->retry_cleaning &&
+		    nilfs_segments_still_reclaimable(
+			    cleanerd->nilfs, segnums, nsegs, protseq) &&
+		    nilfs_shrink_protected_region(cleanerd->nilfs) == 0) {
+
+			syslog(LOG_DEBUG, "retrying protected region");
+			cleanerd->retry_cleaning = 1;
+		} else {
+			cleanerd->retry_cleaning = 0;
+		}
 
 	} else if (ret < 0 && errno == ENOMEM) {
 		nilfs_cleanerd_reduce_ncleansegs_for_retry(cleanerd);
@@ -1289,6 +1362,7 @@ static int nilfs_cleanerd_clean_loop(struct nilfs_cleanerd *cleanerd)
 
 	cleanerd->running = 1;
 	cleanerd->fallback = 0;
+	cleanerd->retry_cleaning = 0;
 	nilfs_cnoconv_reset(cleanerd->cnoconv);
 	nilfs_gc_logger = syslog;
 
@@ -1342,6 +1416,8 @@ static int nilfs_cleanerd_clean_loop(struct nilfs_cleanerd *cleanerd)
 				prottime);
 			if (ndone < 0)
 				return -1;
+		} else {
+			cleanerd->retry_cleaning = 0;
 		}
 		/* done */
 
