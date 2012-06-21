@@ -22,7 +22,8 @@ The primary authors work at Cyberspace Labs at NTT Corporation.
 - Enhanced lscp to allow specifying range of checkpoints
 - Enhanced lssu to allow specifying range of segments
 
-* Seiji Kihara
+* Seiji Kihara <kihara.seiji@lab.ntt.co.jp>
+- Maintainer of RPM packages of nilfs-utils and nilfs2 standalone modules
 - Initial development
 
 * Yoshiji Amagai
