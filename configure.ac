@@ -26,6 +26,23 @@ AC_PATH_PROG([LDCONFIG], [ldconfig],
 	[AC_MSG_ERROR([ldconfig not found])],
 	[$PATH:/sbin])
 
+dnl UTIL_CHECK_LIB(LIBRARY, FUNCTION, [VARSUFFIX = $1]))
+dnl The VARSUFFIX is optional and overrides the default behaviour. For example:
+dnl     UTIL_CHECK_LIB(yyy, func, xxx) generates have_xxx and HAVE_LIBXXX
+dnl     UTIL_CHECK_LIB(yyy, func)      generates have_yyy and HAVE_LIBYYY
+dnl ---------------------------------
+dnl borrowed from util-linux 2.17.2
+AC_DEFUN([UTIL_CHECK_LIB], [
+	m4_define([suffix], m4_default([$3],$1))
+	[have_]suffix=yes
+	m4_ifdef([$3],
+		 [AC_CHECK_LIB([$1], [$2],
+		 	       [AC_DEFINE(AS_TR_CPP([HAVE_LIB]suffix), 1)],
+			       [[have_]suffix=no])],
+		 [AC_CHECK_LIB([$1], [$2], [], [[have_]suffix=no])])
+	AM_CONDITIONAL(AS_TR_CPP([HAVE_]suffix), [test [$have_]suffix = yes])
+])
+
 # Check for options.
 AC_ARG_ENABLE(libmount,
 	[AC_HELP_STRING([--enable-libmount=[ARG]],
@@ -33,6 +50,10 @@ AC_ARG_ENABLE(libmount,
 	[enable_libmount=$enableval],
 	[enable_libmount=no; \
 	 if test -L /etc/mtab; then enable_libmount=yes; fi])
+
+AC_ARG_WITH([selinux],
+	AS_HELP_STRING([--with-selinux], [compile with SELinux support]),
+	[], with_selinux=no)
 
 # Checks for libraries.
 AC_CHECK_LIB([uuid], [uuid_generate],
@@ -71,6 +92,22 @@ if test "${enable_libmount}" = "yes"; then
 fi
 AM_CONDITIONAL(CONFIG_LIBMOUNT, [test "$enable_libmount" = "yes"])
 AC_SUBST(LIB_MOUNT)
+
+if test "${with_selinux}" = "no"; then
+   AM_CONDITIONAL(HAVE_SELINUX, false)
+else
+   UTIL_CHECK_LIB(selinux, getprevcon)
+   case "$with_selinux:$have_selinux" in
+   yes:no) AC_MSG_ERROR([SELinux selected but libselinux not found]) ;;
+   esac
+fi
+
+if test "${have_selinux}" = "yes"; then
+   SELINUX_LIBS="-lselinux -lsepol"
+   SELINUX_LIBS_STATIC="-lselinux -lsepol"
+fi
+AC_SUBST([SELINUX_LIBS])
+AC_SUBST([SELINUX_LIBS_STATIC])
 
 # Checks for typedefs, structures, and compiler characteristics.
 AC_C_CONST
