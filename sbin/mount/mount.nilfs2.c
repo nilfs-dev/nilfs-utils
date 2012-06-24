@@ -511,7 +511,7 @@ do_mount_one(struct nilfs_mount_info *mi, const struct mount_options *mo)
 	if (!mi->nogc && mtab_ok) {
 		/* Restarting cleaner daemon */
 		if (nilfs_launch_cleanerd(mi->device, mi->mntdir,
-					  mi->protperiod, &mi->gcpid)) {
+					  mi->protperiod, &mi->gcpid) == 0) {
 			if (verbose)
 				printf(_("%s: restarted %s\n"),
 				       progname, NILFS_CLEANERD_NAME);

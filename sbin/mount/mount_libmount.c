@@ -376,7 +376,7 @@ static int nilfs_do_mount_one(struct nilfs_mount_info *mi)
 		/* Restarting cleaner daemon */
 		if (nilfs_launch_cleanerd(mnt_context_get_source(cxt),
 					  mnt_context_get_target(cxt),
-					  mattrs.pp, &mattrs.gcpid)) {
+					  mattrs.pp, &mattrs.gcpid) == 0) {
 			if (mnt_context_is_verbose(cxt))
 				printf(_("%s: restarted %s\n"),
 				       progname, NILFS_CLEANERD_NAME);
