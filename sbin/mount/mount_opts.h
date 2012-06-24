@@ -38,9 +38,10 @@ char *append_opt(char *s, const char *opt, const char *val);
 char *append_numopt(char *s, const char *opt, long num);
 void parse_opts(const char *options, int *flags, char **extra_opts);
 char *fix_opts_string(int flags, const char *extra_opts, const char *user);
+
 int find_opt(const char *opts, const char *token, void *varp);
-char *change_opt(const char *opts, const char *token, void *varp,
-		 const char *instead);
+char *replace_opt(char *s, const char *fmt, void *varp, const char *instead);
+char *replace_optval(char *s, const char *fmt, void *varp, ...);
 
 
 #endif /* _MOUNT_OPTS_H */

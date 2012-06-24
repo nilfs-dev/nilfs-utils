@@ -14,6 +14,7 @@
 #endif	/* HAVE_CONFIG_H */
 
 #include <stdio.h>
+#include <stdarg.h>
 
 #if HAVE_STRING_H
 #include <string.h>
@@ -25,6 +26,7 @@
 #include <grp.h>
 
 #include "sundries.h"
+#include "xmalloc.h"
 #include "mount_constants.h"
 #include "mount_opts.h"
 #include "nls.h"
@@ -316,37 +318,67 @@ int find_opt(const char *opts, const char *token, void *varp)
 	return res;
 }
 
-char *change_opt(const char *opts, const char *token, void *varp,
-		 const char *instead)
+char *replace_opt(char *s, const char *fmt, void *varp, const char *instead)
 {
-	int ind = find_opt(opts, token, varp);
-	const char *ep;
-	char *newopts;
+	char *ep, *sp;
+	size_t oldopt_len, newopt_len, rest_len;
+	int ind;
+
+	if (!s || *s == '\0' || (ind = find_opt(s, fmt, varp)) < 0)
+		return append_opt(s, instead, NULL);
 
 	if (!instead)
 		instead = "";
-	if (ind >= 0) {
-		ep = opts + ind;
-		while (*ep != ',' && *ep != '\0')
-			ep++;
 
-		if (*instead == '\0') {
-			if (*ep == ',')
-				ep++;
-			else if (ind > 0)
-				ind--;
+	/* Scan end of the option */
+	ep = sp = s + ind;
+	while (*ep != ',' && *ep != '\0')
+		ep++;
+
+	if (*instead == '\0') { /* Remove the option */
+		if (*ep == ',') {
+			/* Get rid of ',' at the end position */
+			ep++;
+		} else if (ind > 0) {
+			/*
+			 * (*ep) was a null char - get rid of ','
+			 * immediately preceding the start position.
+			 */
+			ind--; sp--;
 		}
-		newopts = xmalloc(ind + strlen(instead) + strlen(ep) + 1);
-		memcpy(newopts, opts, ind);
-		strcpy(newopts + ind, instead);
-		strcat(newopts, ep);
-	} else if (opts == NULL || *opts == '\0') {
-		newopts = xstrdup(instead);
-	} else {
-		newopts = xstrdup(opts);
-		if (*instead != '\0')
-			newopts = xstrconcat3(newopts, ",", instead);
 	}
 
-	return newopts;
+	oldopt_len = ep - sp;
+	newopt_len = strlen(instead);
+	rest_len = strlen(ep);
+
+	if (newopt_len < oldopt_len) {
+		/* move remaining options forward */
+		memmove(sp + newopt_len, ep, rest_len + 1 /* '\0' */);
+	}
+
+	s = xrealloc(s, ind + newopt_len + rest_len + 1 /* '\0' */);
+	memcpy(sp, instead, newopt_len);
+
+	if (newopt_len > oldopt_len) {
+		/* move remaining options backward */
+		memmove(sp + newopt_len, ep, rest_len + 1 /* '\0' */);
+	}
+	return s;
+}
+
+char *replace_optval(char *s, const char *fmt, void *varp, ...)
+{
+	char buf[128];
+	va_list args;
+	int len;
+
+	va_start(args, varp);
+	len = vsnprintf(buf, sizeof(buf), fmt, args);
+	va_end(args);
+
+	if (len < 0 || len >= sizeof(buf))
+		die(EX_SOFTWARE, _("%s: too long option"), __func__);
+
+	return replace_opt(s, fmt, varp, buf);
 }

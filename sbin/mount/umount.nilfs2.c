@@ -342,16 +342,6 @@ static inline pid_t get_mtab_gcpid(const struct mntentchn *mc)
 	return pid;
 }
 
-static inline char *change_gcpid_opt(const char *opts, pid_t newpid)
-{
-	char buf[256];
-	gcpid_opt_t oldpid;
-
-	buf[0] = '\0';
-	snprintf(buf, sizeof(buf), gcpid_opt_fmt, (int)newpid);
-	return change_opt(opts, gcpid_opt_fmt, &oldpid, buf);
-}
-
 static inline void my_free(const void *ptr)
 {
 	/* free(NULL) is ignored; the check below is just to be sure */
@@ -430,12 +420,16 @@ umount_one(const char *spec, const char *node, const char *type,
 
 			if (nilfs_launch_cleanerd(spec, node, prot_period,
 						  &pid) == 0) {
+				gcpid_opt_t oldpid;
+				char *s = xstrdup(opts);
+
 				if (verbose)
 					printf(_("%s: restarted %s(pid=%d)\n"),
 					       progname, NILFS_CLEANERD_NAME,
 					       (int)pid);
-				change_mtab_opt(spec, node, type,
-						change_gcpid_opt(opts, pid));
+				s = replace_optval(s, gcpid_opt_fmt, &oldpid,
+						   pid);
+				change_mtab_opt(spec, node, type, s);
 				goto out;
 			} else
 				error(_("%s: failed to restart %s"),

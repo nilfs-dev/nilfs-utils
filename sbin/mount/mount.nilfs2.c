@@ -278,40 +278,28 @@ static int mounted(const char *spec, const char *node)
 	return ret;
 }
 
-static void update_gcpid_opt(char **opts, pid_t newpid)
-{
-	char buf[256], *newopts;
-	gcpid_opt_t oldpid;
-
-	snprintf(buf, sizeof(buf), gcpid_opt_fmt, (int)newpid);
-	newopts = change_opt(*opts, gcpid_opt_fmt, &oldpid, buf);
-	my_free(*opts);
-	*opts = newopts;
-}
-
-static char *fix_extra_opts_string(const char *extra_opts, pid_t gcpid,
+static char *fix_extra_opts_string(const char *exopts, gcpid_opt_t gcpid,
 				   pp_opt_t protection_period)
 {
-	char buf[256];
-	gcpid_opt_t id;
-	pp_opt_t pp;
-	char *tmpres;
-	char *res;
+	char *s = xstrdup(exopts); /* NULL will be set if exopts == NULL */
+	pp_opt_t oldpp;
+	gcpid_opt_t oldpid;
 
-	buf[0] = '\0';
-	if (gcpid)
-		snprintf(buf, sizeof(buf), gcpid_opt_fmt, (int)gcpid);
-	/* The gcpid option will be removed if gcpid == 0 */
-	tmpres = change_opt(extra_opts, gcpid_opt_fmt, &id, buf);
+	if (gcpid) {
+		s = replace_optval(s, gcpid_opt_fmt, &oldpid, gcpid);
+	} else {
+		/* Remove the gcpid option if gcpid == 0 */
+		s = replace_opt(s, gcpid_opt_fmt, &oldpid, NULL);
+	}
 
-	buf[0] = '\0';
-	if (protection_period != ULONG_MAX)
-		snprintf(buf, sizeof(buf), pp_opt_fmt, protection_period);
-	/* The pp option will be removed if pp == ULONG_MAX */
-	res = change_opt(tmpres, pp_opt_fmt, &pp, buf);
+	if (protection_period != ULONG_MAX) {
+		s = replace_optval(s, pp_opt_fmt, &oldpp, protection_period);
+	} else {
+		/* Remove the pp option if pp == ULONG_MAX */
+		s = replace_opt(s, pp_opt_fmt, &oldpp, NULL);
+	}
 
-	my_free(tmpres);
-	return res;
+	return s;
 }
 
 /*
@@ -478,12 +466,16 @@ static int
 do_mount_one(struct nilfs_mount_info *mi, const struct mount_options *mo)
 {
 	int res, errsv, mtab_ok;
-	char *tmpexopts, *exopts;
-	pp_opt_t prot_period;
+	char *exopts = xstrdup(mo->extra_opts);
+	pp_opt_t oldpp;
 
-	tmpexopts = change_opt(mo->extra_opts, pp_opt_fmt, &prot_period, "");
-	exopts = change_opt(tmpexopts, nogc_opt_fmt, NULL, "");
-	my_free(tmpexopts);
+	/*
+	 * Get rid of pp option and nogc option.  We do not have to
+	 * remove gcpid option because it is not given by command line
+	 * of the program.
+	 */
+	exopts = replace_opt(exopts, pp_opt_fmt, &oldpp, NULL);
+	exopts = replace_opt(exopts, nogc_opt_fmt, NULL, NULL);
 
 	res = mount(mi->device, mi->mntdir, fstype, mo->flags & ~MS_NOSYS,
 		    exopts);
@@ -512,10 +504,15 @@ do_mount_one(struct nilfs_mount_info *mi, const struct mount_options *mo)
 		/* Restarting cleaner daemon */
 		if (nilfs_launch_cleanerd(mi->device, mi->mntdir,
 					  mi->protperiod, &mi->gcpid) == 0) {
+			gcpid_opt_t oldpid;
+
 			if (verbose)
 				printf(_("%s: restarted %s\n"),
 				       progname, NILFS_CLEANERD_NAME);
-			update_gcpid_opt(&mi->optstr, mi->gcpid);
+
+			mi->optstr = replace_optval(
+				mi->optstr, gcpid_opt_fmt, &oldpid, mi->gcpid);
+
 			update_mtab_entry(mi->device, mi->mntdir, fstype,
 					  mi->optstr, 0, 0, !mi->mounted);
 		} else {
