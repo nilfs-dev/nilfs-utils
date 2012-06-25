@@ -42,6 +42,10 @@
 #include <sys/stat.h>
 #endif	/* HAVE_SYS_STAT_H */
 
+#if HAVE_SYS_TIME_H
+#include <sys/time.h>
+#endif	/* HAVE_SYS_TIME_H */
+
 #if HAVE_TIME_H
 #include <time.h>
 #endif	/* HAVE_TIME_H */
@@ -62,8 +66,13 @@
 #include "cleaner_exec.h"
 #include "nls.h"
 
-#define CLEANERD_WAIT_RETRY_COUNT	3
-#define CLEANERD_WAIT_RETRY_INTERVAL	2  /* in seconds */
+/* Intervals for binary exponential backoff */
+#define WAIT_CLEANERD_MIN_BACKOFF_TIME	5000	/* in micro-seconds */
+#define WAIT_CLEANERD_MAX_BACKOFF_TIME	2	/* in seconds */
+
+/* Intervals for periodic wait retry */
+#define WAIT_CLEANERD_RETRY_INTERVAL	2	/* in seconds */
+#define WAIT_CLEANERD_RETRY_TIMEOUT	8	/* in seconds */
 
 static const char cleanerd[] = "/sbin/" NILFS_CLEANERD_NAME;
 static const char cleanerd_nofork_opt[] = "-n";
@@ -171,41 +180,69 @@ int nilfs_ping_cleanerd(pid_t pid)
 	return process_is_alive(pid);
 }
 
+static void recalc_backoff_time(struct timespec *interval)
+{
+	/* binary exponential backoff */
+	interval->tv_sec <<= 1;
+	interval->tv_nsec <<= 1;
+	if (interval->tv_nsec >= 1000000000) {
+		ldiv_t q = ldiv(interval->tv_nsec, 1000000000);
+
+		interval->tv_sec += q.quot;
+		interval->tv_nsec = q.rem;
+	}
+}
+
 static int nilfs_wait_cleanerd(const char *device, pid_t pid)
 {
-	int cnt = CLEANERD_WAIT_RETRY_COUNT;
-	int ret;
+	struct timespec waittime;
+	struct timeval start, end, now;
 
-	sleep(0);
 	if (!process_is_alive(pid))
 		return 0;
-	sleep(1);
-	if (!process_is_alive(pid))
-		return 0;
+
+	gettimeofday(&start, NULL);
+	waittime.tv_sec = 0;
+	waittime.tv_nsec = WAIT_CLEANERD_MIN_BACKOFF_TIME * 1000;
+	end.tv_sec = start.tv_sec + WAIT_CLEANERD_MAX_BACKOFF_TIME;
+	end.tv_usec = start.tv_usec;
+
+	for (;;) {
+		nanosleep(&waittime, NULL);
+		if (!process_is_alive(pid))
+			return 0;
+
+		if (gettimeofday(&now, NULL) < 0 || !timercmp(&now, &end, <))
+			break;
+
+		recalc_backoff_time(&waittime);
+	}
 
 	nilfs_cleaner_printf(_("cleanerd (pid=%ld) still exists on %d. "
 			       "waiting."),
 			     (long)pid, device);
 	nilfs_cleaner_flush();
 
-	for (;;) {
-		if (cnt-- < 0) {
-			nilfs_cleaner_printf(_("failed\n"));
-			nilfs_cleaner_flush();
-			ret = -1; /* wait failed */
-			break;
-		}
-		sleep(CLEANERD_WAIT_RETRY_INTERVAL);
+	waittime.tv_sec = WAIT_CLEANERD_RETRY_INTERVAL;
+	waittime.tv_nsec = 0;
+	end.tv_sec = start.tv_sec + WAIT_CLEANERD_RETRY_TIMEOUT;
+	end.tv_usec = start.tv_usec;
+
+	while (!gettimeofday(&now, NULL) && timercmp(&now, &end, <)) {
+
+		nanosleep(&waittime, NULL);
+
 		if (!process_is_alive(pid)) {
 			nilfs_cleaner_printf(_("done\n"));
 			nilfs_cleaner_flush();
-			ret = 0;
-			break;
+			return 0;
 		}
 		nilfs_cleaner_printf(_("."));
 		nilfs_cleaner_flush();
 	}
-	return ret;
+	nilfs_cleaner_printf(_("failed\n"));
+	nilfs_cleaner_flush();
+	return -1; /* wait failed */
 }
 
 int nilfs_shutdown_cleanerd(const char *device, pid_t pid)
