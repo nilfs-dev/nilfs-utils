@@ -385,23 +385,55 @@ char *fix_opts_string(int flags, const char *extra_opts, const char *user)
 /*
  * Following part was appended by Ryusuke Konishi <konishi.ryusuke@lab.ntt.co.jp>
  */
+static char *strchrnulq(char *s, int c, int qc)
+{
+	int open_quote = 0;
+	char *p;
+
+	for (p = s; *p != '\0'; p++) {
+		if (*p == qc) {
+			open_quote ^= 1;
+			continue;
+		}
+		if (!open_quote && *p == c)
+			break;
+	}
+	return p;
+}
+
+static char *strtok_opt(char *s, char **saveptr)
+{
+	char *delm, *p = s ? : *saveptr;
+
+	if (!p || !*p)
+		return NULL;
+
+	delm = strchrnulq(p, ',', '"');
+	if (*delm) {
+		*delm = '\0';
+		delm++;
+	}
+	*saveptr = delm;
+	return p;
+}
+
 int find_opt(const char *opts, const char *token, void *varp)
 {
-	char *opts2, *opt;
+	char *opts2, *opt, *ptr = NULL;
 	int res = -1;
 
 	if (!opts)
 		return res;
 
 	opts2 = xstrdup(opts);
-	opt = strtok(opts2, ",");
+	opt = strtok_opt(opts2, &ptr);
 	if (varp) {
 		while (opt) {
 			if (sscanf(opt, token, varp) == 1) {
 				res = opt - opts2;
 				break;
 			}
-			opt = strtok(NULL, ",");
+			opt = strtok_opt(NULL, &ptr);
 		}
 	} else {
 		int cmplen = strlen(token) + 1;
@@ -410,7 +442,7 @@ int find_opt(const char *opts, const char *token, void *varp)
 				res = opt - opts2;
 				break;
 			}
-			opt = strtok(NULL, ",");
+			opt = strtok_opt(NULL, &ptr);
 		}
 	}
 	free(opts2);
@@ -430,9 +462,8 @@ char *replace_opt(char *s, const char *fmt, void *varp, const char *instead)
 		instead = "";
 
 	/* Scan end of the option */
-	ep = sp = s + ind;
-	while (*ep != ',' && *ep != '\0')
-		ep++;
+	sp = s + ind;
+	ep = strchrnulq(sp, ',', '"');
 
 	if (*instead == '\0') { /* Remove the option */
 		if (*ep == ',') {
