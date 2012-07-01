@@ -586,8 +586,6 @@ static ssize_t nilfs_resize_move_segments(struct nilfs *nilfs,
 	int rv = 0;
 	int ret;
 
-	sync();
-
 	for (snp = segnumv; rest > 0; snp += nc, rest -= nc) {
 		nc = min_t(unsigned long, rest, nsegments_per_clean);
 
@@ -623,14 +621,16 @@ static ssize_t nilfs_resize_move_segments(struct nilfs *nilfs,
 
 static int nilfs_resize_try_update_log_cursor(struct nilfs *nilfs)
 {
+	nilfs_cno_t cno;
 	int arg = 0;
 	int ret = -1;
+
+	nilfs_sync(nilfs, &cno);
 
 	if (ioctl(nilfs->n_iocfd, FIFREEZE, &arg) == 0 &&
 	    ioctl(nilfs->n_iocfd, FITHAW, &arg) == 0)
 		ret = 0;
 
-	sync();
 	nilfs_resize_update_sustat(nilfs);
 
 	return ret;
@@ -667,7 +667,6 @@ retry:
 		if (nm < 0)
 			goto failed;
 
-		sync();
 		nmoved += nm;
 		if (nmoved >= count)
 			return 0;
@@ -1020,9 +1019,8 @@ static int nilfs_resize_online(const char *device, unsigned long long newsize)
 {
 	struct nilfs *nilfs;
 	struct nilfs_super_block *sb;
+	nilfs_cno_t cno;
 	int status = EXIT_FAILURE;
-
-	sync();
 
 	nilfs = nilfs_open(device, NULL,
 			   NILFS_OPEN_RAW | NILFS_OPEN_RDWR | NILFS_OPEN_GCLK);
@@ -1041,6 +1039,8 @@ static int nilfs_resize_online(const char *device, unsigned long long newsize)
 		status = EXIT_SUCCESS;
 		goto out_unlock;
 	}
+
+	nilfs_sync(nilfs, &cno);
 
 	if (newsize > fs_devsize)
 		status = nilfs_extend_online(nilfs, device, newsize);
