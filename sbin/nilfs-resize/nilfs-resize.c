@@ -619,7 +619,7 @@ static ssize_t nilfs_resize_move_segments(struct nilfs *nilfs,
 	return nmoved;
 }
 
-static int nilfs_resize_try_update_log_cursor(struct nilfs *nilfs)
+static int __nilfs_resize_try_update_log_cursor(struct nilfs *nilfs)
 {
 	nilfs_cno_t cno;
 	int arg = 0;
@@ -636,16 +636,31 @@ static int nilfs_resize_try_update_log_cursor(struct nilfs *nilfs)
 	return ret;
 }
 
+static int nilfs_resize_try_update_log_cursor(struct nilfs *nilfs,
+					      const char *reason)
+{
+	int ret;
+
+	if (verbose)
+		myprintf("%s.\nTrying to update log cursor ..", reason);
+
+	ret = __nilfs_resize_try_update_log_cursor(nilfs);
+
+	if (verbose)
+		myprintf(ret == 0 ? " ok.\n" : " failed.\n");
+	return ret;
+}
+
 static int nilfs_resize_reclaim_nibble(struct nilfs *nilfs,
 				       unsigned long long start,
 				       unsigned long long end,
-				       unsigned long count)
+				       unsigned long count, int unprotect)
 {
 	__u64 segnumv[2], segnum;
 	ssize_t nfound, nmoved = 0;
 	unsigned long nc;
 	unsigned long long end2 = end;
-	int freeze_thaw = 0;
+	int log_cursor_updated = 0;
 	int ret;
 
 	segnum = start;
@@ -668,8 +683,13 @@ retry:
 			goto failed;
 
 		nmoved += nm;
-		if (nmoved >= count)
+		if (nmoved >= count) {
+			if (unprotect && !log_cursor_updated) {
+				nilfs_resize_try_update_log_cursor(
+					nilfs, "Hit protected segment");
+			}
 			return 0;
+		}
 	}
 
 	if (end >= start) {
@@ -677,23 +697,15 @@ retry:
 		end = start - 1;
 		goto retry;
 	}
-	if (!freeze_thaw) {
-		if (verbose)
-			myprintf("No movable segment.\n"
-				 "Trying to update log cursor to make movable "
-				 "segments ..");
-
-		ret = nilfs_resize_try_update_log_cursor(nilfs);
+	if (!log_cursor_updated) {
+		ret = nilfs_resize_try_update_log_cursor(
+			nilfs, "No movable segment");
 		if (!ret) {
-			if (verbose)
-				myprintf(" ok.\n");
 			segnum = start;
 			end = end2;
-			freeze_thaw = 1;
+			log_cursor_updated = 1;
 			goto retry;
 		}
-		if (verbose)
-			myprintf(" failed.\n");
 	}
 	myprintf("Error: couldn't move any segments.\n");
 	return -1;
@@ -711,7 +723,7 @@ static int nilfs_resize_move_out_active_segments(struct nilfs *nilfs,
 							/* 500 msec */
 	__u64 segnum;
 	ssize_t nfound;
-	int latest = 0;
+	int latest = 0, unprotect = 0;
 	int retrycnt = 0;
 	int ret;
 
@@ -748,8 +760,10 @@ retry:
 			ret = nilfs_resize_segment_is_protected(nilfs, segnum);
 			if (ret < 0)
 				return -1;
-			else if (ret)
+			else if (ret) {
 				nfound = 2;
+				unprotect = 1;
+			}
 		}
 	}
 
@@ -763,9 +777,11 @@ retry:
 			myprintf("Active segments are found in the range.\n"
 				 "Trying to move them.\n");
 		}
-		if (nilfs_resize_reclaim_nibble(nilfs, start, end, nfound) < 0)
+		if (nilfs_resize_reclaim_nibble(
+			    nilfs, start, end, nfound, unprotect) < 0)
 			return -1;
 		retrycnt++;
+		unprotect = 0;
 		nanosleep(&retry_interval, NULL);
 		goto retry;
 	}
@@ -835,7 +851,7 @@ static int nilfs_resize_reclaim_range(struct nilfs *nilfs, __u64 newnsegs)
 
 		if (nmoved < nfound &&
 		    (reason & NILFS_RESIZE_SEGMENT_PROTECTED)) {
-			nilfs_resize_reclaim_nibble(nilfs, start, end, 2);
+			nilfs_resize_reclaim_nibble(nilfs, start, end, 2, 1);
 			if (pm_in_progress) {
 				nfound = nilfs_resize_count_inuse_segments(
 					nilfs, start, end);
