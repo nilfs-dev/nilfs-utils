@@ -425,6 +425,7 @@ nilfs_resize_find_movable_segments(struct nilfs *nilfs, __u64 start,
 	return (snp - segnumv); /* return the number of found segments */
 }
 
+#if 0
 static int
 nilfs_resize_get_latest_segment(struct nilfs *nilfs, __u64 start, __u64 end,
 				__u64 *segnump)
@@ -462,6 +463,7 @@ nilfs_resize_get_latest_segment(struct nilfs *nilfs, __u64 start, __u64 end,
 	}
 	return ret;
 }
+#endif
 
 static ssize_t
 nilfs_resize_find_active_segments(struct nilfs *nilfs, __u64 start, __u64 end,
@@ -721,53 +723,20 @@ static int nilfs_resize_move_out_active_segments(struct nilfs *nilfs,
 {
 	const static struct timespec retry_interval = { 0, 500000000 };
 							/* 500 msec */
-	__u64 segnum;
 	ssize_t nfound;
-	int latest = 0, unprotect = 0;
 	int retrycnt = 0;
-	int ret;
 
-retry:
-	if (nilfs_resize_update_sustat(nilfs) < 0)
-		return -1;
+	while (1) {
+		if (nilfs_resize_update_sustat(nilfs) < 0)
+			return -1;
 
-	nfound = nilfs_resize_find_active_segments(
-		nilfs, start, end, segnums, NILFS_RESIZE_NSEGNUMS);
-	if (nfound < 0)
-		return -1;
+		nfound = nilfs_resize_find_active_segments(
+			nilfs, start, end, segnums, NILFS_RESIZE_NSEGNUMS);
+		if (nfound < 0)
+			return -1;
+		if (!nfound)
+			break;
 
-	if (!nfound) {
-		if (latest) {
-			/* reset the latest segment info if it was moved */
-			ret = nilfs_resize_get_latest_segment(
-				nilfs, segnum, segnum, &segnum);
-			if (ret < 0)
-				return -1;
-			else if (!ret)
-				latest = 0;
-		}
-		if (!latest) {
-			/* get the latest segment info */
-			ret = nilfs_resize_get_latest_segment(
-				nilfs, start, end, &segnum);
-			if (ret < 0)
-				return -1;
-			else if (ret)
-				latest = 1;
-		}
-		if (latest) {
-			/* test if the latest segment is protected or not */
-			ret = nilfs_resize_segment_is_protected(nilfs, segnum);
-			if (ret < 0)
-				return -1;
-			else if (ret) {
-				nfound = 2;
-				unprotect = 1;
-			}
-		}
-	}
-
-	if (nfound > 0) {
 		if (retrycnt >= 6) {
 			myprintf("Error: Failed to move active segments -- "
 				 "give up.\n");
@@ -778,28 +747,18 @@ retry:
 				 "Trying to move them.\n");
 		}
 		if (nilfs_resize_reclaim_nibble(
-			    nilfs, start, end, nfound, unprotect) < 0)
+			    nilfs, start, end, nfound, 0) < 0)
 			return -1;
 		retrycnt++;
-		unprotect = 0;
 		nanosleep(&retry_interval, NULL);
-		goto retry;
 	}
-
-	if (retrycnt > 0 && pm_in_progress) {
-		nfound = nilfs_resize_count_inuse_segments(nilfs, start, end);
-		if (nfound >= 0) {
-			if (nfound > pm_max)
-				pm_max = nfound;
-			nilfs_resize_progress_update(pm_max - nfound);
-		}
-	}
-	return 0;
+	return retrycnt > 0;
 }
 
 static int nilfs_resize_reclaim_range(struct nilfs *nilfs, __u64 newnsegs)
 {
 	unsigned long long start, end, segnum;
+	ssize_t nfound;
 	int ret;
 
 	if (nilfs_resize_update_sustat(nilfs) < 0)
@@ -820,6 +779,14 @@ static int nilfs_resize_reclaim_range(struct nilfs *nilfs, __u64 newnsegs)
 	ret = nilfs_resize_move_out_active_segments(nilfs, start, end);
 	if (ret < 0)
 		goto out;
+	if (ret && pm_in_progress) {
+		nfound = nilfs_resize_count_inuse_segments(nilfs, start, end);
+		if (nfound >= 0) {
+			if (nfound > pm_max)
+				pm_max = nfound;
+			nilfs_resize_progress_update(pm_max - nfound);
+		}
+	}
 
 	ret = -1;
 	segnum = start;
