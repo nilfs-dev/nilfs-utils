@@ -1,3 +1,21 @@
+nilfs-utils-2.1.4  Fri Jul 6, 2012 JST
+
+	* umount.nilfs2: use binary exponential backoff for waiting for
+	  cleanerd's shutdown in order to speed up unmount.
+	* mount.nilfs2: fix wrong error handling in do_mount_one routine;
+	  this fixes the bug that gcpid attribute is not updated properly
+	  in the mtab file when cleanerd restarted after rw->{ro,rw} remount.
+	* nilfs-resize: do not use sync() system call.
+	* nilfs-resize: fix early give-up of fs-shrinking.
+	* mount.nilfs2: support context, fscontext, defcontext, and
+	  rootcontext SELinux mount options.
+	* add --with-selinux configuration option.
+	* mount.nilfs2: use realloc instead of malloc(new_s); free(s) in
+	  string manipulation of options.
+	* cleanup usage of _PATH_*; this eliminates deprecated macros MOUTNED
+	  and MNTTAB from nilfs-utils.
+	* update AUTHORS file.
+
 nilfs-utils-2.1.3  Wed Jun 20, 2012 JST
 
 	* Imported mtab fixes from util-linux-2.17.2 including mtab lock
