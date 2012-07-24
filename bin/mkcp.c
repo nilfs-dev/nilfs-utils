@@ -52,6 +52,7 @@
 
 const static struct option long_option[] = {
 	{"snapshot", no_argument, NULL, 's'},
+	{"print", no_argument, NULL, 'p'},
 	{"help", no_argument, NULL, 'h'},
 	{"version", no_argument, NULL, 'V'},
 	{NULL, 0, NULL, 0}
@@ -59,10 +60,11 @@ const static struct option long_option[] = {
 
 #define MKCP_USAGE	"Usage: %s [OPTION] [DEVICE]\n"			\
 			"  -s, --snapshot\tcreate a snapshot\n"		\
+			"  -p, --print\tprint the created CP number\n"	\
 			"  -h, --help\t\tdisplay this help and exit\n"	\
 			"  -V, --version\t\tdisplay version and exit\n"
 #else	/* !_GNU_SOURCE */
-#define MKCP_USAGE	"Usage: %s [-shV] [device]\n"
+#define MKCP_USAGE	"Usage: %s [-sphV] [device]\n"
 #endif	/* _GNU_SOURCE */
 
 
@@ -71,13 +73,14 @@ int main(int argc, char *argv[])
 	struct nilfs *nilfs;
 	nilfs_cno_t cno;
 	char *dev, *progname;
-	int ss, c, status;
+	int ss, print, c, status;
 #ifdef _GNU_SOURCE
 	int option_index;
 #endif	/* _GNU_SOURCE */
 	sigset_t sigset, oldset;
 
 	ss = 0;
+	print = 0;
 	opterr = 0;
 	if ((progname = strrchr(argv[0], '/')) == NULL)
 		progname = argv[0];
@@ -85,15 +88,18 @@ int main(int argc, char *argv[])
 		progname++;
 
 #ifdef _GNU_SOURCE
-	while ((c = getopt_long(argc, argv, "shV",
+	while ((c = getopt_long(argc, argv, "sphV",
 				long_option, &option_index)) >= 0) {
 #else	/* !_GNU_SOURCE */
-	while ((c = getopt(argc, argv, "shV")) >= 0) {
+	while ((c = getopt(argc, argv, "sphV")) >= 0) {
 #endif	/* _GNU_SOURCE */
 
 		switch (c) {
 		case 's':
 			ss = 1;
+			break;
+		case 'p':
+			print = 1;
 			break;
 		case 'h':
 			fprintf(stderr, MKCP_USAGE, progname);
@@ -160,5 +166,7 @@ out_unblock_signal:
 	sigprocmask(SIG_SETMASK, &oldset, NULL);
 out:
 	nilfs_close(nilfs);
+	if (!status && print)
+		printf("%ld\n", (long)cno);
 	exit(status);
 }
