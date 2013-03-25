@@ -72,6 +72,10 @@
 
 #include <errno.h>
 
+#if HAVE_BLKID_BLKID_H
+#include <blkid/blkid.h>
+#endif	/* HAVE_BLKID_BLKID_H */
+
 #include "nilfs.h"
 #include "nilfs_feature.h"
 #include "mkfs.h"
@@ -112,6 +116,7 @@ static int cflag = 0;
 static int nflag = 0;
 static int verbose = 0;
 static int discard = 1;
+static int force_overwrite = 0;
 static unsigned long blocksize = NILFS_DEF_BLOCKSIZE;
 static unsigned long blocks_per_segment = NILFS_DEF_BLKS_PER_SEG;
 static unsigned long r_segments_percentage = NILFS_DEF_RESERVED_SEGMENTS;
@@ -347,6 +352,7 @@ static int nilfs_mkfs_discard_zeroes_data(int fd)
 
 static void disk_scan(const char *device);
 static void check_mount(int fd, const char *device);
+static void check_safety_of_device_overwrite(int fd, const char *device);
 
 
 /*
@@ -611,6 +617,7 @@ int main(int argc, char *argv[])
 	if ((fd = open(device, O_RDWR)) < 0)
 		perr("Error: cannot open device: %s", device);
 	check_mount(fd, device);
+	check_safety_of_device_overwrite(fd, device);
 
 	init_disk_layout(di, fd, device);
 	si = new_segment(di);
@@ -727,6 +734,96 @@ static void check_mount(int fd, const char *device)
 		}
 	}
 	fclose(fp);
+}
+
+static void check_safety_of_device_overwrite(int fd, const char *device)
+{
+	int c, c_next;
+	blkid_probe pr = NULL;
+	blkid_loff_t size;
+	int ret = 0;
+
+	if (!device || !*device)
+		return;
+
+	if (force_overwrite == 0) {
+		pr = blkid_new_probe_from_filename(device);
+		if (!pr) {
+			ret = -1;
+			goto end_check;
+		}
+
+		size = blkid_probe_get_size(pr);
+		if (size <= 0)
+			goto end_check;
+
+		ret = blkid_probe_enable_partitions(pr, 1);
+		if (ret < 0)
+			goto end_check;
+
+		ret = blkid_do_fullprobe(pr);
+		if (ret < 0) /* error */
+			goto end_check;
+		else if (ret == 0) { /* some signature was found */
+			const char *type;
+
+			if (!blkid_probe_lookup_value(pr, "TYPE",
+							&type, NULL)) {
+				pinfo("WARNING: Device %s appears to contain "
+					"an existing %s superblock.",
+					device, type);
+			} else if (!blkid_probe_lookup_value(pr, "PTTYPE",
+								&type, NULL)) {
+				pinfo("WARNING: Device %s appears to contain "
+					"an partition table (%s).",
+					device, type);
+			} else {
+				if (quiet == 0) {
+					pinfo("Device %s appears to contain "
+						"something weird.", device);
+				}
+				goto end_check;
+			}
+
+			pinfo("WARNING: All data will be lost after format!");
+			pinfo("\nDO YOU REALLY WANT TO FORMAT DEVICE %s?",
+				device);
+
+			do {
+				fprintf(stderr, "\nContinue? [y/N] ");
+				c = getchar();
+
+				if (c == EOF || c == '\n')
+					goto abort_format;
+
+				c_next = getchar();
+				if (c_next != EOF && c_next != '\n')
+					goto clear_input_buffer;
+
+				if (c == 'n' || c == 'N')
+					goto abort_format;
+
+clear_input_buffer:
+				while (c_next != '\n' && c_next != EOF)
+					c_next = getchar();
+			} while (c != 'y' && c != 'Y');
+		}
+	}
+
+end_check:
+	if (pr)
+		blkid_free_probe(pr);
+	if (quiet == 0 && ret < 0)
+		pinfo("Probe of %s failed, can't detect fs existence.",
+			device);
+	return;
+
+abort_format:
+	if (pr)
+		blkid_free_probe(pr);
+	close(fd);
+	perr("Abort format of device %s", device);
+	return;
 }
 
 static void destroy_disk_buffer(void)
@@ -973,7 +1070,7 @@ static void parse_options(int argc, char *argv[])
 	int c, show_version_only = 0;
 	char *fs_features = NULL;
 
-	while ((c = getopt(argc, argv, "b:B:chKL:m:nqvO:P:V")) != EOF) {
+	while ((c = getopt(argc, argv, "b:B:cfhKL:m:nqvO:P:V")) != EOF) {
 		switch (c) {
 		case 'b':
 			blocksize = atol(optarg);
@@ -984,6 +1081,9 @@ static void parse_options(int argc, char *argv[])
 			break;
 		case 'c':
 			cflag++;
+			break;
+		case 'f':
+			force_overwrite = 1;
 			break;
 		case 'h':
 			usage();
@@ -1056,7 +1156,7 @@ static void parse_options(int argc, char *argv[])
 static void usage(void)
 {
 	fprintf(stderr,
-		"Usage: %s [-b block-size] [-B blocks-per-segment] [-c] \n"
+		"Usage: %s [-b block-size] [-B blocks-per-segment] [-c] [-f] \n"
 		"       [-L volume-label] [-m reserved-segments-percentage] \n"
 		"       [-O feature[,...]] \n"
 		"       [-hnqvKV] device\n",

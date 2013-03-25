@@ -2,7 +2,7 @@
 
 AM_CFLAGS = -Wall
 AM_CPPFLAGS = -I$(top_srcdir)/include
-LDADD = -luuid $(top_builddir)/lib/libnilfsfeature.la \
+LDADD = -luuid -lblkid $(top_builddir)/lib/libnilfsfeature.la \
 	$(top_builddir)/lib/libmountchk.la \
 	$(top_builddir)/lib/libcrc32.la
 

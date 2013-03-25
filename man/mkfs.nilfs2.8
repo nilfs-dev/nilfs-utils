@@ -18,6 +18,9 @@ mkfs.nilfs2 \- create a NILFS2 filesystem
 .B \-c
 ]
 [
+.B \-f
+]
+[
 .B \-K
 ]
 [
@@ -60,6 +63,9 @@ mkfs.nilfs2 \- create a NILFS2 filesystem
 ]
 [
 .B \-c
+]
+[
+.B \-f
 ]
 [
 .B \-K
@@ -119,6 +125,13 @@ number of blocks per segment is 2048 (= 8MB with 4KB blocks).
 .TP
 .B \-c
 Check the device for bad blocks before building the filesystem.
+.TP
+.B \-f
+Force overwrite when an existing filesystem is detected on the device.
+By default,
+.B mkfs.nilfs2
+will not write to the device if it suspects  that  there is a filesystem
+on the device already.
 .TP
 .B \-h
 Display help message and exit.
