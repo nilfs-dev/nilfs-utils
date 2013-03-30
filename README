@@ -3,6 +3,7 @@
  - libuuid-devel or uuid-dev
  - libmount-devel (fedora 14 and later)
  - libselinux-devel (if you specify --with-selinux)
+ - libblkid-devel
 
 * How to compile
 
