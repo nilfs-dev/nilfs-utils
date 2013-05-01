@@ -68,5 +68,11 @@ November 19, 2010: replaced crc32 implementation
 * Matteo Frigo <athena@fftw.org>
 September 11, 2010: compare device number for mount check
 
+* Takashi Iwai <tiwai@suse.de>
+July 24, 2012: add --print option to mkcp
+
+* Vyacheslav Dubeyko <slava@dubeyko.com>
+March 25, 2013: mkfs.nilfs2 should check presence of NILFS2 volume on device
+
 And this software is realized and maintained by many other
 contributions and helps.
