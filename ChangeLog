@@ -1,3 +1,15 @@
+nilfs-utils-2.1.5  Thu May 2, 2013 JST
+
+	* mkfs.nilfs2: check presence of existing volume on device.
+	* mkfs.nilfs2: erase the first and the second sectors unless boot
+	  sector exists.
+	* mkcp: add --print option.
+	* add ommitted comments for structures in nilfs2_fs.h.
+	* add autogen script.
+	* fix missing bold font termination in nilfs.8 man page.
+	* update README file.
+	* update AUTHORS file.
+
 nilfs-utils-2.1.4  Fri Jul 6, 2012 JST
 
 	* umount.nilfs2: use binary exponential backoff for waiting for
