@@ -880,6 +880,13 @@ static void read_disk_header(int fd, const char *device)
 	}
 }
 
+static int device_has_boot_sector(void)
+{
+	const __le32 *bssig = map_disk_buffer(0, 0) + 0x1fe;
+
+	return le32_to_cpu(*bssig) == 0xaa55;
+}
+
 #define MAX_NBLOCKS_CLEAR_BUFFER	8
 
 static int erase_disk_range(int fd, off_t offset, size_t count)
@@ -925,7 +932,7 @@ static int erase_disk(int fd, struct nilfs_disk_info *di)
 	 * Define range of the partition that nilfs uses.  This should
 	 * not depend on the type of underlying device.
 	 */
-	start = NILFS_SB_OFFSET_BYTES;
+	start = device_has_boot_sector() ? NILFS_SB_OFFSET_BYTES : 0;
 	end = di->dev_size & ~((__u64)sector_size - 1);
 
 	BUG_ON(end < NILFS_DISK_ERASE_SIZE ||
