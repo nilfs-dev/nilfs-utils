@@ -97,26 +97,17 @@ fi
 AM_CONDITIONAL(CONFIG_LIBMOUNT, [test "$enable_libmount" = "yes"])
 AC_SUBST(LIB_MOUNT)
 
-if test "${with_selinux}" = "no"; then
-   AM_CONDITIONAL(HAVE_SELINUX, false)
-else
-   UTIL_CHECK_LIB(selinux, getprevcon)
-   case "$with_selinux:$have_selinux" in
-   yes:no) AC_MSG_ERROR([SELinux selected but libselinux not found]) ;;
-   esac
-fi
-
-if test "${have_selinux}" = "yes"; then
-   SELINUX_LIBS="-lselinux -lsepol"
-   SELINUX_LIBS_STATIC="-lselinux -lsepol"
-   old_LDFLAGS="$LDFLAGS"
-   LDFLAGS="$LDFLAGS $SELINUX_LIBS"
+if test "${with_selinux}" = "yes"; then
+   AC_CHECK_LIB(selinux, getprevcon,
+	[AC_DEFINE(HAVE_LIBSELINUX, 1,
+	    [Define to 1 if you have the 'selinux' library (-lselinux).])
+	 LIB_SELINUX="-lselinux"
+	],
+	AC_MSG_ERROR([SELinux selected but libselinux not found]))
    # This function is missing in old libselinux 1.xx versions
    AC_CHECK_FUNCS([security_get_initial_context])
-   LDFLAGS="$old_LDFLAGS"
 fi
-AC_SUBST([SELINUX_LIBS])
-AC_SUBST([SELINUX_LIBS_STATIC])
+AC_SUBST([LIB_SELINUX])
 
 if test "${with_blkid}" = "yes"; then
    AC_CHECK_LIB(blkid, blkid_new_probe_from_filename,

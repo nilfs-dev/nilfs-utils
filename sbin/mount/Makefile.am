@@ -9,13 +9,11 @@ LEGACYHEADERS = fstab.h mount_constants.h mount_mntent.h mount_opts.h
 AM_CFLAGS = -Wall
 AM_CPPFLAGS = -I$(top_srcdir)/include
 LDADD = $(top_builddir)/lib/librealpath.la \
-	$(top_builddir)/lib/libcleanerexec.la
+	$(top_builddir)/lib/libcleanerexec.la $(LIB_MOUNT) $(LIB_SELINUX)
 
 sbin_PROGRAMS = mount.nilfs2 umount.nilfs2
 
 if CONFIG_LIBMOUNT
-
-LDADD += $(LIB_MOUNT)
 
 COMMONSOURCES += mount_attrs.c
 COMMONHEADERS += mount_attrs.h
@@ -29,11 +27,6 @@ COMMONSOURCES += $(LEGACYSOURCES)
 COMMONHEADERS += $(LEGACYHEADERS)
 
 mount_nilfs2_SOURCES = mount.nilfs2.c $(COMMONSOURCES) $(COMMONHEADERS)
-
 umount_nilfs2_SOURCES = umount.nilfs2.c $(COMMONSOURCES) $(COMMONHEADERS)
-
-if HAVE_SELINUX
-LDADD += -lselinux
-endif  # HAVE_SELINUX
 
 endif  # CONFIG_LIBMOUNT
