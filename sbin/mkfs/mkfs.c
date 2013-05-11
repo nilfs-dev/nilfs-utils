@@ -352,8 +352,12 @@ static int nilfs_mkfs_discard_zeroes_data(int fd)
 
 static void disk_scan(const char *device);
 static void check_mount(int fd, const char *device);
-static void check_safety_of_device_overwrite(int fd, const char *device);
 
+#if HAVE_LIBBLKID
+static void check_safety_of_device_overwrite(int fd, const char *device);
+#else
+#define check_safety_of_device_overwrite(fd, device) do {} while (0)
+#endif /* HAVE_LIBBLKID */
 
 /*
  * Routines to decide disk layout
@@ -736,6 +740,7 @@ static void check_mount(int fd, const char *device)
 	fclose(fp);
 }
 
+#if HAVE_LIBBLKID
 static void check_safety_of_device_overwrite(int fd, const char *device)
 {
 	int c, c_next;
@@ -825,6 +830,7 @@ abort_format:
 	perr("Abort format of device %s", device);
 	return;
 }
+#endif /* HAVE_LIBBLKID */
 
 static void destroy_disk_buffer(void)
 {

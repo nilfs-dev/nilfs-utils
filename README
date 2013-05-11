@@ -3,7 +3,7 @@
  - libuuid-devel or uuid-dev
  - libmount-devel (fedora 14 and later)
  - libselinux-devel (if you specify --with-selinux)
- - libblkid-devel
+ - libblkid-devel (unless you specify --without-blkid)
 
 * How to compile
 
@@ -33,6 +33,18 @@ supporting context mount options (-o context=<context>, etc):
 For mount.nilfs2 built with the --enable-libmount option, support of
 the context mount depends on the libmount library and this configure
 option is not necessary.
+
+
+* Trouble shooting
+
+If the blkid library in your environment is old and unusable to this
+package, you can use --without-blkid option:
+
+ $ ./configure --without-blkid
+
+However, use of this option is normally not recommended because it
+disables the safety check of mkfs.nilfs2 which prevents users from
+unexpectedly overwriting an in-use device.
 
 
 * How to get development sources
