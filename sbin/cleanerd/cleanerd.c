@@ -437,6 +437,12 @@ static int nilfs_cleanerd_automatic_suspend(struct nilfs_cleanerd *cleanerd)
 	return cleanerd->config.cf_min_clean_segments > 0;
 }
 
+static long nilfs_cleanerd_ncleansegs(struct nilfs_cleanerd *cleanerd)
+{
+	return cleanerd->running == 2 ?
+		cleanerd->mm_ncleansegs : cleanerd->ncleansegs;
+}
+
 static struct timeval *
 nilfs_cleanerd_cleaning_interval(struct nilfs_cleanerd *cleanerd)
 {
@@ -571,7 +577,7 @@ nilfs_cleanerd_select_segments(struct nilfs_cleanerd *cleanerd,
 	unsigned long long imp, thr;
 	int i;
 
-	nsegs = cleanerd->ncleansegs;
+	nsegs = nilfs_cleanerd_ncleansegs(cleanerd);
 	nilfs = cleanerd->nilfs;
 	config = &cleanerd->config;
 
