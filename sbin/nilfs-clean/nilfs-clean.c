@@ -302,7 +302,7 @@ static int nilfs_do_clean(const char *device)
 		sigfillset(&act.sa_mask);
 		act.sa_handler = nilfs_clean_escape;
 		act.sa_flags = 0;
-		
+
 		if (sigaction(SIGINT, &act, &oldact[0]) < 0 ||
 		    sigaction(SIGTERM, &act, &oldact[1]) < 0 ||
 		    sigaction(SIGHUP, &act, &oldact[2]) < 0)
@@ -350,7 +350,7 @@ static int nilfs_clean_parse_protection_period(const char *arg)
 			ret = -1;
 			goto out;
 		}
-	} 
+	}
 	if (period >= ULONG_MAX) {
 		myprintf(_("Error: too large period: %s\n"), arg);
 		errno = ERANGE;
@@ -360,7 +360,7 @@ static int nilfs_clean_parse_protection_period(const char *arg)
 	protection_period = period;
 out:
 	return ret;
-}	
+}
 
 static int nilfs_clean_parse_gcspeed(const char *arg)
 {

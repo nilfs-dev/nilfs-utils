@@ -855,7 +855,7 @@ static int nilfs_cleanerd_respond(struct nilfs_cleanerd *cleanerd,
 			       "/nilfs-cleanerq-%s", uuidbuf);
 		if (ret < 0)
 			goto out;
-		
+
 		if (cleanerd->sendq >= 0)
 			mq_close(cleanerd->sendq);
 		ret = -1;
@@ -1284,7 +1284,7 @@ static void nilfs_cleanerd_progress(struct nilfs_cleanerd *cleanerd, int nsegs)
 {
 	if (cleanerd->running == 2) {
 		/* decrease remaining number of segments */
-		cleanerd->mm_nrestsegs = 
+		cleanerd->mm_nrestsegs =
 			max_t(long, cleanerd->mm_nrestsegs - nsegs, 0);
 	}
 }

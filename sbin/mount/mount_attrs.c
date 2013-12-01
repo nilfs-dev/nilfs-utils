@@ -83,7 +83,7 @@ int nilfs_mount_attrs_parse(struct nilfs_mount_attrs *mattrs,
 		if (!strncmp(name, PPOPT_NAME, namesz)) {
 			if (!val || valsz == 0)
 				goto out_inval;
-			
+
 			mattrs->pp = strtoul(val, &endptr, 10);
 			if (endptr != val + valsz)
 				goto out_inval;

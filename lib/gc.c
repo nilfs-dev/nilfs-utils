@@ -484,7 +484,7 @@ static int nilfs_toss_vdescs(struct nilfs *nilfs,
 				goto out;
 			}
 			*vblocknrp = vdesc->vd_vblocknr;
-		
+
 			/*
 			 * Add the period to the candidate for deletion
 			 * unless the file is cpfile or sufile.

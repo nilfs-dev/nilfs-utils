@@ -214,7 +214,7 @@ struct nilfs_disk_info {
 
 struct nilfs_segment_ref {
 	__u64 seq;                      /* Sequence number of a full segment */
-	blocknr_t start;                /* Start block of the partial segment 
+	blocknr_t start;                /* Start block of the partial segment
 					   having a valid super root */
 	blocknr_t free_blocks_count;
 	__u64 cno;                /* checkpoint number */
@@ -441,7 +441,7 @@ __increment_segsum_size(unsigned long offset, unsigned item_size,
 		offset2 = offset + item_size * count;
 	else {
 		unsigned nitems_per_block = blocksize / item_size;
-		
+
 		count -= rest_items_in_block;
 		offset2 = blocksize *
 			(offset / blocksize + 1 + count / nitems_per_block) +
@@ -453,7 +453,7 @@ __increment_segsum_size(unsigned long offset, unsigned item_size,
 static void increment_segsum_size(struct nilfs_segment_info *si,
 				  unsigned nblocks_in_file, int dat_flag)
 {
-	unsigned binfo_size = dat_flag ? 
+	unsigned binfo_size = dat_flag ?
 		sizeof(__le64) /* offset */ : sizeof(struct nilfs_binfo_v);
 
 	si->sumbytes = __increment_segsum_size(si->sumbytes,
@@ -465,7 +465,7 @@ static void increment_segsum_size(struct nilfs_segment_info *si,
 static inline int my_log2(long i)
 {
 	int n;
-	
+
 	for (n = 0; i > 1; i >>= 1) n++;
 	return n;
 }
@@ -473,7 +473,7 @@ static inline int my_log2(long i)
 static unsigned long nilfs_min_nsegments(struct nilfs_disk_info *di, long rp)
 {
 	/* Minimum number of full segments */
-	return max_t(unsigned long, 
+	return max_t(unsigned long,
 		     (rp * di->nsegments - 1) / 100 + 1, NILFS_MIN_NRSVSEGS) +
 		max_t(unsigned long, nr_initial_segments, NILFS_MIN_NUSERSEGS);
 }
@@ -866,7 +866,7 @@ static void *map_disk_buffer(blocknr_t blocknr, int clear_flag)
 		     "(blocknr=%llu)", blocknr);
 
 	if (!disk_buffer[blocknr]) {
-		if (posix_memalign(&disk_buffer[blocknr], blocksize, 
+		if (posix_memalign(&disk_buffer[blocknr], blocksize,
 				   blocksize) != 0)
 			cannot_allocate_memory();
 		if (clear_flag)
@@ -1214,7 +1214,7 @@ static void cannot_allocate_memory(void)
 	perr("Error: memory allocation failure");
 }
 
-static void too_small_segment(unsigned long blocks_per_segment, 
+static void too_small_segment(unsigned long blocks_per_segment,
 			      unsigned long required_blocks)
 {
 	perr("Error: too small segment.\n"
@@ -1418,7 +1418,7 @@ static void prepare_ifile(void)
 	ino_t ino = 0;
 
 	prepare_blockgrouped_file(blocknr);
-	for (entry_block = blocknr + group_desc_blocks_per_group + 
+	for (entry_block = blocknr + group_desc_blocks_per_group +
 		     bitmap_blocks_per_group;
 	     entry_block < blocknr + fi->nblocks; entry_block++) {
 		raw_inode = map_disk_buffer(entry_block, 1);
@@ -1515,7 +1515,7 @@ static void prepare_sufile(void)
 	struct nilfs_segment_usage *su;
 	unsigned long segnum = 0;
 	int i;
-	
+
 	header = map_disk_buffer(blocknr, 1);
 	header->sh_ncleansegs = cpu_to_le64(nilfs.diskinfo->nsegments -
 					    nr_initial_segments);
@@ -1608,7 +1608,7 @@ static blocknr_t assign_vblocknr(blocknr_t blocknr)
 	entry->de_blocknr = cpu_to_le64(blocknr);
 	entry->de_start = cpu_to_le64(nilfs.cno);
 	entry->de_end = cpu_to_le64(NILFS_CNO_MAX);
-	
+
 	return vblocknr;
 }
 
@@ -1777,7 +1777,7 @@ static void prepare_super_block(struct nilfs_disk_info *di)
 	memcpy(raw_sb->s_volume_name, volume_label, sizeof(volume_label));
 }
 
-static void commit_super_block(struct nilfs_disk_info *di, 
+static void commit_super_block(struct nilfs_disk_info *di,
 			       const struct nilfs_segment_ref *segref)
 {
 	__u32 sbsum;

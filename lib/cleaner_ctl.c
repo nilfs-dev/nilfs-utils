@@ -207,7 +207,7 @@ static int nilfs_cleaner_find_fs(struct nilfs_cleaner *cleaner,
 			if (strcmp(mdir, cleaner->mountdir) != 0)
 				continue;
 		}
-			
+
 		if (cleaner->device != NULL) {
 			mdev = mntent->mnt_fsname;
 			if (myrealpath(mdev, canonical, sizeof(canonical)))

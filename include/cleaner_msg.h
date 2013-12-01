@@ -41,7 +41,7 @@ struct nilfs_cleaner_request {
 	/* must be aligned to 64-bit size boundary */
 
 	char buf[0]; /* payload */
-};	
+};
 
 struct nilfs_cleaner_request_with_args {
 	struct nilfs_cleaner_request hdr;
@@ -63,7 +63,7 @@ enum {
 	NILFS_CLEANER_RSP_NACK,
 };
 
-struct nilfs_cleaner_response { 
+struct nilfs_cleaner_response {
 	int16_t result;
 	int16_t status; /* cleanerd status */
 	int32_t err;

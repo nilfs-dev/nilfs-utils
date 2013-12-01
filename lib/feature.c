@@ -204,7 +204,7 @@ int nilfs_edit_feature(const char *str, __u64 *compat_array,
 
 		if (*next == '\0')
 			next = NULL;
-		else 
+		else
 			*next = '\0';
 
 		if (strcasecmp(cp, "none") == 0) {
