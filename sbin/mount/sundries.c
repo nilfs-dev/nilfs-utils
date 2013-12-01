@@ -184,11 +184,7 @@ check_option(const char *haystack, const char *needle) {
 
      for (p = haystack; p < haystack+len; p++) {
 	  r = strchr(p, ',');
-	  if (r) {
-	       this_len = r-p;
-	  } else {
-	       this_len = strlen(p);
-	  }
+	  this_len = r ? r - p : strlen(p);
 	  if (this_len != needle_len) {
 	       p += this_len;
 	       continue;
@@ -225,11 +221,7 @@ matching_opts (const char *options, const char *test_opts) {
 
      for (p = test_opts; p < test_opts+len; p++) {
 	  r = strchr(p, ',');
-	  if (r) {
-	       this_len = r-p;
-	  } else {
-	       this_len = strlen(p);
-	  }
+	  this_len = r ? r - p : strlen(p);
 	  if (!this_len)
 		  continue; /* if two ',' appear in a row */
 	  strncpy(q, p, this_len);

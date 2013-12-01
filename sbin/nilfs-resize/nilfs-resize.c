@@ -840,9 +840,8 @@ static void nilfs_print_resize_error(int err, int shrink)
 {
 	myprintf("Error: failed to %s the filesystem: %s\n",
 		 shrink ? "shrink" : "extend", strerror(err));
-	if (err == ENOTTY) {
+	if (err == ENOTTY)
 		myprintf("       This kernel does not support the resize API.\n");
-	}
 }
 
 static int nilfs_resize_prompt(unsigned long long newsize)
@@ -931,9 +930,8 @@ static int nilfs_shrink_online(struct nilfs *nilfs, const char *device,
 		if (nilfs_resize_lock_cleaner(nilfs, &sigset) < 0)
 			goto restore_alloc_range;
 
-		if (verbose) {
+		if (verbose)
 			myprintf("Truncating segments.\n");
-		}
 
 		ret = nilfs_resize(nilfs, newsize);
 		err = errno;

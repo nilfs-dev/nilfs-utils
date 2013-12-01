@@ -903,13 +903,13 @@ static int nilfs_cleanerd_cmd_getstat(struct nilfs_cleanerd *cleanerd,
 {
 	struct nilfs_cleaner_response res = {0};
 
-	if (cleanerd->running == 0) {
+	if (cleanerd->running == 0)
 		res.status = NILFS_CLEANER_STATUS_IDLE;
-	} else if (cleanerd->running > 0) {
+	else if (cleanerd->running > 0)
 		res.status = NILFS_CLEANER_STATUS_RUNNING;
-	} else {
+	else
 		res.status = NILFS_CLEANER_STATUS_SUSPENDED;
-	}
+
 	res.result = NILFS_CLEANER_RSP_ACK;
 	return nilfs_cleanerd_respond(cleanerd, req, &res);
 }
@@ -1250,9 +1250,9 @@ static int nilfs_cleanerd_handle_manual_mode(struct nilfs_cleanerd *cleanerd,
 			}
 		}
 	}
-	if (cleanerd->mm_nrestpasses == 0 && cleanerd->mm_nrestsegs == 0) {
+	if (cleanerd->mm_nrestpasses == 0 && cleanerd->mm_nrestsegs == 0)
 		nilfs_cleanerd_manual_end(cleanerd);
-	}
+
 	return 0;
 }
 
