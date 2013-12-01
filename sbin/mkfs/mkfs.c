@@ -85,8 +85,8 @@
 typedef __u64  blocknr_t;
 
 #define BUG_ON(x)	   assert(!(x))
-#define ROUNDUP_DIV(n,m)   (((n) - 1) / (m) + 1)
-#define max_t(type,x,y) \
+#define ROUNDUP_DIV(n, m)	(((n) - 1) / (m) + 1)
+#define max_t(type, x, y) \
 	({ type __x = (x); type __y = (y); __x > __y ? __x : __y; })
 
 extern __u32 crc32_le(__u32 seed, unsigned char const *data, size_t length);
@@ -304,11 +304,11 @@ static void too_small_segment(unsigned long, unsigned long);
 #ifdef __linux__
 
 #ifndef BLKDISCARD
-#define BLKDISCARD	_IO(0x12,119)
+#define BLKDISCARD	_IO(0x12, 119)
 #endif
 
 #ifndef BLKDISCARDZEROES
-#define BLKDISCARDZEROES _IO(0x12,124)
+#define BLKDISCARDZEROES _IO(0x12, 124)
 #endif
 
 /**

@@ -48,8 +48,8 @@
 #include <getopt.h>
 const static struct option long_option[] = {
 	{"all",  no_argument, NULL, 'a'},
-	{"index",required_argument, NULL, 'i'},
-	{"lines",required_argument, NULL, 'n'},
+	{"index", required_argument, NULL, 'i'},
+	{"lines", required_argument, NULL, 'n'},
 	{"help", no_argument, NULL, 'h'},
 	{"version", no_argument, NULL, 'V'},
 	{NULL, 0, NULL, 0}

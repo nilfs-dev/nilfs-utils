@@ -16,7 +16,7 @@
  * systems, as well as non-32 bit systems.
  */
 
-int ext2fs_set_bit(int nr,void * addr)
+int ext2fs_set_bit(int nr, void * addr)
 {
 	int		mask, retval;
 	unsigned char	*ADDR = (unsigned char *) addr;

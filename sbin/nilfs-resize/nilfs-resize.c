@@ -101,7 +101,7 @@ const static struct option long_option[] = {
 
 /* general macros */
 #ifndef DIV_ROUND_UP
-#define DIV_ROUND_UP(n,m)   (((n) + (m) - 1) / (m))
+#define DIV_ROUND_UP(n, m)	(((n) + (m) - 1) / (m))
 #endif
 
 #ifndef ARRAY_SIZE
@@ -109,9 +109,9 @@ const static struct option long_option[] = {
 #endif
 
 #ifndef min_t
-#define min_t(type,x,y) \
+#define min_t(type, x, y) \
 	({ type __x = (x); type __y = (y); __x < __y ? __x : __y; })
-#define max_t(type,x,y) \
+#define max_t(type, x, y) \
 	({ type __x = (x); type __y = (y); __x > __y ? __x : __y; })
 #endif
 

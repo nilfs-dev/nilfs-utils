@@ -45,7 +45,7 @@ xstrndup (const char *s, int n) {
 	  die (EX_SOFTWARE, _("bug in xstrndup call"));
 
      t = xmalloc(n+1);
-     strncpy(t,s,n);
+     strncpy(t, s, n);
      t[n] = 0;
 
      return t;
@@ -158,7 +158,7 @@ matching_type (const char *type, const char *types) {
 	     if (strncmp(p, type, len) == 0 &&
 		 (p[len] == 0 || p[len] == ','))
 		     return !no;
-	     p = index(p,',');
+	     p = index(p, ',');
 	     if (!p)
 		     break;
 	     p++;
