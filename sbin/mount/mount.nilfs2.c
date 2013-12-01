@@ -501,7 +501,7 @@ do_mount_one(struct nilfs_mount_info *mi, const struct mount_options *mo)
 	if (mi->type != RW2RO_REMOUNT && mi->type != RW2RW_REMOUNT)
 		goto out;
 
-        mtab_ok = check_mtab();
+	mtab_ok = check_mtab();
 
 	/* Cleaner daemon was stopped and it needs to run */
 	/* because filesystem is still mounted */

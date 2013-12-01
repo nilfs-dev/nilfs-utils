@@ -409,7 +409,7 @@ umount_one(const char *spec, const char *node, const char *type,
 				change_mtab_opt(spec, node, type,
 						xstrdup("ro"));
 				return 0;
-			} else if (errno != EBUSY) { 	/* hmm ... */
+			} else if (errno != EBUSY) {	/* hmm ... */
 				error(_("%s: could not remount %s read-only"),
 				      progname, spec);
 			}

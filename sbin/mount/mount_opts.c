@@ -106,10 +106,10 @@ static const struct opt_map opt_map[] = {
 	{ "nodiratime", 0, 0, MS_NODIRATIME },	/* Do not update dir access times */
 #endif
 #ifdef MS_RELATIME
-  { "relatime",	0, 0, MS_RELATIME },   /* Update access times relative to
-					  mtime/ctime */
-  { "norelatime", 0, 1, MS_RELATIME }, /* Update access time without regard
-					  to mtime/ctime */
+	{ "relatime", 0, 0, MS_RELATIME },   /* Update access times relative
+						to mtime/ctime */
+	{ "norelatime", 0, 1, MS_RELATIME }, /* Update access time without
+						regard to mtime/ctime */
 #endif
 	{ NULL,	0, 0, 0		}
 };

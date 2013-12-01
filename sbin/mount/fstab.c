@@ -331,12 +331,12 @@ extern char *strsignal(int sig);	/* not always in <string.h> */
 
 static void
 handler (int sig) {
-     die(EX_USER, "%s", strsignal(sig));
+	die(EX_USER, "%s", strsignal(sig));
 }
 
 static void
 setlkw_timeout (int sig) {
-     /* nothing, fcntl will fail anyway */
+	/* nothing, fcntl will fail anyway */
 }
 
 /* Remove lock file.  */

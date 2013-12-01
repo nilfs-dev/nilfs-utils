@@ -26,7 +26,7 @@
 
 #include "nilfs2_fs.h"
 
-#define NILFS_DISKHDR_SIZE 		4096 /* HDD header (MBR+superblock) */
+#define NILFS_DISKHDR_SIZE		4096 /* HDD header (MBR+superblock) */
 #define NILFS_DISK_ERASE_SIZE		1048576	/* size of first and last
 						   bytes to be erased (except
 						   for the partition table) */
@@ -62,7 +62,7 @@ extern int ext2fs_test_bit(int nr, const void * addr);
 
 /* get device size through ioctl */
 #ifndef BLKGETSIZE64
-#define BLKGETSIZE64 	_IOR(0x12, 114, size_t)
+#define BLKGETSIZE64	_IOR(0x12, 114, size_t)
 #endif
 
 /*

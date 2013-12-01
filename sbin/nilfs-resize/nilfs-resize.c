@@ -91,11 +91,11 @@ const static struct option long_option[] = {
 
 /* get device size through ioctl */
 #ifndef BLKGETSIZE64
-#define BLKGETSIZE64 	_IOR(0x12, 114, size_t)
+#define BLKGETSIZE64	_IOR(0x12, 114, size_t)
 #endif
 
 #ifndef FIFREEZE
-#define FIFREEZE 	_IOWR('X', 119, int)
+#define FIFREEZE	_IOWR('X', 119, int)
 #define FITHAW		_IOWR('X', 120, int)
 #endif
 

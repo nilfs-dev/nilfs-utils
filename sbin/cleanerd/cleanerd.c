@@ -522,7 +522,7 @@ static int nilfs_segments_still_reclaimable(struct nilfs *nilfs,
 }
 
 #ifndef FIFREEZE
-#define FIFREEZE 	_IOWR('X', 119, int)
+#define FIFREEZE	_IOWR('X', 119, int)
 #define FITHAW		_IOWR('X', 120, int)
 #endif
 

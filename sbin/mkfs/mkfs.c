@@ -1156,11 +1156,11 @@ static void parse_options(int argc, char *argv[])
 	if (fs_features)
 		nilfs_mkfs_edit_feature(fs_features);
 
-        if (argc > 0) {
-                char *cp = strrchr(argv[0], '/');
+	if (argc > 0) {
+		char *cp = strrchr(argv[0], '/');
 
-                progname = (cp ? cp + 1 : argv[0]);
-        }
+		progname = (cp ? cp + 1 : argv[0]);
+	}
 }
 
 /*
@@ -1249,7 +1249,7 @@ static void init_inode(ino_t ino, unsigned type, int mode, unsigned size)
 	raw_inode->i_mode =		cpu_to_le16((type << 12) | mode);
 	raw_inode->i_flags =		0;
 	raw_inode->i_size =		cpu_to_le64(size);
-	raw_inode->i_blocks = 		cpu_to_le64(nilfs.files[ino]->nblocks);
+	raw_inode->i_blocks =		cpu_to_le64(nilfs.files[ino]->nblocks);
 	raw_inode->i_links_count =	cpu_to_le16(1);
 	raw_inode->i_ctime =		cpu_to_le64(nilfs.diskinfo->ctime);
 	raw_inode->i_mtime =		cpu_to_le64(nilfs.diskinfo->ctime);
