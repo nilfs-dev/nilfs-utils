@@ -43,7 +43,7 @@
 #define NILFS_MAX_BMAP_ROOT_PTRS	(NILFS_INODE_BMAP_SIZE - 1)
 #define NILFS_MIN_BLOCKSIZE		1024
 #define NILFS_MIN_NUSERSEGS		8    /* Minimum number of user
-					        (non-reserved) segments */
+						(non-reserved) segments */
 
 /* Additional inode numbers */
 enum {
