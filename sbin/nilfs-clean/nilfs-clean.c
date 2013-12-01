@@ -339,13 +339,26 @@ static int nilfs_clean_parse_protection_period(const char *arg)
 	} else if (endptr[0] != '\0' && endptr[1] == '\0' &&
 		   period < ULONG_MAX) {
 		switch (endptr[0]) {
-		case 's': break;
-		case 'm': period *= 60; break;
-		case 'h': period *= 3600; break;
-		case 'd': period *= 86400; break;
-		case 'w': period *= 604800; break;
-		case 'M': period *= 2678400; break;
-		case 'Y': period *= 31536000; break;
+		case 's':
+			break;
+		case 'm':
+			period *= 60;
+			break;
+		case 'h':
+			period *= 3600;
+			break;
+		case 'd':
+			period *= 86400;
+			break;
+		case 'w':
+			period *= 604800;
+			break;
+		case 'M':
+			period *= 2678400;
+			break;
+		case 'Y':
+			period *= 31536000;
+			break;
 		default:
 			ret = -1;
 			goto out;

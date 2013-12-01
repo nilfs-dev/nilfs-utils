@@ -94,7 +94,8 @@ const char *nilfs_feature2string(int compat_type, __u64 mask)
 		break;
 	}
 
-	for (i = 0; mask >>= 1; i++);
+	for (i = 0; mask >>= 1; i++)
+		;
 	snprintf(buf, sizeof(buf), "FEATURE_%c%d", tchar, i);
 	return buf;
 }

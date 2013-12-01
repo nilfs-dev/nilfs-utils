@@ -689,7 +689,8 @@ static int nilfs_cldconfig_do_read(struct nilfs_cldconfig *config,
 	while (fgets(line, sizeof(line), fp) != NULL) {
 		if (line[strlen(line) - 1] != '\n') {
 			syslog(LOG_WARNING, "too long line");
-			while (((c = fgetc(fp)) != '\n') && (c != EOF)) ;
+			while (((c = fgetc(fp)) != '\n') && (c != EOF))
+				;
 		}
 		if ((ntoks = tokenize(line, tokens, NTOKENS_MAX)) == 0)
 			continue;

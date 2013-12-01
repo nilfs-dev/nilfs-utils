@@ -1092,12 +1092,24 @@ static int nilfs_resize_parse_size(const char *arg, unsigned long long *sizep)
 		;
 	} else if (endptr[1] == '\0') {
 		switch (endptr[0]) {
-		case 's': size <<= 9; break;
-		case 'K': size <<= 10; break;
-		case 'M': size <<= 20; break;
-		case 'G': size <<= 30; break;
-		case 'T': size <<= 40; break;
-		case 'P': size <<= 50; break;
+		case 's':
+			size <<= 9;
+			break;
+		case 'K':
+			size <<= 10;
+			break;
+		case 'M':
+			size <<= 20;
+			break;
+		case 'G':
+			size <<= 30;
+			break;
+		case 'T':
+			size <<= 40;
+			break;
+		case 'P':
+			size <<= 50;
+			break;
 		default:
 			return -1;
 		}

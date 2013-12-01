@@ -231,7 +231,8 @@ matching_opts (const char *options, const char *test_opts) {
 	  } else {
 	       this_len = strlen(p);
 	  }
-	  if (!this_len) continue; /* if two ',' appear in a row */
+	  if (!this_len)
+		  continue; /* if two ',' appear in a row */
 	  strncpy(q, p, this_len);
 	  q[this_len] = '\0';
 	  if (!check_option(options, q))

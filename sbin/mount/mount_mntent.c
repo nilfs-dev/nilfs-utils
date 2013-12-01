@@ -208,7 +208,8 @@ my_getmntent (mntFILE *mfp) {
 
 	if (isdigit(*s)) {
 		me.mnt_freq = atoi(s);
-		while (isdigit(*s)) s++;
+		while (isdigit(*s))
+			s++;
 	} else
 		me.mnt_freq = 0;
 	if (*s && !is_space_or_tab(*s))
@@ -217,7 +218,8 @@ my_getmntent (mntFILE *mfp) {
 	s = skip_spaces(s);
 	if (isdigit(*s)) {
 		me.mnt_passno = atoi(s);
-		while (isdigit(*s)) s++;
+		while (isdigit(*s))
+			s++;
 	} else
 		me.mnt_passno = 0;
 	if (*s && !is_space_or_tab(*s))

@@ -466,7 +466,8 @@ static inline int my_log2(long i)
 {
 	int n;
 
-	for (n = 0; i > 1; i >>= 1) n++;
+	for (n = 0; i > 1; i >>= 1)
+		n++;
 	return n;
 }
 

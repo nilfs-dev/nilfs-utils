@@ -258,8 +258,9 @@ int main(int argc, char *argv[])
 
 	if (argc < 1)
 		die(EX_USAGE, _("No mountpoint specified"));
-	else while (argc--)
-		ret += umount_dir(*argv++);
+	else
+		while (argc--)
+			ret += umount_dir(*argv++);
 
 	exit(ret);
 }
