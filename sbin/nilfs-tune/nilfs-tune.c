@@ -188,8 +188,7 @@ static void parse_options(int argc, char *argv[],
 		}
 	}
 
-	if (optind == argc)
-	{
+	if (optind == argc) {
 		nilfs_tune_usage();
 		exit(EXIT_FAILURE);
 	}

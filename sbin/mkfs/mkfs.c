@@ -1138,8 +1138,7 @@ static void parse_options(int argc, char *argv[])
 	if (quiet)
 		verbose = 0;
 
-	if ((optind == argc) && !show_version_only)
-	{
+	if ((optind == argc) && !show_version_only) {
 		printf("%d %d\n", optind, argc);
 		usage();
 		exit(EXIT_FAILURE);
