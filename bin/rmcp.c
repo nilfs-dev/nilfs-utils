@@ -134,6 +134,7 @@ static int rmcp_remove_range(struct nilfs *nilfs,
 int main(int argc, char *argv[])
 {
 	char *dev;
+	char *last;
 	struct nilfs *nilfs;
 	struct nilfs_cpstat cpstat;
 	nilfs_cno_t start, end, oldest;
@@ -144,10 +145,8 @@ int main(int argc, char *argv[])
 #endif	/* _GNU_SOURCE */
 
 	opterr = 0;
-	if ((progname = strrchr(argv[0], '/')) == NULL)
-		progname = argv[0];
-	else
-		progname++;
+	last = strrchr(argv[0], '/');
+	progname = last ? last + 1 : argv[0];
 
 #ifdef _GNU_SOURCE
 	while ((c = getopt_long(argc, argv, "fihV",

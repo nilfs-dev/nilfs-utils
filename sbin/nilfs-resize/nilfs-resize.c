@@ -1144,15 +1144,14 @@ out:
 
 int main(int argc, char *argv[])
 {
+	char *last;
 	unsigned long long size;
 	struct stat statbuf;
 	char *device;
 	int status, ret;
 
-	if ((progname = strrchr(argv[0], '/')) != NULL)
-		progname++;
-	else
-		progname = argv[0];
+	last = strrchr(argv[0], '/');
+	progname = last ? last + 1 : argv[0];
 
 	nilfs_resize_parse_options(argc, argv);
 	if (show_version_only) {

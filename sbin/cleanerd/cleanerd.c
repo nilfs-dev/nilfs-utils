@@ -581,7 +581,8 @@ nilfs_cleanerd_select_segments(struct nilfs_cleanerd *cleanerd,
 	nilfs = cleanerd->nilfs;
 	config = &cleanerd->config;
 
-	if ((smv = nilfs_vector_create(sizeof(struct nilfs_segimp))) == NULL)
+	smv = nilfs_vector_create(sizeof(struct nilfs_segimp));
+	if (!smv)
 		return -1;
 
 	/* The segments that were more recently written to disk than
@@ -603,13 +604,17 @@ nilfs_cleanerd_select_segments(struct nilfs_cleanerd *cleanerd,
 	for (segnum = 0; segnum < sustat->ss_nsegs; segnum += n) {
 		count = (sustat->ss_nsegs - segnum < NILFS_CLEANERD_NSUINFO) ?
 			sustat->ss_nsegs - segnum : NILFS_CLEANERD_NSUINFO;
-		if ((n = nilfs_get_suinfo(nilfs, segnum, si, count)) < 0) {
+		n = nilfs_get_suinfo(nilfs, segnum, si, count);
+		if (n < 0) {
 			nssegs = n;
 			goto out;
 		}
 		for (i = 0; i < n; i++) {
-			if (nilfs_suinfo_reclaimable(&si[i]) &&
-			    ((imp = (*config->cf_selection_policy.p_importance)(&si[i])) < thr)) {
+			if (!nilfs_suinfo_reclaimable(&si[i]))
+				continue;
+
+			imp = config->cf_selection_policy.p_importance(&si[i]);
+			if (imp < thr) {
 				if (si[i].sui_lastmod < oldest)
 					oldest = si[i].sui_lastmod;
 				if (si[i].sui_lastmod < prottime) {
@@ -657,7 +662,8 @@ static int daemonize(int nochdir, int noclose, int nofork)
 	pid_t pid;
 
 	if (!nofork) {
-		if ((pid = fork()) < 0)
+		pid = fork();
+		if (pid < 0)
 			return -1;
 		else if (pid != 0)
 			/* parent */

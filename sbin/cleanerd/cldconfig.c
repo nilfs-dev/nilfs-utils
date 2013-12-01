@@ -682,7 +682,8 @@ static int nilfs_cldconfig_do_read(struct nilfs_cldconfig *config,
 	char line[LINE_MAX], *tokens[NTOKENS_MAX];
 	int ntoks, c, ret;
 
-	if ((fp = fopen(conffile, "r")) == NULL)
+	fp = fopen(conffile, "r");
+	if (!fp)
 		return -1;
 
 	ret = 0;
@@ -692,10 +693,12 @@ static int nilfs_cldconfig_do_read(struct nilfs_cldconfig *config,
 			while (((c = fgetc(fp)) != '\n') && (c != EOF))
 				;
 		}
-		if ((ntoks = tokenize(line, tokens, NTOKENS_MAX)) == 0)
+		ntoks = tokenize(line, tokens, NTOKENS_MAX);
+		if (ntoks == 0)
 			continue;
-		if ((ret = nilfs_cldconfig_handle_keyword(
-			     config, tokens, ntoks, nilfs)) < 0)
+		ret = nilfs_cldconfig_handle_keyword(config, tokens, ntoks,
+						     nilfs);
+		if (ret < 0)
 			break;
 	}
 

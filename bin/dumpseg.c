@@ -170,7 +170,7 @@ int main(int argc, char *argv[])
 {
 	struct nilfs *nilfs;
 	__u64 segnum;
-	char *dev, *endptr, *progname;
+	char *dev, *endptr, *progname, *last;
 	void *seg;
 	ssize_t segsize;
 	int c, i, status;
@@ -180,10 +180,8 @@ int main(int argc, char *argv[])
 
 	opterr = 0;
 
-	if ((progname = strrchr(argv[0], '/')) == NULL)
-		progname = argv[0];
-	else
-		progname++;
+	last = strrchr(argv[0], '/');
+	progname = last ? last + 1 : argv[0];
 
 #ifdef _GNU_SOURCE
 	while ((c = getopt_long(argc, argv, "hV",
@@ -236,7 +234,8 @@ int main(int argc, char *argv[])
 			status = 1;
 			continue;
 		}
-		if ((segsize = nilfs_get_segment(nilfs, segnum, &seg)) < 0) {
+		segsize = nilfs_get_segment(nilfs, segnum, &seg);
+		if (segsize < 0) {
 			fprintf(stderr, "%s: %s\n", progname, strerror(errno));
 			status = 1;
 			goto out;

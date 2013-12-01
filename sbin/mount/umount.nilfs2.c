@@ -275,7 +275,8 @@ static int del_loop(const char *device)
 {
 	int fd;
 
-	if ((fd = open (device, O_RDONLY)) < 0) {
+	fd = open(device, O_RDONLY);
+	if (fd < 0) {
 		int errsv = errno;
 		error(_("loop: can't delete device %s: %s\n"),
 		      device, strerror (errsv));
@@ -388,10 +389,12 @@ umount_one(const char *spec, const char *node, const char *type,
 		nomtab++;
 
 	if (mc) {
-		if (!read_only_mount_point(mc) &&
-		    (pid = get_mtab_gcpid(mc)) != 0) {
-			alive = nilfs_ping_cleanerd(pid);
-			nilfs_shutdown_cleanerd(spec, pid);
+		if (!read_only_mount_point(mc)) {
+			pid = get_mtab_gcpid(mc);
+			if (pid != 0) {
+				alive = nilfs_ping_cleanerd(pid);
+				nilfs_shutdown_cleanerd(spec, pid);
+			}
 		}
 	}
 
@@ -468,7 +471,8 @@ umount_one(const char *spec, const char *node, const char *type,
 			 * If option "-o loop=spec" occurs in mtab,
 			 * note the mount point, and delete mtab line.
 			 */
-			if ((mc = getmntoptfile (spec)) != NULL)
+			mc = getmntoptfile(spec);
+			if (mc)
 				node = mc->m.mnt_dir;
 		}
 

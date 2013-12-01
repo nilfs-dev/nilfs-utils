@@ -39,10 +39,12 @@ struct nilfs_vector *nilfs_vector_create(size_t elemsize)
 {
 	struct nilfs_vector *vector;
 
-	if ((vector = malloc(sizeof(struct nilfs_vector))) == NULL)
+	vector = malloc(sizeof(struct nilfs_vector));
+	if (!vector)
 		return NULL;
 
-	if ((vector->v_data = malloc(elemsize * NILFS_VECTOR_INIT_MAXELEMS)) == NULL) {
+	vector->v_data = malloc(elemsize * NILFS_VECTOR_INIT_MAXELEMS);
+	if (!vector->v_data) {
 		free(vector);
 		return NULL;
 	}
@@ -88,8 +90,8 @@ void *nilfs_vector_get_new_element(struct nilfs_vector *vector)
 	/* resize array if necessary */
 	if (vector->v_nelems >= vector->v_maxelems) {
 		maxelems = vector->v_maxelems * NILFS_VECTOR_FACTOR;
-		if ((data = realloc(vector->v_data,
-				    vector->v_elemsize * maxelems)) == NULL)
+		data = realloc(vector->v_data, vector->v_elemsize * maxelems);
+		if (!data)
 			return NULL;
 		vector->v_data = data;
 		vector->v_maxelems = maxelems;

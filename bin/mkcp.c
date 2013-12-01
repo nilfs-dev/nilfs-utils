@@ -72,7 +72,7 @@ int main(int argc, char *argv[])
 {
 	struct nilfs *nilfs;
 	nilfs_cno_t cno;
-	char *dev, *progname;
+	char *dev, *progname, *last;
 	int ss, print, c, status;
 #ifdef _GNU_SOURCE
 	int option_index;
@@ -82,10 +82,8 @@ int main(int argc, char *argv[])
 	ss = 0;
 	print = 0;
 	opterr = 0;
-	if ((progname = strrchr(argv[0], '/')) == NULL)
-		progname = argv[0];
-	else
-		progname++;
+	last = strrchr(argv[0], '/');
+	progname = last ? last + 1 : argv[0];
 
 #ifdef _GNU_SOURCE
 	while ((c = getopt_long(argc, argv, "sphV",

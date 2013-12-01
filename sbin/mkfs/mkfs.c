@@ -619,7 +619,9 @@ int main(int argc, char *argv[])
 
 	if (cflag)
 		disk_scan(device);  /* check the block device */
-	if ((fd = open(device, O_RDWR)) < 0)
+
+	fd = open(device, O_RDWR);
+	if (fd < 0)
 		perr("Error: cannot open device: %s", device);
 	check_mount(fd, device);
 	check_safety_of_device_overwrite(fd, device);
@@ -1056,7 +1058,8 @@ static inline void check_ctime(time_t ctime)
 		char cbuf[26], *cbufp;
 
 		ctime_r(&ctime, cbuf);
-		if ((cbufp = rindex(cbuf, '\n')) != NULL)
+		cbufp = rindex(cbuf, '\n');
+		if (cbufp)
 			*cbufp = '\0';
 		pinfo("Warning: Future time: %s (%ld)",
 		      cbuf, (long)ctime);

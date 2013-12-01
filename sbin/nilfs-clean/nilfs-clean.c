@@ -487,14 +487,13 @@ static void nilfs_clean_parse_options(int argc, char *argv[])
 
 int main(int argc, char *argv[])
 {
+	char *last;
 	struct stat statbuf;
 	char *device = NULL;
 	int status;
 
-	if ((progname = strrchr(argv[0], '/')) != NULL)
-		progname++;
-	else
-		progname = argv[0];
+	last = strrchr(argv[0], '/');
+	progname = last ? last + 1 : argv[0];
 
 	nilfs_cleaner_logger = nilfs_clean_logger;
 

@@ -303,7 +303,8 @@ static int nilfs_get_vdesc(struct nilfs *nilfs, struct nilfs_vector *vdescv)
 			assert(vdesc != NULL);
 			vinfo[j].vi_vblocknr = vdesc->vd_vblocknr;
 		}
-		if ((n = nilfs_get_vinfo(nilfs, vinfo, j)) < 0)
+		n = nilfs_get_vinfo(nilfs, vinfo, j);
+		if (n < 0)
 			return -1;
 		for (j = 0; j < n; j++) {
 			vdesc = nilfs_vector_get_element(vdescv, i + j);
@@ -342,9 +343,9 @@ static ssize_t nilfs_get_snapshot(struct nilfs *nilfs, nilfs_cno_t **ssp)
 
 	cno = 0;
 	for (i = 0; i < cpstat.cs_nsss; i += n) {
-		if ((n = nilfs_get_cpinfo(
-			     nilfs, cno, NILFS_SNAPSHOT,
-			     cpinfo, NILFS_GC_NCPINFO)) < 0) {
+		n = nilfs_get_cpinfo(nilfs, cno, NILFS_SNAPSHOT, cpinfo,
+				     NILFS_GC_NCPINFO);
+		if (n < 0) {
 			free(ss);
 			return -1;
 		}
@@ -462,7 +463,8 @@ static int nilfs_toss_vdescs(struct nilfs *nilfs,
 	int i, j, ret;
 
 	ss = NULL;
-	if ((n = nilfs_get_snapshot(nilfs, &ss)) < 0)
+	n = nilfs_get_snapshot(nilfs, &ss);
+	if (n < 0)
 		return n;
 
 	last_hit = 0;
@@ -556,7 +558,8 @@ static int nilfs_get_bdesc(struct nilfs *nilfs, struct nilfs_vector *bdescv)
 	for (i = 0; i < nbdescs; i += n) {
 		count = (nbdescs - i < NILFS_GC_NBDESCS) ?
 			(nbdescs - i) : NILFS_GC_NBDESCS;
-		if ((n = nilfs_get_bdescs(nilfs, bdescs + i, count)) < 0)
+		n = nilfs_get_bdescs(nilfs, bdescs + i, count);
+		if (n < 0)
 			return -1;
 	}
 

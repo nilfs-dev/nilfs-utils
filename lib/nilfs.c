@@ -124,7 +124,8 @@ static int has_mntopt(const char *opts, const char *opt)
 	p = opts;
 	len = strlen(opt);
 	while (p != NULL) {
-		if ((q = strchr(p, MNTOPT_SEP)) != NULL) {
+		q = strchr(p, MNTOPT_SEP);
+		if (q) {
 			n = (q - p < len) ? len : q - p;
 			q++;
 		} else
@@ -245,7 +246,8 @@ int nilfs_opt_set_mmap(struct nilfs *nilfs)
 	long pagesize;
 	size_t segsize;
 
-	if ((pagesize = sysconf(_SC_PAGESIZE)) < 0)
+	pagesize = sysconf(_SC_PAGESIZE);
+	if (pagesize < 0)
 		return -1;
 	segsize = le32_to_cpu(nilfs->n_sb->s_blocks_per_segment) *
 		nilfs_get_block_size(nilfs);
@@ -665,8 +667,8 @@ int nilfs_sync(const struct nilfs *nilfs, nilfs_cno_t *cnop)
 		return -1;
 	}
 
-	if (((ret = ioctl(nilfs->n_iocfd, NILFS_IOCTL_SYNC, cnop)) < 0) &&
-	    (ret == -EROFS))
+	ret = ioctl(nilfs->n_iocfd, NILFS_IOCTL_SYNC, cnop);
+	if (ret < 0 && ret == -EROFS)
 		/* syncing read-only filesystem */
 		ret = 0;
 
@@ -739,12 +741,14 @@ ssize_t nilfs_get_segment(struct nilfs *nilfs, unsigned long segnum,
 
 #ifdef HAVE_MMAP
 	if (nilfs_opt_test_mmap(nilfs)) {
-		if ((segment = mmap(0, segsize, PROT_READ, MAP_SHARED,
-				    nilfs->n_devfd, offset)) == MAP_FAILED)
+		segment = mmap(0, segsize, PROT_READ, MAP_SHARED,
+			       nilfs->n_devfd, offset);
+		if (segment == MAP_FAILED)
 			return -1;
 	} else {
 #endif	/* HAVE_MMAP */
-		if ((segment = malloc(segsize)) == NULL)
+		segment = malloc(segsize);
+		if (!segment)
 			return -1;
 		if (lseek(nilfs->n_devfd, offset, SEEK_SET) != offset) {
 			free(segment);

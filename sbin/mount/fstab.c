@@ -306,13 +306,15 @@ getmntoptfile (const char *file) {
 	l = strlen(file);
 
 	mc0 = mtab_head();
-	for (mc = mc0->nxt; mc && mc != mc0; mc = mc->nxt)
-		if ((opts = mc->m.mnt_opts) != NULL
+	for (mc = mc0->nxt; mc && mc != mc0; mc = mc->nxt) {
+		opts = mc->m.mnt_opts;
+		if (opts
 		    && (s = strstr(opts, "loop="))
 		    && !strncmp(s+5, file, l)
 		    && (s == opts || s[-1] == ',')
 		    && (s[l+5] == 0 || s[l+5] == ','))
 			return mc;
+	}
 	return NULL;
 }
 
