@@ -151,7 +151,7 @@ matching_type (const char *type, const char *types) {
      /* Does type occur in types, separated by commas? */
      len = strlen(type);
      p = types;
-     while(1) {
+     while (1) {
 	     if (!strncmp(p, "no", 2) && !strncmp(p+2, type, len) &&
 		 (p[len+2] == 0 || p[len+2] == ','))
 		     return 0;

@@ -42,7 +42,7 @@ mangle(const char *s) {
 
 	n = strlen(s);
 	ss = sp = xmalloc(4*n+1);
-	while(1) {
+	while (1) {
 		for (n = 0; n < sizeof(need_escaping); n++) {
 			if (*s == need_escaping[n]) {
 				*sp++ = '\\';
@@ -89,7 +89,7 @@ unmangle(char *s) {
 
 	ss = skip_nonspaces(s);
 	ret = sp = xmalloc(ss-s+1);
-	while(s != ss) {
+	while (s != ss) {
 		if (*s == '\\' && isoctal(s[1]) && isoctal(s[2]) && isoctal(s[3])) {
 			*sp++ = 64*(s[1] & 7) + 8*(s[2] & 7) + (s[3] & 7);
 			s += 4;
@@ -208,19 +208,19 @@ my_getmntent (mntFILE *mfp) {
 
 	if (isdigit(*s)) {
 		me.mnt_freq = atoi(s);
-		while(isdigit(*s)) s++;
+		while (isdigit(*s)) s++;
 	} else
 		me.mnt_freq = 0;
-	if(*s && !is_space_or_tab(*s))
+	if (*s && !is_space_or_tab(*s))
 		goto err;
 
 	s = skip_spaces(s);
-	if(isdigit(*s)) {
+	if (isdigit(*s)) {
 		me.mnt_passno = atoi(s);
-		while(isdigit(*s)) s++;
+		while (isdigit(*s)) s++;
 	} else
 		me.mnt_passno = 0;
-	if(*s && !is_space_or_tab(*s))
+	if (*s && !is_space_or_tab(*s))
 		goto err;
 
 	/* allow more stuff, e.g. comments, on this line */
