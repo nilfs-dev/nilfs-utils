@@ -482,7 +482,6 @@ umount_one(const char *spec, const char *node, const char *type,
 	if (loopdev)
 		del_loop(loopdev);
 
-// writemtab:
 	if (!nomtab &&
 	    (umnt_err == 0 || umnt_err == EINVAL || umnt_err == ENOENT)) {
 		update_mtab(node, NULL);

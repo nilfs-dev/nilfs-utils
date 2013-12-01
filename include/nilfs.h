@@ -83,7 +83,7 @@ typedef __u64	__be64;
 #include "nilfs2_fs.h"
 
 /* XXX: sector_t is not defined in user land */
-typedef __u64 sector_t;	// XXX: __u64 ??
+typedef __u64 sector_t;	/* XXX: __u64 ?? */
 typedef sector_t nilfs_blkoff_t;
 typedef __u64 nilfs_cno_t;
 

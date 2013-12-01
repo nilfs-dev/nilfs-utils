@@ -1708,10 +1708,10 @@ static void commit_segment(void)
 	for (i = 0, fi = si->files; i < si->nfiles; i++, fi++)
 		update_blocknr(fi, &sum_offset);
 
-	//commit_ifile();
+	/* commit_ifile(); */
 	commit_cpfile();
 	commit_sufile();
-	//commit_dat();
+	/* commit_dat(); */
 
 	fill_in_checksums(si, di->crc_seed);
 

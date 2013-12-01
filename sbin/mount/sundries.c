@@ -34,7 +34,6 @@
 #include "sundries.h"
 #include "realpath.h"
 #include "xmalloc.h"
-//#include "nfsmount.h"
 #include "nls.h"
 
 char *
