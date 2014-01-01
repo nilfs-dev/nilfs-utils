@@ -654,6 +654,40 @@ nilfs_cleanerd_select_segments(struct nilfs_cleanerd *cleanerd,
 	return nssegs;
 }
 
+static int oom_adjust(void)
+{
+	int fd, err;
+	const char *path, *score;
+	struct stat st;
+
+	/* Avoid oom-killer */
+	path = "/proc/self/oom_score_adj";
+	score = "-1000\n";
+
+	if (stat(path, &st)) {
+		/* oom_score_adj cannot be used, try oom_adj */
+		path = "/proc/self/oom_adj";
+		score = "-17\n";
+	}
+
+	fd = open(path, O_WRONLY);
+	if (fd < 0) {
+		fprintf(stderr, "can't adjust oom-killer's pardon %s, %m\n",
+			path);
+		return errno;
+	}
+
+	err = write(fd, score, strlen(score));
+	if (err < 0) {
+		fprintf(stderr, "can't adjust oom-killer's pardon %s, %m\n",
+			path);
+		close(fd);
+		return errno;
+	}
+	close(fd);
+	return 0;
+}
+
 #define DEVNULL	"/dev/null"
 #define ROOTDIR	"/"
 
@@ -1536,6 +1570,11 @@ int main(int argc, char *argv[])
 
 	if (daemonize(0, 0, nofork) < 0) {
 		fprintf(stderr, "%s: %s\n", progname, strerror(errno));
+		exit(1);
+	}
+
+	if (oom_adjust() < 0) {
+		fprintf(stderr, "adjusting the OOM killer failed: %m\n");
 		exit(1);
 	}
 
