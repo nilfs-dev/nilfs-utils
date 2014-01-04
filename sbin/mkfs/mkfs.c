@@ -85,6 +85,9 @@
 typedef __u64  blocknr_t;
 
 #define BUG_ON(x)	   assert(!(x))
+/* Force a compilation error if the condition is true */
+#define BUILD_BUG_ON(condition) ((void)sizeof(struct { int: -!!(condition); }))
+
 #define ROUNDUP_DIV(n, m)	(((n) - 1) / (m) + 1)
 #define max_t(type, x, y) \
 	({ type __x = (x); type __y = (y); __x > __y ? __x : __y; })
@@ -417,16 +420,15 @@ static unsigned count_dat_blocks(unsigned nr_dat_entries)
 	return nblocks;
 }
 
-static void nilfs_check_ondisk_sizes(void)
+static __attribute__((used)) void nilfs_check_ondisk_sizes(void)
 {
-	if (sizeof(struct nilfs_inode) > NILFS_MIN_BLOCKSIZE ||
-	    sizeof(struct nilfs_sufile_header) > NILFS_MIN_BLOCKSIZE ||
-	    sizeof(struct nilfs_segment_usage) > NILFS_MIN_BLOCKSIZE ||
-	    sizeof(struct nilfs_cpfile_header) > NILFS_MIN_BLOCKSIZE ||
-	    sizeof(struct nilfs_checkpoint) > NILFS_MIN_BLOCKSIZE ||
-	    sizeof(struct nilfs_dat_entry) > NILFS_MIN_BLOCKSIZE ||
-	    sizeof(struct nilfs_super_root) > NILFS_MIN_BLOCKSIZE)
-		perr("Internal error: too large on-disk structure");
+	BUILD_BUG_ON(sizeof(struct nilfs_inode) > NILFS_MIN_BLOCKSIZE);
+	BUILD_BUG_ON(sizeof(struct nilfs_sufile_header) > NILFS_MIN_BLOCKSIZE);
+	BUILD_BUG_ON(sizeof(struct nilfs_segment_usage) > NILFS_MIN_BLOCKSIZE);
+	BUILD_BUG_ON(sizeof(struct nilfs_cpfile_header) > NILFS_MIN_BLOCKSIZE);
+	BUILD_BUG_ON(sizeof(struct nilfs_checkpoint) > NILFS_MIN_BLOCKSIZE);
+	BUILD_BUG_ON(sizeof(struct nilfs_dat_entry) > NILFS_MIN_BLOCKSIZE);
+	BUILD_BUG_ON(sizeof(struct nilfs_super_root) > NILFS_MIN_BLOCKSIZE);
 }
 
 static unsigned long
@@ -523,8 +525,6 @@ static void init_disk_layout(struct nilfs_disk_info *di, int fd,
 		     "or shorten segments with -B option.", dev_size,
 		     (unsigned long long)segment_size * min_nsegments);
 	di->nseginfo = 0;
-
-	nilfs_check_ondisk_sizes();
 }
 
 static struct nilfs_segment_info *new_segment(struct nilfs_disk_info *di)
