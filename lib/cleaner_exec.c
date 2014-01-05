@@ -75,7 +75,6 @@
 #define WAIT_CLEANERD_RETRY_TIMEOUT	8	/* in seconds */
 
 static const char cleanerd[] = "/sbin/" NILFS_CLEANERD_NAME;
-static const char cleanerd_nofork_opt[] = "-n";
 static const char cleanerd_protperiod_opt[] = "-p";
 
 static void default_logger(int priority, const char *fmt, ...)
@@ -118,7 +117,7 @@ static inline int process_is_alive(pid_t pid)
 int nilfs_launch_cleanerd(const char *device, const char *mntdir,
 			  unsigned long protperiod, pid_t *ppid)
 {
-	const char *dargs[7];
+	const char *dargs[6];
 	struct stat statbuf;
 	sigset_t sigs;
 	int i = 0;
@@ -146,7 +145,6 @@ int nilfs_launch_cleanerd(const char *device, const char *mntdir,
 			exit(1);
 		}
 		dargs[i++] = cleanerd;
-		dargs[i++] = cleanerd_nofork_opt;
 		if (protperiod != ULONG_MAX) {
 			dargs[i++] = cleanerd_protperiod_opt;
 			snprintf(buf, sizeof(buf), "%lu", protperiod);
