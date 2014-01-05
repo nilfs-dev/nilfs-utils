@@ -708,6 +708,14 @@ static int daemonize(int nochdir, int noclose)
 
 	/* umask(0); */
 
+	/* for ensuring I'm not a session leader */
+	pid = fork();
+	if (pid < 0)
+		return -1;
+	else if (pid != 0)
+		/* parent */
+		_exit(0);
+
 	if (!nochdir && (chdir(ROOTDIR) < 0))
 		return -1;
 
