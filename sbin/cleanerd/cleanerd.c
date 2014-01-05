@@ -113,7 +113,7 @@ do {						\
 const static struct option long_option[] = {
 	{"conffile", required_argument, NULL, 'c'},
 	{"help", no_argument, NULL, 'h'},
-	/* internal option for mount.nilfs2 only */
+	/* nofork option is obsolete. It does nothing even if passed */
 	{"nofork", no_argument, NULL, 'n'},
 	{"protection-period", required_argument, NULL, 'p'},
 	{"version", no_argument, NULL, 'V'},
@@ -691,20 +691,18 @@ static int oom_adjust(void)
 #define DEVNULL	"/dev/null"
 #define ROOTDIR	"/"
 
-static int daemonize(int nochdir, int noclose, int nofork)
+static int daemonize(int nochdir, int noclose)
 {
 	pid_t pid;
 
-	if (!nofork) {
-		pid = fork();
-		if (pid < 0)
-			return -1;
-		else if (pid != 0)
-			/* parent */
-			_exit(0);
-	}
+	pid = fork();
+	if (pid < 0)
+		return -1;
+	else if (pid != 0)
+		/* parent */
+		_exit(0);
 
-	/* child or nofork */
+	/* child */
 	if (setsid() < 0)
 		return -1;
 
@@ -1491,7 +1489,7 @@ int main(int argc, char *argv[])
 	char canonical[PATH_MAX + 2];
 	const char *dev, *dir;
 	char *endptr;
-	int status, nofork, c;
+	int status, c;
 #ifdef _GNU_SOURCE
 	int option_index;
 #endif	/* _GNU_SOURCE */
@@ -1499,7 +1497,6 @@ int main(int argc, char *argv[])
 	progname = (strrchr(argv[0], '/') != NULL) ?
 		strrchr(argv[0], '/') + 1 : argv[0];
 	conffile = NILFS_CLEANERD_CONFFILE;
-	nofork = 0;
 	status = 0;
 	protection_period = ULONG_MAX;
 	dev = NULL;
@@ -1520,8 +1517,7 @@ int main(int argc, char *argv[])
 			nilfs_cleanerd_usage(progname);
 			exit(0);
 		case 'n':
-			/* internal option for mount.nilfs2 only */
-			nofork = 1;
+			/* ignore nofork option, do nothing */
 			break;
 		case 'p':
 			protection_period = strtoul(optarg, &endptr, 10);
@@ -1568,7 +1564,7 @@ int main(int argc, char *argv[])
 		}
 	}
 
-	if (daemonize(0, 0, nofork) < 0) {
+	if (daemonize(0, 0) < 0) {
 		fprintf(stderr, "%s: %s\n", progname, strerror(errno));
 		exit(1);
 	}
