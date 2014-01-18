@@ -2,7 +2,7 @@
 
  - libuuid-devel or uuid-dev
  - libmount-devel (fedora 14 and later)
- - libselinux-devel (if you specify --with-selinux)
+ - libselinux-devel (unless you specify --without-selinux or --enable-libmount)
  - libblkid-devel (unless you specify --without-blkid)
 
 * How to compile
@@ -25,15 +25,6 @@ into /usr/lib64 instead of /usr/lib, change the library directory with
 
  $ ./configure --libdir=/usr/lib64
 
-You can specify --with-selinux option to compile mount.nilfs2
-supporting context mount options (-o context=<context>, etc):
-
- $ ./configure --with-selinux
-
-For mount.nilfs2 built with the --enable-libmount option, support of
-the context mount depends on the libmount library and this configure
-option is not necessary.
-
 
 * Trouble shooting
 
@@ -45,6 +36,14 @@ package, you can use --without-blkid option:
 However, use of this option is normally not recommended because it
 disables the safety check of mkfs.nilfs2 which prevents users from
 unexpectedly overwriting an in-use device.
+
+You can compile legacy mount.nilfs2 and umount.nilfs2 without support
+of selinux context mount options (-o context=<context>, etc):
+
+ $ ./configure --without-selinux
+
+For mount.nilfs2 built with the --enable-libmount option, support of
+the context mount depends on the libmount library.
 
 
 * How to get development sources

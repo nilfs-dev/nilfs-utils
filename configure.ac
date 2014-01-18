@@ -52,8 +52,8 @@ AC_ARG_ENABLE(libmount,
 	 if test -L /etc/mtab; then enable_libmount=yes; fi])
 
 AC_ARG_WITH([selinux],
-	AS_HELP_STRING([--with-selinux], [compile with SELinux support]),
-	[], with_selinux=no)
+	AS_HELP_STRING([--without-selinux], [compile without SELinux support]),
+	[], with_selinux=yes)
 
 AC_ARG_WITH([blkid],
 	AS_HELP_STRING([--without-blkid], [compile without blkid support]),
@@ -93,6 +93,7 @@ if test "${enable_libmount}" = "yes"; then
    AC_CHECK_LIB(mount, mnt_context_do_mount, [LIB_MOUNT="-lmount"],
    	AC_MSG_ERROR([libmount needed]))
    AC_CHECK_HEADERS([libmount/libmount.h])
+   with_selinux=no
 fi
 AM_CONDITIONAL(CONFIG_LIBMOUNT, [test "$enable_libmount" = "yes"])
 AC_SUBST(LIB_MOUNT)
