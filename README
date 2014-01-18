@@ -2,7 +2,7 @@
 
  - libuuid-devel or uuid-dev
  - libmount-devel (fedora 14 and later)
- - libselinux-devel (unless you specify --without-selinux or --enable-libmount)
+ - libselinux-devel (unless you specify --without-selinux or --with-libmount)
  - libblkid-devel (unless you specify --without-blkid)
 
 * How to compile
@@ -12,9 +12,9 @@
 
 To link mount.nilfs2 and umount.nilfs2 helper programs with libmount
 library, install libmount-devel package and run the configure script
-with --enable-libmount option:
+with --with-libmount option:
 
- $ ./configure --enable-libmount
+ $ ./configure --with-libmount
 
 This option is set by default if /etc/mtab is a symlink to
 /proc/mounts in your system.
@@ -42,7 +42,7 @@ of selinux context mount options (-o context=<context>, etc):
 
  $ ./configure --without-selinux
 
-For mount.nilfs2 built with the --enable-libmount option, support of
+For mount.nilfs2 built with the --with-libmount option, support of
 the context mount depends on the libmount library.
 
 

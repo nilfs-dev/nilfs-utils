@@ -44,12 +44,19 @@ AC_DEFUN([UTIL_CHECK_LIB], [
 ])
 
 # Check for options.
+AC_ARG_WITH([libmount],
+	AS_HELP_STRING([--with-libmount],
+		       [compile mount.nilfs2 with libmount support]),
+	[with_libmount=$withval],
+	[with_libmount=no; \
+	 if test -L /etc/mtab; then with_libmount=yes; fi])
+
+# Leave --enable-libmount[=ARG] and --disable-libmount options for
+# compatibility reason.
 AC_ARG_ENABLE(libmount,
-	[AC_HELP_STRING([--enable-libmount=[ARG]],
-			[Link mount.nilfs2 with libmount [ARG=yes] (EXPERIMENTAL)])],
-	[enable_libmount=$enableval],
-	[enable_libmount=no; \
-	 if test -L /etc/mtab; then enable_libmount=yes; fi])
+	AS_HELP_STRING([--enable-libmount (obsolete)],
+		       [same as --with-libmount]),
+	[with_libmount=$enableval], [])
 
 AC_ARG_WITH([selinux],
 	AS_HELP_STRING([--without-selinux], [compile without SELinux support]),
@@ -89,13 +96,13 @@ AC_CHECK_HEADERS([ctype.h fcntl.h grp.h libintl.h limits.h linux/magic.h \
 		  sys/mount.h sys/time.h syslog.h time.h unistd.h])
 
 # Check for conditional libraries and headers.
-if test "${enable_libmount}" = "yes"; then
+if test "${with_libmount}" = "yes"; then
    AC_CHECK_LIB(mount, mnt_context_do_mount, [LIB_MOUNT="-lmount"],
-   	AC_MSG_ERROR([libmount needed]))
+   	AC_MSG_ERROR([Mount library is enabled but libmount not found]))
    AC_CHECK_HEADERS([libmount/libmount.h])
    with_selinux=no
 fi
-AM_CONDITIONAL(CONFIG_LIBMOUNT, [test "$enable_libmount" = "yes"])
+AM_CONDITIONAL(CONFIG_LIBMOUNT, [test "$with_libmount" = "yes"])
 AC_SUBST(LIB_MOUNT)
 
 if test "${with_selinux}" = "yes"; then
