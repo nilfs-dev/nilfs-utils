@@ -1,7 +1,7 @@
 .\"  Copyright (C) 2007-2012 Nippon Telegraph and Telephone Corporation.
 .\"  Written by Ryusuke Konishi <konishi.ryusuke@lab.ntt.co.jp>
 .\"
-.TH LSCP 1 "May 2011" "nilfs-utils version 2.1"
+.TH LSCP 1 "Jan 2014" "nilfs-utils version 2.1"
 .SH NAME
 lscp \- list NILFS2 checkpoints
 .SH SYNOPSIS
@@ -21,11 +21,11 @@ NILFS2 file system.
 Do not hide minor checkpoints.
 .TP
 \fB\-b\fR, \fB\-\-show\-block\-count\fR
-Show number of used blocks instead of appended blocks.
+Show number of used blocks instead of appended blocks.  This is the
+default mode.
 .TP
 \fB\-g\fR, \fB\-\-show\-increment\fR
-Show number of appended blocks instead of used blocks.  This is the
-default mode.
+Show number of appended blocks instead of used blocks.
 .TP
 \fB\-r\fR, \fB\-\-reverse\fR
 Reverse order.
@@ -67,17 +67,19 @@ field if the checkpoint was created only by garbage collection,
 checkpoint mode change, or other change of internal state.  Otherwise
 ``-'' is printed.
 .TP
-.B NBLKINC
-Number of blocks appended by the checkpoint.
+.B NBLKINC (optional)
+Number of blocks appended by the checkpoint.  This field is displayed
+instead of BLKCNT field when \fB\-g\fR option is specified.
 .TP
 .B BLKCNT
-Number of blocks used by the checkpoint.  The \fBNBLKINC\fR field
-and the \fBBLKCNT\fR field is selective.  This field is displayed
-only if the \fB\-b\fR option is specified.
+Number of blocks used by the checkpoint.
 .TP
 .B ICNT
 Number of inodes included in the entire file system at the time
 specified by the checkpoint.
+.SH BUGS
+NILFS2 in Linux kernel version 2.6.38 and earlier does not support the
+block count (BLKCNT) information.
 .SH AUTHOR
 Koji Sato
 .SH AVAILABILITY
