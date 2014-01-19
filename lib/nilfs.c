@@ -448,6 +448,7 @@ int nilfs_change_cpmode(struct nilfs *nilfs, nilfs_cno_t cno, int mode)
 
 	cpmode.cm_cno = cno;
 	cpmode.cm_mode = mode;
+	cpmode.cm_pad = 0;
 	return ioctl(nilfs->n_iocfd, NILFS_IOCTL_CHANGE_CPMODE, &cpmode);
 }
 
@@ -539,6 +540,7 @@ ssize_t nilfs_get_suinfo(const struct nilfs *nilfs, __u64 segnum,
 	argv.v_base = (unsigned long)si;
 	argv.v_nmembs = nsi;
 	argv.v_size = sizeof(struct nilfs_suinfo);
+	argv.v_flags = 0;
 	argv.v_index = segnum;
 	if (ioctl(nilfs->n_iocfd, NILFS_IOCTL_GET_SUINFO, &argv) < 0)
 		return -1;
@@ -579,6 +581,8 @@ ssize_t nilfs_get_vinfo(const struct nilfs *nilfs,
 	argv.v_base = (unsigned long)vinfo;
 	argv.v_nmembs = nvi;
 	argv.v_size = sizeof(struct nilfs_vinfo);
+	argv.v_flags = 0;
+	argv.v_index = 0;
 	if (ioctl(nilfs->n_iocfd, NILFS_IOCTL_GET_VINFO, &argv) < 0)
 		return -1;
 	return argv.v_nmembs;
@@ -603,6 +607,8 @@ ssize_t nilfs_get_bdescs(const struct nilfs *nilfs,
 	argv.v_base = (unsigned long)bdescs;
 	argv.v_nmembs = nbdescs;
 	argv.v_size = sizeof(struct nilfs_bdesc);
+	argv.v_flags = 0;
+	argv.v_index = 0;
 	if (ioctl(nilfs->n_iocfd, NILFS_IOCTL_GET_BDESCS, &argv) < 0)
 		return -1;
 	return argv.v_nmembs;
@@ -636,6 +642,7 @@ int nilfs_clean_segments(struct nilfs *nilfs,
 		return -1;
 	}
 
+	memset(argv, 0, sizeof(argv));
 	argv[0].v_base = (unsigned long)vdescs;
 	argv[0].v_nmembs = nvdescs;
 	argv[0].v_size = sizeof(struct nilfs_vdesc);
