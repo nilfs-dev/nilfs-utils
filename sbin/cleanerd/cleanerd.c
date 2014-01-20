@@ -719,6 +719,9 @@ static int daemonize(int nochdir, int noclose)
 	if (!nochdir && (chdir(ROOTDIR) < 0))
 		return -1;
 
+	printf("NILFS_CLEANERD_PID=%lu\n", (unsigned long)getpid());
+	fflush(stdout);
+
 	if (!noclose) {
 		close(0);
 		close(1);

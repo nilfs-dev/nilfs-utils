@@ -114,6 +114,43 @@ static inline int process_is_alive(pid_t pid)
 	return (kill(pid, 0) == 0);
 }
 
+static int receive_pid(int fd, pid_t *ppid)
+{
+	char buf[100];
+	unsigned long pid;
+	FILE *fp;
+	int ret;
+
+	fp = fdopen(fd, "r");
+	if (!fp) {
+		nilfs_cleaner_logger(
+			LOG_ERR, _("Error: fdopen failed: %m"));
+		close(fd);
+		goto fail;
+	}
+
+	/* read process ID of cleanerd through the given fd */
+	while (fgets(buf, sizeof(buf), fp) != NULL) {
+		/*
+		 * fgets() is blocked during no child processes
+		 * respond, but it will escape returning a NULL value
+		 * and terminate the loop when all child processes
+		 * close the given pipe (fd) including call of exit().
+		 */
+		ret = sscanf(buf, "NILFS_CLEANERD_PID=%lu", &pid);
+		if (ret == 1) {
+			*ppid = pid;
+			fclose(fp); /* this also closes fd */
+			return 0;
+		}
+	}
+	fclose(fp);
+fail:
+	nilfs_cleaner_logger(
+		LOG_WARNING, _("Warning: cannot get pid of cleanerd"));
+	return -1;
+}
+
 int nilfs_launch_cleanerd(const char *device, const char *mntdir,
 			  unsigned long protperiod, pid_t *ppid)
 {
@@ -123,6 +160,7 @@ int nilfs_launch_cleanerd(const char *device, const char *mntdir,
 	int i = 0;
 	int ret;
 	char buf[256];
+	int pipes[2];
 
 	if (stat(cleanerd, &statbuf) != 0) {
 		nilfs_cleaner_logger(LOG_ERR,  _("Error: %s not found"),
@@ -130,8 +168,16 @@ int nilfs_launch_cleanerd(const char *device, const char *mntdir,
 		return -1;
 	}
 
+	ret = pipe(pipes);
+	if (ret < 0) {
+		nilfs_cleaner_logger(
+			LOG_ERR, _("Error: failed to create pipe: %m"));
+		return -1;
+	}
+
 	ret = fork();
 	if (ret == 0) {
+		/* child */
 		if (setgid(getgid()) < 0) {
 			nilfs_cleaner_logger(
 				LOG_ERR,
@@ -159,16 +205,40 @@ int nilfs_launch_cleanerd(const char *device, const char *mntdir,
 		sigdelset(&sigs, SIGSEGV);
 		sigprocmask(SIG_UNBLOCK, &sigs, NULL);
 
+		close(pipes[0]);
+		ret = dup2(pipes[1], STDOUT_FILENO);
+		if (ret < 0) {
+			nilfs_cleaner_logger(
+				LOG_ERR,
+				_("Error: failed to duplicate pipe: %m"));
+			exit(1);
+		}
+		close(pipes[1]);
+
 		execv(cleanerd, (char **)dargs);
 		exit(1);   /* reach only if failed */
-	} else if (ret != -1) {
-		*ppid = ret;
-		return 0; /* cleanerd started */
+	} else if (ret > 0) {
+		/* parent */
+		close(pipes[1]);
+
+		/*
+		 * fork() returns a pid of the child process, but we
+		 * cannot use it because cleanerd internally fork()s
+		 * and changes pid.
+		 */
+		ret = receive_pid(pipes[0], ppid);
+		if (ret < 0)
+			*ppid = 0;
+		/*
+		 * always return a success code because cleanerd has
+		 * already started.
+		 */
+		return 0;
 	} else {
-		int errsv = errno;
-		nilfs_cleaner_logger(LOG_ERR,
-				     _("Error: could not fork: %s"),
-				     strerror(errsv));
+		nilfs_cleaner_logger(
+			LOG_ERR, _("Error: could not fork: %m"));
+		close(pipes[0]);
+		close(pipes[1]);
 	}
 	return -1;
 }
