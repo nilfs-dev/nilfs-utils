@@ -290,20 +290,9 @@ static char *fix_extra_opts_string(const char *exopts, gcpid_opt_t gcpid,
 	pp_opt_t oldpp;
 	gcpid_opt_t oldpid;
 
-	if (gcpid) {
-		s = replace_optval(s, gcpid_opt_fmt, &oldpid, gcpid);
-	} else {
-		/* Remove the gcpid option if gcpid == 0 */
-		s = replace_opt(s, gcpid_opt_fmt, &oldpid, NULL);
-	}
-
-	if (protection_period != ULONG_MAX) {
-		s = replace_optval(s, pp_opt_fmt, &oldpp, protection_period);
-	} else {
-		/* Remove the pp option if pp == ULONG_MAX */
-		s = replace_opt(s, pp_opt_fmt, &oldpp, NULL);
-	}
-
+	s = replace_drop_opt(s, gcpid_opt_fmt, &oldpid, gcpid, gcpid != 0);
+	s = replace_drop_opt(s, pp_opt_fmt, &oldpp, protection_period,
+			     protection_period != ULONG_MAX);
 	return s;
 }
 
@@ -515,8 +504,9 @@ do_mount_one(struct nilfs_mount_info *mi, const struct mount_options *mo)
 				printf(_("%s: restarted %s\n"),
 				       progname, NILFS_CLEANERD_NAME);
 
-			mi->optstr = replace_optval(
-				mi->optstr, gcpid_opt_fmt, &oldpid, mi->gcpid);
+			mi->optstr = replace_drop_opt(
+				mi->optstr, gcpid_opt_fmt, &oldpid, mi->gcpid,
+				mi->gcpid != 0);
 
 			update_mtab_entry(mi->device, mi->mntdir, fstype,
 					  mi->optstr, 0, 0, !mi->mounted);

@@ -431,8 +431,8 @@ umount_one(const char *spec, const char *node, const char *type,
 					printf(_("%s: restarted %s(pid=%d)\n"),
 					       progname, NILFS_CLEANERD_NAME,
 					       (int)pid);
-				s = replace_optval(s, gcpid_opt_fmt, &oldpid,
-						   pid);
+				s = replace_drop_opt(s, gcpid_opt_fmt, &oldpid,
+						     pid, pid != 0);
 				change_mtab_opt(spec, node, type, s);
 				goto out;
 			} else

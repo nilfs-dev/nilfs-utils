@@ -43,5 +43,33 @@ int find_opt(const char *opts, const char *token, void *varp);
 char *replace_opt(char *s, const char *fmt, void *varp, const char *instead);
 char *replace_optval(char *s, const char *fmt, void *varp, ...);
 
+/**
+ * replace_drop_opt() - replace or drop mount option string
+ * @str: comma-separated string
+ * @fmt: format string of target option such as "pid=%lu"
+ * @oldvalp: pointer to old value
+ * @newval: new value of option
+ * @cond: condition of mount option manipulation
+ *
+ * replace_drop_opt() finds out an option string matching @fmt in
+ * @str, and replaces value of the option with @newval if @cond is
+ * true or otherwise deletes the whole option string from @str.  In
+ * both cases, old value of the option is saved in @oldvalp, where
+ * @oldvalp must have the type of pointer to a value specified in
+ * @fmt.  If replacement or removal occurs, old @str is automatically
+ * freed.
+ *
+ * Return Value: new options string is retured.
+ */
+#define replace_drop_opt(str, fmt, oldvalp, newval, cond)	\
+({								\
+	char *ret;						\
+	if (cond)						\
+		ret = replace_optval(				\
+			str, fmt, oldvalp, newval);		\
+	else							\
+		ret = replace_opt(str, fmt, oldvalp, NULL);	\
+	ret;							\
+})
 
 #endif /* _MOUNT_OPTS_H */
