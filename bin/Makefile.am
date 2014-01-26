@@ -20,3 +20,5 @@ mkcp_LDADD = $(LDADD) $(LIB_POSIX_SEM)
 
 rmcp_SOURCES = rmcp.c
 rmcp_LDADD = $(LDADD) $(top_builddir)/lib/libcno.la
+
+EXTRA_DIST = .gitignore

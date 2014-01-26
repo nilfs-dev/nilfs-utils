@@ -9,3 +9,5 @@ LDADD = $(top_builddir)/lib/libnilfs.la \
 sbin_PROGRAMS = nilfs-tune
 
 nilfs_tune_SOURCES = nilfs-tune.c
+
+EXTRA_DIST = .gitignore

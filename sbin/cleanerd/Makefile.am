@@ -11,3 +11,5 @@ nilfs_cleanerd_CPPFLAGS = -I$(top_srcdir)/include \
 	-DSYSCONFDIR=\"$(sysconfdir)\"
 
 dist_sysconf_DATA = nilfs_cleanerd.conf
+
+EXTRA_DIST = .gitignore

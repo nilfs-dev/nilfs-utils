@@ -30,3 +30,5 @@ mount_nilfs2_SOURCES = mount.nilfs2.c $(COMMONSOURCES) $(COMMONHEADERS)
 umount_nilfs2_SOURCES = umount.nilfs2.c $(COMMONSOURCES) $(COMMONHEADERS)
 
 endif  # CONFIG_LIBMOUNT
+
+EXTRA_DIST = .gitignore

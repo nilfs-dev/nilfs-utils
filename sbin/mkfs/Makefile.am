@@ -9,3 +9,5 @@ LDADD = -luuid $(LIB_BLKID) $(top_builddir)/lib/libnilfsfeature.la \
 sbin_PROGRAMS = mkfs.nilfs2
 
 mkfs_nilfs2_SOURCES = mkfs.c bitops.c mkfs.h
+
+EXTRA_DIST = .gitignore

@@ -9,3 +9,5 @@ LDADD = $(top_builddir)/lib/libnilfs.la \
 sbin_PROGRAMS = nilfs-resize
 
 nilfs_resize_SOURCES = nilfs-resize.c
+
+EXTRA_DIST = .gitignore

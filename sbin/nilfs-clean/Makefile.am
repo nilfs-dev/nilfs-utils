@@ -8,3 +8,5 @@ LDADD = $(top_builddir)/lib/libnilfs.la \
 sbin_PROGRAMS = nilfs-clean
 
 nilfs_clean_SOURCES = nilfs-clean.c
+
+EXTRA_DIST = .gitignore
