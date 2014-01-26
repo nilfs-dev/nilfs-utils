@@ -35,7 +35,7 @@ libcleanerexec_la_CPPFLAGS = -I$(top_srcdir)/include
 libcleanerexec_la_LDFLAGS = -static
 
 libnilfs_CURRENT = 1
-libnilfs_REVISION = 0
+libnilfs_REVISION = 1
 libnilfs_AGE = 1
 libnilfs_VERSIONINFO = $(libnilfs_CURRENT):$(libnilfs_REVISION):$(libnilfs_AGE)
 
@@ -57,7 +57,7 @@ libnilfsgc_la_LDFLAGS = -version-info $(nilfsgc_VERSIONINFO)
 libnilfsgc_la_LIBADD = libnilfs.la $(LIB_POSIX_SEM)
 
 cleanerctl_CURRENT = 0
-cleanerctl_REVISION = 0
+cleanerctl_REVISION = 1
 cleanerctl_AGE = 0
 cleanerctl_VERSIONINFO = $(cleanerctl_CURRENT):$(cleanerctl_REVISION):$(cleanerctl_AGE)
 

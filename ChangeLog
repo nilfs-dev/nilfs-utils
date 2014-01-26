@@ -1,3 +1,25 @@
+nilfs-utils-2.1.6  Sun Jan 26, 2014 JST
+
+	* cleanerd: fix wrong cleaner speed of manual clean mode
+	* add missing initializations of ioctl arguments
+	* cleanerd: adjust the OOM killer
+	* mkfs: check sizes of important structs at build time
+	* cleanerd: rework daemonize() of cleanerd
+	* cleaner_exec.c: get process ID of cleanerd through pipe
+	* mount.nilfs2: ensure that gcpid option is dropped if the value
+	  is zero
+	* lib/nilfs.c: remove broken readonly fs check at nilfs_sync()
+	* lib/nilfs.c: add missing comments of API functions
+	* allow to make without libblkid
+	* remove redundant selinux library references
+	* compile legacy {mount,umount}.nilfs2 with libselinux
+	* add --with-libmount build option
+	* add checkpatch script
+	* fix many coding style issues
+	* a minor update in lscp manpage
+	* update README file
+	* update AUTHORS file
+
 nilfs-utils-2.1.5  Thu May 2, 2013 JST
 
 	* mkfs.nilfs2: check presence of existing volume on device.

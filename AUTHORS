@@ -68,6 +68,14 @@ November 19, 2010: replaced crc32 implementation
 * Matteo Frigo <athena@fftw.org>
 September 11, 2010: compare device number for mount check
 
+* Hitoshi Mitake <mitake.hitoshi@gmail.com>
+January 1, 2014: cleanerd: adjust OOM killer
+January 4, 2014: mkfs.nilfs2: statically check size of important structures
+January 6, 2014: rework daemonize() of cleanerd
+    - cleanerd: ignore nofork option
+    - cleanerd: call _exit(2) twice for ensuring not being a session leader
+    - mount: don't pass -n option to cleanerd
+
 * Takashi Iwai <tiwai@suse.de>
 July 24, 2012: add --print option to mkcp
 
