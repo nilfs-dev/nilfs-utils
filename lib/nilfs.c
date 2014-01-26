@@ -688,19 +688,12 @@ int nilfs_clean_segments(struct nilfs *nilfs,
  */
 int nilfs_sync(const struct nilfs *nilfs, nilfs_cno_t *cnop)
 {
-	int ret;
-
 	if (nilfs->n_iocfd < 0) {
 		errno = EBADF;
 		return -1;
 	}
 
-	ret = ioctl(nilfs->n_iocfd, NILFS_IOCTL_SYNC, cnop);
-	if (ret < 0 && ret == -EROFS)
-		/* syncing read-only filesystem */
-		ret = 0;
-
-	return ret;
+	return ioctl(nilfs->n_iocfd, NILFS_IOCTL_SYNC, cnop);
 }
 
 /**
