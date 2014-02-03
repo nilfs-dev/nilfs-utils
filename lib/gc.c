@@ -601,20 +601,34 @@ static int nilfs_toss_bdescs(struct nilfs_vector *bdescv)
 }
 
 /**
- * nilfs_reclaim_segment - reclaim segments
+ * nilfs_xreclaim_segment - reclaim segments (enhanced API)
  * @nilfs: nilfs object
  * @segnums: array of segment numbers storing selected segments
  * @nsegs: size of the @segnums array
- * @protseq: start of sequence number of protected segments
- * @protcno: start checkpoint number of protected period
+ * @dryrun: dry-run flag
+ * @params: reclaim parameters
+ * @stat: reclaim statistics
  */
-ssize_t nilfs_reclaim_segment(struct nilfs *nilfs,
-			      __u64 *segnums, size_t nsegs,
-			      __u64 protseq, nilfs_cno_t protcno)
+int nilfs_xreclaim_segment(struct nilfs *nilfs,
+			   __u64 *segnums, size_t nsegs, int dryrun,
+			   const struct nilfs_reclaim_params *params,
+			   struct nilfs_reclaim_stat *stat)
 {
 	struct nilfs_vector *vdescv, *bdescv, *periodv, *vblocknrv;
 	sigset_t sigset, oldset, waitset;
+	nilfs_cno_t protcno;
 	ssize_t n, ret = -1;
+	size_t nblocks;
+
+	if (!(params->flags & NILFS_RECLAIM_PARAM_PROTSEQ) ||
+	    (params->flags & (~0UL << __NR_NILFS_RECLAIM_PARAMS))) {
+		/*
+		 * The protseq parameter is mandatory.  Unknown
+		 * parameters are rejected.
+		 */
+		errno = EINVAL;
+		return -1;
+	}
 
 	if (nsegs == 0)
 		return 0;
@@ -623,8 +637,7 @@ ssize_t nilfs_reclaim_segment(struct nilfs *nilfs,
 	bdescv = nilfs_vector_create(sizeof(struct nilfs_bdesc));
 	periodv = nilfs_vector_create(sizeof(struct nilfs_period));
 	vblocknrv = nilfs_vector_create(sizeof(__u64));
-	if (vdescv == NULL || bdescv == NULL || periodv == NULL ||
-	    vblocknrv == NULL)
+	if (!vdescv || !bdescv || !periodv || !vblocknrv)
 		goto out_vec;
 
 	sigemptyset(&sigset);
@@ -633,7 +646,7 @@ ssize_t nilfs_reclaim_segment(struct nilfs *nilfs,
 	ret = sigprocmask(SIG_BLOCK, &sigset, &oldset);
 	if (ret < 0) {
 		nilfs_gc_logger(LOG_ERR, "cannot block signals: %s",
-				     strerror(errno));
+				strerror(errno));
 		goto out_vec;
 	}
 
@@ -641,29 +654,64 @@ ssize_t nilfs_reclaim_segment(struct nilfs *nilfs,
 	if (ret < 0)
 		goto out_sig;
 
-	n = nilfs_acc_blocks(nilfs, segnums, nsegs, protseq, vdescv, bdescv);
-	if (n <= 0) {
+	/* count blocks */
+	n = nilfs_acc_blocks(nilfs, segnums, nsegs, params->protseq, vdescv,
+			     bdescv);
+	if (n < 0) {
 		ret = n;
 		goto out_lock;
 	}
+	if (stat) {
+		stat->cleaned_segs = n;
+		stat->protected_segs = nsegs - n;
+		stat->deferred_segs = 0;
+	}
+	if (n == 0) {
+		ret = 0;
+		goto out_lock;
+	}
 
+	/* toss virtual blocks */
 	ret = nilfs_get_vdesc(nilfs, vdescv);
 	if (ret < 0)
 		goto out_lock;
+
+	nblocks = nilfs_vector_get_size(vdescv);
+	protcno = (params->flags & NILFS_RECLAIM_PARAM_PROTCNO) ?
+		params->protcno : NILFS_CNO_MAX;
 
 	ret = nilfs_toss_vdescs(nilfs, vdescv, periodv, vblocknrv, protcno);
 	if (ret < 0)
 		goto out_lock;
 
+	if (stat) {
+		stat->live_vblks = nilfs_vector_get_size(vdescv);
+		stat->defunct_vblks = nblocks - stat->live_vblks;
+		stat->freed_vblks = nilfs_vector_get_size(vblocknrv);
+	}
+
 	nilfs_vector_sort(vdescv, nilfs_comp_vdesc_blocknr);
 	nilfs_unify_period(periodv);
 
+	/* toss DAT file blocks */
 	ret = nilfs_get_bdesc(nilfs, bdescv);
 	if (ret < 0)
 		goto out_lock;
 
+	nblocks = nilfs_vector_get_size(bdescv);
 	ret = nilfs_toss_bdescs(bdescv);
 	if (ret < 0)
+		goto out_lock;
+
+	if (stat) {
+		stat->live_pblks = nilfs_vector_get_size(bdescv);
+		stat->defunct_pblks = nblocks - stat->live_pblks;
+
+		stat->live_blks = stat->live_vblks + stat->live_pblks;
+		stat->defunct_blks = n * nilfs_get_blocks_per_segment(nilfs) -
+			stat->live_blks;
+	}
+	if (dryrun)
 		goto out_lock;
 
 	ret = sigpending(&waitset);
@@ -690,13 +738,14 @@ ssize_t nilfs_reclaim_segment(struct nilfs *nilfs,
 	if (ret < 0) {
 		nilfs_gc_logger(LOG_ERR, "cannot clean segments: %s",
 				strerror(errno));
-	} else {
-		ret = n;
 	}
 
 out_lock:
-	if (nilfs_unlock_cleaner(nilfs) < 0)
-		ret = -1;
+	if (nilfs_unlock_cleaner(nilfs) < 0) {
+		nilfs_gc_logger(LOG_CRIT, "failed to unlock cleaner: %s",
+				strerror(errno));
+		exit(1);
+	}
 
 out_sig:
 	sigprocmask(SIG_SETMASK, &oldset, NULL);
@@ -710,6 +759,38 @@ out_vec:
 		nilfs_vector_destroy(periodv);
 	if (vblocknrv != NULL)
 		nilfs_vector_destroy(vblocknrv);
+	/*
+	 * Flags of valid fields in stat->exflags must be unset.
+	 */
+	return ret;
+}
 
+/**
+ * nilfs_reclaim_segment - reclaim segments
+ * @nilfs: nilfs object
+ * @segnums: array of segment numbers storing selected segments
+ * @nsegs: size of the @segnums array
+ * @protseq: start of sequence number of protected segments
+ * @protcno: start checkpoint number of protected period
+ */
+ssize_t nilfs_reclaim_segment(struct nilfs *nilfs,
+			      __u64 *segnums, size_t nsegs,
+			      __u64 protseq, nilfs_cno_t protcno)
+{
+	struct nilfs_reclaim_params params;
+	struct nilfs_reclaim_stat stat;
+	int ret;
+
+	params.flags =
+		NILFS_RECLAIM_PARAM_PROTSEQ | NILFS_RECLAIM_PARAM_PROTCNO;
+	params.reserved = 0;
+	params.protseq = protseq;
+	params.protcno = protcno;
+	memset(&stat, 0, sizeof(stat));
+
+	ret = nilfs_xreclaim_segment(nilfs, segnums, nsegs, 0,
+				     &params, &stat);
+	if (!ret)
+		ret = stat.cleaned_segs;
 	return ret;
 }
