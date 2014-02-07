@@ -304,6 +304,8 @@ int nilfs_delete_checkpoint(struct nilfs *, nilfs_cno_t);
 int nilfs_get_cpstat(const struct nilfs *, struct nilfs_cpstat *);
 ssize_t nilfs_get_suinfo(const struct nilfs *, __u64, struct nilfs_suinfo *,
 			 size_t);
+int nilfs_set_suinfo(const struct nilfs *, struct nilfs_suinfo_update *,
+		     size_t);
 int nilfs_get_sustat(const struct nilfs *, struct nilfs_sustat *);
 ssize_t nilfs_get_vinfo(const struct nilfs *, struct nilfs_vinfo *, size_t);
 ssize_t nilfs_get_bdescs(const struct nilfs *, struct nilfs_bdesc *, size_t);

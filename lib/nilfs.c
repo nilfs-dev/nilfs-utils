@@ -596,6 +596,37 @@ ssize_t nilfs_get_suinfo(const struct nilfs *nilfs, __u64 segnum,
 }
 
 /**
+ * nilfs_set_suinfo - sets segment usage info
+ * @nilfs: nilfs object
+ * @sup: an array of nilfs_suinfo_update structs
+ * @nsup: number of elements in sup
+ *
+ * Description: Takes an array of nilfs_suinfo_update structs and updates
+ * segment usage info accordingly. Only the fields indicated by sup_flags
+ * are updated.
+ *
+ * Return Value: On success, 0 is returned. On error, -1 is returned.
+ */
+int nilfs_set_suinfo(const struct nilfs *nilfs,
+		     struct nilfs_suinfo_update *sup, size_t nsup)
+{
+	struct nilfs_argv argv;
+
+	if (nilfs->n_iocfd < 0) {
+		errno = EBADF;
+		return -1;
+	}
+
+	argv.v_base = (unsigned long)sup;
+	argv.v_nmembs = nsup;
+	argv.v_size = sizeof(struct nilfs_suinfo_update);
+	argv.v_index = 0;
+	argv.v_flags = 0;
+
+	return ioctl(nilfs->n_iocfd, NILFS_IOCTL_SET_SUINFO, &argv);
+}
+
+/**
  * nilfs_get_sustat - get segment usage statistics
  * @nilfs: nilfs object
  * @sustat: buffer of a nilfs_sustat struct to store statistics in
