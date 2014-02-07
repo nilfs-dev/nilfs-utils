@@ -1392,15 +1392,17 @@ static void nilfs_cleanerd_progress(struct nilfs_cleanerd *cleanerd, int nsegs)
 static int nilfs_cleanerd_clean_segments(struct nilfs_cleanerd *cleanerd,
 					 __u64 *segnums, size_t nsegs,
 					 __u64 protseq, __u64 prottime,
-					 size_t *ncleaned)
+					 size_t *ndone)
 {
 	struct nilfs_reclaim_params params;
 	struct nilfs_reclaim_stat stat;
-	int ret, i;
+	int ret, i, sumsegs;
 
-	params.flags =
-		NILFS_RECLAIM_PARAM_PROTSEQ | NILFS_RECLAIM_PARAM_PROTCNO;
-	params.reserved = 0;
+	params.flags = NILFS_RECLAIM_PARAM_PROTSEQ |
+		       NILFS_RECLAIM_PARAM_PROTCNO |
+		       NILFS_RECLAIM_PARAM_MIN_RECLAIMABLE_BLKS;
+	params.min_reclaimable_blks =
+			nilfs_cleanerd_min_reclaimable_blocks(cleanerd);
 	params.protseq = protseq;
 
 	ret = nilfs_cnoconv_time2cno(cleanerd->cnoconv, prottime,
@@ -1418,20 +1420,40 @@ static int nilfs_cleanerd_clean_segments(struct nilfs_cleanerd *cleanerd,
 		if (errno == ENOMEM) {
 			nilfs_cleanerd_reduce_ncleansegs_for_retry(cleanerd);
 			cleanerd->fallback = 1;
-			*ncleaned = 0;
+			*ndone = 0;
 			ret = 0;
 		}
 		goto out;
 	}
 
+	*ndone = 0;
+
 	if (stat.cleaned_segs > 0) {
 		for (i = 0; i < stat.cleaned_segs; i++)
 			syslog(LOG_DEBUG, "segment %llu cleaned",
 			       (unsigned long long)segnums[i]);
+
 		nilfs_cleanerd_progress(cleanerd, stat.cleaned_segs);
 		cleanerd->fallback = 0;
 		cleanerd->retry_cleaning = 0;
-	} else {
+
+		*ndone += stat.cleaned_segs;
+	}
+
+	if (stat.deferred_segs > 0) {
+		sumsegs = stat.cleaned_segs + stat.deferred_segs;
+		for (i = stat.cleaned_segs; i < sumsegs; i++)
+			syslog(LOG_DEBUG, "segment %llu deferred",
+			       (unsigned long long)segnums[i]);
+
+		nilfs_cleanerd_progress(cleanerd, stat.deferred_segs);
+		cleanerd->fallback = 0;
+		cleanerd->retry_cleaning = 0;
+
+		*ndone += stat.deferred_segs;
+	}
+
+	if (*ndone == 0) {
 		syslog(LOG_DEBUG, "no segments cleaned");
 
 		if (!cleanerd->retry_cleaning &&
@@ -1445,7 +1467,7 @@ static int nilfs_cleanerd_clean_segments(struct nilfs_cleanerd *cleanerd,
 			cleanerd->retry_cleaning = 0;
 		}
 	}
-	*ncleaned = stat.cleaned_segs;
+
 out:
 	return ret;
 }

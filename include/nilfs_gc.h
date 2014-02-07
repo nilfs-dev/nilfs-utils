@@ -15,20 +15,21 @@
 #include "nilfs.h"
 
 /* flags for nilfs_reclaim_params struct */
-#define NILFS_RECLAIM_PARAM_PROTSEQ	(1UL << 0)
-#define NILFS_RECLAIM_PARAM_PROTCNO	(1UL << 1)
-#define __NR_NILFS_RECLAIM_PARAMS	2
+#define NILFS_RECLAIM_PARAM_PROTSEQ			(1UL << 0)
+#define NILFS_RECLAIM_PARAM_PROTCNO			(1UL << 1)
+#define NILFS_RECLAIM_PARAM_MIN_RECLAIMABLE_BLKS	(1UL << 2)
+#define __NR_NILFS_RECLAIM_PARAMS	3
 
 /**
  * struct nilfs_reclaim_params - structure to specify GC parameters
  * @flags: flags of valid fields
- * @reserved: padding bytes
+ * @min_reclaimable_blks: minimum number of reclaimable blocks
  * @protseq: start of sequence number of protected segments
  * @protcno: start number of checkpoint to be protected
  */
 struct nilfs_reclaim_params {
 	unsigned long flags;
-	unsigned long reserved;
+	unsigned long min_reclaimable_blks;
 	__u64 protseq;
 	nilfs_cno_t protcno;
 };

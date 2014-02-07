@@ -29,6 +29,10 @@
 #include <syslog.h>
 #endif	/* HAVE_SYSLOG_H */
 
+#if HAVE_SYS_TIME_H
+#include <sys/time.h>
+#endif	/* HAVE_SYS_TIME */
+
 #include <errno.h>
 #include <assert.h>
 #include <stdarg.h>
@@ -614,11 +618,14 @@ int nilfs_xreclaim_segment(struct nilfs *nilfs,
 			   const struct nilfs_reclaim_params *params,
 			   struct nilfs_reclaim_stat *stat)
 {
-	struct nilfs_vector *vdescv, *bdescv, *periodv, *vblocknrv;
+	struct nilfs_vector *vdescv, *bdescv, *periodv, *vblocknrv, *supv;
 	sigset_t sigset, oldset, waitset;
 	nilfs_cno_t protcno;
-	ssize_t n, ret = -1;
+	ssize_t n, i, ret = -1;
 	size_t nblocks;
+	__u32 reclaimable_blocks;
+	struct nilfs_suinfo_update *sup;
+	struct timeval tv;
 
 	if (!(params->flags & NILFS_RECLAIM_PARAM_PROTSEQ) ||
 	    (params->flags & (~0UL << __NR_NILFS_RECLAIM_PARAMS))) {
@@ -637,7 +644,8 @@ int nilfs_xreclaim_segment(struct nilfs *nilfs,
 	bdescv = nilfs_vector_create(sizeof(struct nilfs_bdesc));
 	periodv = nilfs_vector_create(sizeof(struct nilfs_period));
 	vblocknrv = nilfs_vector_create(sizeof(__u64));
-	if (!vdescv || !bdescv || !periodv || !vblocknrv)
+	supv = nilfs_vector_create(sizeof(struct nilfs_suinfo_update));
+	if (!vdescv || !bdescv || !periodv || !vblocknrv || !supv)
 		goto out_vec;
 
 	sigemptyset(&sigset);
@@ -703,13 +711,16 @@ int nilfs_xreclaim_segment(struct nilfs *nilfs,
 	if (ret < 0)
 		goto out_lock;
 
+	reclaimable_blocks = (nilfs_get_blocks_per_segment(nilfs) * n) -
+			(nilfs_vector_get_size(vdescv) +
+			nilfs_vector_get_size(bdescv));
+
 	if (stat) {
 		stat->live_pblks = nilfs_vector_get_size(bdescv);
 		stat->defunct_pblks = nblocks - stat->live_pblks;
 
 		stat->live_blks = stat->live_vblks + stat->live_pblks;
-		stat->defunct_blks = n * nilfs_get_blocks_per_segment(nilfs) -
-			stat->live_blks;
+		stat->defunct_blks = reclaimable_blocks;
 	}
 	if (dryrun)
 		goto out_lock;
@@ -723,6 +734,55 @@ int nilfs_xreclaim_segment(struct nilfs *nilfs,
 	if (sigismember(&waitset, SIGINT) || sigismember(&waitset, SIGTERM)) {
 		nilfs_gc_logger(LOG_DEBUG, "interrupted");
 		goto out_lock;
+	}
+
+	/*
+	 * if there are less reclaimable blocks than the minimal
+	 * threshold try to update suinfo instead of cleaning
+	 */
+	if ((params->flags & NILFS_RECLAIM_PARAM_MIN_RECLAIMABLE_BLKS) &&
+			nilfs_opt_test_set_suinfo(nilfs) &&
+			reclaimable_blocks < params->min_reclaimable_blks * n) {
+		if (stat) {
+			stat->deferred_segs = n;
+			stat->cleaned_segs = 0;
+		}
+
+		ret = gettimeofday(&tv, NULL);
+		if (ret < 0)
+			goto out_lock;
+
+		for (i = 0; i < n; ++i) {
+			sup = nilfs_vector_get_new_element(supv);
+			if (!sup)
+				goto out_lock;
+
+			sup->sup_segnum = segnums[i];
+			sup->sup_flags = 0;
+			nilfs_suinfo_update_set_lastmod(sup);
+			sup->sup_sui.sui_lastmod = tv.tv_sec;
+		}
+
+		ret = nilfs_set_suinfo(nilfs, nilfs_vector_get_data(supv), n);
+
+		if (ret == 0)
+			goto out_lock;
+
+		if (ret < 0 && errno != ENOTTY) {
+			nilfs_gc_logger(LOG_ERR, "cannot set suinfo: %s",
+					strerror(errno));
+			goto out_lock;
+		}
+
+		/* errno == ENOTTY */
+		nilfs_gc_logger(LOG_WARNING,
+				"set_suinfo ioctl is not supported");
+		nilfs_opt_clear_set_suinfo(nilfs);
+		if (stat) {
+			stat->deferred_segs = 0;
+			stat->cleaned_segs = n;
+		}
+		/* Try nilfs_clean_segments */
 	}
 
 	ret = nilfs_clean_segments(nilfs,
@@ -759,6 +819,8 @@ out_vec:
 		nilfs_vector_destroy(periodv);
 	if (vblocknrv != NULL)
 		nilfs_vector_destroy(vblocknrv);
+	if (supv != NULL)
+		nilfs_vector_destroy(supv);
 	/*
 	 * Flags of valid fields in stat->exflags must be unset.
 	 */
@@ -783,7 +845,7 @@ ssize_t nilfs_reclaim_segment(struct nilfs *nilfs,
 
 	params.flags =
 		NILFS_RECLAIM_PARAM_PROTSEQ | NILFS_RECLAIM_PARAM_PROTCNO;
-	params.reserved = 0;
+	params.min_reclaimable_blks = 0;
 	params.protseq = protseq;
 	params.protcno = protcno;
 	memset(&stat, 0, sizeof(stat));
