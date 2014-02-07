@@ -288,6 +288,34 @@ int nilfs_opt_test_mmap(struct nilfs *nilfs)
 	return !!(nilfs->n_opts & NILFS_OPT_MMAP);
 }
 
+/**
+ * nilfs_opt_set_set_suinfo - set set_suinfo option
+ * @nilfs: nilfs object
+ */
+int nilfs_opt_set_set_suinfo(struct nilfs *nilfs)
+{
+	nilfs->n_opts |= NILFS_OPT_SET_SUINFO;
+	return 0;
+}
+
+/**
+ * nilfs_opt_clear_set_suinfo - clear set_suinfo option
+ * @nilfs: nilfs object
+ */
+void nilfs_opt_clear_set_suinfo(struct nilfs *nilfs)
+{
+	nilfs->n_opts &= ~NILFS_OPT_SET_SUINFO;
+}
+
+/**
+ * nilfs_opt_test_set_suinfo - test whether set_suinfo option is set or not
+ * @nilfs: nilfs object
+ */
+int nilfs_opt_test_set_suinfo(struct nilfs *nilfs)
+{
+	return !!(nilfs->n_opts & NILFS_OPT_SET_SUINFO);
+}
+
 static int nilfs_open_sem(struct nilfs *nilfs)
 {
 	char semnambuf[NAME_MAX - 4];

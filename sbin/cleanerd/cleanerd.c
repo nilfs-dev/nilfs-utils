@@ -248,6 +248,12 @@ static int nilfs_cleanerd_config(struct nilfs_cleanerd *cleanerd,
 	else
 		nilfs_opt_clear_mmap(cleanerd->nilfs);
 #endif	/* HAVE_MMAP */
+
+	if (cleanerd->config.cf_use_set_suinfo)
+		nilfs_opt_set_set_suinfo(cleanerd->nilfs);
+	else
+		nilfs_opt_clear_set_suinfo(cleanerd->nilfs);
+
 	nilfs_cleanerd_set_log_priority(cleanerd);
 
 	if (protection_period != ULONG_MAX) {

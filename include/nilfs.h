@@ -128,7 +128,8 @@ struct nilfs {
 #define NILFS_OPEN_RDWR		0x0008	/* Open NILFS API in read/write mode */
 #define NILFS_OPEN_GCLK		0x1000	/* Open GC lock primitive */
 
-#define NILFS_OPT_MMAP	0x01
+#define NILFS_OPT_MMAP		0x01
+#define NILFS_OPT_SET_SUINFO	0x02
 
 
 struct nilfs *nilfs_open(const char *, const char *, int);
@@ -139,6 +140,10 @@ const char *nilfs_get_dev(const struct nilfs *);
 void nilfs_opt_clear_mmap(struct nilfs *);
 int nilfs_opt_set_mmap(struct nilfs *);
 int nilfs_opt_test_mmap(struct nilfs *);
+
+void nilfs_opt_clear_set_suinfo(struct nilfs *);
+int nilfs_opt_set_set_suinfo(struct nilfs *);
+int nilfs_opt_test_set_suinfo(struct nilfs *);
 
 nilfs_cno_t nilfs_get_oldest_cno(struct nilfs *);
 
