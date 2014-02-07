@@ -159,6 +159,7 @@ const static struct option long_option[] = {
  * @mm_ncleansegs: number of segmetns cleaned per cycle (manual mode)
  * @mm_protection_period: protection period (manual mode)
  * @mm_cleaning_interval: cleaning interval (manual mode)
+ * @mm_min_reclaimable_blocks: min. number of reclaimable blocks (manual mode)
  */
 struct nilfs_cleanerd {
 	struct nilfs *nilfs;
@@ -186,6 +187,7 @@ struct nilfs_cleanerd {
 	long mm_ncleansegs;
 	struct timeval mm_protection_period;
 	struct timeval mm_cleaning_interval;
+	unsigned long mm_min_reclaimable_blocks;
 };
 
 /**
@@ -467,6 +469,14 @@ nilfs_cleanerd_protection_period(struct nilfs_cleanerd *cleanerd)
 	return cleanerd->running == 2 ?
 		&cleanerd->mm_protection_period :
 		&cleanerd->config.cf_protection_period;
+}
+
+static unsigned long
+nilfs_cleanerd_min_reclaimable_blocks(struct nilfs_cleanerd *cleanerd)
+{
+	return cleanerd->running == 2 ?
+		cleanerd->mm_min_reclaimable_blocks :
+		cleanerd->min_reclaimable_blocks;
 }
 
 static void
@@ -1010,6 +1020,33 @@ static int nilfs_cleanerd_cmd_run(struct nilfs_cleanerd *cleanerd,
 	} else {
 		cleanerd->mm_cleaning_interval =
 			cleanerd->cleaning_interval;
+	}
+	/* minimal reclaimable blocks */
+	if (req2->args.valid & NILFS_CLEANER_ARG_MIN_RECLAIMABLE_BLOCKS) {
+		switch (req2->args.min_reclaimable_blocks_unit) {
+		case NILFS_CLEANER_ARG_UNIT_NONE:
+			if (req2->args.min_reclaimable_blocks >
+				nilfs_get_blocks_per_segment(cleanerd->nilfs))
+				goto error_inval;
+
+			cleanerd->mm_min_reclaimable_blocks =
+				req2->args.min_reclaimable_blocks;
+			break;
+		case NILFS_CLEANER_ARG_UNIT_PERCENT:
+			if (req2->args.min_reclaimable_blocks > 100)
+				goto error_inval;
+
+			cleanerd->mm_min_reclaimable_blocks =
+				(req2->args.min_reclaimable_blocks *
+				nilfs_get_blocks_per_segment(cleanerd->nilfs) +
+				99) / 100;
+			break;
+		default:
+			goto error_inval;
+		}
+	} else {
+		cleanerd->mm_min_reclaimable_blocks =
+			cleanerd->min_reclaimable_blocks;
 	}
 	/* number of passes */
 	if (req2->args.valid & NILFS_CLEANER_ARG_NPASSES) {

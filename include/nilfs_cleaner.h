@@ -39,24 +39,47 @@ struct nilfs_cleaner_args {
 	uint16_t npasses; /* number of passes */
 	uint16_t usage_rate_threshold;
 	uint16_t nsegments_per_clean;
-	uint16_t pad1;
+	uint8_t pad;
+	uint8_t min_reclaimable_blocks_unit;
 	uint16_t cleaning_interval;
 	uint32_t cleaning_interval_nsec;
 	uint64_t protection_period; /* protection period in seconds */
 	uint64_t start_segnum;	/* start segment number */
 	uint64_t nsegs;		/* number of segments */
 	uint32_t runtime; /* runtime in seconds */
-	uint32_t pad2;
+	uint32_t min_reclaimable_blocks;
 };
+
+enum nilfs_cleaner_args_unit {
+	NILFS_CLEANER_ARG_UNIT_NONE = 0,
+	NILFS_CLEANER_ARG_UNIT_PERCENT,
+	NILFS_CLEANER_ARG_UNIT_KB,     /* kilo-byte (kB) */
+	NILFS_CLEANER_ARG_UNIT_KIB,    /* kibi-byte (KiB) */
+	NILFS_CLEANER_ARG_UNIT_MB,     /* mega-byte (MB) */
+	NILFS_CLEANER_ARG_UNIT_MIB,    /* mebi-byte (MiB) */
+	NILFS_CLEANER_ARG_UNIT_GB,     /* giga-byte (GB) */
+	NILFS_CLEANER_ARG_UNIT_GIB,    /* gibi-byte (GiB) */
+	NILFS_CLEANER_ARG_UNIT_TB,     /* tera-byte (TB) */
+	NILFS_CLEANER_ARG_UNIT_TIB,    /* tebi-byte (TiB) */
+	NILFS_CLEANER_ARG_UNIT_PB,     /* peta-byte (PB) */
+	NILFS_CLEANER_ARG_UNIT_PIB,    /* pebi-byte (PiB) */
+	NILFS_CLEANER_ARG_UNIT_EB,     /* exa-byte (EB) */
+	NILFS_CLEANER_ARG_UNIT_EIB,    /* exbi-byte (EiB) */
+
+	NILFS_CLEANER_ARG_MIN_BINARY_SUFFIX = NILFS_CLEANER_ARG_UNIT_KB,
+	NILFS_CLEANER_ARG_MAX_BINARY_SUFFIX = NILFS_CLEANER_ARG_UNIT_EIB,
+};
+
 /* valid flags */
-#define NILFS_CLEANER_ARG_PROTECTION_PERIOD	(1 << 0)
-#define NILFS_CLEANER_ARG_NSEGMENTS_PER_CLEAN	(1 << 1)
-#define NILFS_CLEANER_ARG_CLEANING_INTERVAL	(1 << 2)
-#define NILFS_CLEANER_ARG_USAGE_RATE_THRESHOLD	(1 << 3) /* reserved */
-#define NILFS_CLEANER_ARG_START_SEGNUM		(1 << 4) /* reserved */
-#define NILFS_CLEANER_ARG_NSEGS			(1 << 5) /* reserved */
-#define NILFS_CLEANER_ARG_NPASSES		(1 << 6) /* reserved */
-#define NILFS_CLEANER_ARG_RUNTIME		(1 << 7) /* reserved */
+#define NILFS_CLEANER_ARG_PROTECTION_PERIOD		(1 << 0)
+#define NILFS_CLEANER_ARG_NSEGMENTS_PER_CLEAN		(1 << 1)
+#define NILFS_CLEANER_ARG_CLEANING_INTERVAL		(1 << 2)
+#define NILFS_CLEANER_ARG_USAGE_RATE_THRESHOLD		(1 << 3) /* reserved */
+#define NILFS_CLEANER_ARG_START_SEGNUM			(1 << 4) /* reserved */
+#define NILFS_CLEANER_ARG_NSEGS				(1 << 5) /* reserved */
+#define NILFS_CLEANER_ARG_NPASSES			(1 << 6) /* reserved */
+#define NILFS_CLEANER_ARG_RUNTIME			(1 << 7) /* reserved */
+#define NILFS_CLEANER_ARG_MIN_RECLAIMABLE_BLOCKS	(1 << 8)
 
 enum {
 	NILFS_CLEANER_STATUS_IDLE,
