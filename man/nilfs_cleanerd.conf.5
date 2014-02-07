@@ -79,6 +79,28 @@ Specify whether to use \fBmmap\fP(2) for reading segments.  At
 present, this option is enabled if supported regardless of this
 directive.
 .TP
+.B use_set_suinfo
+Specify whether to use the set_suinfo ioctl if it is supported. This is
+necessary for the \fBmin_reclaimable_blocks\fP feature. By disabling this
+switch \fBmin_reclaimable_blocks\fP is also disabled.
+.TP
+.B min_reclaimable_blocks
+Specify the minimum number of reclaimable blocks in a segment before
+it can be cleaned.
+.TP
+.B mc_min_reclaimable_blocks
+Specify the minimum number of reclaimable blocks in a segment before
+it can be cleaned. if clean segments < min_clean_segments.
+.PP
+\fBmin_reclaimable_blocks\fP and \fBmc_min_reclaimable_blocks\fP may
+be followed by a percent sign or the following multiplicative suffixes:
+kB 1000, K 1024, MB 1000*1000, M 1024*1024, GB 1000*1000*1000, G
+1024*1024*1024, and so on for T, P, E.  If the argument is followed by
+a percent sign, it represents the ratio of blocks in a segment.
+.PP
+The default values of \fBmin_reclaimable_blocks\fP and
+\fBmc_min_reclaimable_blocks\fP are 5 percent and 1 percent respectively.
+.TP
 .B log_priority
 Gives the verbosity level that is used when logging messages from
 \fBnilfs_cleanerd\fP(8).  The possible values are: \fBemerg\fP,

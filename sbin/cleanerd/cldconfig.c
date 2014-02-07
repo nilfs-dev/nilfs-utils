@@ -278,6 +278,55 @@ nilfs_cldconfig_handle_protection_period(struct nilfs_cldconfig *config,
 }
 
 static unsigned long long
+nilfs_convert_units_to_bytes(const struct nilfs_param *param)
+{
+	unsigned long long bytes = param->num;
+
+	switch (param->unit) {
+	case NILFS_SIZE_UNIT_KB:
+		bytes *= 1000ULL;
+		break;
+	case NILFS_SIZE_UNIT_KIB:
+		bytes <<= 10;
+		break;
+	case NILFS_SIZE_UNIT_MB:
+		bytes *= 1000000ULL;
+		break;
+	case NILFS_SIZE_UNIT_MIB:
+		bytes <<= 20;
+		break;
+	case NILFS_SIZE_UNIT_GB:
+		bytes *= 1000000000ULL;
+		break;
+	case NILFS_SIZE_UNIT_GIB:
+		bytes <<= 30;
+		break;
+	case NILFS_SIZE_UNIT_TB:
+		bytes *= 1000000000000ULL;
+		break;
+	case NILFS_SIZE_UNIT_TIB:
+		bytes <<= 40;
+		break;
+	case NILFS_SIZE_UNIT_PB:
+		bytes *= 1000000000000000ULL;
+		break;
+	case NILFS_SIZE_UNIT_PIB:
+		bytes <<= 50;
+		break;
+	case NILFS_SIZE_UNIT_EB:
+		bytes *= 1000000000000000000ULL;
+		break;
+	case NILFS_SIZE_UNIT_EIB:
+		bytes <<= 60;
+		break;
+	default:
+		assert(0);
+	}
+
+	return bytes;
+}
+
+static unsigned long long
 nilfs_convert_size_to_nsegments(struct nilfs *nilfs, struct nilfs_param *param)
 {
 	unsigned long long ret, segment_size, bytes;
@@ -287,48 +336,7 @@ nilfs_convert_size_to_nsegments(struct nilfs *nilfs, struct nilfs_param *param)
 	} else if (param->unit == NILFS_SIZE_UNIT_PERCENT) {
 		ret = (nilfs_get_nsegments(nilfs) * param->num + 99) / 100;
 	} else {
-		bytes = param->num;
-
-		switch (param->unit) {
-		case NILFS_SIZE_UNIT_KB:
-			bytes *= 1000ULL;
-			break;
-		case NILFS_SIZE_UNIT_KIB:
-			bytes <<= 10;
-			break;
-		case NILFS_SIZE_UNIT_MB:
-			bytes *= 1000000ULL;
-			break;
-		case NILFS_SIZE_UNIT_MIB:
-			bytes <<= 20;
-			break;
-		case NILFS_SIZE_UNIT_GB:
-			bytes *= 1000000000ULL;
-			break;
-		case NILFS_SIZE_UNIT_GIB:
-			bytes <<= 30;
-			break;
-		case NILFS_SIZE_UNIT_TB:
-			bytes *= 1000000000000ULL;
-			break;
-		case NILFS_SIZE_UNIT_TIB:
-			bytes <<= 40;
-			break;
-		case NILFS_SIZE_UNIT_PB:
-			bytes *= 1000000000000000ULL;
-			break;
-		case NILFS_SIZE_UNIT_PIB:
-			bytes <<= 50;
-			break;
-		case NILFS_SIZE_UNIT_EB:
-			bytes *= 1000000000000000000ULL;
-			break;
-		case NILFS_SIZE_UNIT_EIB:
-			bytes <<= 60;
-			break;
-		default:
-			assert(0);
-		}
+		bytes = nilfs_convert_units_to_bytes(param);
 		segment_size = nilfs_get_block_size(nilfs) *
 			nilfs_get_blocks_per_segment(nilfs);
 		ret = (bytes + segment_size - 1) / segment_size;
@@ -455,6 +463,52 @@ nilfs_cldconfig_handle_mc_nsegments_per_clean(struct nilfs_cldconfig *config,
 	return 0;
 }
 
+static unsigned long long
+nilfs_convert_size_to_blocks_per_segment(struct nilfs *nilfs,
+					 struct nilfs_param *param)
+{
+	unsigned long long ret, segment_size, block_size, bytes;
+
+	if (param->unit == NILFS_SIZE_UNIT_NONE) {
+		ret = param->num;
+	} else if (param->unit == NILFS_SIZE_UNIT_PERCENT) {
+		ret = (nilfs_get_blocks_per_segment(nilfs) * param->num) / 100;
+	} else {
+		block_size = nilfs_get_block_size(nilfs);
+		segment_size = block_size *
+				nilfs_get_blocks_per_segment(nilfs);
+		bytes = nilfs_convert_units_to_bytes(param) % segment_size;
+		ret = (bytes + block_size - 1) / block_size;
+	}
+	return ret;
+}
+
+static int
+nilfs_cldconfig_handle_min_reclaimable_blocks(struct nilfs_cldconfig *config,
+					      char **tokens, size_t ntoks,
+					      struct nilfs *nilfs)
+{
+	struct nilfs_param param;
+
+	if (nilfs_cldconfig_get_size_argument(tokens, ntoks, &param) == 0)
+		config->cf_min_reclaimable_blocks =
+			nilfs_convert_size_to_blocks_per_segment(nilfs, &param);
+	return 0;
+}
+
+static int
+nilfs_cldconfig_handle_mc_min_reclaimable_blocks(struct nilfs_cldconfig *config,
+						 char **tokens, size_t ntoks,
+						 struct nilfs *nilfs)
+{
+	struct nilfs_param param;
+
+	if (nilfs_cldconfig_get_size_argument(tokens, ntoks, &param) == 0)
+		config->cf_mc_min_reclaimable_blocks =
+			nilfs_convert_size_to_blocks_per_segment(nilfs, &param);
+	return 0;
+}
+
 static int
 nilfs_cldconfig_handle_cleaning_interval(struct nilfs_cldconfig *config,
 					 char **tokens, size_t ntoks,
@@ -487,6 +541,14 @@ static int nilfs_cldconfig_handle_use_mmap(struct nilfs_cldconfig *config,
 					   struct nilfs *nilfs)
 {
 	config->cf_use_mmap = 1;
+	return 0;
+}
+
+static int nilfs_cldconfig_handle_use_set_suinfo(struct nilfs_cldconfig *config,
+						 char **tokens, size_t ntoks,
+						 struct nilfs *nilfs)
+{
+	config->cf_use_set_suinfo = 1;
 	return 0;
 }
 
@@ -576,6 +638,18 @@ nilfs_cldconfig_keyword_table[] = {
 		"log_priority", 2, 2,
 		nilfs_cldconfig_handle_log_priority
 	},
+	{
+		"min_reclaimable_blocks", 2, 2,
+		nilfs_cldconfig_handle_min_reclaimable_blocks
+	},
+	{
+		"mc_min_reclaimable_blocks", 2, 2,
+		nilfs_cldconfig_handle_mc_min_reclaimable_blocks
+	},
+	{
+		"use_set_suinfo", 1, 1,
+		nilfs_cldconfig_handle_use_set_suinfo
+	},
 };
 
 #define NILFS_CLDCONFIG_NKEYWORDS			\
@@ -640,7 +714,18 @@ static void nilfs_cldconfig_set_default(struct nilfs_cldconfig *config,
 	config->cf_retry_interval.tv_sec = NILFS_CLDCONFIG_RETRY_INTERVAL;
 	config->cf_retry_interval.tv_usec = 0;
 	config->cf_use_mmap = NILFS_CLDCONFIG_USE_MMAP;
+	config->cf_use_set_suinfo = NILFS_CLDCONFIG_USE_SET_SUINFO;
 	config->cf_log_priority = NILFS_CLDCONFIG_LOG_PRIORITY;
+
+	param.num = NILFS_CLDCONFIG_MIN_RECLAIMABLE_BLOCKS;
+	param.unit = NILFS_CLDCONFIG_MIN_RECLAIMABLE_BLOCKS_UNIT;
+	config->cf_min_reclaimable_blocks =
+		nilfs_convert_size_to_blocks_per_segment(nilfs, &param);
+
+	param.num = NILFS_CLDCONFIG_MC_MIN_RECLAIMABLE_BLOCKS;
+	param.unit = NILFS_CLDCONFIG_MC_MIN_RECLAIMABLE_BLOCKS_UNIT;
+	config->cf_mc_min_reclaimable_blocks =
+		nilfs_convert_size_to_blocks_per_segment(nilfs, &param);
 }
 
 static inline int iseol(int c)
