@@ -141,6 +141,7 @@ const static struct option long_option[] = {
  * @running: running state
  * @fallback: fallback state
  * @retry_cleaning: retrying reclamation for protected segments
+ * @no_timeout: the next timeout will be 0 seconds
  * @ncleansegs: number of semgents cleaned per cycle
  * @cleaning_interval: cleaning interval
  * @target: target time for sleeping
@@ -169,6 +170,7 @@ struct nilfs_cleanerd {
 	int running;
 	int fallback;
 	int retry_cleaning;
+	int no_timeout;
 	int shutdown;
 	long ncleansegs;
 	struct timeval cleaning_interval;
@@ -896,7 +898,7 @@ static int nilfs_cleanerd_recalc_interval(struct nilfs_cleanerd *cleanerd,
 	interval = nilfs_cleanerd_cleaning_interval(cleanerd);
 	/* timercmp() does not work for '>=' or '<='. */
 	/* curr >= target */
-	if (!timercmp(&curr, &cleanerd->target, <)) {
+	if (!timercmp(&curr, &cleanerd->target, <) || cleanerd->no_timeout) {
 		cleanerd->timeout.tv_sec = 0;
 		cleanerd->timeout.tv_usec = 0;
 		timeradd(&curr, interval, &cleanerd->target);
@@ -1450,6 +1452,9 @@ static int nilfs_cleanerd_clean_segments(struct nilfs_cleanerd *cleanerd,
 		cleanerd->fallback = 0;
 		cleanerd->retry_cleaning = 0;
 
+		if (!stat.cleaned_segs)
+			cleanerd->no_timeout = 1;
+
 		*ndone += stat.deferred_segs;
 	}
 
@@ -1523,6 +1528,8 @@ static int nilfs_cleanerd_clean_loop(struct nilfs_cleanerd *cleanerd)
 		nilfs_cleanerd_clean_check_pause(cleanerd);
 
 	while (!cleanerd->shutdown) {
+		cleanerd->no_timeout = 0;
+
 		if (sigprocmask(SIG_BLOCK, &sigset, NULL) < 0) {
 			syslog(LOG_ERR, "cannot set signal mask: %m");
 			return -1;
