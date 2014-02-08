@@ -34,9 +34,9 @@ libcleanerexec_la_CFLAGS = -Wall -fPIC
 libcleanerexec_la_CPPFLAGS = -I$(top_srcdir)/include
 libcleanerexec_la_LDFLAGS = -static
 
-libnilfs_CURRENT = 1
-libnilfs_REVISION = 1
-libnilfs_AGE = 1
+libnilfs_CURRENT = 2
+libnilfs_REVISION = 0
+libnilfs_AGE = 2
 libnilfs_VERSIONINFO = $(libnilfs_CURRENT):$(libnilfs_REVISION):$(libnilfs_AGE)
 
 libnilfs_la_SOURCES = nilfs.c sb.c
@@ -45,9 +45,9 @@ libnilfs_la_CPPFLAGS = -I$(top_srcdir)/include
 libnilfs_la_LDFLAGS = -version-info $(libnilfs_VERSIONINFO)
 libnilfs_la_LIBADD = librealpath.la libcrc32.la $(LIB_POSIX_SEM)
 
-nilfsgc_CURRENT = 0
+nilfsgc_CURRENT = 1
 nilfsgc_REVISION = 0
-nilfsgc_AGE = 0
+nilfsgc_AGE = 1
 nilfsgc_VERSIONINFO = $(nilfsgc_CURRENT):$(nilfsgc_REVISION):$(nilfsgc_AGE)
 
 libnilfsgc_la_SOURCES = gc.c vector.c cnoconv.c
