@@ -811,16 +811,11 @@ out_sig:
 	sigprocmask(SIG_SETMASK, &oldset, NULL);
 
 out_vec:
-	if (vdescv != NULL)
-		nilfs_vector_destroy(vdescv);
-	if (bdescv != NULL)
-		nilfs_vector_destroy(bdescv);
-	if (periodv != NULL)
-		nilfs_vector_destroy(periodv);
-	if (vblocknrv != NULL)
-		nilfs_vector_destroy(vblocknrv);
-	if (supv != NULL)
-		nilfs_vector_destroy(supv);
+	nilfs_vector_destroy(vdescv);
+	nilfs_vector_destroy(bdescv);
+	nilfs_vector_destroy(periodv);
+	nilfs_vector_destroy(vblocknrv);
+	nilfs_vector_destroy(supv);
 	/*
 	 * Flags of valid fields in stat->exflags must be unset.
 	 */
