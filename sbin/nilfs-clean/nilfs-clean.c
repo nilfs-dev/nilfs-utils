@@ -91,7 +91,7 @@ const static struct option long_option[] = {
 	"  -l, --status\t\tdisplay cleaner status\n"			\
 	"  -p, --protection-period=SECONDS\n"				\
 	"               \t\tspecify protection period\n"		\
-	"  -m, --min-reclaimable-blocks=COUNT[%]\n"			\
+	"  -m, --min-reclaimable-blocks=COUNT[%%]\n"			\
 	"               \t\tset minimum number of reclaimable blocks\n"	\
 	"               \t\tbefore a segment can be cleaned\n"		\
 	"  -q, --quit\t\tshutdown cleaner\n"				\
