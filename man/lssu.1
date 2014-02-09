@@ -1,7 +1,7 @@
 .\"  Copyright (C) 2007-2012 Nippon Telegraph and Telephone Corporation.
 .\"  Written by Ryusuke Konishi <konishi.ryusuke@lab.ntt.co.jp>
 .\"
-.TH LSSU 1 "May 2011" "nilfs-utils version 2.1"
+.TH LSSU 1 "Feb 2014" "nilfs-utils version 2.1"
 .SH NAME
 lssu \- list usage state of NILFS2 segments
 .SH SYNOPSIS
@@ -27,8 +27,16 @@ Display help message and exit.
 \fB\-i \fIindex\fR, \fB\-\-index\fR=\fIindex\fR
 Skip \fIindex\fP segments at start of input.
 .TP
+\fB\-l\fR, \fB\-\-latest-usage\fR
+Print usage status of the moment.
+.TP
 \fB\-n \fIlines\fR, \fB\-\-lines\fR=\fIlines\fR
 List only \fIlines\fP input segments.
+.TP
+\fB\-p \fIperiod\fR, \fB\-\-protection-period\fR=\fIperiod\fR
+Specify protection period.  This option is used when printing usage
+status of the moment (with \fB\-l\fR option) to test if each
+block in segments is protected and is not reclaimable.
 .TP
 \fB\-V\fR, \fB\-\-version\fR
 Display version and exit.
@@ -63,6 +71,10 @@ error.  NILFS2 avoids allocating the segments with this flag.
 .TP
 .B NBLOCKS
 Number of in-use blocks of the segment.
+.TP
+.B NLIVEBLOCKS (optional)
+Number and ratio of in-use blocks of the moment.  This field is
+displayed when \fB\-l\fR option is specified.
 .SH AUTHOR
 Koji Sato
 .SH AVAILABILITY

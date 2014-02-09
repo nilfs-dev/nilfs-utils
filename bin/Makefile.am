@@ -14,6 +14,8 @@ dumpseg_SOURCES = dumpseg.c
 lscp_SOURCES = lscp.c
 
 lssu_SOURCES = lssu.c
+lssu_LDADD = $(LDADD) $(top_builddir)/lib/libnilfsgc.la \
+	 $(top_builddir)/lib/libparser.la
 
 mkcp_SOURCES = mkcp.c
 mkcp_LDADD = $(LDADD) $(LIB_POSIX_SEM)
