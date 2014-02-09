@@ -49,7 +49,7 @@
 
 #include <errno.h>
 #include "nilfs.h"
-#include "cno.h"
+#include "parser.h"
 
 
 #ifdef _GNU_SOURCE

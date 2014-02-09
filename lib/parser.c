@@ -1,5 +1,5 @@
 /*
- * cno.c - NILFS checkpoint number parser
+ * parser.c - NILFS parser library
  *
  * Copyright (C) 2009-2012 Nippon Telegraph and Telephone Corporation.
  *
@@ -34,8 +34,13 @@
 #include <string.h>
 #endif	/* HAVE_STRING_H */
 
+#if HAVE_LIMITS_H
+#include <limits.h>
+#endif	/* HAVE_LIMITS_H */
+
 #include <assert.h>
 #include <ctype.h>
+#include <errno.h>
 #include "nilfs.h"
 
 nilfs_cno_t nilfs_parse_cno(const char *arg, char **endptr, int base)
@@ -98,4 +103,52 @@ int nilfs_parse_cno_range(const char *arg, __u64 *start, __u64 *end, int base)
 		}
 	}
 	return -1; /* parse error */
+}
+
+int nilfs_parse_protection_period(const char *arg, unsigned long *period)
+{
+	unsigned long long val;
+	char *endptr;
+	int ret = 0;
+
+	val = strtoull(arg, &endptr, 10);
+	if (endptr == arg) {
+		errno = EINVAL;
+		ret = -1;
+		goto out;
+	} else if (endptr[0] != '\0' && endptr[1] == '\0' && val < ULONG_MAX) {
+		switch (endptr[0]) {
+		case 's':
+			break;
+		case 'm':
+			val *= 60;
+			break;
+		case 'h':
+			val *= 3600;
+			break;
+		case 'd':
+			val *= 86400;
+			break;
+		case 'w':
+			val *= 604800;
+			break;
+		case 'M':
+			val *= 2678400;
+			break;
+		case 'Y':
+			val *= 31536000;
+			break;
+		default:
+			ret = -1;
+			goto out;
+		}
+	}
+	if (val >= ULONG_MAX) {
+		errno = ERANGE;
+		ret = -1;
+		goto out;
+	}
+	*period = val;
+out:
+	return ret;
 }

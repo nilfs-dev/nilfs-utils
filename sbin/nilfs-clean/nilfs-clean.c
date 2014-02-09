@@ -63,6 +63,7 @@
 #include "nls.h"
 #include "nilfs.h"
 #include "nilfs_cleaner.h"
+#include "parser.h"
 
 #ifdef _GNU_SOURCE
 #include <getopt.h>
@@ -336,56 +337,6 @@ static void nilfs_clean_usage(void)
 	fprintf(stderr, NILFS_CLEAN_USAGE, progname);
 }
 
-static int nilfs_clean_parse_protection_period(const char *arg)
-{
-	unsigned long long period;
-	char *endptr;
-	int ret = 0;
-
-	period = strtoull(arg, &endptr, 10);
-	if (endptr == arg) {
-		myprintf(_("Error: invalid protection period: %s\n"), arg);
-		ret = -1;
-		goto out;
-	} else if (endptr[0] != '\0' && endptr[1] == '\0' &&
-		   period < ULONG_MAX) {
-		switch (endptr[0]) {
-		case 's':
-			break;
-		case 'm':
-			period *= 60;
-			break;
-		case 'h':
-			period *= 3600;
-			break;
-		case 'd':
-			period *= 86400;
-			break;
-		case 'w':
-			period *= 604800;
-			break;
-		case 'M':
-			period *= 2678400;
-			break;
-		case 'Y':
-			period *= 31536000;
-			break;
-		default:
-			ret = -1;
-			goto out;
-		}
-	}
-	if (period >= ULONG_MAX) {
-		myprintf(_("Error: too large period: %s\n"), arg);
-		errno = ERANGE;
-		ret = -1;
-		goto out;
-	}
-	protection_period = period;
-out:
-	return ret;
-}
-
 static int nilfs_clean_parse_gcspeed(const char *arg)
 {
 	unsigned long nsegs;
@@ -473,7 +424,7 @@ static void nilfs_clean_parse_options(int argc, char *argv[])
 #ifdef _GNU_SOURCE
 	int option_index;
 #endif	/* _GNU_SOURCE */
-	int c;
+	int c, ret;
 
 #ifdef _GNU_SOURCE
 	while ((c = getopt_long(argc, argv, "bc::hlm:p:qrsS:vV",
@@ -502,9 +453,19 @@ static void nilfs_clean_parse_options(int argc, char *argv[])
 				exit(EXIT_FAILURE);
 			break;
 		case 'p':
-			if (nilfs_clean_parse_protection_period(optarg) < 0)
-				exit(EXIT_FAILURE);
-			break;
+			ret = nilfs_parse_protection_period(
+				optarg, &protection_period);
+			if (!ret)
+				break;
+
+			if (errno == ERANGE) {
+				myprintf(_("Error: too large period: %s\n"),
+					 optarg);
+			} else {
+				myprintf(_("Error: invalid protection period: "
+					   "%s\n"), optarg);
+			}
+			exit(EXIT_FAILURE);
 		case 'q':
 			clean_cmd = NILFS_CLEAN_CMD_SHUTDOWN;
 			break;

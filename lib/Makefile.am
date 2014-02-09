@@ -1,7 +1,7 @@
 ## Makefile.am
 
 lib_LTLIBRARIES = libnilfs.la libnilfsgc.la libnilfscleaner.la
-noinst_LTLIBRARIES = librealpath.la libnilfsfeature.la libcno.la \
+noinst_LTLIBRARIES = librealpath.la libnilfsfeature.la libparser.la \
 	libmountchk.la libcrc32.la libcleanerexec.la
 
 librealpath_la_SOURCES = realpath.c
@@ -14,10 +14,10 @@ libnilfsfeature_la_CFLAGS = -Wall -fPIC
 libnilfsfeature_la_CPPFLAGS = -I$(top_srcdir)/include
 libnilfsfeature_la_LDFLAGS = -static
 
-libcno_la_SOURCES = cno.c
-libcno_la_CFLAGS = -Wall -fPIC
-libcno_la_CPPFLAGS = -I$(top_srcdir)/include
-libcno_la_LDFLAGS = -static
+libparser_la_SOURCES = parser.c
+libparser_la_CFLAGS = -Wall -fPIC
+libparser_la_CPPFLAGS = -I$(top_srcdir)/include
+libparser_la_LDFLAGS = -static
 
 libmountchk_la_SOURCES = ismounted.c
 libmountchk_la_CFLAGS = -Wall -fPIC

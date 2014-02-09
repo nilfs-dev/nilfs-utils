@@ -49,7 +49,7 @@
 #include <errno.h>
 #include <signal.h>
 #include "nilfs.h"
-#include "cno.h"
+#include "parser.h"
 
 
 #define CHCP_MODE_CP	"cp"
