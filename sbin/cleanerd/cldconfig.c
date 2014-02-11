@@ -472,7 +472,8 @@ nilfs_convert_size_to_blocks_per_segment(struct nilfs *nilfs,
 	if (param->unit == NILFS_SIZE_UNIT_NONE) {
 		ret = param->num;
 	} else if (param->unit == NILFS_SIZE_UNIT_PERCENT) {
-		ret = (nilfs_get_blocks_per_segment(nilfs) * param->num) / 100;
+		ret = (nilfs_get_blocks_per_segment(nilfs) * param->num + 99)
+				/ 100;
 	} else {
 		block_size = nilfs_get_block_size(nilfs);
 		segment_size = block_size *
