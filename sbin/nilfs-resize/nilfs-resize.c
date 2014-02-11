@@ -60,6 +60,7 @@
 #include <errno.h>
 #include <signal.h>
 #include "nilfs.h"
+#include "util.h"
 #include "vector.h"
 #include "nilfs_gc.h"
 #include "cnoconv.h"
@@ -98,24 +99,6 @@ const static struct option long_option[] = {
 #define FIFREEZE	_IOWR('X', 119, int)
 #define FITHAW		_IOWR('X', 120, int)
 #endif
-
-/* general macros */
-#ifndef DIV_ROUND_UP
-#define DIV_ROUND_UP(n, m)	(((n) + (m) - 1) / (m))
-#endif
-
-#ifndef ARRAY_SIZE
-#define ARRAY_SIZE(arr) (sizeof(arr) / sizeof((arr)[0]))
-#endif
-
-#ifndef min_t
-#define min_t(type, x, y) \
-	({ type __x = (x); type __y = (y); __x < __y ? __x : __y; })
-#define max_t(type, x, y) \
-	({ type __x = (x); type __y = (y); __x > __y ? __x : __y; })
-#endif
-
-#define nilfs_cnt64_ge(a, b)	((__s64)(a) - (__s64)(b) >= 0)
 
 /* options */
 static char *progname;
@@ -314,7 +297,7 @@ static int nilfs_resize_segment_is_protected(struct nilfs *nilfs, __u64 segnum)
 		return -1;
 	}
 	segseq = nilfs_get_segment_seqnum(nilfs, segment, segnum);
-	if (nilfs_cnt64_ge(segseq, protseq))
+	if (cnt64_ge(segseq, protseq))
 		ret = 1;
 	nilfs_put_segment(nilfs, segment);
 	return ret;

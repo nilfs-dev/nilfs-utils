@@ -74,8 +74,9 @@
 #include <setjmp.h>
 #include <assert.h>
 #include <uuid/uuid.h>
-#include "vector.h"
 #include "nilfs.h"
+#include "util.h"
+#include "vector.h"
 #include "nilfs_gc.h"
 #include "nilfs_cleaner.h"
 #include "cleaner_msg.h"
@@ -89,24 +90,6 @@
 #endif	/* SYSCONFDIR */
 #define NILFS_CLEANERD_CONFFILE	SYSCONFDIR "/nilfs_cleanerd.conf"
 
-#ifndef min_t
-#define min_t(type, x, y) \
-	({ type __x = (x); type __y = (y); __x < __y ? __x : __y; })
-#define max_t(type, x, y) \
-	({ type __x = (x); type __y = (y); __x > __y ? __x : __y; })
-#endif
-
-#define nilfs_cnt64_ge(a, b)	((__s64)(a) - (__s64)(b) >= 0)
-
-#ifndef ARRAY_SIZE
-#define ARRAY_SIZE(arr) (sizeof(arr) / sizeof((arr)[0]))
-#endif
-
-#define timeval_to_timespec(tv, ts)		\
-do {						\
-	(ts)->tv_sec = (tv)->tv_sec;		\
-	(ts)->tv_nsec = (tv)->tv_usec * 1000;	\
-} while (0)
 
 #ifdef _GNU_SOURCE
 #include <getopt.h>
@@ -510,7 +493,7 @@ static int nilfs_segment_is_protected(struct nilfs *nilfs, __u64 segnum,
 		return -1;
 
 	segseq = nilfs_get_segment_seqnum(nilfs, segment, segnum);
-	if (nilfs_cnt64_ge(segseq, protseq))
+	if (cnt64_ge(segseq, protseq))
 		ret = 1;
 	nilfs_put_segment(nilfs, segment);
 	return ret;

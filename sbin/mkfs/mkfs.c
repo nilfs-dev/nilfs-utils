@@ -36,8 +36,6 @@
 #include <stdlib.h>
 #endif	/* HAVE_STDLIB_H */
 
-#include <assert.h>
-
 #if HAVE_UNISTD_H
 #include <unistd.h>
 #endif	/* HAVE_UNISTD_H */
@@ -77,20 +75,13 @@
 #endif	/* HAVE_BLKID_BLKID_H */
 
 #include "nilfs.h"
+#include "util.h"
 #include "nilfs_feature.h"
 #include "mkfs.h"
 #include "pathnames.h"
 
 
 typedef __u64  blocknr_t;
-
-#define BUG_ON(x)	   assert(!(x))
-/* Force a compilation error if the condition is true */
-#define BUILD_BUG_ON(condition) ((void)sizeof(struct { int: -!!(condition); }))
-
-#define ROUNDUP_DIV(n, m)	(((n) - 1) / (m) + 1)
-#define max_t(type, x, y) \
-	({ type __x = (x); type __y = (y); __x > __y ? __x : __y; })
 
 extern __u32 crc32_le(__u32 seed, unsigned char const *data, size_t length);
 #define nilfs_crc32(seed, data, length)  crc32_le(seed, data, length)
@@ -371,7 +362,7 @@ static unsigned count_blockgrouped_file_blocks(unsigned entry_size,
 	unsigned long entries_per_block = blocksize / entry_size;
 
 	return group_desc_blocks_per_group + bitmap_blocks_per_group +
-		ROUNDUP_DIV(nr_initial_entries, entries_per_block);
+		DIV_ROUND_UP(nr_initial_entries, entries_per_block);
 }
 
 static unsigned count_ifile_blocks(void)
@@ -391,7 +382,7 @@ static unsigned count_sufile_blocks(void)
 {
 	unsigned long sufile_segment_usages_per_block
 		= blocksize / sizeof(struct nilfs_segment_usage);
-	return ROUNDUP_DIV(nr_initial_segments +
+	return DIV_ROUND_UP(nr_initial_segments +
 			   NILFS_SUFILE_FIRST_SEGMENT_USAGE_OFFSET,
 			   sufile_segment_usages_per_block);
 }
@@ -401,7 +392,7 @@ static unsigned count_cpfile_blocks(void)
 	const unsigned nr_initial_checkpoints = 1;
 	unsigned long cpfile_checkpoints_per_block
 		= blocksize / sizeof(struct nilfs_checkpoint);
-	return ROUNDUP_DIV(nr_initial_checkpoints +
+	return DIV_ROUND_UP(nr_initial_checkpoints +
 			   NILFS_CPFILE_FIRST_CHECKPOINT_OFFSET
 			   - 1 /* checkpoint number begins from 1 */,
 			   cpfile_checkpoints_per_block);
@@ -509,7 +500,7 @@ static void init_disk_layout(struct nilfs_disk_info *di, int fd,
 
 	di->blocks_per_segment = blocks_per_segment;
 	segment_size = di->blocks_per_segment * blocksize;
-	first_segblk = ROUNDUP_DIV(NILFS_DISKHDR_SIZE, blocksize);
+	first_segblk = DIV_ROUND_UP(NILFS_DISKHDR_SIZE, blocksize);
 	di->first_segment_block = first_segblk;
 	if (first_segblk + NILFS_PSEG_MIN_BLOCKS > di->blocks_per_segment)
 		too_small_segment(di->blocks_per_segment,
@@ -537,7 +528,7 @@ static struct nilfs_segment_info *new_segment(struct nilfs_disk_info *di)
 	memset(si, 0, sizeof(*si));
 
 	si->sumbytes = sizeof(struct nilfs_segment_summary);
-	si->nblk_sum = ROUNDUP_DIV(si->sumbytes, blocksize);
+	si->nblk_sum = DIV_ROUND_UP(si->sumbytes, blocksize);
 	si->start = di->first_segment_block; /* for segment 0 */
 	return si;
 }
@@ -572,7 +563,7 @@ static void fix_disk_layout(struct nilfs_disk_info *di)
 		if (di->nblocks_to_write < si->start + si->nblocks)
 			di->nblocks_to_write = si->start + si->nblocks;
 	}
-	di->nsegments_to_write = ROUNDUP_DIV(di->nblocks_to_write,
+	di->nsegments_to_write = DIV_ROUND_UP(di->nblocks_to_write,
 					     di->blocks_per_segment);
 }
 
@@ -596,7 +587,7 @@ static void add_file(struct nilfs_segment_info *si, ino_t ino,
 		increment_segsum_size(si, nblocks, dat_flag);
 		if (!dat_flag)
 			si->nvblocknrs += nblocks;
-		si->nblk_sum = ROUNDUP_DIV(si->sumbytes, blocksize);
+		si->nblk_sum = DIV_ROUND_UP(si->sumbytes, blocksize);
 	}
 }
 
@@ -880,7 +871,7 @@ static void *map_disk_buffer(blocknr_t blocknr, int clear_flag)
 
 static void read_disk_header(int fd, const char *device)
 {
-	int i, hdr_blocks = ROUNDUP_DIV(NILFS_SB_OFFSET_BYTES, blocksize);
+	int i, hdr_blocks = DIV_ROUND_UP(NILFS_SB_OFFSET_BYTES, blocksize);
 
 	lseek(fd, 0, SEEK_SET);
 	for (i = 0; i < hdr_blocks; i++) {

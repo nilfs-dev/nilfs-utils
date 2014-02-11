@@ -37,6 +37,7 @@
 #include <assert.h>
 #include <stdarg.h>
 #include <signal.h>
+#include "util.h"
 #include "vector.h"
 #include "nilfs_gc.h"
 
@@ -227,8 +228,6 @@ static ssize_t nilfs_deselect_segment(__u64 *segnums, size_t nsegs, int nr)
 	return nsegs - 1;
 }
 
-#define nilfs_cnt64_ge(a, b)	((__s64)(a) - (__s64)(b) >= 0)
-
 /**
  * nilfs_acc_blocks - collect summary of blocks contained in segments
  * @nilfs: nilfs object
@@ -268,7 +267,7 @@ static ssize_t nilfs_acc_blocks(struct nilfs *nilfs,
 			return -1;
 
 		segseq = nilfs_get_segment_seqnum(nilfs, segment, segnums[i]);
-		if (nilfs_cnt64_ge(segseq, protseq)) {
+		if (cnt64_ge(segseq, protseq)) {
 			n = nilfs_deselect_segment(segnums, n, i);
 			if (nilfs_put_segment(nilfs, segment) < 0)
 				return -1;
