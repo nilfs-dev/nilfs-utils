@@ -73,6 +73,7 @@
 #include <errno.h>
 #include <assert.h>
 #include "nilfs.h"
+#include "util.h"
 #include "pathnames.h"
 #include "realpath.h"
 
@@ -126,10 +127,11 @@ static int has_mntopt(const char *opts, const char *opt)
 	while (p != NULL) {
 		q = strchr(p, MNTOPT_SEP);
 		if (q) {
-			n = (q - p < len) ? len : q - p;
+			n = max_t(size_t, q - p, len);
 			q++;
-		} else
-			n = (strlen(p) < len) ? len : strlen(p);
+		} else {
+			n = max_t(size_t, strlen(p), len);
+		}
 		if (strncmp(p, opt, n) == 0)
 			return 1;
 		p = q;

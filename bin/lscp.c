@@ -48,6 +48,7 @@
 
 #include <errno.h>
 #include "nilfs.h"
+#include "util.h"
 
 #undef CONFIG_PRINT_CPSTAT
 
@@ -133,9 +134,8 @@ static void lscp_print_cpstat(const struct nilfs_cpstat *cpstat, int mode)
 static ssize_t lscp_get_cpinfo(struct nilfs *nilfs, nilfs_cno_t cno, int mode,
 			       size_t count)
 {
-	size_t req_count;
+	size_t req_count = min_t(size_t, count, LSCP_NCPINFO);
 
-	req_count = (count < LSCP_NCPINFO) ? count : LSCP_NCPINFO;
 	return nilfs_get_cpinfo(nilfs, cno, mode, cpinfos, req_count);
 }
 
@@ -184,8 +184,8 @@ static int lscp_backward_cpinfo(struct nilfs *nilfs,
 		cpstat->cs_cno;
 
 	for ( ; rest > 0 && eidx > NILFS_CNO_MIN; eidx = sidx) {
-		delta = (rest > LSCP_NCPINFO ? LSCP_NCPINFO :
-			 (rest < LSCP_MINDELTA ? LSCP_MINDELTA : rest));
+		delta = min_t(__u64, LSCP_NCPINFO,
+			      max_t(__u64, rest, LSCP_MINDELTA));
 		sidx = (eidx >= NILFS_CNO_MIN + delta) ? eidx - delta :
 			NILFS_CNO_MIN;
 

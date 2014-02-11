@@ -607,8 +607,8 @@ nilfs_cleanerd_select_segments(struct nilfs_cleanerd *cleanerd,
 		sustat->ss_nongc_ctime;
 
 	for (segnum = 0; segnum < sustat->ss_nsegs; segnum += n) {
-		count = (sustat->ss_nsegs - segnum < NILFS_CLEANERD_NSUINFO) ?
-			sustat->ss_nsegs - segnum : NILFS_CLEANERD_NSUINFO;
+		count = min_t(__u64, sustat->ss_nsegs - segnum,
+			      NILFS_CLEANERD_NSUINFO);
 		n = nilfs_get_suinfo(nilfs, segnum, si, count);
 		if (n < 0) {
 			nssegs = n;

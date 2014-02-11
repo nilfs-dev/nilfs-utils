@@ -51,6 +51,7 @@
 
 #include <errno.h>
 #include "nilfs.h"
+#include "util.h"
 #include "nilfs_gc.h"
 #include "cnoconv.h"
 #include "parser.h"
@@ -244,7 +245,7 @@ static int lssu_list_suinfo(struct nilfs *nilfs)
 		sustat.ss_nsegs;
 
 	for ( ; rest > 0 && segnum < sustat.ss_nsegs; rest -= n) {
-		count = (rest < LSSU_NSEGS) ? rest : LSSU_NSEGS;
+		count = min_t(__u64, rest, LSSU_NSEGS);
 		nsi = nilfs_get_suinfo(nilfs, segnum, suinfos, count);
 		if (nsi < 0)
 			return 1;

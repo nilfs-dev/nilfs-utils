@@ -17,6 +17,7 @@
 #include <stdlib.h>
 #endif	/* HAVE_STDLIB_H */
 
+#include "util.h"
 #include "cnoconv.h"
 
 /* Context of checkpoint number/time converter */
@@ -77,8 +78,8 @@ int nilfs_cnoconv_time2cno(struct nilfs_cnoconv *cnoconv, __u64 time,
 
 	cno = (cnoconv->prevcno == 0) ? NILFS_CNO_MIN : cnoconv->prevcno;
 	while (cno < cpstat.cs_cno) {
-		count = (cpstat.cs_cno - cno < NILFS_CNOCONV_NCPINFO) ?
-			cpstat.cs_cno - cno : NILFS_CNOCONV_NCPINFO;
+		count = min_t(nilfs_cno_t, cpstat.cs_cno - cno,
+			      NILFS_CNOCONV_NCPINFO);
 		n = nilfs_get_cpinfo(cnoconv->nilfs, cno, NILFS_CHECKPOINT,
 				     cpinfo, count);
 		if (n < 0)

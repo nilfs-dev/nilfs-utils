@@ -559,8 +559,7 @@ static int nilfs_get_bdesc(struct nilfs *nilfs, struct nilfs_vector *bdescv)
 	bdescs = nilfs_vector_get_data(bdescv);
 	nbdescs = nilfs_vector_get_size(bdescv);
 	for (i = 0; i < nbdescs; i += n) {
-		count = (nbdescs - i < NILFS_GC_NBDESCS) ?
-			(nbdescs - i) : NILFS_GC_NBDESCS;
+		count = min_t(size_t, nbdescs - i, NILFS_GC_NBDESCS);
 		n = nilfs_get_bdescs(nilfs, bdescs + i, count);
 		if (n < 0)
 			return -1;
