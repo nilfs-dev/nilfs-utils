@@ -137,7 +137,7 @@ static ssize_t lssu_get_latest_usage(struct nilfs *nilfs,
 	__u64 segnums[1];
 	int ret;
 
-	if (protcno == NILFS_CNO_MAX) {
+	if (protcno != NILFS_CNO_MAX) {
 		params.flags |= NILFS_RECLAIM_PARAM_PROTCNO;
 		params.protcno = protcno;
 	}
