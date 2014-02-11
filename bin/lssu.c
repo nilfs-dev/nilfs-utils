@@ -104,7 +104,7 @@ const static struct lssu_format lssu_format[] = {
 	{
 		"           SEGNUM        DATE     TIME STAT     NBLOCKS"
 		"       NLIVEBLOCKS\n",
-		"%17llu  %s  %c%c%c  %10u %10u (%3u%%)\n"
+		"%17llu  %s %c%c%c%c  %10u %10u (%3u%%)\n"
 	}
 };
 
@@ -114,6 +114,7 @@ static int all;
 static int latest;
 static int disp_mode;		/* display mode */
 static nilfs_cno_t protcno;
+static __u64 prottime;
 static __u64 param_index;
 static __u64 param_lines;
 
@@ -163,6 +164,7 @@ static ssize_t lssu_print_suinfo(struct nilfs *nilfs, __u64 segnum,
 	char timebuf[LSSU_BUFSIZE];
 	ssize_t i, n = 0, ret;
 	int ratio;
+	int protected;
 	size_t nliveblks;
 
 	for (i = 0; i < nsi; i++, segnum++) {
@@ -190,6 +192,7 @@ static ssize_t lssu_print_suinfo(struct nilfs *nilfs, __u64 segnum,
 		case LSSU_MODE_LATEST_USAGE:
 			nliveblks = 0;
 			ratio = 0;
+			protected = suinfos[i].sui_lastmod >= prottime;
 
 			if (!nilfs_suinfo_dirty(&suinfos[i]) ||
 			    nilfs_suinfo_error(&suinfos[i]))
@@ -203,6 +206,7 @@ static ssize_t lssu_print_suinfo(struct nilfs *nilfs, __u64 segnum,
 			} else if (ret == -2) {
 				nliveblks = suinfos[i].sui_nblocks;
 				ratio = 100;
+				protected = 1;
 			} else {
 				fprintf(stderr,
 					"%s: failed to get usage: %s\n",
@@ -217,6 +221,7 @@ static ssize_t lssu_print_suinfo(struct nilfs *nilfs, __u64 segnum,
 			       nilfs_suinfo_active(&suinfos[i]) ? 'a' : '-',
 			       nilfs_suinfo_dirty(&suinfos[i]) ? 'd' : '-',
 			       nilfs_suinfo_error(&suinfos[i]) ? 'e' : '-',
+			       protected ? 'p' : '-',
 			       suinfos[i].sui_nblocks, nliveblks, ratio);
 			break;
 		}
@@ -253,24 +258,25 @@ static int lssu_list_suinfo(struct nilfs *nilfs)
 
 static int lssu_get_protcno(struct nilfs *nilfs,
 			    unsigned long protection_period,
-			    nilfs_cno_t *protcnop)
+			    __u64 *prottimep, nilfs_cno_t *protcnop)
 {
 	struct nilfs_cnoconv *cnoconv;
 	struct timeval tv;
-	__u64 prottime;
 	int ret;
-
-	if (protection_period == ULONG_MAX) {
-		*protcnop = NILFS_CNO_MAX;
-		return 0;
-	}
 
 	ret = gettimeofday(&tv, NULL);
 	if (ret < 0) {
 		fprintf(stderr, "%s: cannot get current time: %m\n", progname);
 		return -1;
 	}
-	prottime = tv.tv_sec - protection_period;
+
+	if (protection_period == ULONG_MAX) {
+		*protcnop = NILFS_CNO_MAX;
+		*prottimep = tv.tv_sec;
+		return 0;
+	}
+
+	*prottimep = tv.tv_sec - protection_period;
 
 	cnoconv = nilfs_cnoconv_create(nilfs);
 	if (!cnoconv) {
@@ -280,7 +286,7 @@ static int lssu_get_protcno(struct nilfs *nilfs,
 		return -1;
 	}
 
-	ret = nilfs_cnoconv_time2cno(cnoconv, prottime, protcnop);
+	ret = nilfs_cnoconv_time2cno(cnoconv, *prottimep, protcnop);
 	if (ret < 0) {
 		fprintf(stderr,
 			"%s: cannot convert protectoin time to checkpoint "
@@ -383,7 +389,8 @@ int main(int argc, char *argv[])
 	if (latest) {
 		blocks_per_segment = nilfs_get_blocks_per_segment(nilfs);
 		disp_mode = LSSU_MODE_LATEST_USAGE;
-		ret = lssu_get_protcno(nilfs, protection_period, &protcno);
+		ret = lssu_get_protcno(nilfs, protection_period, &prottime,
+				       &protcno);
 		if (ret < 0)
 			exit(1);
 	}

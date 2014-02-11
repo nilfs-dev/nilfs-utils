@@ -35,8 +35,11 @@ List only \fIlines\fP input segments.
 .TP
 \fB\-p \fIperiod\fR, \fB\-\-protection-period\fR=\fIperiod\fR
 Specify protection period.  This option is used when printing usage
-status of the moment (with \fB\-l\fR option) to test if each
-block in segments is protected and is not reclaimable.
+status of the moment (with \fB\-l\fR option) to test if each block in
+segments is protected and is not reclaimable.  Optionally, the
+\fIperiod\fP parameter may be suffixed by one of the following units
+designators: \'s\', \'m\', \'h\', \'d\',\'w\',\'M\', or \'Y\', for
+seconds, minutes, hours, days, weeks, months, or years, respectively.
 .TP
 \fB\-V\fR, \fB\-\-version\fR
 Display version and exit.
@@ -53,8 +56,7 @@ Creation date.
 Creation time.
 .TP
 .B STAT
-State of the segment.  It consists of three flags whose meaning is
-shown below:
+State of the segment.  It consists of the following flags:
 .RS
 .TP
 .B a
@@ -67,6 +69,13 @@ The segment is dirty, meaning that it is in use.
 .B e
 The segment is erroneous, meaning that it has once caused an I/O
 error.  NILFS2 avoids allocating the segments with this flag.
+.TP
+.B p (optional)
+The segment is protected, meaning that garbage collection for the
+segment is prevented for some reason, for instance, the protection
+period is not elapsed from its last modified time, the segment is
+pinned by the file system, or it is erroneous and unreclaimable, etc.
+This flag is displayed when \fB\-l\fR option is specified.
 .RE
 .TP
 .B NBLOCKS
