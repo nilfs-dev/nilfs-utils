@@ -82,7 +82,7 @@ static void nilfs_tune_usage(void)
 	       "                  [-U UUID] device\n");
 }
 
-const static __u64 ok_features[NILFS_MAX_FEATURE_TYPES] = {
+static const __u64 ok_features[NILFS_MAX_FEATURE_TYPES] = {
 	/* Compat */
 	0,
 	/* Read-only compat */
@@ -91,7 +91,7 @@ const static __u64 ok_features[NILFS_MAX_FEATURE_TYPES] = {
 	0
 };
 
-const static __u64 clear_ok_features[NILFS_MAX_FEATURE_TYPES] = {
+static const __u64 clear_ok_features[NILFS_MAX_FEATURE_TYPES] = {
 	/* Compat */
 	0,
 	/* Read-only compat */

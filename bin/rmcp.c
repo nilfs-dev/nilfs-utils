@@ -54,7 +54,7 @@
 
 #ifdef _GNU_SOURCE
 #include <getopt.h>
-const static struct option long_options[] = {
+static const struct option long_options[] = {
 	{"force", no_argument, NULL, 'f'},
 	{"interactive", no_argument, NULL, 'i'},
 	{"help", no_argument, NULL, 'h'},

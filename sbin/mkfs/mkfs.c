@@ -1057,7 +1057,7 @@ static inline void check_ctime(time_t ctime)
 	}
 }
 
-const static __u64 ok_features[NILFS_MAX_FEATURE_TYPES] = {
+static const __u64 ok_features[NILFS_MAX_FEATURE_TYPES] = {
 	/* Compat */
 	0,
 	/* Read-only compat */

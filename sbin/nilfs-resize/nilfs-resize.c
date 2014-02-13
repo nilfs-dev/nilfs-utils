@@ -69,7 +69,7 @@ extern int check_mount(const char *device);
 
 #ifdef _GNU_SOURCE
 #include <getopt.h>
-const static struct option long_option[] = {
+static const struct option long_option[] = {
 	{"help", no_argument, NULL, 'h'},
 	{"verbose", no_argument, NULL, 'v'},
 	{"yes", no_argument, NULL, 'y'},
@@ -141,7 +141,7 @@ static __u64 pm_max;
 static __u64 pm_done;
 static int pm_curpos;
 static int pm_in_progress = 0;  /* 0: off, 1: on, -1: interrupted */
-const static char *pm_label;
+static const char *pm_label;
 
 static void nilfs_resize_logger(int priority, const char *fmt, ...)
 {
@@ -704,7 +704,7 @@ static int nilfs_resize_move_out_active_segments(struct nilfs *nilfs,
 						 unsigned long long start,
 						 unsigned long long end)
 {
-	const static struct timespec retry_interval = { 0, 500000000 };
+	static const struct timespec retry_interval = { 0, 500000000 };
 							/* 500 msec */
 	ssize_t nfound;
 	int retrycnt = 0;

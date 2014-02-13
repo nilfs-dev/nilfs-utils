@@ -58,7 +58,7 @@
 
 #ifdef _GNU_SOURCE
 #include <getopt.h>
-const static struct option long_option[] = {
+static const struct option long_option[] = {
 	{"all",  no_argument, NULL, 'a'},
 	{"index", required_argument, NULL, 'i'},
 	{"latest-usage", no_argument, NULL, 'l' },
@@ -97,7 +97,7 @@ struct lssu_format {
 	char *body;
 };
 
-const static struct lssu_format lssu_format[] = {
+static const struct lssu_format lssu_format[] = {
 	{
 		"              SEGNUM        DATE     TIME STAT     NBLOCKS\n",
 		"%20llu  %s  %c%c%c  %10u\n"
