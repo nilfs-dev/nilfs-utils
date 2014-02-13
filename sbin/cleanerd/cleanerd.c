@@ -1562,7 +1562,7 @@ static int nilfs_cleanerd_clean_loop(struct nilfs_cleanerd *cleanerd)
 		if (ret < 0)
 			return -1;
 
-	sleep:
+sleep:
 		if (sigprocmask(SIG_UNBLOCK, &sigset, NULL) < 0) {
 			syslog(LOG_ERR, "cannot set signal mask: %m");
 			return -1;

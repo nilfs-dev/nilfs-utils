@@ -55,7 +55,7 @@ mangle(const char *s) {
 		*sp++ = *s;
 		if (*s == 0)
 			break;
-	next:
+next:
 		s++;
 	}
 	return ss;

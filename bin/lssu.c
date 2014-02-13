@@ -215,7 +215,7 @@ static ssize_t lssu_print_suinfo(struct nilfs *nilfs, __u64 segnum,
 				exit(1);
 			}
 
-		skip_scan:
+skip_scan:
 			printf(lssu_format[disp_mode].body,
 			       (unsigned long long)segnum,
 			       timebuf,
