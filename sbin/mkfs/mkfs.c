@@ -1163,9 +1163,10 @@ static void parse_options(int argc, char *argv[])
 static void usage(void)
 {
 	fprintf(stderr,
-		"Usage: %s [-b block-size] [-B blocks-per-segment] [-c] [-f] \n"
-		"       [-L volume-label] [-m reserved-segments-percentage] \n"
-		"       [-O feature[,...]] \n"
+		"Usage: %s [-b block-size] [-B blocks-per-segment] [-c] " \
+		"[-f]\n" \
+		"       [-L volume-label] [-m reserved-segments-percentage]\n" \
+		"       [-O feature[,...]]\n" \
 		"       [-hnqvKV] device\n",
 		progname);
 }
