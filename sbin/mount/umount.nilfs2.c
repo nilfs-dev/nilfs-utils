@@ -101,9 +101,6 @@ int readonly;
 int readwrite;
 static int nomtab;
 
-extern char *optarg;
-extern int optind;
-
 const char fstype[] = NILFS2_FS_NAME;
 char *progname = "umount." NILFS2_FS_NAME;
 

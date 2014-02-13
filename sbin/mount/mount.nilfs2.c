@@ -103,9 +103,6 @@ static int devro;
 static int fake;
 
 /* global variables */
-extern char *optarg;
-extern int optind;
-
 const char fstype[] = NILFS2_FS_NAME;
 char *progname = "mount." NILFS2_FS_NAME;
 

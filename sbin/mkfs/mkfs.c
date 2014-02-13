@@ -99,9 +99,6 @@ static const char badblocks[] = "/sbin/" BADBLOCKS_NAME;
 /*
  * Command interface primitives
  */
-extern char *optarg;
-extern int optind;
-
 char *progname = "mkfs.nilfs2";
 
 /* Options */
