@@ -216,11 +216,11 @@ append_context(const char *optname, char *optdata, char **extra_opts)
 		/* ignore the option if we running without selinux */
 		return 0;
 
-	if (optdata==NULL || *optdata=='\0' || optname==NULL)
+	if (optdata == NULL || *optdata == '\0' || optname == NULL)
 		return -1;
 
 	/* TODO: use strip_quotes() for all mount options? */
-	data = *optdata =='"' ? strip_quotes(optdata) : optdata;
+	data = *optdata == '"' ? strip_quotes(optdata) : optdata;
 
 	if (selinux_trans_to_raw_context(
 			(security_context_t) data, &raw) == -1 ||
@@ -325,7 +325,7 @@ void parse_opts(const char *options, int *flags, char **extra_opts)
 		int open_quote = 0;
 		char *opt, *p;
 
-		for (p=opts, opt=NULL; p && *p; p++) {
+		for (p = opts, opt = NULL; p && *p; p++) {
 			if (!opt)
 				opt = p;		/* begin of the option item */
 			if (*p == '"')
@@ -335,7 +335,7 @@ void parse_opts(const char *options, int *flags, char **extra_opts)
 			if (*p == ',')
 				*p = '\0';		/* terminate the option item */
 			/* end of option item or last item */
-			if (*p == '\0' || *(p+1) == '\0') {
+			if (*p == '\0' || *(p + 1) == '\0') {
 				if (!parse_string_opt(opt))
 					parse_opt(opt, flags, extra_opts);
 				opt = NULL;
