@@ -20,9 +20,9 @@
 
 #if defined MAY_ENABLE_NLS && !defined DISABLE_NLS
 # include <libintl.h>
-# define _(Text) gettext (Text)
+# define _(Text) gettext(Text)
 # ifdef gettext_noop
-#  define N_(String) gettext_noop (String)
+#  define N_(String) gettext_noop(String)
 # else
 #  define N_(String) (String)
 # endif

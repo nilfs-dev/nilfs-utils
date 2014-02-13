@@ -36,12 +36,12 @@
 #include "xmalloc.h"
 #include "nls.h"
 
-char *
-xstrndup (const char *s, int n) {
+char *xstrndup(const char *s, int n)
+{
      char *t;
 
      if (s == NULL)
-	  die (EX_SOFTWARE, _("bug in xstrndup call"));
+	  die(EX_SOFTWARE, _("bug in xstrndup call"));
 
      t = xmalloc(n+1);
      strncpy(t, s, n);
@@ -51,8 +51,8 @@ xstrndup (const char *s, int n) {
 }
 
 /* reallocates its first arg - typical use: s = xstrconcat3(s,t,u); */
-char *
-xstrconcat3 (char *s, const char *t, const char *u) {
+char *xstrconcat3(char *s, const char *t, const char *u)
+{
      size_t len = 0;
 
      len = (s ? strlen(s) : 0) + (t ? strlen(t) : 0) + (u ? strlen(u) : 0);
@@ -73,8 +73,8 @@ xstrconcat3 (char *s, const char *t, const char *u) {
 }
 
 /* frees its first arg - typical use: s = xstrconcat4(s,t,u,v); */
-char *
-xstrconcat4 (char *s, const char *t, const char *u, const char *v) {
+char *xstrconcat4(char *s, const char *t, const char *u, const char *v)
+{
      size_t len = 0;
 
      len = (s ? strlen(s) : 0) + (t ? strlen(t) : 0) +
@@ -100,29 +100,29 @@ xstrconcat4 (char *s, const char *t, const char *u, const char *v) {
 }
 
 /* Call this with SIG_BLOCK to block and SIG_UNBLOCK to unblock.  */
-void
-block_signals (int how) {
+void block_signals(int how)
+{
      sigset_t sigs;
 
-     sigfillset (&sigs);
+     sigfillset(&sigs);
      sigdelset(&sigs, SIGTRAP);
      sigdelset(&sigs, SIGSEGV);
-     sigprocmask (how, &sigs, (sigset_t *) 0);
+     sigprocmask(how, &sigs, (sigset_t *) 0);
 }
 
 
 /* Non-fatal error.  Print message and return.  */
 /* (print the message in a single printf, in an attempt
     to avoid mixing output of several threads) */
-void
-error (const char *fmt, ...) {
+void error(const char *fmt, ...)
+{
      va_list args;
 
      if (mount_quiet)
 	  return;
-     va_start (args, fmt);
-     vfprintf (stderr, fmt, args);
-     va_end (args);
+     va_start(args, fmt);
+     vfprintf(stderr, fmt, args);
+     va_end(args);
      fputc('\n', stderr);
 }
 
@@ -130,13 +130,13 @@ error (const char *fmt, ...) {
    except that swap types always return false. */
 /* Accept nonfs,proc,devpts and nonfs,noproc,nodevpts
    with the same meaning. */
-int
-matching_type (const char *type, const char *types) {
+int matching_type(const char *type, const char *types)
+{
      int no;			/* negated types list */
      int len;
      const char *p;
 
-     if (streq (type, MNTTYPE_SWAP))
+     if (streq(type, MNTTYPE_SWAP))
 	  return 0;
      if (types == NULL)
 	  return 1;
@@ -205,8 +205,8 @@ check_option(const char *haystack, const char *needle) {
  * Unlike fs type matching, nonetdev,user and nonetdev,nouser have
  * DIFFERENT meanings; each option is matched explicitly as specified.
  */
-int
-matching_opts (const char *options, const char *test_opts) {
+int matching_opts(const char *options, const char *test_opts)
+{
      const char *p, *r;
      char *q;
      int len, this_len;
@@ -217,7 +217,7 @@ matching_opts (const char *options, const char *test_opts) {
      len = strlen(test_opts);
      q = alloca(len+1);
      if (q == NULL)
-          die (EX_SYSERR, _("not enough memory"));
+          die(EX_SYSERR, _("not enough memory"));
 
      for (p = test_opts; p < test_opts+len; p++) {
 	  r = strchr(p, ',');
@@ -240,8 +240,8 @@ matching_opts (const char *options, const char *test_opts) {
    canonicalize ("/dev/fd0/.") returns "/dev/fd0" even though ``/dev/fd0/.''
    is not a legal pathname for ``/dev/fd0''.  Anything we cannot parse
    we return unmodified.   */
-char *
-canonicalize (const char *path) {
+char *canonicalize(const char *path)
+{
 	char canonical[PATH_MAX+2];
 
 	if (path == NULL)
@@ -253,7 +253,7 @@ canonicalize (const char *path) {
 	    streq(path, "devpts"))
 		return xstrdup(path);
 #endif
-	if (myrealpath (path, canonical, PATH_MAX+1))
+	if (myrealpath(path, canonical, PATH_MAX+1))
 		return xstrdup(canonical);
 
 	return xstrdup(path);

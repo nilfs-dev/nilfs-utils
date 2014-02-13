@@ -21,25 +21,25 @@
 
 extern int mount_quiet;
 
-#define streq(s, t)	(strcmp ((s), (t)) == 0)
+#define streq(s, t)	(strcmp((s), (t)) == 0)
 
 /* Functions in sundries.c that are used in mount.c and umount.c  */
-void block_signals (int how);
-char *canonicalize (const char *path);
-void error (const char *fmt, ...);
-int matching_type (const char *type, const char *types);
-int matching_opts (const char *options, const char *test_opts);
-void *xmalloc (size_t size);
-char *xstrdup (const char *s);
-char *xstrndup (const char *s, int n);
-char *xstrconcat3 (char *, const char *, const char *);
-char *xstrconcat4 (char *, const char *, const char *, const char *);
+void block_signals(int how);
+char *canonicalize(const char *path);
+void error(const char *fmt, ...);
+int matching_type(const char *type, const char *types);
+int matching_opts(const char *options, const char *test_opts);
+void *xmalloc(size_t size);
+char *xstrdup(const char *s);
+char *xstrndup(const char *s, int n);
+char *xstrconcat3(char *, const char *, const char *);
+char *xstrconcat4(char *, const char *, const char *, const char *);
 
-void die (int errcode, const char *fmt, ...);
+void die(int errcode, const char *fmt, ...);
 
 #ifdef HAVE_NFS
-int nfsmount (const char *spec, const char *node, int *flags,
-	      char **orig_opts, char **opt_args, int *version, int running_bg);
+int nfsmount(const char *spec, const char *node, int *flags,
+	     char **orig_opts, char **opt_args, int *version, int running_bg);
 #endif
 
 /* exit status - bits below are ORed */

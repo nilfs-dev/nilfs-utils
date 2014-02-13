@@ -61,8 +61,8 @@ next:
 	return ss;
 }
 
-static int
-is_space_or_tab (char c) {
+static int is_space_or_tab(char c)
+{
 	return c == ' ' || c == '\t';
 }
 
@@ -108,8 +108,8 @@ unmangle(char *s) {
  *  for /proc/mounts.)
  */
 
-mntFILE *
-my_setmntent (const char *file, char *mode) {
+mntFILE *my_setmntent(const char *file, char *mode)
+{
 	mntFILE *mfp = xmalloc(sizeof(*mfp));
 	mode_t old_umask = umask(077);
 
@@ -122,8 +122,8 @@ my_setmntent (const char *file, char *mode) {
 	return mfp;
 }
 
-void
-my_endmntent (mntFILE *mfp) {
+void my_endmntent(mntFILE *mfp)
+{
 	if (mfp) {
 		if (mfp->mntent_fp)
 			fclose(mfp->mntent_fp);
@@ -133,12 +133,12 @@ my_endmntent (mntFILE *mfp) {
 	}
 }
 
-int
-my_addmntent (mntFILE *mfp, struct my_mntent *mnt) {
+int my_addmntent(mntFILE *mfp, struct my_mntent *mnt)
+{
 	char *m1, *m2, *m3, *m4;
 	int res;
 
-	if (fseek (mfp->mntent_fp, 0, SEEK_END))
+	if (fseek(mfp->mntent_fp, 0, SEEK_END))
 		return 1;			/* failure */
 
 	m1 = mangle(mnt->mnt_fsname);
@@ -146,8 +146,8 @@ my_addmntent (mntFILE *mfp, struct my_mntent *mnt) {
 	m3 = mangle(mnt->mnt_type);
 	m4 = mangle(mnt->mnt_opts);
 
-	res = fprintf (mfp->mntent_fp, "%s %s %s %s %d %d\n",
-		       m1, m2, m3, m4, mnt->mnt_freq, mnt->mnt_passno);
+	res = fprintf(mfp->mntent_fp, "%s %s %s %s %d %d\n",
+		      m1, m2, m3, m4, mnt->mnt_freq, mnt->mnt_passno);
 
 	free(m1);
 	free(m2);
@@ -157,8 +157,8 @@ my_addmntent (mntFILE *mfp, struct my_mntent *mnt) {
 }
 
 /* Read the next entry from the file fp. Stop reading at an incorrect entry. */
-struct my_mntent *
-my_getmntent (mntFILE *mfp) {
+struct my_mntent *my_getmntent(mntFILE *mfp)
+{
 	static char buf[4096];
 	static struct my_mntent me;
 	char *s;
@@ -169,11 +169,11 @@ my_getmntent (mntFILE *mfp) {
 
 	/* read the next non-blank non-comment line */
 	do {
-		if (fgets (buf, sizeof(buf), mfp->mntent_fp) == NULL)
+		if (fgets(buf, sizeof(buf), mfp->mntent_fp) == NULL)
 			return NULL;
 
 		mfp->mntent_lineno++;
-		s = index (buf, '\n');
+		s = index(buf, '\n');
 		if (s == NULL) {
 			/* Missing final newline?  Otherwise extremely */
 			/* long line - assume file was corrupted */
@@ -182,7 +182,7 @@ my_getmntent (mntFILE *mfp) {
 					_("[mntent]: warning: no final " \
 					"newline at the end of %s\n"),
 					mfp->mntent_file);
-				s = index (buf, 0);
+				s = index(buf, 0);
 			} else {
 				mfp->mntent_errs = 1;
 				goto err;

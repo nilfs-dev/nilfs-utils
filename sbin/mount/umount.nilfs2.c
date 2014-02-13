@@ -279,14 +279,14 @@ static int del_loop(const char *device)
 	if (fd < 0) {
 		int errsv = errno;
 		error(_("loop: can't delete device %s: %s\n"),
-		      device, strerror (errsv));
+		      device, strerror(errsv));
 		return 1;
 	}
-	if (ioctl (fd, LOOP_CLR_FD, 0) < 0) {
-		perror ("ioctl: LOOP_CLR_FD");
+	if (ioctl(fd, LOOP_CLR_FD, 0) < 0) {
+		perror("ioctl: LOOP_CLR_FD");
 		return 1;
 	}
-	close (fd);
+	close(fd);
 	if (verbose > 1)
 		printf(_("del_loop(%s): success\n"), device);
 	return 0;
@@ -385,7 +385,7 @@ umount_one(const char *spec, const char *node, const char *type,
 	pid_t pid;
 	pp_opt_t prot_period;
 
-	if (streq (node, "/") || streq (node, "root"))
+	if (streq(node, "/") || streq(node, "root"))
 		nomtab++;
 
 	if (mc) {
@@ -459,8 +459,8 @@ umount_one(const char *spec, const char *node, const char *type,
 
 			/* new style mtab line? */
 			optl = mc->m.mnt_opts ? xstrdup(mc->m.mnt_opts) : "";
-			for (optl = strtok (optl, ","); optl;
-			     optl = strtok (NULL, ",")) {
+			for (optl = strtok(optl, ","); optl;
+			     optl = strtok(NULL, ",")) {
 				if (!strncmp(optl, "loop=", 5)) {
 					loopdev = optl+5;
 					goto gotloop;

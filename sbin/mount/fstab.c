@@ -46,7 +46,7 @@
 #include "pathnames.h"
 #include "nls.h"
 
-#define streq(s, t)	(strcmp ((s), (t)) == 0)
+#define streq(s, t)	(strcmp((s), (t)) == 0)
 
 extern int verbose;
 
@@ -170,7 +170,7 @@ read_mntentchn(mntFILE *mfp, const char *fnam, struct mntentchn *mc0) {
 	if (ferror(mfp->mntent_fp)) {
 		int errsv = errno;
 		error(_("warning: error reading %s: %s"),
-		      fnam, strerror (errsv));
+		      fnam, strerror(errsv));
 		mc0->nxt = mc0->prev = NULL;
 	}
 	my_endmntent(mfp);
@@ -191,20 +191,20 @@ read_mounttable() {
 	mc->nxt = mc->prev = NULL;
 
 	fnam = _PATH_MOUNTED;
-	mfp = my_setmntent (fnam, "r");
+	mfp = my_setmntent(fnam, "r");
 	if (mfp == NULL || mfp->mntent_fp == NULL) {
 		int errsv = errno;
 		fnam = _PATH_PROC_MOUNTS;
-		mfp = my_setmntent (fnam, "r");
+		mfp = my_setmntent(fnam, "r");
 		if (mfp == NULL || mfp->mntent_fp == NULL) {
 			error(_("warning: can't open %s: %s"),
-			      _PATH_MOUNTED, strerror (errsv));
+			      _PATH_MOUNTED, strerror(errsv));
 			return;
 		}
 		if (verbose)
-			printf (_("mount: could not open %s - " \
-				  "using %s instead\n"),
-				_PATH_MOUNTED, _PATH_PROC_MOUNTS);
+			printf(_("mount: could not open %s - " \
+				 "using %s instead\n"),
+			       _PATH_MOUNTED, _PATH_PROC_MOUNTS);
 	}
 	read_mntentchn(mfp, fnam, mc);
 }
@@ -219,11 +219,11 @@ read_fstab() {
 	mc->nxt = mc->prev = NULL;
 
 	fnam = _PATH_MNTTAB;
-	mfp = my_setmntent (fnam, "r");
+	mfp = my_setmntent(fnam, "r");
 	if (mfp == NULL || mfp->mntent_fp == NULL) {
 		int errsv = errno;
 		error(_("warning: can't open %s: %s"),
-		      _PATH_MNTTAB, strerror (errsv));
+		      _PATH_MNTTAB, strerror(errsv));
 		return;
 	}
 	read_mntentchn(mfp, fnam, mc);
@@ -231,8 +231,8 @@ read_fstab() {
 
 
 /* Given the name NAME, try to find it in mtab.  */
-struct mntentchn *
-getmntfile (const char *name) {
+struct mntentchn *getmntfile(const char *name)
+{
 	struct mntentchn *mc, *mc0;
 
 	mc0 = mtab_head();
@@ -247,8 +247,8 @@ getmntfile (const char *name) {
  * Given the directory name NAME, and the place MCPREV we found it last time,
  * try to find more occurrences.
  */
-struct mntentchn *
-getmntdirbackward (const char *name, struct mntentchn *mcprev) {
+struct mntentchn *getmntdirbackward(const char *name, struct mntentchn *mcprev)
+{
 	struct mntentchn *mc, *mc0;
 
 	mc0 = mtab_head();
@@ -264,8 +264,8 @@ getmntdirbackward (const char *name, struct mntentchn *mcprev) {
  * Given the device name NAME, and the place MCPREV we found it last time,
  * try to find more occurrences.
  */
-struct mntentchn *
-getmntdevbackward (const char *name, struct mntentchn *mcprev) {
+struct mntentchn *getmntdevbackward(const char *name, struct mntentchn *mcprev)
+{
 	struct mntentchn *mc, *mc0;
 
 	mc0 = mtab_head();
@@ -294,8 +294,8 @@ is_mounted_once(const char *name) {
 }
 
 /* Given the name FILE, try to find the option "loop=FILE" in mtab.  */
-struct mntentchn *
-getmntoptfile (const char *file) {
+struct mntentchn *getmntoptfile(const char *file)
+{
 	struct mntentchn *mc, *mc0;
 	const char *opts, *s;
 	int l;
@@ -333,23 +333,23 @@ static int signals_have_been_setup;
 /* Ensure that the lock is released if we are interrupted.  */
 extern char *strsignal(int sig);	/* not always in <string.h> */
 
-static void
-handler (int sig) {
+static void handler(int sig)
+{
 	die(EX_USER, "%s", strsignal(sig));
 }
 
-static void
-setlkw_timeout (int sig) {
+static void setlkw_timeout(int sig)
+{
 	/* nothing, fcntl will fail anyway */
 }
 
 /* Remove lock file.  */
-void
-unlock_mtab (void) {
+void unlock_mtab(void)
+{
 	if (we_created_lockfile) {
 		close(lockfile_fd);
 		lockfile_fd = -1;
-		unlink (_PATH_MOUNTED_LOCK);
+		unlink(_PATH_MOUNTED_LOCK);
 		we_created_lockfile = 0;
 	}
 }
@@ -395,8 +395,8 @@ unlock_mtab (void) {
 /* sleep time (in microseconds, max=999999) between attempts */
 #define MOUNTLOCK_WAITTIME		5000
 
-void
-lock_mtab (void) {
+void lock_mtab(void)
+{
 	int i;
 	struct timespec waittime;
 	struct timeval maxtime;
@@ -408,31 +408,31 @@ lock_mtab (void) {
 
 		sa.sa_handler = handler;
 		sa.sa_flags = 0;
-		sigfillset (&sa.sa_mask);
+		sigfillset(&sa.sa_mask);
 
-		while (sigismember (&sa.sa_mask, ++sig) != -1
+		while (sigismember(&sa.sa_mask, ++sig) != -1
 		       && sig != SIGCHLD) {
 			if (sig == SIGALRM)
 				sa.sa_handler = setlkw_timeout;
 			else
 				sa.sa_handler = handler;
-			sigaction (sig, &sa, (struct sigaction *) 0);
+			sigaction(sig, &sa, (struct sigaction *) 0);
 		}
 		signals_have_been_setup = 1;
 	}
 
-	sprintf(linktargetfile, MOUNTLOCK_LINKTARGET, getpid ());
+	sprintf(linktargetfile, MOUNTLOCK_LINKTARGET, getpid());
 
-	i = open (linktargetfile, O_WRONLY|O_CREAT, S_IRUSR|S_IWUSR);
+	i = open(linktargetfile, O_WRONLY|O_CREAT, S_IRUSR|S_IWUSR);
 	if (i < 0) {
 		int errsv = errno;
 		/* linktargetfile does not exist (as a file)
 		   and we cannot create it. Read-only filesystem?
 		   Too many files open in the system?
 		   Filesystem full? */
-		die (EX_FILEIO, _("can't create lock file %s: %s " \
-				  "(use -n flag to override)"),
-			 linktargetfile, strerror (errsv));
+		die(EX_FILEIO, _("can't create lock file %s: %s " \
+				 "(use -n flag to override)"),
+			 linktargetfile, strerror(errsv));
 	}
 	close(i);
 
@@ -456,12 +456,12 @@ lock_mtab (void) {
 
 		if (j < 0 && errsv != EEXIST) {
 			(void) unlink(linktargetfile);
-			die (EX_FILEIO, _("can't link lock file %s: %s " \
-			     "(use -n flag to override)"),
-			     _PATH_MOUNTED_LOCK, strerror (errsv));
+			die(EX_FILEIO, _("can't link lock file %s: %s " \
+					 "(use -n flag to override)"),
+			    _PATH_MOUNTED_LOCK, strerror(errsv));
 		}
 
-		lockfile_fd = open (_PATH_MOUNTED_LOCK, O_WRONLY);
+		lockfile_fd = open(_PATH_MOUNTED_LOCK, O_WRONLY);
 
 		if (lockfile_fd < 0) {
 			/* Strange... Maybe the file was just deleted? */
@@ -472,9 +472,9 @@ lock_mtab (void) {
 				continue;
 			}
 			(void) unlink(linktargetfile);
-			die (EX_FILEIO, _("can't open lock file %s: %s " \
-			     "(use -n flag to override)"),
-			     _PATH_MOUNTED_LOCK, strerror (errsv));
+			die(EX_FILEIO, _("can't open lock file %s: %s " \
+					 "(use -n flag to override)"),
+			    _PATH_MOUNTED_LOCK, strerror(errsv));
 		}
 
 		flock.l_type = F_WRLCK;
@@ -484,11 +484,11 @@ lock_mtab (void) {
 
 		if (j == 0) {
 			/* We made the link. Now claim the lock. */
-			if (fcntl (lockfile_fd, F_SETLK, &flock) == -1) {
+			if (fcntl(lockfile_fd, F_SETLK, &flock) == -1) {
 				if (verbose) {
 				    int errsv = errno;
 				    printf(_("Can't lock lock file %s: %s\n"),
-					   _PATH_MOUNTED_LOCK, strerror (errsv));
+					   _PATH_MOUNTED_LOCK, strerror(errsv));
 				}
 				/* proceed, since it was us who created the lockfile anyway */
 			}
@@ -498,22 +498,24 @@ lock_mtab (void) {
 			gettimeofday(&now, NULL);
 			if (now.tv_sec < maxtime.tv_sec) {
 				alarm(maxtime.tv_sec - now.tv_sec);
-				if (fcntl (lockfile_fd, F_SETLKW, &flock) == -1) {
+				if (fcntl(lockfile_fd, F_SETLKW, &flock) == -1) {
 					int errsv = errno;
 					(void) unlink(linktargetfile);
-					die (EX_FILEIO, _("can't lock lock file %s: %s"),
-					     _PATH_MOUNTED_LOCK, (errno == EINTR) ?
-					     _("timed out") : strerror (errsv));
+					die(EX_FILEIO,
+					    _("can't lock lock file %s: %s"),
+					    _PATH_MOUNTED_LOCK,
+					    (errno == EINTR) ?
+					    _("timed out") : strerror(errsv));
 				}
 				alarm(0);
 
 				nanosleep(&waittime, NULL);
 			} else {
 				(void) unlink(linktargetfile);
-				die (EX_FILEIO,
-				     _("Cannot create link %s\n"	\
-				       "Perhaps there is a stale lock file?\n"),
-					 _PATH_MOUNTED_LOCK);
+				die(EX_FILEIO,
+				    _("Cannot create link %s\n"		\
+				      "Perhaps there is a stale lock file?\n"),
+				    _PATH_MOUNTED_LOCK);
 			}
 			close(lockfile_fd);
 		}
@@ -530,8 +532,8 @@ lock_mtab (void) {
  *    the values given in INSTEAD.]
  */
 
-void
-update_mtab (const char *dir, struct my_mntent *instead) {
+void update_mtab(const char *dir, struct my_mntent *instead)
+{
 	mntFILE *mfp, *mftmp;
 	const char *fnam = _PATH_MOUNTED;
 	struct mntentchn mtabhead;	/* dummy */
@@ -551,8 +553,8 @@ update_mtab (const char *dir, struct my_mntent *instead) {
 	mfp = my_setmntent(fnam, "r");
 	if (mfp == NULL || mfp->mntent_fp == NULL) {
 		int errsv = errno;
-		error (_("cannot open %s (%s) - mtab not updated"),
-		       fnam, strerror (errsv));
+		error(_("cannot open %s (%s) - mtab not updated"),
+		      fnam, strerror(errsv));
 		goto leave;
 	}
 
@@ -597,11 +599,11 @@ update_mtab (const char *dir, struct my_mntent *instead) {
 	}
 
 	/* write chain to mtemp */
-	mftmp = my_setmntent (_PATH_MOUNTED_TMP, "w");
+	mftmp = my_setmntent(_PATH_MOUNTED_TMP, "w");
 	if (mftmp == NULL || mftmp->mntent_fp == NULL) {
 		int errsv = errno;
-		error (_("cannot open %s (%s) - mtab not updated"),
-		       _PATH_MOUNTED_TMP, strerror (errsv));
+		error(_("cannot open %s (%s) - mtab not updated"),
+		      _PATH_MOUNTED_TMP, strerror(errsv));
 		discard_mntentchn(mc0);
 		goto leave;
 	}
@@ -609,8 +611,8 @@ update_mtab (const char *dir, struct my_mntent *instead) {
 	for (mc = mc0->nxt; mc && mc != mc0; mc = mc->nxt) {
 		if (my_addmntent(mftmp, &(mc->m)) == 1) {
 			int errsv = errno;
-			die (EX_FILEIO, _("error writing %s: %s"),
-			     _PATH_MOUNTED_TMP, strerror (errsv));
+			die(EX_FILEIO, _("error writing %s: %s"),
+			    _PATH_MOUNTED_TMP, strerror(errsv));
 		}
 	}
 
@@ -628,7 +630,7 @@ update_mtab (const char *dir, struct my_mntent *instead) {
 	if (fchmod(fd, S_IRUSR|S_IWUSR|S_IRGRP|S_IROTH) < 0) {
 		int errsv = errno;
 		fprintf(stderr, _("error changing mode of %s: %s\n"),
-			_PATH_MOUNTED_TMP, strerror (errsv));
+			_PATH_MOUNTED_TMP, strerror(errsv));
 		goto leave;
 	}
 
@@ -640,16 +642,16 @@ update_mtab (const char *dir, struct my_mntent *instead) {
 	if (stat(_PATH_MOUNTED, &sbuf) == 0) {
 		if (fchown(fd, sbuf.st_uid, sbuf.st_gid) < 0) {
 			int errsv = errno;
-			fprintf (stderr, _("error changing owner of %s: %s\n"),
+			fprintf(stderr, _("error changing owner of %s: %s\n"),
 				_PATH_MOUNTED_TMP, strerror(errsv));
 			goto leave;
 		}
 	}
 
-	my_endmntent (mftmp);
+	my_endmntent(mftmp);
 
 	/* rename mtemp to mtab */
-	if (rename (_PATH_MOUNTED_TMP, _PATH_MOUNTED) < 0) {
+	if (rename(_PATH_MOUNTED_TMP, _PATH_MOUNTED) < 0) {
 		int errsv = errno;
 		fprintf(stderr, _("can't rename %s to %s: %s\n"),
 			_PATH_MOUNTED_TMP, _PATH_MOUNTED, strerror(errsv));

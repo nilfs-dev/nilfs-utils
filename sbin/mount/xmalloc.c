@@ -46,8 +46,8 @@ die_if_null(void *t) {
 		die(EX_SYSERR, _("not enough memory"));
 }
 
-void *
-xmalloc (size_t size) {
+void *xmalloc(size_t size)
+{
 	void *t;
 
 	if (size == 0)
@@ -59,8 +59,8 @@ xmalloc (size_t size) {
 	return t;
 }
 
-void *
-xrealloc (void *p, size_t size) {
+void *xrealloc(void *p, size_t size)
+{
 	void *t;
 
 	t = realloc(p, size);
@@ -69,8 +69,8 @@ xrealloc (void *p, size_t size) {
 	return t;
 }
 
-char *
-xstrdup (const char *s) {
+char *xstrdup(const char *s)
+{
 	char *t;
 
 	if (s == NULL)

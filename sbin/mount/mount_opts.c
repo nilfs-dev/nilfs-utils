@@ -194,8 +194,8 @@ strip_quotes(char *str)
 
 	end = strrchr(str, '"');
 	if (end == NULL || end == str)
-		die (EX_USAGE, _("%s: improperly quoted option string '%s'"),
-		     progname, str);
+		die(EX_USAGE, _("%s: improperly quoted option string '%s'"),
+		    progname, str);
 
 	*end = '\0';
 	return str+1;
@@ -250,7 +250,7 @@ parse_opt(char *opt, int *mask, char **extra_opts)
 	const struct opt_map *om;
 
 	for (om = opt_map; om->opt != NULL; om++)
-		if (streq (opt, om->opt)) {
+		if (streq(opt, om->opt)) {
 			if (om->inv)
 				*mask &= ~om->mask;
 			else

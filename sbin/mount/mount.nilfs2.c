@@ -141,26 +141,26 @@ static void nilfs_mount_logger(int priority, const char *fmt, ...)
 }
 
 /* Report on a single mount.  */
-static void print_one (const struct my_mntent *me)
+static void print_one(const struct my_mntent *me)
 {
 	if (mount_quiet)
 		return;
-	printf ("%s on %s", me->mnt_fsname, me->mnt_dir);
+	printf("%s on %s", me->mnt_fsname, me->mnt_dir);
 	if (me->mnt_type != NULL && *(me->mnt_type) != '\0')
-		printf (" type %s", me->mnt_type);
+		printf(" type %s", me->mnt_type);
 	if (me->mnt_opts != NULL)
-		printf (" (%s)", me->mnt_opts);
+		printf(" (%s)", me->mnt_opts);
 #if 0  /* XXX: volume label */
 	if (list_with_volumelabel) {
 		const char *label;
 		label = mount_get_volume_label_by_spec(me->mnt_fsname);
 		if (label) {
-			printf (" [%s]", label);
+			printf(" [%s]", label);
 			/* free(label); */
 		}
 	}
 #endif
-	printf ("\n");
+	printf("\n");
 }
 
 /*
@@ -305,8 +305,8 @@ update_mtab_entry(const char *spec, const char *node, const char *type,
 {
 	struct my_mntent mnt;
 
-	mnt.mnt_fsname = canonicalize (spec);
-	mnt.mnt_dir = canonicalize (node);
+	mnt.mnt_fsname = canonicalize(spec);
+	mnt.mnt_dir = canonicalize(node);
 	mnt.mnt_type = xstrdup(type);
 	mnt.mnt_opts = xstrdup(opts);
 	mnt.mnt_freq = freq;
@@ -315,10 +315,10 @@ update_mtab_entry(const char *spec, const char *node, const char *type,
 	/* We get chatty now rather than after the update to mtab since the
 	   mount succeeded, even if the write to /etc/mtab should fail.  */
 	if (verbose)
-		print_one (&mnt);
+		print_one(&mnt);
 
 	if (!addnew)
-		update_mtab (mnt.mnt_dir, &mnt);
+		update_mtab(mnt.mnt_dir, &mnt);
 	else {
 		mntFILE *mfp;
 
@@ -329,7 +329,7 @@ update_mtab_entry(const char *spec, const char *node, const char *type,
 			error(_("%s: can't open %s, %s"),
 			      progname, _PATH_MOUNTED, strerror(errsv));
 		} else {
-			if ((my_addmntent (mfp, &mnt)) == 1) {
+			if ((my_addmntent(mfp, &mnt)) == 1) {
 				int errsv = errno;
 				error(_("%s: error writing %s, %s"),
 				      progname, _PATH_MOUNTED, strerror(errsv));
