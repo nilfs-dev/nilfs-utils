@@ -219,8 +219,8 @@ static void init_disk_layout(struct nilfs_disk_info *di, int fd,
 
 static inline blocknr_t count_free_blocks(struct nilfs_disk_info *di)
 {
-	return (di->blocks_per_segment *
-		(di->nsegments - di->nsegments_to_write));
+	return di->blocks_per_segment *
+		(di->nsegments - di->nsegments_to_write);
 }
 
 static inline blocknr_t

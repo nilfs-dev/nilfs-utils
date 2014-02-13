@@ -63,7 +63,7 @@ next:
 
 static int
 is_space_or_tab (char c) {
-	return (c == ' ' || c == '\t');
+	return c == ' ' || c == '\t';
 }
 
 static char *

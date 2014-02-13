@@ -81,7 +81,7 @@ extern __u32 crc32_le(__u32 seed, unsigned char const *data, size_t length);
 
 static inline int iseol(int c)
 {
-	return (c == '\n' || c == '\0');
+	return c == '\n' || c == '\0';
 }
 
 static size_t tokenize(char *line, char **tokens, size_t ntoks)

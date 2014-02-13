@@ -290,7 +290,7 @@ is_mounted_once(const char *name) {
 		if (streq(mc->m.mnt_dir, name) ||
 		    streq(mc->m.mnt_fsname, name))
 			ct++;
-	return (ct == 1);
+	return ct == 1;
 }
 
 /* Given the name FILE, try to find the option "loop=FILE" in mtab.  */

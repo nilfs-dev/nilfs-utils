@@ -405,7 +405,7 @@ nilfs_resize_find_movable_segments(struct nilfs *nilfs, __u64 start,
 			rest--;
 		}
 	}
-	return (snp - segnumv); /* return the number of found segments */
+	return snp - segnumv; /* return the number of found segments */
 }
 
 #if 0
@@ -476,7 +476,7 @@ nilfs_resize_find_active_segments(struct nilfs *nilfs, __u64 start, __u64 end,
 			}
 		}
 	}
-	return (snp - segnumv); /* return the number of found segments */
+	return snp - segnumv; /* return the number of found segments */
 }
 
 static ssize_t
@@ -506,7 +506,7 @@ nilfs_resize_find_inuse_segments(struct nilfs *nilfs, __u64 start, __u64 end,
 			}
 		}
 	}
-	return (snp - segnumv); /* return the number of found segments */
+	return snp - segnumv; /* return the number of found segments */
 }
 
 static ssize_t

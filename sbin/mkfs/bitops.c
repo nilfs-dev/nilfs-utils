@@ -47,7 +47,7 @@ int ext2fs_test_bit(int nr, const void *addr)
 
 	ADDR += nr >> 3;
 	mask = 1 << (nr & 0x07);
-	return (mask & *ADDR);
+	return mask & *ADDR;
 }
 
 #endif	/* !_EXT2_HAVE_ASM_BITOPS_ */
