@@ -253,7 +253,7 @@ static int nilfs_cleaner_find_fs(struct nilfs_cleaner *cleaner,
 	}
 	if (nfound == 0) {
 		nilfs_cleaner_logger(LOG_ERR,
-				     _("Error: no valid nilfs mountpoint "
+				     _("Error: no valid nilfs mountpoint " \
 				       "found."));
 		goto abort;
 	}
@@ -304,7 +304,7 @@ static int nilfs_cleaner_open_queue(struct nilfs_cleaner *cleaner)
 				 &attr);
 	if (cleaner->recvq < 0) {
 		nilfs_cleaner_logger(LOG_ERR,
-				     _("Error: cannot create receive queue: "
+				     _("Error: cannot create receive queue: " \
 				       "%s."),
 				     strerror(errno));
 		free(cleaner->recvq_name);
@@ -333,10 +333,10 @@ static int nilfs_cleaner_open_queue(struct nilfs_cleaner *cleaner)
 					     _("No cleaner found on %s."),
 					     cleaner->device);
 		} else {
-			nilfs_cleaner_logger(LOG_ERR,
-					     _("Error: cannot open cleaner on "
-					       "%s: %s."),
-					     cleaner->device, strerror(errno));
+			nilfs_cleaner_logger(
+				LOG_ERR,
+				_("Error: cannot open cleaner on %s: %s."),
+				cleaner->device, strerror(errno));
 		}
 		goto abort;
 	}

@@ -376,8 +376,8 @@ nilfs_cleanerd_create(const char *dev, const char *dir, const char *conffile)
 
 	cleanerd->cnoconv = nilfs_cnoconv_create(cleanerd->nilfs);
 	if (cleanerd->cnoconv == NULL) {
-		syslog(LOG_ERR, "failed to create checkpoint number converter "
-		       ": %m");
+		syslog(LOG_ERR,
+		       "failed to create checkpoint number converter: %m");
 		goto out_nilfs;
 	}
 
@@ -1393,7 +1393,8 @@ static int nilfs_cleanerd_clean_segments(struct nilfs_cleanerd *cleanerd,
 	ret = nilfs_cnoconv_time2cno(cleanerd->cnoconv, prottime,
 				     &params.protcno);
 	if (ret < 0) {
-		syslog(LOG_ERR, "cannot convert protection time to checkpoint "
+		syslog(LOG_ERR,
+		       "cannot convert protection time to checkpoint " \
 		       "number: %m");
 		goto out;
 	}

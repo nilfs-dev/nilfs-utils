@@ -202,7 +202,7 @@ read_mounttable() {
 			return;
 		}
 		if (verbose)
-			printf (_("mount: could not open %s - "
+			printf (_("mount: could not open %s - " \
 				  "using %s instead\n"),
 				_PATH_MOUNTED, _PATH_PROC_MOUNTS);
 	}
@@ -430,8 +430,8 @@ lock_mtab (void) {
 		   and we cannot create it. Read-only filesystem?
 		   Too many files open in the system?
 		   Filesystem full? */
-		die (EX_FILEIO, _("can't create lock file %s: %s "
-						  "(use -n flag to override)"),
+		die (EX_FILEIO, _("can't create lock file %s: %s " \
+				  "(use -n flag to override)"),
 			 linktargetfile, strerror (errsv));
 	}
 	close(i);
@@ -456,7 +456,7 @@ lock_mtab (void) {
 
 		if (j < 0 && errsv != EEXIST) {
 			(void) unlink(linktargetfile);
-			die (EX_FILEIO, _("can't link lock file %s: %s "
+			die (EX_FILEIO, _("can't link lock file %s: %s " \
 			     "(use -n flag to override)"),
 			     _PATH_MOUNTED_LOCK, strerror (errsv));
 		}
@@ -472,7 +472,7 @@ lock_mtab (void) {
 				continue;
 			}
 			(void) unlink(linktargetfile);
-			die (EX_FILEIO, _("can't open lock file %s: %s "
+			die (EX_FILEIO, _("can't open lock file %s: %s " \
 			     "(use -n flag to override)"),
 			     _PATH_MOUNTED_LOCK, strerror (errsv));
 		}
@@ -510,8 +510,9 @@ lock_mtab (void) {
 				nanosleep(&waittime, NULL);
 			} else {
 				(void) unlink(linktargetfile);
-				die (EX_FILEIO, _("Cannot create link %s\n"
-						  "Perhaps there is a stale lock file?\n"),
+				die (EX_FILEIO,
+				     _("Cannot create link %s\n"	\
+				       "Perhaps there is a stale lock file?\n"),
 					 _PATH_MOUNTED_LOCK);
 			}
 			close(lockfile_fd);

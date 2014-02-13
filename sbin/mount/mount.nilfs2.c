@@ -426,7 +426,7 @@ prepare_mount(struct nilfs_mount_info *mi, const struct mount_options *mo)
 
 	switch (mo->flags & (MS_RDONLY | MS_REMOUNT)) {
 	case 0: /* overlapping rw-mount */
-		error(_("%s: the device already has a rw-mount on %s."
+		error(_("%s: the device already has a rw-mount on %s." \
 			"\n\t\tmultiple rw-mount is not allowed."),
 		      progname, mc->m.mnt_dir);
 		goto failed;
@@ -442,7 +442,7 @@ prepare_mount(struct nilfs_mount_info *mi, const struct mount_options *mo)
 		pid = 0;
 		if (find_opt(mc->m.mnt_opts, gcpid_opt_fmt, &pid) >= 0 &&
 		    nilfs_shutdown_cleanerd(mi->device, (pid_t)pid) < 0) {
-			error(_("%s: remount failed due to %s shutdown "
+			error(_("%s: remount failed due to %s shutdown " \
 				"failure"), progname, NILFS_CLEANERD_NAME);
 			goto failed;
 		}

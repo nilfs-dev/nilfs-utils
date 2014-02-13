@@ -77,8 +77,8 @@ struct nilfs_tune_options {
 
 static void nilfs_tune_usage(void)
 {
-	printf("Usage: nilfs-tune [-h] [-l] [-i interval] [-L volume_name]\n"
-	       "                  [-m block_max] [-O [^]feature[,...]]\n"
+	printf("Usage: nilfs-tune [-h] [-l] [-i interval] [-L volume_name]\n" \
+	       "                  [-m block_max] [-O [^]feature[,...]]\n" \
 	       "                  [-U UUID] device\n");
 }
 
@@ -284,7 +284,7 @@ static const char *uuid_string(const unsigned char *uuid)
 {
 	static char buf[256];
 
-	sprintf(buf, "%02x%02x%02x%02x-%02x%02x-%02x%02x-"
+	sprintf(buf, "%02x%02x%02x%02x-%02x%02x-%02x%02x-" \
 		"%02x%02x-%02x%02x%02x%02x%02x%02x", uuid[0], uuid[1],
 		uuid[2], uuid[3], uuid[4], uuid[5], uuid[6], uuid[7],
 		uuid[8], uuid[9], uuid[10], uuid[11], uuid[12],
@@ -523,13 +523,13 @@ static int modify_nilfs(const char *device, struct nilfs_tune_options *opts)
 
 	features = le64_to_cpu(sbp->s_feature_incompat);
 	if (features & ~NILFS_FEATURE_INCOMPAT_SUPP)
-		fprintf(stderr, "Warning: %s: unknown incompatible "
+		fprintf(stderr, "Warning: %s: unknown incompatible " \
 			"features: 0x%llx\n", device, features);
 
 	features = le64_to_cpu(sbp->s_feature_compat_ro);
 	if (opts->flags == O_RDWR &&
 	    (features & ~NILFS_FEATURE_COMPAT_RO_SUPP))
-		fprintf(stderr, "Warning: %s: unknown read-only compatible "
+		fprintf(stderr, "Warning: %s: unknown read-only compatible " \
 			"features: 0x%llx\n", device, features);
 
 	if (opts->mask & NILFS_SB_LABEL)
@@ -587,11 +587,11 @@ int main(int argc, char *argv[])
 	}
 
 	if (!opts.force && opts.flags == O_RDWR && (check_mount(device) < 0)) {
-		fprintf(stderr, "ERROR: %s is currently mounted.  "
-			"Aborting execution.\n"
-			"Running nilfs-tune on a mounted file system "
-			"may cause SEVERE damage.\n"
-			"You can use the \"-f\" option to force this "
+		fprintf(stderr, "ERROR: %s is currently mounted.  "	\
+			"Aborting execution.\n"				\
+			"Running nilfs-tune on a mounted file system "	\
+			"may cause SEVERE damage.\n"			\
+			"You can use the \"-f\" option to force this "	\
 			"operation.\n",
 			device);
 		exit(EXIT_SUCCESS);

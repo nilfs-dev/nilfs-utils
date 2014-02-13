@@ -178,7 +178,8 @@ my_getmntent (mntFILE *mfp) {
 			/* Missing final newline?  Otherwise extremely */
 			/* long line - assume file was corrupted */
 			if (feof(mfp->mntent_fp)) {
-				fprintf(stderr, _("[mntent]: warning: no final "
+				fprintf(stderr,
+					_("[mntent]: warning: no final " \
 					"newline at the end of %s\n"),
 					mfp->mntent_file);
 				s = index (buf, 0);

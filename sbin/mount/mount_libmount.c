@@ -297,7 +297,7 @@ static int nilfs_prepare_mount(struct nilfs_mount_info *mi)
 
 	switch (mi->mflags & (MS_RDONLY | MS_REMOUNT)) {
 	case 0: /* overlapping rw-mount */
-		error(_("%s: the device already has a rw-mount on %s."
+		error(_("%s: the device already has a rw-mount on %s." \
 			"\n\t\tmultiple rw-mount is not allowed."),
 		      progname, mnt_fs_get_target(fs));
 		goto failed;
@@ -320,7 +320,7 @@ static int nilfs_prepare_mount(struct nilfs_mount_info *mi)
 
 		if (!mnt_fs_match_target(fs, mnt_context_get_target(cxt),
 					 mnt_table_get_cache(mtab))) {
-			error(_("%s: different mount point (%s). "
+			error(_("%s: different mount point (%s). " \
 				"remount failed."),
 			      progname, mnt_context_get_target(cxt));
 			goto failed;
@@ -330,7 +330,7 @@ static int nilfs_prepare_mount(struct nilfs_mount_info *mi)
 			res = nilfs_shutdown_cleanerd(
 				mnt_fs_get_source(fs), mi->old_attrs.gcpid);
 			if (res < 0) {
-				error(_("%s: remount failed due to %s "
+				error(_("%s: remount failed due to %s " \
 					"shutdown failure"), progname,
 				      NILFS_CLEANERD_NAME);
 				goto failed;

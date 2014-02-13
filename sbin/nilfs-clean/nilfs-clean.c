@@ -462,8 +462,8 @@ static void nilfs_clean_parse_options(int argc, char *argv[])
 				myprintf(_("Error: too large period: %s\n"),
 					 optarg);
 			} else {
-				myprintf(_("Error: invalid protection period: "
-					   "%s\n"), optarg);
+				myprintf(_("Error: invalid protection " \
+					   "period: %s\n"), optarg);
 			}
 			exit(EXIT_FAILURE);
 		case 'q':

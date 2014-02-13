@@ -726,7 +726,7 @@ static void check_mount(int fd, const char *device)
 		if (strncmp(strtok(line, " "), device, strlen(device)) == 0) {
 			fclose(fp);
 			close(fd);
-			perr("Error: %s is currently mounted. "
+			perr("Error: %s is currently mounted. " \
 			     "You cannot make a filesystem on this device.",
 			     device);
 		}
@@ -768,18 +768,18 @@ static void check_safety_of_device_overwrite(int fd, const char *device)
 
 			if (!blkid_probe_lookup_value(pr, "TYPE",
 							&type, NULL)) {
-				pinfo("WARNING: Device %s appears to contain "
-					"an existing %s superblock.",
-					device, type);
+				pinfo("WARNING: Device %s appears to contain" \
+				      " an existing %s superblock.",
+				      device, type);
 			} else if (!blkid_probe_lookup_value(pr, "PTTYPE",
 								&type, NULL)) {
-				pinfo("WARNING: Device %s appears to contain "
-					"an partition table (%s).",
-					device, type);
+				pinfo("WARNING: Device %s appears to contain" \
+				      " an partition table (%s).",
+				      device, type);
 			} else {
 				if (quiet == 0) {
-					pinfo("Device %s appears to contain "
-						"something weird.", device);
+					pinfo("Device %s appears to contain" \
+					      " something weird.", device);
 				}
 				goto end_check;
 			}
@@ -856,7 +856,7 @@ static void init_disk_buffer(long max_blocks)
 static void *map_disk_buffer(blocknr_t blocknr, int clear_flag)
 {
 	if (blocknr >= disk_buffer_size)
-		perr("Internal error: illegal disk buffer access "
+		perr("Internal error: illegal disk buffer access " \
 		     "(blocknr=%llu)", blocknr);
 
 	if (!disk_buffer[blocknr]) {
@@ -942,7 +942,7 @@ static int erase_disk(int fd, struct nilfs_disk_info *di)
 		ret = nilfs_mkfs_discard_range(fd, start, end - start);
 		if (!ret && nilfs_mkfs_discard_zeroes_data(fd)) {
 			if (verbose)
-				pinfo("Discard succeeded and will return 0s "
+				pinfo("Discard succeeded and will return 0s " \
 				      " - skip wiping");
 			goto out;
 		}

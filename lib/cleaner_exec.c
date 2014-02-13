@@ -286,7 +286,7 @@ static int nilfs_wait_cleanerd(const char *device, pid_t pid)
 		recalc_backoff_time(&waittime);
 	}
 
-	nilfs_cleaner_printf(_("cleanerd (pid=%ld) still exists on %d. "
+	nilfs_cleaner_printf(_("cleanerd (pid=%ld) still exists on %d. " \
 			       "waiting."),
 			     (long)pid, device);
 	nilfs_cleaner_flush();
