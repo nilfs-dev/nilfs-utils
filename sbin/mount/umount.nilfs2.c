@@ -95,11 +95,11 @@
 #include "nls.h"
 
 
-int verbose = 0;
-int mount_quiet = 0;
-int readonly = 0;
-int readwrite = 0;
-static int nomtab = 0;
+int verbose;
+int mount_quiet;
+int readonly;
+int readwrite;
+static int nomtab;
 
 extern char *optarg;
 extern int optind;

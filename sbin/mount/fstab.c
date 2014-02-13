@@ -51,9 +51,9 @@
 extern int verbose;
 
 /* Information about mtab. ------------------------------------*/
-static int have_mtab_info = 0;
-static int var_mtab_does_not_exist = 0;
-static int var_mtab_is_a_symlink = 0;
+static int have_mtab_info;
+static int var_mtab_does_not_exist;
+static int var_mtab_is_a_symlink;
 
 static void
 get_mtab_info(void) {
@@ -105,8 +105,8 @@ mtab_is_writable() {
 /* Contents of mtab and fstab ---------------------------------*/
 
 struct mntentchn mounttable, fstab;
-static int got_mtab = 0;
-static int got_fstab = 0;
+static int got_mtab;
+static int got_fstab;
 
 static void read_mounttable(void), read_fstab(void);
 
@@ -324,11 +324,11 @@ getmntoptfile (const char *file) {
 /* Updating mtab ----------------------------------------------*/
 
 /* Flag for already existing lock file. */
-static int we_created_lockfile = 0;
+static int we_created_lockfile;
 static int lockfile_fd = -1;
 
 /* Flag to indicate that signals have been set up. */
-static int signals_have_been_setup = 0;
+static int signals_have_been_setup;
 
 /* Ensure that the lock is released if we are interrupted.  */
 extern char *strsignal(int sig);	/* not always in <string.h> */

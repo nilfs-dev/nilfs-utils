@@ -122,10 +122,10 @@ enum {
 
 /* options */
 static char *progname;
-static int show_version_only = 0;
-static int verbose = 0;
+static int show_version_only;
+static int verbose;
 static int clean_cmd = NILFS_CLEAN_CMD_RUN;
-static const char *conffile = NULL;
+static const char *conffile;
 
 static unsigned long protection_period = ULONG_MAX;
 static int nsegments_per_clean = 2;

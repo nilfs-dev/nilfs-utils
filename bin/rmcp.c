@@ -79,8 +79,8 @@ static const struct option long_options[] = {
 
 static char *progname;
 
-static int force = 0;
-static int interactive = 0;
+static int force;
+static int interactive;
 
 static int rmcp_confirm(const char *arg)
 {

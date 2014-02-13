@@ -89,7 +89,7 @@ static __u64 param_index;
 static __u64 param_lines;
 static struct nilfs_cpinfo cpinfos[LSCP_NCPINFO];
 static int show_block_count = 1;
-static int show_all = 0;
+static int show_all;
 
 static void lscp_print_header(void)
 {

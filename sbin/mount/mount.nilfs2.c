@@ -94,13 +94,13 @@
 #include "nls.h"
 
 /* mount options */
-int verbose = 0;
-int mount_quiet = 0;
-int readonly = 0;
-int readwrite = 0;
-static int nomtab = 0;
-static int devro = 0;
-static int fake = 0;
+int verbose;
+int mount_quiet;
+int readonly;
+int readwrite;
+static int nomtab;
+static int devro;
+static int fake;
 
 /* global variables */
 extern char *optarg;

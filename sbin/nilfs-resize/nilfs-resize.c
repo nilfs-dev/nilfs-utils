@@ -102,9 +102,9 @@ static const struct option long_option[] = {
 
 /* options */
 static char *progname;
-static int show_version_only = 0;
-static int verbose = 0;
-static int assume_yes = 0;
+static int show_version_only;
+static int verbose;
+static int assume_yes;
 static int show_progress = 1;
 
 /* global variables */
@@ -140,7 +140,7 @@ static int pm_labelwidth = 10;
 static __u64 pm_max;
 static __u64 pm_done;
 static int pm_curpos;
-static int pm_in_progress = 0;  /* 0: off, 1: on, -1: interrupted */
+static int pm_in_progress;	/* 0: off, 1: on, -1: interrupted */
 static const char *pm_label;
 
 static void nilfs_resize_logger(int priority, const char *fmt, ...)

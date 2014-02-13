@@ -79,10 +79,10 @@
 #endif	/* _GNU_SOURCE */
 
 /* options */
-int mount_quiet = 0;	/* for sundries.c */
-static int verbose = 0;
-static int force = 0;
-static int suid = 0;	/* reserved for non-root user mount/umount
+int mount_quiet;	/* for sundries.c */
+static int verbose;
+static int force;
+static int suid;	/* reserved for non-root user mount/umount
 			   (not supported yet) */
 
 /* global variables */

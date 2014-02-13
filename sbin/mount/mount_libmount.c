@@ -87,11 +87,11 @@
 #endif	/* _GNU_SOURCE */
 
 /* mount options */
-int mount_quiet = 0;	/* for sundries.c */
-static int verbose = 0;
-static int devro = 0;
+int mount_quiet;	/* for sundries.c */
+static int verbose;
+static int devro;
 
-static char *mount_fstype = NULL;
+static char *mount_fstype;
 
 /* global variables */
 const char fstype[] = NILFS2_FS_NAME;

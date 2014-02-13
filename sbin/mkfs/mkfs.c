@@ -105,18 +105,18 @@ extern int optind;
 char *progname = "mkfs.nilfs2";
 
 /* Options */
-static int quiet = 0;
-static int cflag = 0;
-static int nflag = 0;
-static int verbose = 0;
+static int quiet;
+static int cflag;
+static int nflag;
+static int verbose;
 static int discard = 1;
-static int force_overwrite = 0;
+static int force_overwrite;
 static unsigned long blocksize = NILFS_DEF_BLOCKSIZE;
 static unsigned long blocks_per_segment = NILFS_DEF_BLKS_PER_SEG;
 static unsigned long r_segments_percentage = NILFS_DEF_RESERVED_SEGMENTS;
 
-static time_t creation_time = 0;
-static char volume_label[80] = {0};
+static time_t creation_time;
+static char volume_label[80];
 static __u64 compat_array[NILFS_MAX_FEATURE_TYPES] = {
 	/* Compat */
 	0,
@@ -233,7 +233,7 @@ segment_start_blocknr(struct nilfs_disk_info *di, unsigned long segnum)
 /*
  * I/O primitives
  */
-static void **disk_buffer = NULL;
+static void **disk_buffer;
 static unsigned long disk_buffer_size;
 
 static void init_disk_buffer(long max_blocks);
