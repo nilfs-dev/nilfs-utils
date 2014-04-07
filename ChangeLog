@@ -1,3 +1,20 @@
+nilfs-utils-2.2.0  Tue Apr 8, 2014 JST
+
+	* lscp: show block count by default
+	* lssu: add option to print count of live blocks
+	* lssu: display "p" flag on protected segments
+	* fix build of dist archives
+	* lib/gc.c: refactor reclaim function
+	* lib/gc.c: add optimized version of nilfs_xreclaim_segments
+	* cleanerd: use nilfs_xreclaim_segment()
+	* cleanerd: add a no_timeout flag to enable faster loop
+	* lib/nilfs.c: add suport for NILFS_IOCTL_SET_SUINFO ioctl
+	* lib/nilfs.c: add NILFS_OPT_SET_SUINFO
+	* nilfs-clean: add cmdline param min-reclaimable-blocks
+	* move generic macros into util.h
+	* fix coding style issues
+	* bump up verion of nilfs-utils written in manpages
+
 nilfs-utils-2.1.6  Sun Jan 26, 2014 JST
 
 	* cleanerd: fix wrong cleaner speed of manual clean mode
