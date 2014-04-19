@@ -290,7 +290,7 @@ static int lssu_get_protcno(struct nilfs *nilfs,
 	ret = nilfs_cnoconv_time2cno(cnoconv, *prottimep, protcnop);
 	if (ret < 0) {
 		fprintf(stderr,
-			"%s: cannot convert protectoin time to checkpoint "
+			"%s: cannot convert protection time to checkpoint "
 			"number: %m\n",
 			progname);
 	}

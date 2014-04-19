@@ -1186,7 +1186,7 @@ int main(int argc, char *argv[])
 			unsigned long long size2;
 
 			size2 = size & ~(sector_size - 1);
-			myprintf("size %llu is not alinged to sector " \
+			myprintf("size %llu is not aligned to sector " \
 				 "size. truncated to %llu.\n",
 				 size, size2);
 			size = size2;
