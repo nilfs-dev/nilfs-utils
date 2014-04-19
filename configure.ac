@@ -166,7 +166,10 @@ AC_SYS_LARGEFILE
 
 # Install directories
 AC_PREFIX_DEFAULT([/usr])
-AC_SUBST([sbindir], [/sbin])
+test "x$prefix" = "xNONE" && prefix="/usr"
+test "x$exec_prefix" = "xNONE" && exec_prefix="${prefix}"
+AC_SUBST([root_sbindir], [/sbin])
+AC_SUBST([sbindir], [${exec_prefix}/sbin])
 AC_SUBST([sysconfdir], [/etc])
 AC_SUBST([localstatedir], [/var])
 

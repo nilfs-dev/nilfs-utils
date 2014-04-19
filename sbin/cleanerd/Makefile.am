@@ -1,6 +1,6 @@
 ## Makefile.am
 
-sbin_PROGRAMS = nilfs_cleanerd
+root_sbin_PROGRAMS = nilfs_cleanerd
 LDADD = $(top_builddir)/lib/libnilfs.la $(top_builddir)/lib/libnilfsgc.la \
 	$(LIB_POSIX_MQ) -luuid
 

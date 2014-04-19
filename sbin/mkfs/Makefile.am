@@ -6,7 +6,7 @@ LDADD = -luuid $(LIB_BLKID) $(top_builddir)/lib/libnilfsfeature.la \
 	$(top_builddir)/lib/libmountchk.la \
 	$(top_builddir)/lib/libcrc32.la
 
-sbin_PROGRAMS = mkfs.nilfs2
+root_sbin_PROGRAMS = mkfs.nilfs2
 
 mkfs_nilfs2_SOURCES = mkfs.c bitops.c mkfs.h
 

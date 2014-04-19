@@ -11,7 +11,7 @@ AM_CPPFLAGS = -I$(top_srcdir)/include
 LDADD = $(top_builddir)/lib/librealpath.la \
 	$(top_builddir)/lib/libcleanerexec.la $(LIB_MOUNT) $(LIB_SELINUX)
 
-sbin_PROGRAMS = mount.nilfs2 umount.nilfs2
+root_sbin_PROGRAMS = mount.nilfs2 umount.nilfs2
 
 if CONFIG_LIBMOUNT
 
