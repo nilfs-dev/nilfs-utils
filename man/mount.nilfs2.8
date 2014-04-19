@@ -37,7 +37,7 @@ the \fI/etc/fstab\fP table.
 The third form, which directly invokes \fBmount.nilfs2\fP, is also
 usable since \fBmount.nilfs2\fP maintains by itself the system mount
 state such as the list of mounted file systems described in
-\fI/etc/mtab\fP. Howerver, the first or the second form is usually
+\fI/etc/mtab\fP. However, the first or the second form is usually
 recommended because some expansive options are not supported by the
 third form.
 .SH OPTIONS
@@ -103,7 +103,7 @@ checkpoints marked as snapshot are mountable with this option.  Note
 that the read-only mount option must be specified together.
 .TP
 .BR errors=continue " / " errors=remount-ro " / " errors=panic
-Define the behaviour when an error is encountered.  (Eigher ignore
+Define the behaviour when an error is encountered.  (Either ignore
 errors and just mark the file system erroneous and continue, or
 remount the file system read-only, or panic and halt the system.)  The
 default is remount-ro.  In earlier kernels than Linux 2.6.35, continue
