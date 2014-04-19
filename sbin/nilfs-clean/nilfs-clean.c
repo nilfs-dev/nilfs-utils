@@ -1,5 +1,5 @@
 /*
- * nilfs-clean.c - run garbage colletor for nilfs2 volume
+ * nilfs-clean.c - run garbage collector for nilfs2 volume
  *
  * Licensed under GPLv2: the complete text of the GNU General Public License
  * can be found in COPYING file of the nilfs-utils package.

@@ -480,7 +480,7 @@ static int nilfs_toss_vdescs(struct nilfs *nilfs,
 				break;
 
 			/*
-			 * Add the virtual block number to the canditate
+			 * Add the virtual block number to the candidate
 			 * for deletion.
 			 */
 			vblocknrp = nilfs_vector_get_new_element(vblocknrv);

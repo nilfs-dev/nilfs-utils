@@ -59,7 +59,7 @@ char *replace_optval(char *s, const char *fmt, void *varp, ...);
  * @fmt.  If replacement or removal occurs, old @str is automatically
  * freed.
  *
- * Return Value: new options string is retured.
+ * Return Value: new options string is returned.
  */
 #define replace_drop_opt(str, fmt, oldvalp, newval, cond)	\
 ({								\

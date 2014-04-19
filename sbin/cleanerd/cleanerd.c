@@ -125,7 +125,7 @@ static const struct option long_option[] = {
  * @fallback: fallback state
  * @retry_cleaning: retrying reclamation for protected segments
  * @no_timeout: the next timeout will be 0 seconds
- * @ncleansegs: number of semgents cleaned per cycle
+ * @ncleansegs: number of segments cleaned per cycle
  * @cleaning_interval: cleaning interval
  * @target: target time for sleeping
  * @timeout: timeout value for sleeping
@@ -138,9 +138,9 @@ static const struct option long_option[] = {
  * @pending_cmd: pending client command
  * @jobid: current job id
  * @mm_prev_state: previous status during suspending
- * @mm_nrestpasses: remaiing number of passes
+ * @mm_nrestpasses: remaining number of passes
  * @mm_nrestsegs: remaining number of segment (1-pass)
- * @mm_ncleansegs: number of segmetns cleaned per cycle (manual mode)
+ * @mm_ncleansegs: number of segments cleaned per cycle (manual mode)
  * @mm_protection_period: protection period (manual mode)
  * @mm_cleaning_interval: cleaning interval (manual mode)
  * @mm_min_reclaimable_blocks: min. number of reclaimable blocks (manual mode)
@@ -190,7 +190,7 @@ static volatile unsigned long protection_period;
 
 /* global variables */
 static struct nilfs_cleanerd *nilfs_cleanerd;
-static sigjmp_buf nilfs_cleanerd_env; /* for siglongjume */
+static sigjmp_buf nilfs_cleanerd_env; /* for siglongjmp */
 static volatile sig_atomic_t nilfs_cleanerd_reload_config; /* reload flag */
 static char nilfs_cleanerd_msgbuf[NILFS_CLEANER_MSG_MAX_REQSZ];
 

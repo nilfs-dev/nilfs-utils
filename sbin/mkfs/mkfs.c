@@ -137,7 +137,7 @@ static void parse_options(int argc, char *argv[]);
  *           ^
  *           sb->s_first_data_block
  *
- * Intial layout of ifile and DAT file:
+ * Initial layout of ifile and DAT file:
  *
  * blk +0                  +1       +2
  *  +------------------+--------+---------+
@@ -1388,7 +1388,7 @@ static inline void
 alloc_blockgrouped_file_entry(blocknr_t blocknr, unsigned long nr)
 {
 	struct nilfs_palloc_group_desc *desc = map_disk_buffer(blocknr, 1);
-					/* allways use the first group */
+					/* always use the first group */
 	void *bitmap = map_disk_buffer(blocknr + 1, 1);
 
 	if (nilfs_test_bit(nr, bitmap))

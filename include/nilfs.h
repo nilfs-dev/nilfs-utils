@@ -191,7 +191,7 @@ struct nilfs_psegment {
  * struct nilfs_file - file iterator
  * @f_finfo: file information
  * @f_blocknr: block number
- * @f_offset: byte offset from the begining of segment
+ * @f_offset: byte offset from the beginning of segment
  * @f_index: index
  * @f_psegment: partial segment
  */
@@ -208,7 +208,7 @@ struct nilfs_file {
  * struct nilfs_block - block iterator
  * @b_binfo: block information
  * @b_blocknr: block number
- * @b_offset: byte offset from the begining of segment
+ * @b_offset: byte offset from the beginning of segment
  * @b_index: index
  * @b_dsize: size of data block information
  * @b_nsize: size of node block information
