@@ -407,12 +407,12 @@ static int nilfs_clean_parse_min_reclaimable(const char *arg)
 	}
 
 	if (endptr[0] == '%') {
-		min_reclaimable_blocks_unit = NILFS_CLEANER_ARG_UNIT_PERCENT;
 		if (blocks > 100) {
 			myprintf(_("Error: percent value can't be > 100: %s\n"),
 					arg);
 			return -1;
 		}
+		min_reclaimable_blocks_unit = NILFS_CLEANER_ARG_UNIT_PERCENT;
 	} else {
 		min_reclaimable_blocks_unit = NILFS_CLEANER_ARG_UNIT_NONE;
 	}
