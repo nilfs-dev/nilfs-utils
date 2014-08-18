@@ -130,9 +130,8 @@ static const char *conffile;
 static unsigned long protection_period = ULONG_MAX;
 static int nsegments_per_clean = 2;
 static struct timespec cleaning_interval = { 0, 100000000 };   /* 100 msec */
-static unsigned long min_reclaimable_blocks = 1;
-static unsigned char min_reclaimable_blocks_unit =
-		NILFS_CLEANER_ARG_UNIT_PERCENT;
+static unsigned long min_reclaimable_blocks = ULONG_MAX;
+static unsigned char min_reclaimable_blocks_unit = NILFS_CLEANER_ARG_UNIT_NONE;
 
 static sigjmp_buf nilfs_clean_env;
 static struct nilfs_cleaner *nilfs_cleaner;
@@ -173,16 +172,19 @@ static int nilfs_clean_do_run(struct nilfs_cleaner *cleaner)
 	args.nsegments_per_clean = nsegments_per_clean;
 	args.cleaning_interval = cleaning_interval.tv_sec;
 	args.cleaning_interval_nsec = cleaning_interval.tv_nsec;
-	args.min_reclaimable_blocks = min_reclaimable_blocks;
-	args.min_reclaimable_blocks_unit = min_reclaimable_blocks_unit;
 	args.valid = (NILFS_CLEANER_ARG_NPASSES |
 		      NILFS_CLEANER_ARG_CLEANING_INTERVAL |
-		      NILFS_CLEANER_ARG_NSEGMENTS_PER_CLEAN |
-		      NILFS_CLEANER_ARG_MIN_RECLAIMABLE_BLOCKS);
+		      NILFS_CLEANER_ARG_NSEGMENTS_PER_CLEAN);
 
 	if (protection_period != ULONG_MAX) {
 		args.protection_period = protection_period;
 		args.valid |= NILFS_CLEANER_ARG_PROTECTION_PERIOD;
+	}
+
+	if (min_reclaimable_blocks != ULONG_MAX) {
+		args.min_reclaimable_blocks = min_reclaimable_blocks;
+		args.min_reclaimable_blocks_unit = min_reclaimable_blocks_unit;
+		args.valid |= NILFS_CLEANER_ARG_MIN_RECLAIMABLE_BLOCKS;
 	}
 
 	if (nilfs_cleaner_run(cleaner, &args, NULL) < 0) {
