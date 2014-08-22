@@ -532,12 +532,12 @@ static struct nilfs_segment_info *new_segment(struct nilfs_disk_info *di)
 
 static void fix_disk_layout(struct nilfs_disk_info *di)
 {
+	struct nilfs_segment_info *si;
 	int i, j;
 
 	di->nblocks_used = 0;
 	di->nblocks_to_write = di->first_segment_block;
-	for (i = 0; i < di->nseginfo; i++) {
-		struct nilfs_segment_info *si = &di->seginfo[i];
+	for (i = 0, si = di->seginfo; i < di->nseginfo; i++, si++) {
 		blocknr_t blocknr = si->start + si->nblk_sum;
 
 		si->nblocks += si->nblk_sum + 1 /* summary and super root */;
