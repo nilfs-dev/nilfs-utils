@@ -193,7 +193,8 @@ int main(int argc, char *argv[])
 
 	nilfs = nilfs_open(dev, NULL, NILFS_OPEN_RDWR);
 	if (nilfs == NULL) {
-		fprintf(stderr, "%s: %s: cannot open NILFS\n", progname, dev);
+		fprintf(stderr, "%s: cannot open NILFS on %s: %m\n",
+			progname, dev ? : "device");
 		exit(1);
 	}
 
