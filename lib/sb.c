@@ -97,10 +97,20 @@ static int nilfs_sb_is_valid(struct nilfs_super_block *sbp, int check_crc)
 	return crc == le32_to_cpu(sbp->s_sum);
 }
 
+static int nilfs_sb2_offset_is_too_small(struct nilfs_super_block *sbp,
+					 __u64 sb2_offset)
+{
+	return sb2_offset < ((le64_to_cpu(sbp->s_nsegments) *
+			      le32_to_cpu(sbp->s_blocks_per_segment)) <<
+			     (le32_to_cpu(sbp->s_log_block_size) +
+			      NILFS_SB_BLOCK_SIZE_SHIFT));
+}
+
 static int __nilfs_sb_read(int devfd, struct nilfs_super_block **sbp,
 			   __u64 *offsets)
 {
 	__u64 devsize, sb2_offset;
+	int invalid_fs = 0;
 
 	sbp[0] = malloc(NILFS_MAX_SB_SIZE);
 	sbp[1] = malloc(NILFS_MAX_SB_SIZE);
@@ -110,12 +120,16 @@ static int __nilfs_sb_read(int devfd, struct nilfs_super_block **sbp,
 	if (ioctl(devfd, BLKGETSIZE64, &devsize) != 0)
 		goto failed;
 
-	if (lseek(devfd, NILFS_SB_OFFSET_BYTES, SEEK_SET) < 0 ||
-	    read(devfd, sbp[0], NILFS_MAX_SB_SIZE) < 0 ||
-	    !nilfs_sb_is_valid(sbp[0], 0)) {
-		free(sbp[0]);
-		sbp[0] = NULL;
+	if (lseek(devfd, NILFS_SB_OFFSET_BYTES, SEEK_SET) >= 0 &&
+	    read(devfd, sbp[0], NILFS_MAX_SB_SIZE) >= 0) {
+		if (nilfs_sb_is_valid(sbp[0], 0))
+			goto sb1_ok;
+		invalid_fs = 1;
 	}
+
+	free(sbp[0]);
+	sbp[0] = NULL;
+sb1_ok:
 
 	sb2_offset = NILFS_SB2_OFFSET_BYTES(devsize);
 	if (offsets) {
@@ -123,21 +137,23 @@ static int __nilfs_sb_read(int devfd, struct nilfs_super_block **sbp,
 		offsets[1] = sb2_offset;
 	}
 
-	if (lseek(devfd, sb2_offset, SEEK_SET) < 0 ||
-	    read(devfd, sbp[1], NILFS_MAX_SB_SIZE) < 0 ||
-	    !nilfs_sb_is_valid(sbp[1], 0))
-		goto sb2_failed;
+	if (lseek(devfd, sb2_offset, SEEK_SET) >= 0 &&
+	    read(devfd, sbp[1], NILFS_MAX_SB_SIZE) >= 0) {
+		if (nilfs_sb_is_valid(sbp[1], 0) &&
+		    !nilfs_sb2_offset_is_too_small(sbp[1], sb2_offset))
+			goto sb2_ok;
+		invalid_fs = 1;
+	}
 
-	if (sb2_offset <
-	    (le64_to_cpu(sbp[1]->s_nsegments) *
-	     le32_to_cpu(sbp[1]->s_blocks_per_segment)) <<
-	    (le32_to_cpu(sbp[1]->s_log_block_size) +
-	     NILFS_SB_BLOCK_SIZE_SHIFT))
-		goto sb2_failed;
+	free(sbp[1]);
+	sbp[1] = NULL;
+sb2_ok:
 
- sb2_done:
-	if (!sbp[0] && !sbp[1])
+	if (!sbp[0] && !sbp[1]) {
+		if (invalid_fs)
+			errno = EINVAL;
 		goto failed;
+	}
 
 	return 0;
 
@@ -145,11 +161,6 @@ static int __nilfs_sb_read(int devfd, struct nilfs_super_block **sbp,
 	free(sbp[0]);  /* free(NULL) is just ignored */
 	free(sbp[1]);
 	return -1;
-
- sb2_failed:
-	free(sbp[1]);
-	sbp[1] = NULL;
-	goto sb2_done;
 }
 
 struct nilfs_super_block *nilfs_sb_read(int devfd)
