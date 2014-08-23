@@ -1,3 +1,19 @@
+nilfs-utils-2.2.1  Sat Aug 23, 2014 JST
+
+	* nilfs-clean: do not override min_reclaimable_blocks if -m option
+	  is not used.
+	* nilfs_cleanerd.conf: try to use set_suinfo ioctl by default
+	* nilfs_cleanerd.conf: set min_reclaimable_blocks parameter to 10
+	  percent to more reduce relocation of static data.
+	* libnilfs: set errno when device doesn't contain valid NILFS data
+	* mkfs.nilfs2: fix gcc warning "array subscript is above array bounds"
+	* bin/*: improve error message on failure of nilfs_open()
+	* install nilfs-* executables to /usr/sbin to resolve warnings of
+	  adequate (Debian package quality testing tool).
+	* nilfs_cleanerd: link libraries statically to make nilfs_cleanerd
+	  self-contained in /sbin directory.
+	* fix typos in messages, manpages, source files, and ChangeLog file.
+
 nilfs-utils-2.2.0  Tue Apr 8, 2014 JST
 
 	* lscp: show block count by default

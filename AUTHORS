@@ -62,6 +62,9 @@ December 3, 2009: introduced pp (protection period) mount option
 * dexen deVries <dexen.devries@gmail.com>
 March 6, 2011: support relative pathnames in command line of nilfs_cleanerd
 
+* Dmitry Smirnov <onlyjob@member.fsf.org>
+April 19, 2014: install nilfs-* executables to /usr/bin
+
 * Eric Sandeen <sandeen@redhat.com>
 February 13, 2010: fix build against newer glibc
 

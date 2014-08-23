@@ -35,7 +35,7 @@ libcleanerexec_la_CPPFLAGS = -I$(top_srcdir)/include
 libcleanerexec_la_LDFLAGS = -static
 
 libnilfs_CURRENT = 2
-libnilfs_REVISION = 0
+libnilfs_REVISION = 1
 libnilfs_AGE = 2
 libnilfs_VERSIONINFO = $(libnilfs_CURRENT):$(libnilfs_REVISION):$(libnilfs_AGE)
 
