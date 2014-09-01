@@ -404,12 +404,6 @@ static int nilfs_update_mount_state(struct nilfs_mount_info *mi)
 	rungc = gc_ok && !mi->new_attrs.nogc;
 	old_attrs = (mi->mflags & MS_REMOUNT) ? &mi->old_attrs : NULL;
 
-	if (mnt_context_is_nomtab(cxt)) {
-		if (rungc)
-			printf(_("%s not started\n"), NILFS_CLEANERD_NAME);
-		return 0;
-	}
-
 	if (rungc) {
 		if (mi->new_attrs.pp == ULONG_MAX)
 			mi->new_attrs.pp = mi->old_attrs.pp;
