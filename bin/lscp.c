@@ -159,7 +159,8 @@ static int lscp_forward_cpinfo(struct nilfs *nilfs,
 			break;
 
 		for (cpi = cpinfos; cpi < cpinfos + n; cpi++) {
-			if (show_all || !nilfs_cpinfo_minor(cpi)) {
+			if (show_all || nilfs_cpinfo_snapshot(cpi) ||
+			    !nilfs_cpinfo_minor(cpi)) {
 				lscp_print_cpinfo(cpi);
 				rest--;
 			}
