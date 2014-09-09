@@ -198,7 +198,8 @@ static int lscp_backward_cpinfo(struct nilfs *nilfs,
 
 		for (cpi = cpinfos + n - 1; cpi >= cpinfos && rest > 0; cpi--) {
 			if (cpi->ci_cno < eidx &&
-			    (show_all || !nilfs_cpinfo_minor(cpi))) {
+			    (show_all || nilfs_cpinfo_snapshot(cpi) ||
+			     !nilfs_cpinfo_minor(cpi))) {
 				lscp_print_cpinfo(cpi);
 				rest--;
 			}
