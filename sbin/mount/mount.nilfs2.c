@@ -528,12 +528,6 @@ static void update_mount_state(struct nilfs_mount_info *mi,
 
 	rungc = (find_opt(mo->extra_opts, nogc_opt_fmt, NULL) < 0) && !(mo->flags & MS_RDONLY) && !(mo->flags & MS_BIND);
 
-	if (!check_mtab()) {
-		if (rungc)
-			printf(_("%s not started\n"), NILFS_CLEANERD_NAME);
-		return;
-	}
-
 	if (rungc) {
 		if (find_opt(mo->extra_opts, pp_opt_fmt, &pp) < 0)
 			pp = mi->protperiod;
@@ -544,6 +538,9 @@ static void update_mount_state(struct nilfs_mount_info *mi,
 			printf(_("%s: started %s\n"), progname,
 			       NILFS_CLEANERD_NAME);
 	}
+
+	if (!check_mtab())
+		return;
 
 	my_free(mi->optstr);
 	exopts = fix_extra_opts_string(mo->extra_opts, pid, pp);

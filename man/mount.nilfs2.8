@@ -64,10 +64,7 @@ and handling of pseudo mount options.
 .TP
 .B \-n
 Mount without writing in \fI/etc/mtab\fP.  This is necessary for
-example when \fI/etc\fP is on a read-only file system.  With this
-option, invocation of \fBnilfs_cleanerd\fP(8) is skipped.
-To add entries to mtab and invoke the garbage collector later, the
-\fB-f\fP option is available.
+example when \fI/etc\fP is on a read-only file system.
 .TP
 .B \-r
 Mount the file system read-only.  A synonym is \fB"\-o ro"\fP.
