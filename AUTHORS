@@ -51,6 +51,8 @@ Dec 21, 2011: bunch of fixes and cleanups including:
     - removal of kern_compat.h
     - and so forth.
 Jan 5, 2012: add -h command line option to mkfs.nilfs2
+Sep 1, 2014: lscp: always show snapshots, even if marked minor
+Sep 1, 2014: mount.nilfs2(libmount ver.): don't base GC startup on-mtab context
 
 * David Arendt <admin@prnet.org>
 March 29, 2010: added cleaning functions based on the number of free segments

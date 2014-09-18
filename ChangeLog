@@ -1,3 +1,9 @@
+nilfs-utils-2.2.2  Fri Sep 19, 2014 JST
+
+	* mount.nilfs2: invoke cleanerd even if no-mtab option is specified;
+	  this fixes failure of cleanerd invocation under systemd 216+.
+	* lscp: always show snapshots, even if marked minor.
+
 nilfs-utils-2.2.1  Sat Aug 23, 2014 JST
 
 	* nilfs-clean: do not override min_reclaimable_blocks if -m option
