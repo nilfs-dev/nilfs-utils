@@ -24,7 +24,6 @@
  * The following functions are extracted from util-linux-2.12r/mount.c:
  *  - print_one()
  *  - update_mtab_entry()
- *  - my_free()
  */
 
 #ifdef HAVE_CONFIG_H
@@ -172,13 +171,6 @@ static void handle_signal(int sig)
 	}
 }
 
-static inline void my_free(const void *ptr)
-{
-	/* free(NULL) is ignored; the check below is just to be sure */
-	if (ptr)
-		free((void *)ptr);
-}
-
 static int device_is_readonly(const char *device, int *ro)
 {
 	int fd, res;
@@ -255,7 +247,7 @@ static struct mntentchn *find_rw_mount(const char *device)
 			break;
 		mc = getmntdevbackward(fsname, mc);
 	}
-	my_free(fsname);
+	free(fsname);
 	return mc;
 }
 
@@ -275,8 +267,8 @@ static int mounted(const char *spec, const char *node)
 		}
 		mc = getmntdirbackward(dir, mc);
 	}
-	my_free(fsname);
-	my_free(dir);
+	free(fsname);
+	free(dir);
 	return ret;
 }
 
@@ -335,10 +327,10 @@ update_mtab_entry(const char *spec, const char *node, const char *type,
 		my_endmntent(mfp);
 		unlock_mtab();
 	}
-	my_free(mnt.mnt_fsname);
-	my_free(mnt.mnt_dir);
-	my_free(mnt.mnt_type);
-	my_free(mnt.mnt_opts);
+	free(mnt.mnt_fsname);
+	free(mnt.mnt_dir);
+	free(mnt.mnt_type);
+	free(mnt.mnt_opts);
 }
 
 enum remount_type {
@@ -349,7 +341,7 @@ enum remount_type {
 
 static int check_remount_dir(struct mntentchn *mc, const char *mntdir)
 {
-	const char *dir = canonicalize(mntdir);
+	char *dir = canonicalize(mntdir);
 	int res = 0;
 
 	if (strcmp(dir, mc->m.mnt_dir) != 0) {
@@ -357,7 +349,7 @@ static int check_remount_dir(struct mntentchn *mc, const char *mntdir)
 		      progname, mntdir);
 		res = -1;
 	}
-	my_free(dir);
+	free(dir);
 	return res;
 }
 
@@ -514,7 +506,7 @@ do_mount_one(struct nilfs_mount_info *mi, const struct mount_options *mo)
 	} else
 		printf(_("%s not restarted\n"), NILFS_CLEANERD_NAME);
  out:
-	my_free(exopts);
+	free(exopts);
 	return res;
 }
 
@@ -542,14 +534,14 @@ static void update_mount_state(struct nilfs_mount_info *mi,
 	if (!check_mtab())
 		return;
 
-	my_free(mi->optstr);
+	free(mi->optstr);
 	exopts = fix_extra_opts_string(mo->extra_opts, pid, pp);
 	mi->optstr = fix_opts_string(((mo->flags & ~MS_NOMTAB) | MS_NETDEV),
 				     exopts, NULL);
 
 	update_mtab_entry(mi->device, mi->mntdir, fstype, mi->optstr, 0, 0,
 			  !mi->mounted);
-	my_free(exopts);
+	free(exopts);
 }
 
 static int mount_one(char *device, char *mntdir,
@@ -591,7 +583,7 @@ static int mount_one(char *device, char *mntdir,
 
 	err = 0;
  failed:
-	my_free(mi.optstr);
+	free(mi.optstr);
 	return err;
 }
 
@@ -655,7 +647,7 @@ int main(int argc, char *argv[])
 	res = mount_one(device, mntdir, opts);
 	block_signals(SIG_UNBLOCK);
 
-	my_free(opts->opts);
-	my_free(opts->extra_opts);
+	free(opts->opts);
+	free(opts->extra_opts);
 	return res;
 }

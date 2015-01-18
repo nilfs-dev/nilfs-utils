@@ -341,13 +341,6 @@ static inline pid_t get_mtab_gcpid(const struct mntentchn *mc)
 	return pid;
 }
 
-static inline void my_free(const void *ptr)
-{
-	/* free(NULL) is ignored; the check below is just to be sure */
-	if (ptr)
-		free((void *)ptr);
-}
-
 static void change_mtab_opt(const char *spec, const char *node,
 			    const char *type, char *opts)
 {
@@ -364,10 +357,10 @@ static void change_mtab_opt(const char *spec, const char *node,
 	if (!nomtab)
 		update_mtab(node, &mnt);
 
-	my_free(mnt.mnt_fsname);
-	my_free(mnt.mnt_dir);
-	my_free(mnt.mnt_type);
-	my_free(mnt.mnt_opts);
+	free(mnt.mnt_fsname);
+	free(mnt.mnt_dir);
+	free(mnt.mnt_type);
+	free(mnt.mnt_opts);
 }
 
 /* Umount a single device.  Return a status code, so don't exit

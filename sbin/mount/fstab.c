@@ -124,19 +124,13 @@ fstab_head() {
 	return &fstab;
 }
 
-static void
-my_free(const void *s) {
-	if (s)
-		free((void *) s);
-}
-
-static void
-my_free_mc(struct mntentchn *mc) {
+static void my_free_mc(struct mntentchn *mc)
+{
 	if (mc) {
-		my_free(mc->m.mnt_fsname);
-		my_free(mc->m.mnt_dir);
-		my_free(mc->m.mnt_type);
-		my_free(mc->m.mnt_opts);
+		free(mc->m.mnt_fsname);
+		free(mc->m.mnt_dir);
+		free(mc->m.mnt_type);
+		free(mc->m.mnt_opts);
 		free(mc);
 	}
 }
@@ -574,7 +568,7 @@ void update_mtab(const char *dir, struct my_mntent *instead)
 			}
 		} else {
 			/* Replace option strings. (changed for nilfs2) */
-			my_free(mc->m.mnt_opts);
+			free(mc->m.mnt_opts);
 			mc->m.mnt_opts = xstrdup(instead->mnt_opts);
 		}
 	} else if (instead) {
