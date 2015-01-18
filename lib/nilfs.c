@@ -411,9 +411,9 @@ struct nilfs *nilfs_open(const char *dev, const char *dir, int flags)
 	    (NILFS_OPEN_RDONLY | NILFS_OPEN_WRONLY | NILFS_OPEN_RDWR)) {
 		if (nilfs_find_fs(nilfs, dev, dir, MNTOPT_RW) < 0) {
 			if (!(flags & NILFS_OPEN_RDONLY))
-				goto out_nilfs;
+				goto out_fd;
 			if (nilfs_find_fs(nilfs, dev, dir, MNTOPT_RO) < 0)
-				goto out_nilfs;
+				goto out_fd;
 		}
 		nilfs->n_iocfd = open(nilfs->n_ioc, O_RDONLY);
 		if (nilfs->n_iocfd < 0)
@@ -442,7 +442,6 @@ out_fd:
 	if (nilfs->n_sb != NULL)
 		free(nilfs->n_sb);
 
-out_nilfs:
 	free(nilfs);
 	return NULL;
 }
