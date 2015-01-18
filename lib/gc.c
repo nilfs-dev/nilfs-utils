@@ -508,8 +508,7 @@ static int nilfs_toss_vdescs(struct nilfs *nilfs,
 	}
 	ret = 0;
  out:
-	if (ss != NULL)
-		free(ss);
+	free(ss);
 	return ret;
 }
 

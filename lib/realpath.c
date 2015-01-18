@@ -133,8 +133,7 @@ myrealpath(const char *path, char *resolved_path, int maxreslth) {
 
 			/* Insert symlink contents into path. */
 			m = strlen(path);
-			if (buf)
-				free(buf);
+			free(buf);
 			buf = malloc(m + n + 1);
 			if (!buf) {
 				errno = ENOMEM;
@@ -153,12 +152,10 @@ myrealpath(const char *path, char *resolved_path, int maxreslth) {
 	/* Make sure it's null terminated. */
 	*npath = '\0';
 
-	if (buf)
-		free(buf);
+	free(buf);
 	return resolved_path;
 
  err:
-	if (buf)
-		free(buf);
+	free(buf);
 	return NULL;
 }

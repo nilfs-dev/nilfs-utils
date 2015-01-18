@@ -435,13 +435,10 @@ out_fd:
 		close(nilfs->n_devfd);
 	if (nilfs->n_iocfd >= 0)
 		close(nilfs->n_iocfd);
-	if (nilfs->n_dev != NULL)
-		free(nilfs->n_dev);
-	if (nilfs->n_ioc != NULL)
-		free(nilfs->n_ioc);
-	if (nilfs->n_sb != NULL)
-		free(nilfs->n_sb);
 
+	free(nilfs->n_dev);
+	free(nilfs->n_ioc);
+	free(nilfs->n_sb);
 	free(nilfs);
 	return NULL;
 }
@@ -458,12 +455,10 @@ void nilfs_close(struct nilfs *nilfs)
 		close(nilfs->n_devfd);
 	if (nilfs->n_iocfd >= 0)
 		close(nilfs->n_iocfd);
-	if (nilfs->n_dev != NULL)
-		free(nilfs->n_dev);
-	if (nilfs->n_ioc != NULL)
-		free(nilfs->n_ioc);
-	if (nilfs->n_sb != NULL)
-		free(nilfs->n_sb);
+
+	free(nilfs->n_dev);
+	free(nilfs->n_ioc);
+	free(nilfs->n_sb);
 	free(nilfs);
 }
 

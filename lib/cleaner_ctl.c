@@ -226,8 +226,7 @@ static int nilfs_cleaner_find_fs(struct nilfs_cleaner *cleaner,
 					       sizeof(canonical))) {
 					mdev = canonical;
 				}
-				if (last_match_dev)
-					free(last_match_dev);
+				free(last_match_dev);
 				last_match_dev = strdup(mdev);
 				if (!last_match_dev)
 					goto error;
@@ -238,8 +237,7 @@ static int nilfs_cleaner_find_fs(struct nilfs_cleaner *cleaner,
 					       sizeof(canonical))) {
 					mdir = canonical;
 				}
-				if (last_match_dir)
-					free(last_match_dir);
+				free(last_match_dir);
 				last_match_dir = strdup(mdir);
 				if (!last_match_dir)
 					goto error;
