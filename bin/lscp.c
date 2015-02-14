@@ -84,6 +84,12 @@ static const struct option long_option[] = {
 #define LSCP_NCPINFO	512
 #define LSCP_MINDELTA	64	/* Minimum delta for reverse direction */
 
+enum lscp_state {
+	LSCP_INIT_ST,		/* Initial state */
+	LSCP_NORMAL_ST,		/* Normal state */
+	LSCP_ACCEL_ST,		/* Accelerate state */
+	LSCP_DECEL_ST,		/* Decelerate state */
+};
 
 static __u64 param_index;
 static __u64 param_lines;
@@ -176,35 +182,107 @@ static int lscp_backward_cpinfo(struct nilfs *nilfs,
 	struct nilfs_cpinfo *cpi;
 	nilfs_cno_t sidx; /* start index (inclusive) */
 	nilfs_cno_t eidx; /* end index (exclusive) */
-	__u64 rest, delta;
+	nilfs_cno_t prev_head = 0;
+	__u64 rest, delta, v;
+	int state = LSCP_INIT_ST;
 	ssize_t n;
 
 	rest = param_lines && param_lines < cpstat->cs_ncps ? param_lines :
 		cpstat->cs_ncps;
+	if (!rest)
+		goto out;
 	eidx = param_index && param_index < cpstat->cs_cno ? param_index + 1 :
 		cpstat->cs_cno;
 
-	for ( ; rest > 0 && eidx > NILFS_CNO_MIN; eidx = sidx) {
-		delta = min_t(__u64, LSCP_NCPINFO,
-			      max_t(__u64, rest, LSCP_MINDELTA));
-		sidx = (eidx >= NILFS_CNO_MIN + delta) ? eidx - delta :
-			NILFS_CNO_MIN;
+recalc_delta:
+	delta = min_t(__u64, LSCP_NCPINFO, max_t(__u64, rest, LSCP_MINDELTA));
+	v = delta;
 
-		n = lscp_get_cpinfo(nilfs, sidx, NILFS_CHECKPOINT, eidx - sidx);
+	while (eidx > NILFS_CNO_MIN) {
+		if (eidx < NILFS_CNO_MIN + v || state == LSCP_INIT_ST)
+			sidx = NILFS_CNO_MIN;
+		else
+			sidx = eidx - v;
+
+		n = lscp_get_cpinfo(nilfs, sidx, NILFS_CHECKPOINT,
+				    state == LSCP_NORMAL_ST ? eidx - sidx : 1);
 		if (n < 0)
 			return n;
 		if (!n)
 			break;
 
-		for (cpi = cpinfos + n - 1; cpi >= cpinfos && rest > 0; cpi--) {
+		if (state == LSCP_INIT_ST) {
+			/*
+			 * This state makes succesive
+			 * nilfs_get_cpinfo() calls much faster by
+			 * setting minimum checkpoint number in nilfs
+			 * struct.
+			 */
+			if (cpinfos[0].ci_cno >= eidx)
+				goto out; /* out of range */
+			state = LSCP_NORMAL_ST;
+			continue;
+		} else if (cpinfos[0].ci_cno == prev_head) {
+			/* No younger checkpoint was found */
+
+			if (sidx == NILFS_CNO_MIN)
+				break;
+
+			/* go further back */
+			switch (state) {
+			case LSCP_NORMAL_ST:
+				state = LSCP_ACCEL_ST;
+				/* fall through */
+			case LSCP_ACCEL_ST:
+				if ((v << 1) > v)
+					v <<= 1;
+				break;
+			case LSCP_DECEL_ST:
+				state = LSCP_NORMAL_ST;
+				v = delta;
+				break;
+			}
+			eidx = sidx;
+			continue;
+		} else {
+			switch (state) {
+			case LSCP_ACCEL_ST:
+			case LSCP_DECEL_ST:
+				if (cpinfos[n - 1].ci_cno + 1 < prev_head) {
+					/* search again more slowly */
+					v >>= 1;
+					if (v <= delta) {
+						state = LSCP_NORMAL_ST;
+						v = delta;
+					} else {
+						state = LSCP_DECEL_ST;
+					}
+					continue;
+				}
+				break;
+			default:
+				break;
+			}
+		}
+
+		state = LSCP_NORMAL_ST;
+		cpi = &cpinfos[n - 1];
+		do {
 			if (cpi->ci_cno < eidx &&
 			    (show_all || nilfs_cpinfo_snapshot(cpi) ||
 			     !nilfs_cpinfo_minor(cpi))) {
 				lscp_print_cpinfo(cpi);
 				rest--;
+				if (rest == 0)
+					goto out;
 			}
-		}
+		} while (--cpi >= cpinfos);
+
+		prev_head = cpinfos[0].ci_cno;
+		eidx = sidx;
+		goto recalc_delta;
 	}
+out:
 	return 0;
 }
 
