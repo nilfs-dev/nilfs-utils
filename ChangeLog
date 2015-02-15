@@ -1,3 +1,10 @@
+nilfs-utils-2.2.3  Sun Feb 15, 2015 JST
+
+	* lscp: accelerate backward checkpoint listing
+	* lib/nilfs.c: fix potential leak at nilfs_open()
+	* get rid of unnecessary null checks before calling free()
+	* get rid of my_free() wrapper function
+
 nilfs-utils-2.2.2  Fri Sep 19, 2014 JST
 
 	* mount.nilfs2: invoke cleanerd even if no-mtab option is specified;
