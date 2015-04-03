@@ -381,6 +381,7 @@ struct nilfs *nilfs_open(const char *dev, const char *dir, int flags)
 	nilfs->n_iocfd = -1;
 	nilfs->n_dev = NULL;
 	nilfs->n_ioc = NULL;
+	nilfs->n_opts = 0;
 	nilfs->n_mincno = NILFS_CNO_MIN;
 	memset(nilfs->n_sems, 0, sizeof(nilfs->n_sems));
 
