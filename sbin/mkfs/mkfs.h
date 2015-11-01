@@ -19,8 +19,8 @@
  * along with NILFS; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  *
- * Written by Hisashi Hifumi <hifumi@osrg.net>,
- *            Amagai Yoshiji <amagai@osrg.net>.
+ * Written by Hisashi Hifumi,
+ *            Amagai Yoshiji.
  * Revised by Ryusuke Konishi <konishi.ryusuke@lab.ntt.co.jp>.
  */
 

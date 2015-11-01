@@ -19,7 +19,7 @@
  * along with NILFS; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  *
- * Written by Koji Sato <koji@osrg.net>.
+ * Written by Koji Sato.
  *
  * Maintained by Ryusuke Konishi <konishi.ryusuke@lab.ntt.co.jp> from 2008.
  */
