@@ -1,6 +1,6 @@
-PRIMARY AUTHORS AND MAJOR CONTRIBUTORS TO NILFS-UTILS:
-The primary authors work at Cyberspace Labs at NTT Corporation.
+PRIMARY AUTHORS AND MAJOR CONTRIBUTORS TO NILFS-UTILS
 
+Authors who worked or are working at labs of NTT Corporation:
 * Ryusuke Konishi <konishi.ryusuke@lab.ntt.co.jp>
 - Primary maintainer (02/2008-Present)
 - Implemented mkfs.nilfs2, mount.nilfs2
