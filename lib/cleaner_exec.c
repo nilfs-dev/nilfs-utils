@@ -182,13 +182,15 @@ int nilfs_launch_cleanerd(const char *device, const char *mntdir,
 			nilfs_cleaner_logger(
 				LOG_ERR,
 				_("Error: failed to drop setgid privileges"));
-			exit(1);
+			nilfs_cleaner_flush();
+			_exit(1);
 		}
 		if (setuid(getuid()) < 0) {
 			nilfs_cleaner_logger(
 				LOG_ERR,
 				_("Error: failed to drop setuid privileges"));
-			exit(1);
+			nilfs_cleaner_flush();
+			_exit(1);
 		}
 		dargs[i++] = cleanerd;
 		if (protperiod != ULONG_MAX) {
@@ -211,12 +213,13 @@ int nilfs_launch_cleanerd(const char *device, const char *mntdir,
 			nilfs_cleaner_logger(
 				LOG_ERR,
 				_("Error: failed to duplicate pipe: %m"));
-			exit(1);
+			nilfs_cleaner_flush();
+			_exit(1);
 		}
 		close(pipes[1]);
 
 		execv(cleanerd, (char **)dargs);
-		exit(1);   /* reach only if failed */
+		_exit(1);   /* reach only if failed */
 	} else if (ret > 0) {
 		/* parent */
 		close(pipes[1]);
