@@ -1,3 +1,14 @@
+nilfs-utils-2.2.4  Wed Apr 27, 2016 JST
+
+	* lib/nilfs.c: add missing initialization of nilfs->n_opts
+	* lib/cleaner_exec.c: use _exit() to safely terminate child processes
+	* update checkpatch.pl and misspelled words dictionary (spelling.txt)
+	* lib/Makefile.am: do not set -fPIC and -static manually
+	* lib/Makefile.am: use AM_CFLAGS and AM_CPPFLAGS for simplicity
+	* lib/crc32.c: make crc32tab array static const
+	* remove obsolete email addresses
+	* AUTHORS: update header line of author list
+
 nilfs-utils-2.2.3  Sun Feb 15, 2015 JST
 
 	* lscp: accelerate backward checkpoint listing
