@@ -275,6 +275,7 @@ static int del_loop(const char *device)
 	fd = open(device, O_RDONLY);
 	if (fd < 0) {
 		int errsv = errno;
+
 		error(_("loop: can't delete device %s: %s\n"),
 		      device, strerror(errsv));
 		return 1;

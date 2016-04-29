@@ -375,6 +375,7 @@ static unsigned count_sufile_blocks(void)
 {
 	unsigned long sufile_segment_usages_per_block
 		= blocksize / sizeof(struct nilfs_segment_usage);
+
 	return DIV_ROUND_UP(nr_initial_segments +
 			   NILFS_SUFILE_FIRST_SEGMENT_USAGE_OFFSET,
 			   sufile_segment_usages_per_block);
@@ -385,6 +386,7 @@ static unsigned count_cpfile_blocks(void)
 	const unsigned nr_initial_checkpoints = 1;
 	unsigned long cpfile_checkpoints_per_block
 		= blocksize / sizeof(struct nilfs_checkpoint);
+
 	return DIV_ROUND_UP(nr_initial_checkpoints +
 			   NILFS_CPFILE_FIRST_CHECKPOINT_OFFSET
 			   - 1 /* checkpoint number begins from 1 */,

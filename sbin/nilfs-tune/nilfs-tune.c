@@ -125,6 +125,7 @@ static void parse_options(int argc, char *argv[],
 		struct nilfs_tune_options *opts)
 {
 	int c;
+
 	opts->flags = O_RDONLY;
 	opts->display = 0;
 	opts->mask = 0;

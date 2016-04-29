@@ -437,6 +437,7 @@ int find_opt(const char *opts, const char *token, void *varp)
 		}
 	} else {
 		int cmplen = strlen(token) + 1;
+
 		while (opt) {
 			if (!strncmp(opt, token, cmplen)) {
 				res = opt - opts2;

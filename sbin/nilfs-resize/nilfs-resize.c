@@ -968,6 +968,7 @@ static int nilfs_extend_online(struct nilfs *nilfs, const char *device,
 
 	if (nilfs_resize(nilfs, newsize) < 0) {
 		int err = errno;
+
 		nilfs_print_resize_error(err, 0);
 		goto out_unlock;
 	}

@@ -87,6 +87,7 @@ static void dumpseg_print_block_super(struct nilfs_block *blk)
 		       (unsigned long long)blk->b_blocknr);
 	} else {
 		struct nilfs_binfo_dat *bid = blk->b_binfo;
+
 		printf("        blkoff = %llu, level = %d, blocknr = %llu\n",
 		       (unsigned long long)le64_to_cpu(bid->bi_blkoff),
 		       bid->bi_level,

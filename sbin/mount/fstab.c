@@ -163,6 +163,7 @@ read_mntentchn(mntFILE *mfp, const char *fnam, struct mntentchn *mc0) {
 	mc0->prev = mc;
 	if (ferror(mfp->mntent_fp)) {
 		int errsv = errno;
+
 		error(_("warning: error reading %s: %s"),
 		      fnam, strerror(errsv));
 		mc0->nxt = mc0->prev = NULL;
@@ -188,6 +189,7 @@ read_mounttable() {
 	mfp = my_setmntent(fnam, "r");
 	if (mfp == NULL || mfp->mntent_fp == NULL) {
 		int errsv = errno;
+
 		fnam = _PATH_PROC_MOUNTS;
 		mfp = my_setmntent(fnam, "r");
 		if (mfp == NULL || mfp->mntent_fp == NULL) {
@@ -216,6 +218,7 @@ read_fstab() {
 	mfp = my_setmntent(fnam, "r");
 	if (mfp == NULL || mfp->mntent_fp == NULL) {
 		int errsv = errno;
+
 		error(_("warning: can't open %s: %s"),
 		      _PATH_MNTTAB, strerror(errsv));
 		return;
@@ -420,6 +423,7 @@ void lock_mtab(void)
 	i = open(linktargetfile, O_WRONLY|O_CREAT, S_IRUSR|S_IWUSR);
 	if (i < 0) {
 		int errsv = errno;
+
 		/* linktargetfile does not exist (as a file)
 		   and we cannot create it. Read-only filesystem?
 		   Too many files open in the system?
@@ -460,6 +464,7 @@ void lock_mtab(void)
 		if (lockfile_fd < 0) {
 			/* Strange... Maybe the file was just deleted? */
 			int errsv = errno;
+
 			gettimeofday(&now, NULL);
 			if (errno == ENOENT && now.tv_sec < maxtime.tv_sec) {
 				we_created_lockfile = 0;
@@ -481,6 +486,7 @@ void lock_mtab(void)
 			if (fcntl(lockfile_fd, F_SETLK, &flock) == -1) {
 				if (verbose) {
 				    int errsv = errno;
+
 				    printf(_("Can't lock lock file %s: %s\n"),
 					   _PATH_MOUNTED_LOCK, strerror(errsv));
 				}
@@ -494,6 +500,7 @@ void lock_mtab(void)
 				alarm(maxtime.tv_sec - now.tv_sec);
 				if (fcntl(lockfile_fd, F_SETLKW, &flock) == -1) {
 					int errsv = errno;
+
 					(void) unlink(linktargetfile);
 					die(EX_FILEIO,
 					    _("can't lock lock file %s: %s"),
@@ -547,6 +554,7 @@ void update_mtab(const char *dir, struct my_mntent *instead)
 	mfp = my_setmntent(fnam, "r");
 	if (mfp == NULL || mfp->mntent_fp == NULL) {
 		int errsv = errno;
+
 		error(_("cannot open %s (%s) - mtab not updated"),
 		      fnam, strerror(errsv));
 		goto leave;
@@ -596,6 +604,7 @@ void update_mtab(const char *dir, struct my_mntent *instead)
 	mftmp = my_setmntent(_PATH_MOUNTED_TMP, "w");
 	if (mftmp == NULL || mftmp->mntent_fp == NULL) {
 		int errsv = errno;
+
 		error(_("cannot open %s (%s) - mtab not updated"),
 		      _PATH_MOUNTED_TMP, strerror(errsv));
 		discard_mntentchn(mc0);
@@ -605,6 +614,7 @@ void update_mtab(const char *dir, struct my_mntent *instead)
 	for (mc = mc0->nxt; mc && mc != mc0; mc = mc->nxt) {
 		if (my_addmntent(mftmp, &(mc->m)) == 1) {
 			int errsv = errno;
+
 			die(EX_FILEIO, _("error writing %s: %s"),
 			    _PATH_MOUNTED_TMP, strerror(errsv));
 		}
@@ -623,6 +633,7 @@ void update_mtab(const char *dir, struct my_mntent *instead)
 
 	if (fchmod(fd, S_IRUSR|S_IWUSR|S_IRGRP|S_IROTH) < 0) {
 		int errsv = errno;
+
 		fprintf(stderr, _("error changing mode of %s: %s\n"),
 			_PATH_MOUNTED_TMP, strerror(errsv));
 		goto leave;
@@ -636,6 +647,7 @@ void update_mtab(const char *dir, struct my_mntent *instead)
 	if (stat(_PATH_MOUNTED, &sbuf) == 0) {
 		if (fchown(fd, sbuf.st_uid, sbuf.st_gid) < 0) {
 			int errsv = errno;
+
 			fprintf(stderr, _("error changing owner of %s: %s\n"),
 				_PATH_MOUNTED_TMP, strerror(errsv));
 			goto leave;
@@ -647,6 +659,7 @@ void update_mtab(const char *dir, struct my_mntent *instead)
 	/* rename mtemp to mtab */
 	if (rename(_PATH_MOUNTED_TMP, _PATH_MOUNTED) < 0) {
 		int errsv = errno;
+
 		fprintf(stderr, _("can't rename %s to %s: %s\n"),
 			_PATH_MOUNTED_TMP, _PATH_MOUNTED, strerror(errsv));
 	}
