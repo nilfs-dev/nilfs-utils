@@ -237,12 +237,11 @@ int nilfs_launch_cleanerd(const char *device, const char *mntdir,
 		 * already started.
 		 */
 		return 0;
-	} else {
-		nilfs_cleaner_logger(
-			LOG_ERR, _("Error: could not fork: %m"));
-		close(pipes[0]);
-		close(pipes[1]);
 	}
+
+	nilfs_cleaner_logger(LOG_ERR, _("Error: could not fork: %m"));
+	close(pipes[0]);
+	close(pipes[1]);
 	return -1;
 }
 

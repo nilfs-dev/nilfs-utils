@@ -860,13 +860,11 @@ int nilfs_put_segment(struct nilfs *nilfs, void *segment)
 			(1UL << (le32_to_cpu(nilfs->n_sb->s_log_block_size) +
 				 NILFS_SB_BLOCK_SIZE_SHIFT));
 		return munmap(segment, segsize);
-	} else {
-#endif	/* HAVE_MUNMAP */
-		free(segment);
-		return 0;
-#ifdef HAVE_MUNMAP
 	}
 #endif	/* HAVE_MUNMAP */
+
+	free(segment);
+	return 0;
 }
 
 __u64 nilfs_get_segment_seqnum(const struct nilfs *nilfs, void *segment,
