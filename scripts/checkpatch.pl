@@ -350,12 +350,12 @@ our $typeTypedefs = qr{(?x:
 )};
 
 our $logFunctions = qr{(?x:
-	printk(?:_ratelimited|_once|)|
-	(?:[a-z0-9]+_){1,2}(?:printk|emerg|alert|crit|err|warning|warn|notice|info|debug|dbg|vdbg|devel|cont|WARN)(?:_ratelimited|_once|)|
-	WARN(?:_RATELIMIT|_ONCE|)|
-	panic|
-	MODULE_[A-Z_]+|
-	seq_vprintf|seq_printf|seq_puts
+	v?(?:f|s|sn|)printf|
+	(?:[a-z0-9]+_){1,2}(?:printf|logger)|
+	v?syslog|
+	perror|
+	v?(?:err|warn)x?|
+	die|error|perr|pinfo|myprintf|
 )};
 
 our $signature_tags = qr{(?xi:
