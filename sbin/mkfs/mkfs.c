@@ -814,7 +814,6 @@ abort_format:
 		blkid_free_probe(pr);
 	close(fd);
 	perr("Abort format of device %s", device);
-	return;
 }
 #endif /* HAVE_LIBBLKID */
 
