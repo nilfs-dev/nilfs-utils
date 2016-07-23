@@ -2459,8 +2459,8 @@ sub process {
 #line length limit
 		if ($line =~ /^\+/ && $prevrawline !~ /\/\*\*/ &&
 		    $rawline !~ /^.\s*\*\s*\@$Ident\s/ &&
-		    !($line =~ /^\+\s*$logFunctions\s*\(\s*(?:(KERN_\S+\s*|[^"]*))?"[X\t]*"\s*(?:|,|\)\s*;)\s*$/ ||
-		    $line =~ /^\+\s*"[^"]*"\s*(?:\s*|,|\)\s*;)\s*$/) &&
+		    !($line =~ /^\+\s*$logFunctions\s*\(\s*(?:(KERN_\S+\s*|[^"]*))?(?:_\(\s*)?"[X\t]*"(?:\s*\))?\s*(?:|,|\)\s*;)\s*$/ ||
+		    $line =~ /^\+\s*(?:_\(\s*)?"[^"]*"(?:\s*\))?\s*(?:\s*|,|\)\s*;)\s*$/) &&
 		    $length > $max_line_length)
 		{
 			WARN("LONG_LINE",
