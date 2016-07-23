@@ -221,18 +221,20 @@ static void nilfs_cleanerd_set_log_priority(struct nilfs_cleanerd *cleanerd)
 static int nilfs_cleanerd_config(struct nilfs_cleanerd *cleanerd,
 				 const char *conffile)
 {
-	if (nilfs_cldconfig_read(&cleanerd->config,
-				 conffile ? : cleanerd->conffile,
+	struct nilfs_cldconfig *config = &cleanerd->config;
+
+	if (nilfs_cldconfig_read(config, conffile ? : cleanerd->conffile,
 				 cleanerd->nilfs) < 0)
 		return -1;
+
 #ifdef HAVE_MMAP
-	if (cleanerd->config.cf_use_mmap)
+	if (config->cf_use_mmap)
 		nilfs_opt_set_mmap(cleanerd->nilfs);
 	else
 		nilfs_opt_clear_mmap(cleanerd->nilfs);
 #endif	/* HAVE_MMAP */
 
-	if (cleanerd->config.cf_use_set_suinfo)
+	if (config->cf_use_set_suinfo)
 		nilfs_opt_set_set_suinfo(cleanerd->nilfs);
 	else
 		nilfs_opt_clear_set_suinfo(cleanerd->nilfs);
@@ -242,8 +244,8 @@ static int nilfs_cleanerd_config(struct nilfs_cleanerd *cleanerd,
 	if (protection_period != ULONG_MAX) {
 		syslog(LOG_INFO, "override protection period to %lu",
 		       protection_period);
-		cleanerd->config.cf_protection_period.tv_sec = protection_period;
-		cleanerd->config.cf_protection_period.tv_usec = 0;
+		config->cf_protection_period.tv_sec = protection_period;
+		config->cf_protection_period.tv_usec = 0;
 	}
 	return 0;
 }
@@ -853,7 +855,8 @@ static int nilfs_cleanerd_recalc_interval(struct nilfs_cleanerd *cleanerd,
 
 			pt = *(nilfs_cleanerd_protection_period(cleanerd));
 		} else {
-			pt.tv_sec = (oldest > prottime ? oldest - prottime : 0) + 1;
+			pt.tv_sec = oldest > prottime ?
+				oldest - prottime + 1 : 1;
 			pt.tv_usec = 0;
 		}
 		if (timercmp(&pt,

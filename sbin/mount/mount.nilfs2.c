@@ -520,7 +520,8 @@ static void update_mount_state(struct nilfs_mount_info *mi,
 	char *exopts;
 	int rungc;
 
-	rungc = (find_opt(mo->extra_opts, nogc_opt_fmt, NULL) < 0) && !(mo->flags & MS_RDONLY) && !(mo->flags & MS_BIND);
+	rungc = find_opt(mo->extra_opts, nogc_opt_fmt, NULL) < 0 &&
+		!(mo->flags & MS_RDONLY) && !(mo->flags & MS_BIND);
 
 	if (rungc) {
 		if (find_opt(mo->extra_opts, pp_opt_fmt, &pp) < 0)

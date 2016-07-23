@@ -67,14 +67,16 @@ static const struct option long_option[] = {
 
 static void dumpseg_print_block(struct nilfs_block *blk)
 {
+	__le64 *binfo = blk->b_binfo;
+
 	if (nilfs_block_is_data(blk)) {
 		printf("        vblocknr = %llu, blkoff = %llu, blocknr = %llu\n",
-		       (unsigned long long)le64_to_cpu(*(__le64 *)blk->b_binfo),
-		       (unsigned long long)le64_to_cpu(*((__le64 *)blk->b_binfo + 1)),
+		       (unsigned long long)le64_to_cpu(binfo[0]),
+		       (unsigned long long)le64_to_cpu(binfo[1]),
 		       (unsigned long long)blk->b_blocknr);
 	} else {
 		printf("        vblocknr = %llu, blocknr = %llu\n",
-		       (unsigned long long)le64_to_cpu(*(__le64 *)blk->b_binfo),
+		       (unsigned long long)le64_to_cpu(binfo[0]),
 		       (unsigned long long)blk->b_blocknr);
 	}
 }
@@ -82,8 +84,10 @@ static void dumpseg_print_block(struct nilfs_block *blk)
 static void dumpseg_print_block_super(struct nilfs_block *blk)
 {
 	if (nilfs_block_is_data(blk)) {
+		__le64 *binfo = blk->b_binfo;
+
 		printf("        blkoff = %llu, blocknr = %llu\n",
-		       (unsigned long long)le64_to_cpu(*(__le64 *)blk->b_binfo),
+		       (unsigned long long)le64_to_cpu(binfo[0]),
 		       (unsigned long long)blk->b_blocknr);
 	} else {
 		struct nilfs_binfo_dat *bid = blk->b_binfo;

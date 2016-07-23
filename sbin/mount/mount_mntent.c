@@ -90,11 +90,13 @@ unmangle(char *s) {
 	ss = skip_nonspaces(s);
 	ret = sp = xmalloc(ss-s+1);
 	while (s != ss) {
-		if (*s == '\\' && isoctal(s[1]) && isoctal(s[2]) && isoctal(s[3])) {
+		if (*s == '\\' && isoctal(s[1]) && isoctal(s[2]) &&
+		    isoctal(s[3])) {
 			*sp++ = 64*(s[1] & 7) + 8*(s[2] & 7) + (s[3] & 7);
 			s += 4;
-		} else
+		} else {
 			*sp++ = *s++;
+		}
 	}
 	*sp = 0;
 	return ret;

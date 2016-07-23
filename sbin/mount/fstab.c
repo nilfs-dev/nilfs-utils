@@ -487,15 +487,21 @@ void lock_mtab(void)
 					       _PATH_MOUNTED_LOCK,
 					       strerror(errsv));
 				}
-				/* proceed, since it was us who created the lockfile anyway */
+				/*
+				 * proceed, since it was us who created
+				 * the lockfile anyway
+				 */
 			}
 			(void) unlink(linktargetfile);
 		} else {
 			/* Someone else made the link. Wait. */
 			gettimeofday(&now, NULL);
 			if (now.tv_sec < maxtime.tv_sec) {
+				int ret;
+
 				alarm(maxtime.tv_sec - now.tv_sec);
-				if (fcntl(lockfile_fd, F_SETLKW, &flock) == -1) {
+				ret = fcntl(lockfile_fd, F_SETLKW, &flock);
+				if (ret == -1) {
 					int errsv = errno;
 
 					(void) unlink(linktargetfile);

@@ -48,70 +48,188 @@ extern char *progname;
 
 /* Map from -o and fstab option strings to the flag argument to mount(2).  */
 struct opt_map {
-	const char *opt;		/* option name */
-	int  skip;			/* skip in mtab option string */
-	int  inv;			/* true if flag value should be inverted */
-	int  mask;			/* flag mask value */
+	const char *opt;	/* option name */
+	int  skip;		/* skip in mtab option string */
+	int  inv;		/* true if flag value should be inverted */
+	int  mask;		/* flag mask value */
 };
 
 static const struct opt_map opt_map[] = {
-	{ "defaults",	0, 0, 0		},	/* default options */
-	{ "ro",	1, 0, MS_RDONLY	},	/* read-only */
-	{ "rw",	1, 1, MS_RDONLY	},	/* read-write */
-	{ "exec",	0, 1, MS_NOEXEC	},	/* permit execution of binaries */
-	{ "noexec",	0, 0, MS_NOEXEC	},	/* don't execute binaries */
-	{ "suid",	0, 1, MS_NOSUID	},	/* honor suid executables */
-	{ "nosuid",	0, 0, MS_NOSUID	},	/* don't honor suid executables */
-	{ "dev",	0, 1, MS_NODEV	},	/* interpret device files  */
-	{ "nodev",	0, 0, MS_NODEV	},	/* don't interpret devices */
-	{ "sync",	0, 0, MS_SYNCHRONOUS},	/* synchronous I/O */
-	{ "async",	0, 1, MS_SYNCHRONOUS},	/* asynchronous I/O */
-	{ "dirsync",	0, 0, MS_DIRSYNC},	/* synchronous directory modifications */
-	{ "remount",  0, 0, MS_REMOUNT},      /* Alter flags of mounted FS */
-	{ "bind",	0, 0, MS_BIND   },	/* Remount part of tree elsewhere */
-	{ "rbind",	0, 0, MS_BIND|MS_REC }, /* Idem, plus mounted subtrees */
-	{ "auto",	0, 1, MS_NOAUTO	},	/* Can be mounted using -a */
-	{ "noauto",	0, 0, MS_NOAUTO	},	/* Can  only be mounted explicitly */
-	{ "users",	0, 0, MS_USERS	},	/* Allow ordinary user to mount */
-	{ "nousers",	0, 1, MS_USERS	},	/* Forbid ordinary user to mount */
-	{ "user",	0, 0, MS_USER	},	/* Allow ordinary user to mount */
-	{ "nouser",	0, 1, MS_USER	},	/* Forbid ordinary user to mount */
-	{ "owner",	0, 0, MS_OWNER  },	/* Let the owner of the device mount */
-	{ "noowner",	0, 1, MS_OWNER  },	/* Device owner has no special privs */
-	{ "group",	0, 0, MS_GROUP  },	/* Let the group of the device mount */
-	{ "nogroup",	0, 1, MS_GROUP  },	/* Device group has no special privs */
-	{ "_netdev",	0, 0, MS_COMMENT},	/* Device requires network */
-	{ "comment",	0, 0, MS_COMMENT},	/* fstab comment only (kudzu,_netdev)*/
+	{
+		"defaults",	0, 0, 0
+		/* default options */
+	},
+	{
+		"ro",		1, 0, MS_RDONLY
+		/* read-only */
+	},
+	{
+		"rw",		1, 1, MS_RDONLY
+		/* read-write */
+	},
+	{
+		"exec",		0, 1, MS_NOEXEC
+		/* permit execution of binaries */
+	},
+	{
+		"noexec",	0, 0, MS_NOEXEC
+		/* don't execute binaries */
+	},
+	{
+		"suid",		0, 1, MS_NOSUID
+		/* honor suid executables */
+	},
+	{
+		"nosuid",	0, 0, MS_NOSUID
+		/* don't honor suid executables */
+	},
+	{
+		"dev",		0, 1, MS_NODEV
+		/* interpret device files */
+	},
+	{
+		"nodev",	0, 0, MS_NODEV
+		/* don't interpret devices */
+	},
+	{
+		"sync",		0, 0, MS_SYNCHRONOUS
+		/* synchronous I/O */
+	},
+	{
+		"async",	0, 1, MS_SYNCHRONOUS
+		/* asynchronous I/O */
+	},
+	{
+		"dirsync",	0, 0, MS_DIRSYNC
+		/* synchronous directory modifications */
+	},
+	{
+		"remount",	0, 0, MS_REMOUNT
+		/* Alter flags of mounted FS */
+	},
+	{
+		"bind",		0, 0, MS_BIND
+		/* Remount part of tree elsewhere */
+	},
+	{
+		"rbind",	0, 0, MS_BIND|MS_REC
+		/* Idem, plus mounted subtrees */
+	},
+	{
+		"auto",		0, 1, MS_NOAUTO
+		/* Can be mounted using -a */
+	},
+	{
+		"noauto",	0, 0, MS_NOAUTO
+		/* Can only be mounted explicitly */
+	},
+	{
+		"users",	0, 0, MS_USERS
+		/* Allow ordinary user to mount */
+	},
+	{
+		"nousers",	0, 1, MS_USERS
+		/* Forbid ordinary user to mount */
+	},
+	{
+		"user",		0, 0, MS_USER
+		/* Allow ordinary user to mount */
+	},
+	{
+		"nouser",	0, 1, MS_USER
+		/* Forbid ordinary user to mount */
+	},
+	{
+		"owner",	0, 0, MS_OWNER
+		/* Let the owner of the device mount */
+	},
+	{
+		"noowner",	0, 1, MS_OWNER
+		/* Device owner has no special privs */
+	},
+	{
+		"group",	0, 0, MS_GROUP
+		/* Let the group of the device mount */
+	},
+	{
+		"nogroup",	0, 1, MS_GROUP
+		/* Device group has no special privs */
+	},
+	{
+		"_netdev",	0, 0, MS_COMMENT
+		/* Device requires network */
+	},
+	{
+		"comment",	0, 0, MS_COMMENT
+		/* fstab comment only (kudzu, _netdev) */
+	},
 
 	/* add new options here */
 #ifdef MS_NOSUB
-	{ "sub",	0, 1, MS_NOSUB	},	/* allow submounts */
-	{ "nosub",	0, 0, MS_NOSUB	},	/* don't allow submounts */
+	{
+		"sub",		0, 1, MS_NOSUB
+		/* allow submounts */
+	},
+	{
+		"nosub",	0, 0, MS_NOSUB
+		/* don't allow submounts */
+	},
 #endif
 #ifdef MS_SILENT
-	{ "quiet",	0, 0, MS_SILENT    },	/* be quiet  */
-	{ "loud",	0, 1, MS_SILENT    },	/* print out messages. */
+	{
+		"quiet",	0, 0, MS_SILENT
+		/* be quiet  */
+	},
+	{
+		"loud",		0, 1, MS_SILENT
+		/* print out messages. */
+	},
 #endif
 #ifdef MS_MANDLOCK
-	{ "mand",	0, 0, MS_MANDLOCK },	/* Allow mandatory locks on this FS */
-	{ "nomand",	0, 1, MS_MANDLOCK },	/* Forbid mandatory locks on this FS */
+	{
+		"mand",		0, 0, MS_MANDLOCK
+		/* Allow mandatory locks on this FS */
+	},
+	{
+		"nomand",	0, 1, MS_MANDLOCK
+		/* Forbid mandatory locks on this FS */
+	},
 #endif
-	{ "loop",	1, 0, MS_LOOP	},	/* use a loop device */
+	{
+		"loop",		1, 0, MS_LOOP
+		/* use a loop device */
+	},
 #ifdef MS_NOATIME
-	{ "atime",	0, 1, MS_NOATIME },	/* Update access time */
-	{ "noatime",	0, 0, MS_NOATIME },	/* Do not update access time */
+	{
+		"atime",	0, 1, MS_NOATIME
+		/* Update access time */
+	},
+	{
+		"noatime",	0, 0, MS_NOATIME
+		/* Do not update access time */
+	},
 #endif
 #ifdef MS_NODIRATIME
-	{ "diratime",	0, 1, MS_NODIRATIME },	/* Update dir access times */
-	{ "nodiratime", 0, 0, MS_NODIRATIME },	/* Do not update dir access times */
+	{
+		"diratime",	0, 1, MS_NODIRATIME
+		/* Update dir access times */
+	},
+	{
+		"nodiratime",	0, 0, MS_NODIRATIME
+		/* Do not update dir access times */
+	},
 #endif
 #ifdef MS_RELATIME
-	{ "relatime", 0, 0, MS_RELATIME },   /* Update access times relative
-						to mtime/ctime */
-	{ "norelatime", 0, 1, MS_RELATIME }, /* Update access time without
-						regard to mtime/ctime */
+	{
+		"relatime",	0, 0, MS_RELATIME
+		/* Update access times relative to mtime/ctime */
+	},
+	{
+		"norelatime",	0, 1, MS_RELATIME
+		/* Update access time without regard to mtime/ctime */
+	},
 #endif
-	{ NULL,	0, 0, 0		}
+	{ NULL,	0, 0, 0	}
 };
 
 static const char *opt_loopdev, *opt_vfstype, *opt_offset, *opt_encryption,
@@ -327,13 +445,13 @@ void parse_opts(const char *options, int *flags, char **extra_opts)
 
 		for (p = opts, opt = NULL; p && *p; p++) {
 			if (!opt)
-				opt = p;		/* begin of the option item */
+				opt = p;	/* begin of the option item */
 			if (*p == '"')
-				open_quote ^= 1;	/* reverse the status */
+				open_quote ^= 1;/* reverse the status */
 			if (open_quote)
-				continue;		/* still in quoted block */
+				continue;	/* still in quoted block */
 			if (*p == ',')
-				*p = '\0';		/* terminate the option item */
+				*p = '\0';	/* terminate the option item */
 			/* end of option item or last item */
 			if (*p == '\0' || *(p + 1) == '\0') {
 				if (!parse_string_opt(opt))
@@ -383,7 +501,8 @@ char *fix_opts_string(int flags, const char *extra_opts, const char *user)
 }
 
 /*
- * Following part was appended by Ryusuke Konishi <konishi.ryusuke@lab.ntt.co.jp>
+ * Following part was appended by
+ * Ryusuke Konishi <konishi.ryusuke@lab.ntt.co.jp>.
  */
 static char *strchrnulq(char *s, int c, int qc)
 {
