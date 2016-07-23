@@ -59,6 +59,7 @@
 #include <errno.h>
 #include <assert.h>
 #include "nilfs.h"
+#include "util.h"
 #include "cldconfig.h"
 
 
@@ -561,10 +562,6 @@ nilfs_cldconfig_log_priority_table[] = {
 	{"debug",	LOG_DEBUG},
 };
 
-#define NILFS_CLDCONFIG_NLOGPRIORITIES			\
-	(sizeof(nilfs_cldconfig_log_priority_table) /	\
-	 sizeof(nilfs_cldconfig_log_priority_table[0]))
-
 static int
 nilfs_cldconfig_handle_log_priority(struct nilfs_cldconfig *config,
 				    char **tokens, size_t ntoks,
@@ -574,7 +571,8 @@ nilfs_cldconfig_handle_log_priority(struct nilfs_cldconfig *config,
 	int i;
 
 	clp = nilfs_cldconfig_log_priority_table;
-	for (i = 0; i < NILFS_CLDCONFIG_NLOGPRIORITIES; i++, clp++) {
+	for (i = 0; i < ARRAY_SIZE(nilfs_cldconfig_log_priority_table);
+	     i++, clp++) {
 		if (strcmp(tokens[1], clp->cl_name) == 0) {
 			config->cf_log_priority = clp->cl_priority;
 			return 0;
@@ -649,10 +647,6 @@ nilfs_cldconfig_keyword_table[] = {
 	},
 };
 
-#define NILFS_CLDCONFIG_NKEYWORDS			\
-	(sizeof(nilfs_cldconfig_keyword_table) /	\
-	 sizeof(nilfs_cldconfig_keyword_table[0]))
-
 static int nilfs_cldconfig_handle_keyword(struct nilfs_cldconfig *config,
 					  char **tokens, size_t ntoks,
 					  struct nilfs *nilfs)
@@ -664,7 +658,7 @@ static int nilfs_cldconfig_handle_keyword(struct nilfs_cldconfig *config,
 		return 0;
 
 	kw = nilfs_cldconfig_keyword_table;
-	for (i = 0; i < NILFS_CLDCONFIG_NKEYWORDS; i++, kw++) {
+	for (i = 0; i < ARRAY_SIZE(nilfs_cldconfig_keyword_table); i++, kw++) {
 		if (strcmp(tokens[0], kw->ck_text) == 0) {
 			if (check_tokens(tokens, ntoks, kw->ck_minargs,
 					 kw->ck_maxargs) < 0)
