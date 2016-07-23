@@ -481,10 +481,11 @@ void lock_mtab(void)
 			/* We made the link. Now claim the lock. */
 			if (fcntl(lockfile_fd, F_SETLK, &flock) == -1) {
 				if (verbose) {
-				    int errsv = errno;
+					int errsv = errno;
 
-				    printf(_("Can't lock lock file %s: %s\n"),
-					   _PATH_MOUNTED_LOCK, strerror(errsv));
+					printf(_("Can't lock lock file %s: %s\n"),
+					       _PATH_MOUNTED_LOCK,
+					       strerror(errsv));
 				}
 				/* proceed, since it was us who created the lockfile anyway */
 			}

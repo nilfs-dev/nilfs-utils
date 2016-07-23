@@ -162,7 +162,7 @@ char *append_opt(char *s, const char *opt, const char *val)
 		return s;
 	if (!s) {
 		if (!val)
-		       return xstrdup(opt);		/* opt */
+			return xstrdup(opt);		/* opt */
 
 		return xstrconcat3(NULL, opt, val);	/* opt=val */
 	}
