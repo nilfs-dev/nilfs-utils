@@ -99,8 +99,7 @@ static const struct lssu_format lssu_format[] = {
 		"%20llu  %s  %c%c%c  %10u\n"
 	},
 	{
-		"           SEGNUM        DATE     TIME STAT     NBLOCKS" \
-		"       NLIVEBLOCKS",
+		"           SEGNUM        DATE     TIME STAT     NBLOCKS       NLIVEBLOCKS",
 		"%17llu  %s %c%c%c%c  %10u %10u (%3u%%)\n"
 	}
 };
@@ -286,8 +285,7 @@ static int lssu_get_protcno(struct nilfs *nilfs,
 	ret = nilfs_cnoconv_time2cno(cnoconv, *prottimep, protcnop);
 	if (ret < 0) {
 		fprintf(stderr,
-			"%s: cannot convert protection time to checkpoint "
-			"number: %m\n",
+			"%s: cannot convert protection time to checkpoint number: %m\n",
 			progname);
 	}
 

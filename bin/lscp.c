@@ -95,8 +95,7 @@ static int show_all;
 
 static void lscp_print_header(void)
 {
-	printf("                 CNO        DATE     TIME  MODE  FLG     %s" \
-	       "       ICNT\n",
+	printf("                 CNO        DATE     TIME  MODE  FLG     %s       ICNT\n",
 	       show_block_count ? " BLKCNT" : "NBLKINC");
 }
 

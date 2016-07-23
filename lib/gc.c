@@ -357,13 +357,10 @@ static ssize_t nilfs_get_snapshot(struct nilfs *nilfs, nilfs_cno_t **ssp)
 		for (j = 0; j < n; j++) {
 			ss[i + j] = cpinfo[j].ci_cno;
 			if (prev >= ss[i + j]) {
-				nilfs_gc_logger
-					(LOG_ERR,
-					 "broken snapshot information. "
-					 "snapshot numbers appeared in a "
-					 "non-ascending order: %llu >= %llu",
-					 (unsigned long long)prev,
-					 (unsigned long long)ss[i + j]);
+				nilfs_gc_logger(LOG_ERR,
+						"broken snapshot information. snapshot numbers appeared in a non-ascending order: %llu >= %llu",
+						(unsigned long long)prev,
+						(unsigned long long)ss[i + j]);
 				free(ss);
 				errno = EIO;
 				return -1;

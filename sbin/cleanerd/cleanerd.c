@@ -1390,8 +1390,7 @@ static int nilfs_cleanerd_clean_segments(struct nilfs_cleanerd *cleanerd,
 				     &params.protcno);
 	if (ret < 0) {
 		syslog(LOG_ERR,
-		       "cannot convert protection time to checkpoint " \
-		       "number: %m");
+		       "cannot convert protection time to checkpoint number: %m");
 		goto out;
 	}
 

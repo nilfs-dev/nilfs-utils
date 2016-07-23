@@ -251,8 +251,7 @@ static int nilfs_cleaner_find_fs(struct nilfs_cleaner *cleaner,
 	}
 	if (nfound == 0) {
 		nilfs_cleaner_logger(LOG_ERR,
-				     _("Error: no valid nilfs mountpoint " \
-				       "found."));
+				     _("Error: no valid nilfs mountpoint found."));
 		goto abort;
 	}
 	if (last_match_dir)
@@ -302,8 +301,7 @@ static int nilfs_cleaner_open_queue(struct nilfs_cleaner *cleaner)
 				 &attr);
 	if (cleaner->recvq < 0) {
 		nilfs_cleaner_logger(LOG_ERR,
-				     _("Error: cannot create receive queue: " \
-				       "%s."),
+				     _("Error: cannot create receive queue: %s."),
 				     strerror(errno));
 		free(cleaner->recvq_name);
 		goto abort;

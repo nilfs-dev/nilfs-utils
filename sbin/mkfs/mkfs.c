@@ -507,8 +507,8 @@ static void init_disk_layout(struct nilfs_disk_info *di, int fd,
 	if (di->nsegments < min_nsegments)
 		perr("Error: too small device.\n"
 		     "       device size=%llu bytes, required size=%llu bytes.\n"
-		     "       Please enlarge the device, "
-		     "or shorten segments with -B option.", dev_size,
+		     "       Please enlarge the device, or shorten segments with -B option.",
+		     dev_size,
 		     (unsigned long long)segment_size * min_nsegments);
 	di->nseginfo = 0;
 }
@@ -721,8 +721,7 @@ static void check_mount(int fd, const char *device)
 		if (strncmp(strtok(line, " "), device, strlen(device)) == 0) {
 			fclose(fp);
 			close(fd);
-			perr("Error: %s is currently mounted. " \
-			     "You cannot make a filesystem on this device.",
+			perr("Error: %s is currently mounted. You cannot make a filesystem on this device.",
 			     device);
 		}
 	}
@@ -763,18 +762,16 @@ static void check_safety_of_device_overwrite(int fd, const char *device)
 
 			if (!blkid_probe_lookup_value(pr, "TYPE",
 							&type, NULL)) {
-				pinfo("WARNING: Device %s appears to contain" \
-				      " an existing %s superblock.",
+				pinfo("WARNING: Device %s appears to contain an existing %s superblock.",
 				      device, type);
 			} else if (!blkid_probe_lookup_value(pr, "PTTYPE",
 								&type, NULL)) {
-				pinfo("WARNING: Device %s appears to contain" \
-				      " an partition table (%s).",
+				pinfo("WARNING: Device %s appears to contain an partition table (%s).",
 				      device, type);
 			} else {
 				if (quiet == 0) {
-					pinfo("Device %s appears to contain" \
-					      " something weird.", device);
+					pinfo("Device %s appears to contain something weird.",
+					      device);
 				}
 				goto end_check;
 			}
@@ -851,8 +848,8 @@ static void init_disk_buffer(long max_blocks)
 static void *map_disk_buffer(blocknr_t blocknr, int clear_flag)
 {
 	if (blocknr >= disk_buffer_size)
-		perr("Internal error: illegal disk buffer access " \
-		     "(blocknr=%llu)", blocknr);
+		perr("Internal error: illegal disk buffer access (blocknr=%llu)",
+		     blocknr);
 
 	if (!disk_buffer[blocknr]) {
 		if (posix_memalign(&disk_buffer[blocknr], blocksize,
@@ -937,8 +934,7 @@ static int erase_disk(int fd, struct nilfs_disk_info *di)
 		ret = nilfs_mkfs_discard_range(fd, start, end - start);
 		if (!ret && nilfs_mkfs_discard_zeroes_data(fd)) {
 			if (verbose)
-				pinfo("Discard succeeded and will return 0s " \
-				      " - skip wiping");
+				pinfo("Discard succeeded and will return 0s  - skip wiping");
 			goto out;
 		}
 	}
@@ -1158,10 +1154,9 @@ static void parse_options(int argc, char *argv[])
 static void usage(void)
 {
 	fprintf(stderr,
-		"Usage: %s [-b block-size] [-B blocks-per-segment] [-c] " \
-		"[-f]\n" \
-		"       [-L volume-label] [-m reserved-segments-percentage]\n" \
-		"       [-O feature[,...]]\n" \
+		"Usage: %s [-b block-size] [-B blocks-per-segment] [-c] [-f]\n"
+		"       [-L volume-label] [-m reserved-segments-percentage]\n"
+		"       [-O feature[,...]]\n"
 		"       [-hnqvKV] device\n",
 		progname);
 }

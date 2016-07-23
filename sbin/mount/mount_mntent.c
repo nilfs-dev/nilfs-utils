@@ -179,8 +179,7 @@ struct my_mntent *my_getmntent(mntFILE *mfp)
 			/* long line - assume file was corrupted */
 			if (feof(mfp->mntent_fp)) {
 				fprintf(stderr,
-					_("[mntent]: warning: no final " \
-					"newline at the end of %s\n"),
+					_("[mntent]: warning: no final newline at the end of %s\n"),
 					mfp->mntent_file);
 				s = index(buf, 0);
 			} else {
