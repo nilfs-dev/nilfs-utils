@@ -69,7 +69,7 @@ if we have a stack or plain mount - mount atop of it, forming a stack. */
 #endif
 #ifndef MS_RELATIME
 #define MS_RELATIME	0x200000 /* 200000: Update access times relative
-                                    to mtime/ctime */
+				    to mtime/ctime */
 #endif
 /*
  * Magic mount flag number. Had to be or-ed to the flag values.
