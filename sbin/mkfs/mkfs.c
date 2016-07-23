@@ -373,8 +373,8 @@ static unsigned count_ifile_blocks(void)
 
 static unsigned count_sufile_blocks(void)
 {
-	unsigned long sufile_segment_usages_per_block
-		= blocksize / sizeof(struct nilfs_segment_usage);
+	unsigned long sufile_segment_usages_per_block =
+		blocksize / sizeof(struct nilfs_segment_usage);
 
 	return DIV_ROUND_UP(nr_initial_segments +
 			   NILFS_SUFILE_FIRST_SEGMENT_USAGE_OFFSET,
@@ -384,8 +384,8 @@ static unsigned count_sufile_blocks(void)
 static unsigned count_cpfile_blocks(void)
 {
 	const unsigned nr_initial_checkpoints = 1;
-	unsigned long cpfile_checkpoints_per_block
-		= blocksize / sizeof(struct nilfs_checkpoint);
+	unsigned long cpfile_checkpoints_per_block =
+		blocksize / sizeof(struct nilfs_checkpoint);
 
 	return DIV_ROUND_UP(nr_initial_checkpoints +
 			   NILFS_CPFILE_FIRST_CHECKPOINT_OFFSET
@@ -1366,8 +1366,8 @@ static void update_blocknr(struct nilfs_file_info *fi,
 static void prepare_blockgrouped_file(blocknr_t blocknr)
 {
 	struct nilfs_palloc_group_desc *desc;
-	const unsigned group_descs_per_block
-		= blocksize / sizeof(struct nilfs_palloc_group_desc);
+	const unsigned group_descs_per_block =
+		blocksize / sizeof(struct nilfs_palloc_group_desc);
 	int i;
 
 	for (i = 0, desc = map_disk_buffer(blocknr, 1);
@@ -1394,8 +1394,8 @@ static void prepare_ifile(void)
 {
 	struct nilfs_file_info *fi = nilfs.files[NILFS_IFILE_INO];
 	struct nilfs_inode *raw_inode;
-	const unsigned entries_per_block
-		= blocksize / sizeof(struct nilfs_inode);
+	const unsigned entries_per_block =
+		blocksize / sizeof(struct nilfs_inode);
 	blocknr_t entry_block;
 	blocknr_t blocknr = fi->start;
 	int i;
@@ -1432,8 +1432,8 @@ static void reserve_ifile_inode(ino_t ino)
 static void prepare_cpfile(void)
 {
 	struct nilfs_file_info *fi = nilfs.files[NILFS_CPFILE_INO];
-	const unsigned entries_per_block
-		= blocksize / sizeof(struct nilfs_checkpoint);
+	const unsigned entries_per_block =
+		blocksize / sizeof(struct nilfs_checkpoint);
 	blocknr_t blocknr = fi->start;
 	blocknr_t entry_block = blocknr;
 	struct nilfs_cpfile_header *header;
@@ -1491,8 +1491,8 @@ static void commit_cpfile(void)
 static void prepare_sufile(void)
 {
 	struct nilfs_file_info *fi = nilfs.files[NILFS_SUFILE_INO];
-	const unsigned entries_per_block
-		= blocksize / sizeof(struct nilfs_segment_usage);
+	const unsigned entries_per_block =
+		blocksize / sizeof(struct nilfs_segment_usage);
 	blocknr_t blocknr = fi->start;
 	blocknr_t entry_block = blocknr;
 	struct nilfs_sufile_header *header;
@@ -1530,8 +1530,8 @@ static void prepare_sufile(void)
 static void commit_sufile(void)
 {
 	struct nilfs_file_info *fi = nilfs.files[NILFS_SUFILE_INO];
-	const unsigned entries_per_block
-		= blocksize / sizeof(struct nilfs_segment_usage);
+	const unsigned entries_per_block =
+		blocksize / sizeof(struct nilfs_segment_usage);
 	struct nilfs_segment_usage *su;
 	unsigned segnum = fi->start / nilfs.diskinfo->blocks_per_segment;
 	blocknr_t blocknr = fi->start +
@@ -1549,8 +1549,8 @@ static void prepare_dat(void)
 {
 	struct nilfs_file_info *fi = nilfs.files[NILFS_DAT_INO];
 	struct nilfs_dat_entry *entry;
-	const unsigned entries_per_block
-		= blocksize / sizeof(struct nilfs_dat_entry);
+	const unsigned entries_per_block =
+		blocksize / sizeof(struct nilfs_dat_entry);
 	blocknr_t entry_block;
 	int i, vblocknr = 0;
 	blocknr_t blocknr = fi->start;
@@ -1576,8 +1576,8 @@ static void prepare_dat(void)
 static blocknr_t assign_vblocknr(blocknr_t blocknr)
 {
 	struct nilfs_file_info *fi = nilfs.files[NILFS_DAT_INO];
-	const unsigned entries_per_block
-		= blocksize / sizeof(struct nilfs_dat_entry);
+	const unsigned entries_per_block =
+		blocksize / sizeof(struct nilfs_dat_entry);
 	struct nilfs_dat_entry *entry;
 	blocknr_t vblocknr = nilfs.vblocknr++;
 	blocknr_t entry_block = fi->start + group_desc_blocks_per_group
