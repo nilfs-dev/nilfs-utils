@@ -230,7 +230,7 @@ static void parse_options(int argc, char *argv[], struct mount_options *opts)
 
 	if (show_version_only) {
 		show_version();
-		exit(0);
+		exit(EXIT_SUCCESS);
 	}
 
 	parse_opts(opts->opts, &opts->flags, &opts->extra_opts);

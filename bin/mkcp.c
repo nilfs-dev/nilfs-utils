@@ -97,21 +97,21 @@ int main(int argc, char *argv[])
 			break;
 		case 'h':
 			fprintf(stderr, MKCP_USAGE, progname);
-			exit(0);
+			exit(EXIT_SUCCESS);
 		case 'V':
 			printf("%s (%s %s)\n", progname, PACKAGE,
 			       PACKAGE_VERSION);
-			exit(0);
+			exit(EXIT_SUCCESS);
 		default:
 			fprintf(stderr, "%s: invalid option -- %c\n",
 				progname, optopt);
-			exit(1);
+			exit(EXIT_FAILURE);
 		}
 	}
 
 	if (optind < argc - 1) {
 		fprintf(stderr, "%s: too many arguments\n", progname);
-		exit(1);
+		exit(EXIT_FAILURE);
 	} else if (optind > argc - 1)
 		dev = NULL;
 	else
@@ -121,13 +121,13 @@ int main(int argc, char *argv[])
 	if (nilfs == NULL) {
 		fprintf(stderr, "%s: cannot open NILFS on %s: %m\n",
 			progname, dev ? : "device");
-		exit(1);
+		exit(EXIT_FAILURE);
 	}
 
-	status = 0;
+	status = EXIT_SUCCESS;
 	if (nilfs_sync(nilfs, &cno) < 0) {
 		fprintf(stderr, "%s: %s\n", progname, strerror(errno));
-		status = 1;
+		status = EXIT_FAILURE;
 		goto out;
 	}
 
@@ -137,23 +137,23 @@ int main(int argc, char *argv[])
 	if (sigprocmask(SIG_BLOCK, &sigset, &oldset) < 0) {
 		fprintf(stderr, "%s: cannot block signals: %s\n",
 			progname, strerror(errno));
-		status = 1;
+		status = EXIT_FAILURE;
 		goto out;
 	}
 
 	if (ss) {
 		if (nilfs_lock_cleaner(nilfs) < 0) {
 			fprintf(stderr, "%s: %s\n", progname, strerror(errno));
-			status = 1;
+			status = EXIT_FAILURE;
 			goto out_unblock_signal;
 		}
 		if (nilfs_change_cpmode(nilfs, cno, NILFS_SNAPSHOT) < 0) {
 			fprintf(stderr, "%s: %s\n", progname, strerror(errno));
-			status = 1;
+			status = EXIT_FAILURE;
 		}
 		if (nilfs_unlock_cleaner(nilfs) < 0) {
 			fprintf(stderr, "%s: %s\n", progname, strerror(errno));
-			status = 1;
+			status = EXIT_FAILURE;
 		}
 	}
 

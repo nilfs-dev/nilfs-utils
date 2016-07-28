@@ -96,21 +96,21 @@ int main(int argc, char *argv[])
 		switch (c) {
 		case 'h':
 			fprintf(stderr, CHCP_USAGE, progname);
-			exit(0);
+			exit(EXIT_SUCCESS);
 		case 'V':
 			printf("%s (%s %s)\n", progname, PACKAGE,
 			       PACKAGE_VERSION);
-			exit(0);
+			exit(EXIT_SUCCESS);
 		default:
 			fprintf(stderr, "%s: invalid option -- %c\n",
 				progname, optopt);
-			exit(1);
+			exit(EXIT_FAILURE);
 		}
 	}
 
 	if (optind > argc - 2) {
 		fprintf(stderr, "%s: too few arguments\n", progname);
-		exit(1);
+		exit(EXIT_FAILURE);
 	} else if (optind == argc - 2) {
 		modestr = argv[optind++];
 		dev = NULL;
@@ -130,17 +130,17 @@ int main(int argc, char *argv[])
 	else {
 		fprintf(stderr, "%s: %s: invalid checkpoint mode\n",
 			progname, modestr);
-		exit(1);
+		exit(EXIT_FAILURE);
 	}
 
 	nilfs = nilfs_open(dev, NULL, NILFS_OPEN_RDWR | NILFS_OPEN_GCLK);
 	if (nilfs == NULL) {
 		fprintf(stderr, "%s: cannot open NILFS on %s: %m\n",
 			progname, dev ? : "device");
-		exit(1);
+		exit(EXIT_FAILURE);
 	}
 
-	status = 0;
+	status = EXIT_SUCCESS;
 
 	sigemptyset(&sigset);
 	sigaddset(&sigset, SIGINT);
@@ -148,13 +148,13 @@ int main(int argc, char *argv[])
 	if (sigprocmask(SIG_BLOCK, &sigset, &oldset) < 0) {
 		fprintf(stderr, "%s: cannot block signals: %s\n",
 			progname, strerror(errno));
-		status = 1;
+		status = EXIT_FAILURE;
 		goto out;
 	}
 
 	if (nilfs_lock_cleaner(nilfs) < 0) {
 		fprintf(stderr, "%s: cannot lock NILFS\n", progname);
-		status = 1;
+		status = EXIT_FAILURE;
 		goto out_unblock_signal;
 	}
 
@@ -164,13 +164,13 @@ int main(int argc, char *argv[])
 		if (sigpending(&waitset) < 0) {
 			fprintf(stderr, "%s: cannot test signals: %s\n",
 				progname, strerror(errno));
-			status = 1;
+			status = EXIT_FAILURE;
 			break;
 		}
 		if (sigismember(&waitset, SIGINT) ||
 		    sigismember(&waitset, SIGTERM)) {
 			fprintf(stderr,	"%s: interrupted\n", progname);
-			status = 1;
+			status = EXIT_FAILURE;
 			break;
 		}
 
@@ -178,12 +178,12 @@ int main(int argc, char *argv[])
 		if (cno >= NILFS_CNO_MAX || *endptr != '\0') {
 			fprintf(stderr, "%s: %s: invalid checkpoint number\n",
 				progname, argv[optind]);
-			status = 1;
+			status = EXIT_FAILURE;
 			continue;
 		} else if ((cno == ULONG_MAX) && (errno == ERANGE)) {
 			fprintf(stderr, "%s: %s: %s\n",
 				progname, argv[optind],	strerror(errno));
-			status = 1;
+			status = EXIT_FAILURE;
 			continue;
 		}
 
@@ -194,7 +194,7 @@ int main(int argc, char *argv[])
 			else
 				fprintf(stderr, "%s: %s\n",
 					progname, strerror(errno));
-			status = 1;
+			status = EXIT_FAILURE;
 			continue;
 		}
 	}

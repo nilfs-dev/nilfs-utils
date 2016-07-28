@@ -702,7 +702,7 @@ static int daemonize(int nochdir, int noclose)
 		return -1;
 	else if (pid != 0)
 		/* parent */
-		_exit(0);
+		_exit(EXIT_SUCCESS);
 
 	/* child */
 	if (setsid() < 0)
@@ -716,7 +716,7 @@ static int daemonize(int nochdir, int noclose)
 		return -1;
 	else if (pid != 0)
 		/* parent */
-		_exit(0);
+		_exit(EXIT_SUCCESS);
 
 	if (!nochdir && (chdir(ROOTDIR) < 0))
 		return -1;
@@ -1604,7 +1604,7 @@ int main(int argc, char *argv[])
 			break;
 		case 'h':
 			nilfs_cleanerd_usage(progname);
-			exit(0);
+			exit(EXIT_SUCCESS);
 		case 'n':
 			/* ignore nofork option, do nothing */
 			break;
@@ -1614,20 +1614,20 @@ int main(int argc, char *argv[])
 				fprintf(stderr,
 					"%s: invalid protection period: %s\n",
 					progname, optarg);
-				exit(1);
+				exit(EXIT_FAILURE);
 			} else if (protection_period == ULONG_MAX &&
 				   errno == ERANGE) {
 				fprintf(stderr, "%s: too large period: %s\n",
 					progname, optarg);
-				exit(1);
+				exit(EXIT_FAILURE);
 			}
 			break;
 		case 'V':
 			nilfs_cleanerd_version(progname);
-			exit(0);
+			exit(EXIT_SUCCESS);
 		default:
 			nilfs_cleanerd_usage(progname);
-			exit(1);
+			exit(EXIT_FAILURE);
 		}
 	}
 
@@ -1641,7 +1641,7 @@ int main(int argc, char *argv[])
 		dev = strdup(canonical);
 		if (!dev) {
 			fprintf(stderr, "%s: %s\n", progname, strerror(ENOMEM));
-			exit(1);
+			exit(EXIT_FAILURE);
 		}
 	}
 
@@ -1649,18 +1649,18 @@ int main(int argc, char *argv[])
 		dir = strdup(canonical);
 		if (!dir) {
 			fprintf(stderr, "%s: %s\n", progname, strerror(ENOMEM));
-			exit(1);
+			exit(EXIT_FAILURE);
 		}
 	}
 
 	if (daemonize(0, 0) < 0) {
 		fprintf(stderr, "%s: %s\n", progname, strerror(errno));
-		exit(1);
+		exit(EXIT_FAILURE);
 	}
 
 	if (oom_adjust() < 0) {
 		fprintf(stderr, "adjusting the OOM killer failed: %m\n");
-		exit(1);
+		exit(EXIT_FAILURE);
 	}
 
 	openlog(progname, LOG_PID, LOG_DAEMON);

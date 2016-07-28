@@ -162,21 +162,21 @@ int main(int argc, char *argv[])
 			break;
 		case 'h':
 			fprintf(stderr, RMCP_USAGE, progname);
-			exit(0);
+			exit(EXIT_SUCCESS);
 		case 'V':
 			printf("%s (%s %s)\n", progname, PACKAGE,
 			       PACKAGE_VERSION);
-			exit(0);
+			exit(EXIT_SUCCESS);
 		default:
 			fprintf(stderr, "%s: invalid option -- %c\n",
 				progname, optopt);
-			exit(1);
+			exit(EXIT_FAILURE);
 		}
 	}
 
 	if (optind > argc - 1) {
 		fprintf(stderr, "%s: too few arguments\n", progname);
-		exit(1);
+		exit(EXIT_FAILURE);
 	} else if (optind == argc - 1) {
 		dev = NULL;
 	} else {
@@ -191,7 +191,7 @@ int main(int argc, char *argv[])
 	if (nilfs == NULL) {
 		fprintf(stderr, "%s: cannot open NILFS on %s: %m\n",
 			progname, dev ? : "device");
-		exit(1);
+		exit(EXIT_FAILURE);
 	}
 
 	if (nilfs_get_cpstat(nilfs, &cpstat) < 0) {
@@ -201,7 +201,7 @@ int main(int argc, char *argv[])
 		goto out_close_nilfs;
 	}
 
-	status = 0;
+	status = EXIT_SUCCESS;
 	nsnapshots = 0;
 	for ( ; optind < argc; optind++) {
 		if (nilfs_parse_cno_range(argv[optind], &start, &end,
@@ -210,7 +210,7 @@ int main(int argc, char *argv[])
 			fprintf(stderr,
 				"%s: invalid checkpoint range: %s\n",
 				progname, argv[optind]);
-			status = 1;
+			status = EXIT_FAILURE;
 			continue;
 		}
 		if (interactive && !rmcp_confirm(argv[optind]))
@@ -226,7 +226,7 @@ int main(int argc, char *argv[])
 			if (start > end) {
 				if (force)
 					continue;
-				status = 1;
+				status = EXIT_FAILURE;
 				goto warn_on_invalid_checkpoint;
 			}
 		}
@@ -236,7 +236,7 @@ int main(int argc, char *argv[])
 		if (!ret)
 			continue;
 
-		status = 1;
+		status = EXIT_FAILURE;
 		if (ret < 0) {
 			fprintf(stderr, "Remaining checkpoints were not removed.\n");
 			break;

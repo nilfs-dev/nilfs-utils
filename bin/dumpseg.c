@@ -194,21 +194,21 @@ int main(int argc, char *argv[])
 		switch (c) {
 		case 'h':
 			fprintf(stderr, DUMPSEG_USAGE, progname);
-			exit(0);
+			exit(EXIT_SUCCESS);
 		case 'V':
 			printf("%s (%s %s)\n", progname, PACKAGE,
 			       PACKAGE_VERSION);
-			exit(0);
+			exit(EXIT_SUCCESS);
 		default:
 			fprintf(stderr, "%s: invalid option -- %c\n",
 				progname, optopt);
-			exit(1);
+			exit(EXIT_FAILURE);
 		}
 	}
 
 	if (optind > argc - 1) {
 		fprintf(stderr, "%s: too few arguments\n", progname);
-		exit(1);
+		exit(EXIT_FAILURE);
 	} else {
 		strtoull(argv[optind], &endptr, DUMPSEG_BASE);
 		if (*endptr == '\0')
@@ -221,31 +221,31 @@ int main(int argc, char *argv[])
 	if (nilfs == NULL) {
 		fprintf(stderr, "%s: cannot open NILFS on %s: %m\n",
 			progname, dev ? : "device");
-		exit(1);
+		exit(EXIT_FAILURE);
 	}
 
 	if (nilfs_opt_set_mmap(nilfs) < 0)
 		fprintf(stderr, "%s: cannot use mmap\n", progname);
 
-	status = 0;
+	status = EXIT_SUCCESS;
 	for (i = optind; i < argc; i++) {
 		segnum = strtoull(argv[i], &endptr, DUMPSEG_BASE);
 		if (*endptr != '\0') {
 			fprintf(stderr, "%s: %s: invalid segment number\n",
 				progname, argv[i]);
-			status = 1;
+			status = EXIT_FAILURE;
 			continue;
 		}
 		segsize = nilfs_get_segment(nilfs, segnum, &seg);
 		if (segsize < 0) {
 			fprintf(stderr, "%s: %s\n", progname, strerror(errno));
-			status = 1;
+			status = EXIT_FAILURE;
 			goto out;
 		}
 		dumpseg_print_segment(nilfs, segnum, seg, segsize);
 		if (nilfs_put_segment(nilfs, seg) < 0) {
 			fprintf(stderr, "%s: %s\n", progname, strerror(errno));
-			status = 1;
+			status = EXIT_FAILURE;
 			goto out;
 		}
 	}

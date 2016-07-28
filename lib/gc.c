@@ -798,7 +798,7 @@ out_lock:
 	if (nilfs_unlock_cleaner(nilfs) < 0) {
 		nilfs_gc_logger(LOG_CRIT, "failed to unlock cleaner: %s",
 				strerror(errno));
-		exit(1);
+		exit(EXIT_FAILURE);
 	}
 
 out_sig:

@@ -234,7 +234,7 @@ static int lssu_list_suinfo(struct nilfs *nilfs)
 
 	lssu_print_header();
 	if (nilfs_get_sustat(nilfs, &sustat) < 0)
-		return 1;
+		return EXIT_FAILURE;
 	segnum = param_index;
 	rest = param_lines && param_lines < sustat.ss_nsegs ? param_lines :
 		sustat.ss_nsegs;
@@ -243,7 +243,7 @@ static int lssu_list_suinfo(struct nilfs *nilfs)
 		count = min_t(__u64, rest, LSSU_NSEGS);
 		nsi = nilfs_get_suinfo(nilfs, segnum, suinfos, count);
 		if (nsi < 0)
-			return 1;
+			return EXIT_FAILURE;
 
 		n = lssu_print_suinfo(nilfs, segnum, nsi, sustat.ss_prot_seq);
 		if (n < 0)
@@ -251,7 +251,7 @@ static int lssu_list_suinfo(struct nilfs *nilfs)
 		segnum += nsi;
 	}
 
-	return 0;
+	return EXIT_SUCCESS;
 }
 
 static int lssu_get_protcno(struct nilfs *nilfs,
@@ -336,7 +336,7 @@ int main(int argc, char *argv[])
 			break;
 		case 'h':
 			fprintf(stderr, LSSU_USAGE, progname);
-			exit(0);
+			exit(EXIT_SUCCESS);
 		case 'p':
 			ret = nilfs_parse_protection_period(
 				optarg, &protection_period);
@@ -351,15 +351,15 @@ int main(int argc, char *argv[])
 					"invalid protection period: %s\n",
 					optarg);
 			}
-			exit(1);
+			exit(EXIT_FAILURE);
 		case 'V':
 			printf("%s (%s %s)\n", progname, PACKAGE,
 			       PACKAGE_VERSION);
-			exit(0);
+			exit(EXIT_SUCCESS);
 		default:
 			fprintf(stderr, "%s: invalid option -- %c\n",
 				progname, optopt);
-			exit(1);
+			exit(EXIT_FAILURE);
 		}
 	}
 
@@ -369,7 +369,7 @@ int main(int argc, char *argv[])
 		dev = argv[optind++];
 	} else {
 		fprintf(stderr, "%s: too many arguments\n", progname);
-		exit(1);
+		exit(EXIT_FAILURE);
 	}
 
 	open_flags = NILFS_OPEN_RDONLY;
@@ -380,7 +380,7 @@ int main(int argc, char *argv[])
 	if (nilfs == NULL) {
 		fprintf(stderr, "%s: cannot open NILFS on %s: %m\n",
 			progname, dev ? : "device");
-		exit(1);
+		exit(EXIT_FAILURE);
 	}
 
 	if (latest) {

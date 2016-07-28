@@ -467,7 +467,7 @@ int main(int argc, char *argv[])
 
 	if (optind < argc - 1) {
 		fprintf(stderr, "%s: too many arguments\n", progname);
-		exit(1);
+		exit(EXIT_FAILURE);
 	} else if (optind == argc - 1) {
 		dev = argv[optind++];
 	} else {

@@ -178,7 +178,7 @@ static void parse_options(int argc, char *argv[], struct umount_options *opts)
 
 	if (show_version_only) {
 		show_version();
-		exit(0);
+		exit(EXIT_SUCCESS);
 	}
 }
 

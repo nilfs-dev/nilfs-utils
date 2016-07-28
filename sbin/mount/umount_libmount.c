@@ -166,7 +166,7 @@ static void nilfs_umount_parse_options(int argc, char *argv[],
 
 	if (show_version_only) {
 		show_version();
-		exit(0);
+		exit(EXIT_SUCCESS);
 	}
 }
 
