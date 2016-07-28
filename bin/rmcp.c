@@ -197,7 +197,8 @@ int main(int argc, char *argv[])
 	if (nilfs_get_cpstat(nilfs, &cpstat) < 0) {
 		fprintf(stderr, "%s: %s: cannot get checkpoint status: %s\n",
 			progname, dev, strerror(errno));
-		exit(1);
+		status = EXIT_FAILURE;
+		goto out_close_nilfs;
 	}
 
 	status = 0;
@@ -253,6 +254,7 @@ int main(int argc, char *argv[])
 	if (!force && nsnapshots)
 		fprintf(stderr, CHCP_PROMPT);
 
+out_close_nilfs:
 	nilfs_close(nilfs);
 	exit(status);
 }
