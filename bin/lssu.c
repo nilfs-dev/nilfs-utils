@@ -207,7 +207,7 @@ static ssize_t lssu_print_suinfo(struct nilfs *nilfs, __u64 segnum,
 				fprintf(stderr,
 					"%s: failed to get usage: %s\n",
 					progname, strerror(errno));
-				exit(1);
+				return -1;
 			}
 
 skip_scan:
@@ -246,6 +246,8 @@ static int lssu_list_suinfo(struct nilfs *nilfs)
 			return 1;
 
 		n = lssu_print_suinfo(nilfs, segnum, nsi, sustat.ss_prot_seq);
+		if (n < 0)
+			return EXIT_FAILURE;
 		segnum += nsi;
 	}
 
@@ -386,12 +388,15 @@ int main(int argc, char *argv[])
 		disp_mode = LSSU_MODE_LATEST_USAGE;
 		ret = lssu_get_protcno(nilfs, protection_period, &prottime,
 				       &protcno);
-		if (ret < 0)
-			exit(1);
+		if (ret < 0) {
+			status = EXIT_FAILURE;
+			goto out_close_nilfs;
+		}
 	}
 
 	status = lssu_list_suinfo(nilfs);
 
+out_close_nilfs:
 	nilfs_close(nilfs);
 	exit(status);
 }
