@@ -676,7 +676,7 @@ static int oom_adjust(void)
 	if (fd < 0) {
 		fprintf(stderr, "can't adjust oom-killer's pardon %s, %m\n",
 			path);
-		return errno;
+		return -1;
 	}
 
 	err = write(fd, score, strlen(score));
@@ -684,7 +684,7 @@ static int oom_adjust(void)
 		fprintf(stderr, "can't adjust oom-killer's pardon %s, %m\n",
 			path);
 		close(fd);
-		return errno;
+		return -1;
 	}
 	close(fd);
 	return 0;
