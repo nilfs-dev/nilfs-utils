@@ -674,15 +674,15 @@ static int oom_adjust(void)
 
 	fd = open(path, O_WRONLY);
 	if (fd < 0) {
-		fprintf(stderr, "can't adjust oom-killer's pardon %s, %m\n",
-			path);
+		syslog(LOG_WARNING,
+		       "can't adjust oom-killer's pardon %s: %m", path);
 		return -1;
 	}
 
 	err = write(fd, score, strlen(score));
 	if (err < 0) {
-		fprintf(stderr, "can't adjust oom-killer's pardon %s, %m\n",
-			path);
+		syslog(LOG_WARNING,
+		       "can't adjust oom-killer's pardon %s: %m", path);
 		close(fd);
 		return -1;
 	}
@@ -1658,13 +1658,12 @@ int main(int argc, char *argv[])
 		exit(EXIT_FAILURE);
 	}
 
-	if (oom_adjust() < 0) {
-		fprintf(stderr, "adjusting the OOM killer failed: %m\n");
-		exit(EXIT_FAILURE);
-	}
-
 	openlog(progname, LOG_PID, LOG_DAEMON);
 	syslog(LOG_INFO, "start");
+
+	if (oom_adjust() < 0)
+		syslog(LOG_WARNING,
+		       "adjusting the OOM killer failed: %m");
 
 	nilfs_cleanerd = nilfs_cleanerd_create(dev, dir, conffile);
 	if (nilfs_cleanerd == NULL) {
