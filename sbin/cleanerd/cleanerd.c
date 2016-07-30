@@ -1586,7 +1586,7 @@ int main(int argc, char *argv[])
 	progname = (strrchr(argv[0], '/') != NULL) ?
 		strrchr(argv[0], '/') + 1 : argv[0];
 	conffile = NILFS_CLEANERD_CONFFILE;
-	status = 0;
+	status = EXIT_SUCCESS;
 	protection_period = ULONG_MAX;
 	dev = NULL;
 	dir = NULL;
@@ -1669,13 +1669,13 @@ int main(int argc, char *argv[])
 	nilfs_cleanerd = nilfs_cleanerd_create(dev, dir, conffile);
 	if (nilfs_cleanerd == NULL) {
 		syslog(LOG_ERR, "cannot create cleanerd on %s: %m", dev);
-		status = 1;
+		status = EXIT_FAILURE;
 		goto out;
 	}
 
 	if (!sigsetjmp(nilfs_cleanerd_env, 1)) {
 		if (nilfs_cleanerd_clean_loop(nilfs_cleanerd) < 0)
-			status = 1;
+			status = EXIT_FAILURE;
 	}
 
 	nilfs_cleanerd_destroy(nilfs_cleanerd);
