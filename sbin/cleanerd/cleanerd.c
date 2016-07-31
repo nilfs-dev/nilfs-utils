@@ -33,6 +33,10 @@
 #include <unistd.h>
 #endif	/* HAVE_UNISTD_H */
 
+#if HAVE_ERR_H
+#include <err.h>
+#endif	/* HAVE_ERR_H */
+
 #if HAVE_STRING_H
 #include <string.h>
 #endif	/* HAVE_STRING_H */
@@ -1619,15 +1623,12 @@ int main(int argc, char *argv[])
 		case 'p':
 			protection_period = strtoul(optarg, &endptr, 10);
 			if (endptr == optarg || *endptr != '\0') {
-				fprintf(stderr,
-					"%s: invalid protection period: %s\n",
-					progname, optarg);
-				exit(EXIT_FAILURE);
+				errx(EXIT_FAILURE,
+				     "invalid protection period: %s", optarg);
 			} else if (protection_period == ULONG_MAX &&
 				   errno == ERANGE) {
-				fprintf(stderr, "%s: too large period: %s\n",
-					progname, optarg);
-				exit(EXIT_FAILURE);
+				errx(EXIT_FAILURE, "too large period: %s",
+				     optarg);
 			}
 			break;
 		case 'V':
@@ -1643,12 +1644,9 @@ int main(int argc, char *argv[])
 		const char *path = argv[optind++];
 
 		dev = get_canonical_path(path);
-		if (path && !dev) {
-			fprintf(stderr,
-				"%s: failed to canonicalize device path %s: %m\n",
-				progname, path);
-			exit(EXIT_FAILURE);
-		}
+		if (path && !dev)
+			err(EXIT_FAILURE,
+			    "failed to canonicalize device path %s", path);
 	}
 
 	if (optind < argc) {
@@ -1656,16 +1654,14 @@ int main(int argc, char *argv[])
 
 		dir = get_canonical_path(path);
 		if (path && !dir) {
-			fprintf(stderr,
-				"%s: failed to canonicalize directory path %s: %m\n",
-				progname, path);
+			warn("failed to canonicalize directory path %s", path);
 			status = EXIT_FAILURE;
 			goto out_free;
 		}
 	}
 
 	if (daemonize(0, 0) < 0) {
-		fprintf(stderr, "%s: %s\n", progname, strerror(errno));
+		warn(NULL);
 		status = EXIT_FAILURE;
 		goto out_free;
 	}

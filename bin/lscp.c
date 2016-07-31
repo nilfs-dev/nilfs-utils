@@ -34,6 +34,10 @@
 #include <unistd.h>
 #endif	/* HAVE_UNISTD_H */
 
+#if HAVE_ERR_H
+#include <err.h>
+#endif	/* HAVE_ERR_H */
+
 #if HAVE_STRING_H
 #include <string.h>
 #endif	/* HAVE_STRING_H */
@@ -42,7 +46,6 @@
 #include <time.h>
 #endif	/* HAVE_TIME_H */
 
-#include <errno.h>
 #include "nilfs.h"
 #include "util.h"
 
@@ -459,15 +462,12 @@ int main(int argc, char *argv[])
 			       PACKAGE_VERSION);
 			exit(EXIT_SUCCESS);
 		default:
-			fprintf(stderr, "%s: invalid option -- %c\n",
-				progname, optopt);
-			exit(EXIT_FAILURE);
+			errx(EXIT_FAILURE, "invalid option -- %c", optopt);
 		}
 	}
 
 	if (optind < argc - 1) {
-		fprintf(stderr, "%s: too many arguments\n", progname);
-		exit(EXIT_FAILURE);
+		errx(EXIT_FAILURE, "too many arguments");
 	} else if (optind == argc - 1) {
 		dev = argv[optind++];
 	} else {
@@ -475,11 +475,8 @@ int main(int argc, char *argv[])
 	}
 
 	nilfs = nilfs_open(dev, NULL, NILFS_OPEN_RDONLY);
-	if (nilfs == NULL) {
-		fprintf(stderr, "%s: cannot open NILFS on %s: %m\n",
-			progname, dev ? : "device");
-		exit(EXIT_FAILURE);
-	}
+	if (nilfs == NULL)
+		err(EXIT_FAILURE, "cannot open NILFS on %s", dev ? : "device");
 
 	status = EXIT_SUCCESS;
 
@@ -506,8 +503,8 @@ int main(int argc, char *argv[])
 
  out:
 	if (ret < 0) {
+		warn(NULL);
 		status = EXIT_FAILURE;
-		fprintf(stderr, "%s: %s\n", progname, strerror(errno));
 	}
 	nilfs_close(nilfs);
 	exit(status);

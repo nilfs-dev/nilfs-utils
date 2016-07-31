@@ -33,6 +33,10 @@
 #include <unistd.h>
 #endif	/* HAVE_UNISTD_H */
 
+#if HAVE_ERR_H
+#include <err.h>
+#endif	/* HAVE_ERR_H */
+
 #if HAVE_STRING_H
 #include <string.h>
 #endif	/* HAVE_STRING_H */
@@ -103,18 +107,15 @@ static int rmcp_remove_range(struct nilfs *nilfs,
 		}
 		if (errno == EBUSY) {
 			nss++;
-			if (!force) {
-				fprintf(stderr,
-					"%s: %llu: cannot remove snapshot\n",
-					progname, (unsigned long long)cno);
-			}
+			if (!force)
+				warnx("%llu: cannot remove snapshot",
+				      (unsigned long long)cno);
+
 		} else if (errno == ENOENT) {
 			nocp++;
 		} else {
-			fprintf(stderr,
-				"%s: %llu: cannot remove checkpoint: %s\n",
-				progname, (unsigned long long)cno,
-				strerror(errno));
+			warn("%llu: cannot remove checkpoint",
+			     (unsigned long long)cno);
 			ret = -1;
 			goto out;
 		}
@@ -168,15 +169,12 @@ int main(int argc, char *argv[])
 			       PACKAGE_VERSION);
 			exit(EXIT_SUCCESS);
 		default:
-			fprintf(stderr, "%s: invalid option -- %c\n",
-				progname, optopt);
-			exit(EXIT_FAILURE);
+			errx(EXIT_FAILURE, "invalid option -- %c", optopt);
 		}
 	}
 
 	if (optind > argc - 1) {
-		fprintf(stderr, "%s: too few arguments\n", progname);
-		exit(EXIT_FAILURE);
+		errx(EXIT_FAILURE, "too few arguments");
 	} else if (optind == argc - 1) {
 		dev = NULL;
 	} else {
@@ -188,15 +186,11 @@ int main(int argc, char *argv[])
 	}
 
 	nilfs = nilfs_open(dev, NULL, NILFS_OPEN_RDWR);
-	if (nilfs == NULL) {
-		fprintf(stderr, "%s: cannot open NILFS on %s: %m\n",
-			progname, dev ? : "device");
-		exit(EXIT_FAILURE);
-	}
+	if (nilfs == NULL)
+		err(EXIT_FAILURE, "cannot open NILFS on %s", dev ? : "device");
 
 	if (nilfs_get_cpstat(nilfs, &cpstat) < 0) {
-		fprintf(stderr, "%s: %s: cannot get checkpoint status: %s\n",
-			progname, dev, strerror(errno));
+		warn("%s: cannot get checkpoint status", dev);
 		status = EXIT_FAILURE;
 		goto out_close_nilfs;
 	}
@@ -207,9 +201,7 @@ int main(int argc, char *argv[])
 		if (nilfs_parse_cno_range(argv[optind], &start, &end,
 					  RMCP_BASE) < 0 ||
 		    start > end || start < NILFS_CNO_MIN) {
-			fprintf(stderr,
-				"%s: invalid checkpoint range: %s\n",
-				progname, argv[optind]);
+			warnx("invalid checkpoint range: %s", argv[optind]);
 			status = EXIT_FAILURE;
 			continue;
 		}
@@ -238,7 +230,7 @@ int main(int argc, char *argv[])
 
 		status = EXIT_FAILURE;
 		if (ret < 0) {
-			fprintf(stderr, "Remaining checkpoints were not removed.\n");
+			warnx("remaining checkpoints were not removed.");
 			break;
 		}
 
@@ -246,10 +238,11 @@ int main(int argc, char *argv[])
 			continue;
 
  warn_on_invalid_checkpoint:
-		fprintf(stderr, start == end ?
-			"%s: invalid checkpoint: %s\n" :
-			"%s: no valid checkpoints found in %s\n",
-			progname, argv[optind]);
+		if (start == end)
+			warnx("invalid checkpoint: %s", argv[optind]);
+		else
+			warnx("no valid checkpoints found in %s",
+			      argv[optind]);
 	}
 	if (!force && nsnapshots)
 		fprintf(stderr, CHCP_PROMPT);

@@ -34,11 +34,14 @@
 #include <unistd.h>
 #endif	/* HAVE_UNISTD_H */
 
+#if HAVE_ERR_H
+#include <err.h>
+#endif	/* HAVE_ERR_H */
+
 #if HAVE_STRING_H
 #include <string.h>
 #endif	/* HAVE_STRING_H */
 
-#include <errno.h>
 #include <signal.h>
 #include "nilfs.h"
 
@@ -103,30 +106,24 @@ int main(int argc, char *argv[])
 			       PACKAGE_VERSION);
 			exit(EXIT_SUCCESS);
 		default:
-			fprintf(stderr, "%s: invalid option -- %c\n",
-				progname, optopt);
-			exit(EXIT_FAILURE);
+			errx(EXIT_FAILURE, "invalid option -- %c", optopt);
 		}
 	}
 
 	if (optind < argc - 1) {
-		fprintf(stderr, "%s: too many arguments\n", progname);
-		exit(EXIT_FAILURE);
+		errx(EXIT_FAILURE, "too many arguments");
 	} else if (optind > argc - 1)
 		dev = NULL;
 	else
 		dev = argv[optind];
 
 	nilfs = nilfs_open(dev, NULL, NILFS_OPEN_RDWR | NILFS_OPEN_GCLK);
-	if (nilfs == NULL) {
-		fprintf(stderr, "%s: cannot open NILFS on %s: %m\n",
-			progname, dev ? : "device");
-		exit(EXIT_FAILURE);
-	}
+	if (nilfs == NULL)
+		err(EXIT_FAILURE, "cannot open NILFS on %s", dev ? : "device");
 
 	status = EXIT_SUCCESS;
 	if (nilfs_sync(nilfs, &cno) < 0) {
-		fprintf(stderr, "%s: %s\n", progname, strerror(errno));
+		warn(NULL);
 		status = EXIT_FAILURE;
 		goto out;
 	}
@@ -135,24 +132,23 @@ int main(int argc, char *argv[])
 	sigaddset(&sigset, SIGINT);
 	sigaddset(&sigset, SIGTERM);
 	if (sigprocmask(SIG_BLOCK, &sigset, &oldset) < 0) {
-		fprintf(stderr, "%s: cannot block signals: %s\n",
-			progname, strerror(errno));
+		warn("cannot block signals");
 		status = EXIT_FAILURE;
 		goto out;
 	}
 
 	if (ss) {
 		if (nilfs_lock_cleaner(nilfs) < 0) {
-			fprintf(stderr, "%s: %s\n", progname, strerror(errno));
+			warn(NULL);
 			status = EXIT_FAILURE;
 			goto out_unblock_signal;
 		}
 		if (nilfs_change_cpmode(nilfs, cno, NILFS_SNAPSHOT) < 0) {
-			fprintf(stderr, "%s: %s\n", progname, strerror(errno));
+			warn(NULL);
 			status = EXIT_FAILURE;
 		}
 		if (nilfs_unlock_cleaner(nilfs) < 0) {
-			fprintf(stderr, "%s: %s\n", progname, strerror(errno));
+			warn(NULL);
 			status = EXIT_FAILURE;
 		}
 	}

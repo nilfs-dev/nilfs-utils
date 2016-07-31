@@ -34,6 +34,10 @@
 #include <unistd.h>
 #endif	/* HAVE_UNISTD_H */
 
+#if HAVE_ERR_H
+#include <err.h>
+#endif	/* HAVE_ERR_H */
+
 #if HAVE_STRING_H
 #include <string.h>
 #endif	/* HAVE_STRING_H */
@@ -102,15 +106,12 @@ int main(int argc, char *argv[])
 			       PACKAGE_VERSION);
 			exit(EXIT_SUCCESS);
 		default:
-			fprintf(stderr, "%s: invalid option -- %c\n",
-				progname, optopt);
-			exit(EXIT_FAILURE);
+			errx(EXIT_FAILURE, "invalid option -- %c", optopt);
 		}
 	}
 
 	if (optind > argc - 2) {
-		fprintf(stderr, "%s: too few arguments\n", progname);
-		exit(EXIT_FAILURE);
+		errx(EXIT_FAILURE, "too few arguments");
 	} else if (optind == argc - 2) {
 		modestr = argv[optind++];
 		dev = NULL;
@@ -127,18 +128,12 @@ int main(int argc, char *argv[])
 		mode = NILFS_CHECKPOINT;
 	else if (strcmp(modestr, CHCP_MODE_SS) == 0)
 		mode = NILFS_SNAPSHOT;
-	else {
-		fprintf(stderr, "%s: %s: invalid checkpoint mode\n",
-			progname, modestr);
-		exit(EXIT_FAILURE);
-	}
+	else
+		errx(EXIT_FAILURE, "%s: invalid checkpoint mode", modestr);
 
 	nilfs = nilfs_open(dev, NULL, NILFS_OPEN_RDWR | NILFS_OPEN_GCLK);
-	if (nilfs == NULL) {
-		fprintf(stderr, "%s: cannot open NILFS on %s: %m\n",
-			progname, dev ? : "device");
-		exit(EXIT_FAILURE);
-	}
+	if (nilfs == NULL)
+		err(EXIT_FAILURE, "cannot open NILFS on %s", dev ? : "device");
 
 	status = EXIT_SUCCESS;
 
@@ -146,14 +141,13 @@ int main(int argc, char *argv[])
 	sigaddset(&sigset, SIGINT);
 	sigaddset(&sigset, SIGTERM);
 	if (sigprocmask(SIG_BLOCK, &sigset, &oldset) < 0) {
-		fprintf(stderr, "%s: cannot block signals: %s\n",
-			progname, strerror(errno));
+		warn("cannot block signals");
 		status = EXIT_FAILURE;
 		goto out;
 	}
 
 	if (nilfs_lock_cleaner(nilfs) < 0) {
-		fprintf(stderr, "%s: cannot lock NILFS\n", progname);
+		warnx("cannot lock NILFS");
 		status = EXIT_FAILURE;
 		goto out_unblock_signal;
 	}
@@ -162,38 +156,34 @@ int main(int argc, char *argv[])
 		sigset_t waitset;
 
 		if (sigpending(&waitset) < 0) {
-			fprintf(stderr, "%s: cannot test signals: %s\n",
-				progname, strerror(errno));
+			warn("cannot test signals");
 			status = EXIT_FAILURE;
 			break;
 		}
 		if (sigismember(&waitset, SIGINT) ||
 		    sigismember(&waitset, SIGTERM)) {
-			fprintf(stderr,	"%s: interrupted\n", progname);
+			warnx("interrupted");
 			status = EXIT_FAILURE;
 			break;
 		}
 
 		cno = nilfs_parse_cno(argv[optind], &endptr, CHCP_BASE);
 		if (cno >= NILFS_CNO_MAX || *endptr != '\0') {
-			fprintf(stderr, "%s: %s: invalid checkpoint number\n",
-				progname, argv[optind]);
+			warnx("%s: invalid checkpoint number", argv[optind]);
 			status = EXIT_FAILURE;
 			continue;
-		} else if ((cno == ULONG_MAX) && (errno == ERANGE)) {
-			fprintf(stderr, "%s: %s: %s\n",
-				progname, argv[optind],	strerror(errno));
+		} else if (cno == ULONG_MAX && errno == ERANGE) {
+			warn("%s", argv[optind]);
 			status = EXIT_FAILURE;
 			continue;
 		}
 
 		if (nilfs_change_cpmode(nilfs, cno, mode) < 0) {
 			if (errno == ENOENT)
-				fprintf(stderr,	"%s: %llu: no checkpoint\n",
-					progname, (unsigned long long)cno);
+				warnx("%llu: no checkpoint",
+				      (unsigned long long)cno);
 			else
-				fprintf(stderr, "%s: %s\n",
-					progname, strerror(errno));
+				warn(NULL);
 			status = EXIT_FAILURE;
 			continue;
 		}

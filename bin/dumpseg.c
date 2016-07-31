@@ -34,6 +34,10 @@
 #include <unistd.h>
 #endif	/* HAVE_UNISTD_H */
 
+#if HAVE_ERR_H
+#include <err.h>
+#endif	/* HAVE_ERR_H */
+
 #if HAVE_STRING_H
 #include <string.h>
 #endif	/* HAVE_STRING_H */
@@ -42,7 +46,6 @@
 #include <time.h>
 #endif	/* HAVE_TIME_H */
 
-#include <errno.h>
 #include "nilfs.h"
 
 #ifdef _GNU_SOURCE
@@ -200,15 +203,12 @@ int main(int argc, char *argv[])
 			       PACKAGE_VERSION);
 			exit(EXIT_SUCCESS);
 		default:
-			fprintf(stderr, "%s: invalid option -- %c\n",
-				progname, optopt);
-			exit(EXIT_FAILURE);
+			errx(EXIT_FAILURE, "invalid option -- %c", optopt);
 		}
 	}
 
 	if (optind > argc - 1) {
-		fprintf(stderr, "%s: too few arguments\n", progname);
-		exit(EXIT_FAILURE);
+		errx(EXIT_FAILURE, "too few arguments");
 	} else {
 		strtoull(argv[optind], &endptr, DUMPSEG_BASE);
 		if (*endptr == '\0')
@@ -218,33 +218,29 @@ int main(int argc, char *argv[])
 	}
 
 	nilfs = nilfs_open(dev, NULL, NILFS_OPEN_RAW);
-	if (nilfs == NULL) {
-		fprintf(stderr, "%s: cannot open NILFS on %s: %m\n",
-			progname, dev ? : "device");
-		exit(EXIT_FAILURE);
-	}
+	if (nilfs == NULL)
+		err(EXIT_FAILURE, "cannot open NILFS on %s", dev ? : "device");
 
 	if (nilfs_opt_set_mmap(nilfs) < 0)
-		fprintf(stderr, "%s: cannot use mmap\n", progname);
+		warnx("cannot use mmap");
 
 	status = EXIT_SUCCESS;
 	for (i = optind; i < argc; i++) {
 		segnum = strtoull(argv[i], &endptr, DUMPSEG_BASE);
 		if (*endptr != '\0') {
-			fprintf(stderr, "%s: %s: invalid segment number\n",
-				progname, argv[i]);
+			warnx("%s: invalid segment number", argv[i]);
 			status = EXIT_FAILURE;
 			continue;
 		}
 		segsize = nilfs_get_segment(nilfs, segnum, &seg);
 		if (segsize < 0) {
-			fprintf(stderr, "%s: %s\n", progname, strerror(errno));
+			warn(NULL);
 			status = EXIT_FAILURE;
 			goto out;
 		}
 		dumpseg_print_segment(nilfs, segnum, seg, segsize);
 		if (nilfs_put_segment(nilfs, seg) < 0) {
-			fprintf(stderr, "%s: %s\n", progname, strerror(errno));
+			warn(NULL);
 			status = EXIT_FAILURE;
 			goto out;
 		}

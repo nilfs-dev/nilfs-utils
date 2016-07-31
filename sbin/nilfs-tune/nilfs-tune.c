@@ -24,6 +24,10 @@
 #include <stdlib.h>
 #endif	/* HAVE_STDLIB_H */
 
+#if HAVE_ERR_H
+#include <err.h>
+#endif	/* HAVE_ERR_H */
+
 #if HAVE_STRINGS_H
 #include <strings.h>
 #endif	/* HAVE_STRINGS_H */
@@ -161,8 +165,7 @@ static void parse_options(int argc, char *argv[],
 			break;
 		case 'O':
 			if (opts->fs_features) {
-				fprintf(stderr,
-					"-O may only be specified once\n");
+				warnx("-O may only be specified once");
 				nilfs_tune_usage();
 				exit(EXIT_FAILURE);
 			}
@@ -171,10 +174,8 @@ static void parse_options(int argc, char *argv[],
 			opts->flags = O_RDWR;
 			break;
 		case 'U':
-			if (parse_uuid(optarg, opts->uuid)) {
-				fprintf(stderr, "Invalid UUID format\n");
-				exit(EXIT_FAILURE);
-			}
+			if (parse_uuid(optarg, opts->uuid))
+				errx(EXIT_FAILURE, "Invalid UUID format");
 			opts->mask |= NILFS_SB_UUID;
 			opts->flags = O_RDWR;
 			break;
@@ -469,17 +470,14 @@ static int update_feature_set(struct nilfs_super_block *sbp,
 				 clear_ok_features, &bad_type, &bad_mask);
 	if (ret < 0) {
 		if (!bad_type) {
-			fprintf(stderr, "cannot parse features: %s\n",
-				strerror(errno));
+			warn("cannot parse features");
 		} else if (bad_type & NILFS_FEATURE_TYPE_NEGATE_FLAG) {
 			bad_type &= NILFS_FEATURE_TYPE_MASK;
-			fprintf(stderr,
-				"feature %s is not allowed to be cleared\n",
-				nilfs_feature2string(bad_type, bad_mask));
+			warnx("feature %s is not allowed to be cleared",
+			      nilfs_feature2string(bad_type, bad_mask));
 		} else {
-			fprintf(stderr,
-				"feature %s is not allowed to be set\n",
-				nilfs_feature2string(bad_type, bad_mask));
+			warnx("feature %s is not allowed to be set",
+			      nilfs_feature2string(bad_type, bad_mask));
 		}
 	} else {
 		sbp->s_feature_compat =
@@ -503,29 +501,28 @@ static int modify_nilfs(const char *device, struct nilfs_tune_options *opts)
 	devfd = open(device, opts->flags);
 
 	if (devfd == -1) {
-		fprintf(stderr, "cannot open device %s: %s\n",
-			device, strerror(errno));
+		warn("cannot open device %s", device);
 		ret = EXIT_FAILURE;
 		goto out;
 	}
 
 	sbp = nilfs_sb_read(devfd);
 	if (!sbp) {
-		fprintf(stderr, "%s: cannot open NILFS\n", device);
+		warnx("%s: cannot open NILFS", device);
 		ret = EXIT_FAILURE;
 		goto close_fd;
 	}
 
 	features = le64_to_cpu(sbp->s_feature_incompat);
 	if (features & ~NILFS_FEATURE_INCOMPAT_SUPP)
-		fprintf(stderr, "Warning: %s: unknown incompatible features: 0x%llx\n",
-			device, features);
+		warnx("Warning: %s: unknown incompatible features: 0x%llx",
+		      device, features);
 
 	features = le64_to_cpu(sbp->s_feature_compat_ro);
 	if (opts->flags == O_RDWR &&
 	    (features & ~NILFS_FEATURE_COMPAT_RO_SUPP))
-		fprintf(stderr, "Warning: %s: unknown read-only compatible features: 0x%llx\n",
-			device, features);
+		warnx("Warning: %s: unknown read-only compatible features: 0x%llx",
+		      device, features);
 
 	if (opts->mask & NILFS_SB_LABEL)
 		memcpy(sbp->s_volume_name, opts->label,
@@ -545,8 +542,7 @@ static int modify_nilfs(const char *device, struct nilfs_tune_options *opts)
 
 	if (opts->mask) {
 		if (nilfs_sb_write(devfd, sbp, opts->mask) < 0) {
-			fprintf(stderr, "%s: cannot write super blocks\n",
-				device);
+			warnx("%s: cannot write super blocks", device);
 			ret = EXIT_FAILURE;
 		}
 	}

@@ -29,6 +29,10 @@
 #include <stdlib.h>
 #endif	/* HAVE_STDLIB_H */
 
+#if HAVE_ERR_H
+#include <err.h>
+#endif	/* HAVE_ERR_H */
+
 #if HAVE_STRING_H
 #include <string.h>
 #endif	/* HAVE_STRING_H */
@@ -103,8 +107,6 @@ static const struct lssu_format lssu_format[] = {
 		"%17llu  %s %c%c%c%c  %10u %10u (%3u%%)\n"
 	}
 };
-
-static char *progname;
 
 static int all;
 static int latest;
@@ -204,9 +206,7 @@ static ssize_t lssu_print_suinfo(struct nilfs *nilfs, __u64 segnum,
 				ratio = 100;
 				protected = 1;
 			} else {
-				fprintf(stderr,
-					"%s: failed to get usage: %s\n",
-					progname, strerror(errno));
+				warn("failed to get usage");
 				return -1;
 			}
 
@@ -264,7 +264,7 @@ static int lssu_get_protcno(struct nilfs *nilfs,
 
 	ret = gettimeofday(&tv, NULL);
 	if (ret < 0) {
-		fprintf(stderr, "%s: cannot get current time: %m\n", progname);
+		warn("cannot get current time");
 		return -1;
 	}
 
@@ -278,18 +278,13 @@ static int lssu_get_protcno(struct nilfs *nilfs,
 
 	cnoconv = nilfs_cnoconv_create(nilfs);
 	if (!cnoconv) {
-		fprintf(stderr,
-			"%s: cannot create checkpoint number converter: %m\n",
-			progname);
+		warn("cannot create checkpoint number converter");
 		return -1;
 	}
 
 	ret = nilfs_cnoconv_time2cno(cnoconv, *prottimep, protcnop);
-	if (ret < 0) {
-		fprintf(stderr,
-			"%s: cannot convert protection time to checkpoint number: %m\n",
-			progname);
-	}
+	if (ret < 0)
+		warn("cannot convert protection time to checkpoint number");
 
 	nilfs_cnoconv_destroy(cnoconv);
 	return ret;
@@ -298,7 +293,7 @@ static int lssu_get_protcno(struct nilfs *nilfs,
 int main(int argc, char *argv[])
 {
 	struct nilfs *nilfs;
-	char *dev;
+	char *dev, *progname;
 	int c, status;
 	int open_flags;
 	unsigned long protection_period = ULONG_MAX;
@@ -343,23 +338,18 @@ int main(int argc, char *argv[])
 			if (!ret)
 				break;
 
-			if (errno == ERANGE) {
-				fprintf(stderr, "too large period: %s\n",
-					optarg);
-			} else {
-				fprintf(stderr,
-					"invalid protection period: %s\n",
-					optarg);
-			}
-			exit(EXIT_FAILURE);
+			if (errno == ERANGE)
+				errx(EXIT_FAILURE, "too large period: %s",
+				     optarg);
+
+			errx(EXIT_FAILURE, "invalid protection period: %s",
+			     optarg);
 		case 'V':
 			printf("%s (%s %s)\n", progname, PACKAGE,
 			       PACKAGE_VERSION);
 			exit(EXIT_SUCCESS);
 		default:
-			fprintf(stderr, "%s: invalid option -- %c\n",
-				progname, optopt);
-			exit(EXIT_FAILURE);
+			errx(EXIT_FAILURE, "invalid option -- %c", optopt);
 		}
 	}
 
@@ -368,8 +358,7 @@ int main(int argc, char *argv[])
 	} else if (optind == argc - 1) {
 		dev = argv[optind++];
 	} else {
-		fprintf(stderr, "%s: too many arguments\n", progname);
-		exit(EXIT_FAILURE);
+		errx(EXIT_FAILURE, "too many arguments");
 	}
 
 	open_flags = NILFS_OPEN_RDONLY;
@@ -377,11 +366,8 @@ int main(int argc, char *argv[])
 		open_flags |= NILFS_OPEN_RAW | NILFS_OPEN_GCLK;
 
 	nilfs = nilfs_open(dev, NULL, open_flags);
-	if (nilfs == NULL) {
-		fprintf(stderr, "%s: cannot open NILFS on %s: %m\n",
-			progname, dev ? : "device");
-		exit(EXIT_FAILURE);
-	}
+	if (nilfs == NULL)
+		err(EXIT_FAILURE, "cannot open NILFS on %s", dev ? : "device");
 
 	if (latest) {
 		blocks_per_segment = nilfs_get_blocks_per_segment(nilfs);
