@@ -348,6 +348,15 @@ static void nilfs_cleanerd_close_queue(struct nilfs_cleanerd *cleanerd)
 #define PATH_MAX	8192
 #endif	/* PATH_MAX */
 
+static __attribute__((noinline)) char *get_canonical_path(const char *path)
+{
+	char buf[PATH_MAX + 2], *canonical = NULL;
+
+	if (path && myrealpath(path, buf, sizeof(buf)))
+		canonical = strdup(buf);
+	return canonical;
+}
+
 /**
  * nilfs_cleanerd_create - create cleanerd object
  * @dev: name of the device on which the cleanerd operates
@@ -1575,8 +1584,7 @@ sleep:
 int main(int argc, char *argv[])
 {
 	char *progname, *conffile;
-	char canonical[PATH_MAX + 2];
-	const char *dev, *dir;
+	char *dev, *dir;
 	char *endptr;
 	int status, c;
 #ifdef _GNU_SOURCE
@@ -1631,31 +1639,35 @@ int main(int argc, char *argv[])
 		}
 	}
 
-	if (optind < argc)
-		dev = argv[optind++];
+	if (optind < argc) {
+		const char *path = argv[optind++];
 
-	if (optind < argc)
-		dir = argv[optind++];
-
-	if (dev && myrealpath(dev, canonical, sizeof(canonical))) {
-		dev = strdup(canonical);
-		if (!dev) {
-			fprintf(stderr, "%s: %s\n", progname, strerror(ENOMEM));
+		dev = get_canonical_path(path);
+		if (path && !dev) {
+			fprintf(stderr,
+				"%s: failed to canonicalize device path %s: %m\n",
+				progname, path);
 			exit(EXIT_FAILURE);
 		}
 	}
 
-	if (dir && myrealpath(dir, canonical, sizeof(canonical))) {
-		dir = strdup(canonical);
-		if (!dir) {
-			fprintf(stderr, "%s: %s\n", progname, strerror(ENOMEM));
-			exit(EXIT_FAILURE);
+	if (optind < argc) {
+		const char *path = argv[optind++];
+
+		dir = get_canonical_path(path);
+		if (path && !dir) {
+			fprintf(stderr,
+				"%s: failed to canonicalize directory path %s: %m\n",
+				progname, path);
+			status = EXIT_FAILURE;
+			goto out_free;
 		}
 	}
 
 	if (daemonize(0, 0) < 0) {
 		fprintf(stderr, "%s: %s\n", progname, strerror(errno));
-		exit(EXIT_FAILURE);
+		status = EXIT_FAILURE;
+		goto out_free;
 	}
 
 	openlog(progname, LOG_PID, LOG_DAEMON);
@@ -1669,7 +1681,7 @@ int main(int argc, char *argv[])
 	if (nilfs_cleanerd == NULL) {
 		syslog(LOG_ERR, "cannot create cleanerd on %s: %m", dev);
 		status = EXIT_FAILURE;
-		goto out;
+		goto out_close_log;
 	}
 
 	if (!sigsetjmp(nilfs_cleanerd_env, 1)) {
@@ -1679,9 +1691,13 @@ int main(int argc, char *argv[])
 
 	nilfs_cleanerd_destroy(nilfs_cleanerd);
 
- out:
+out_close_log:
 	syslog(LOG_INFO, "shutdown");
 	closelog();
+
+out_free:
+	free(dir);	/* free(NULL) is just ignored */
+	free(dev);
 
 	exit(status);
 }
