@@ -54,7 +54,7 @@ void nilfs_cnoconv_destroy(struct nilfs_cnoconv *cnoconv)
 
 /**
  * nilfs_conconv_time2cno - reverse map time to checkpoint number
- * @nilfs: nilfs object
+ * @cnoconv: nilfs_cnoconv struct
  * @time: time to be converted
  * @cnop: buffer to store resultant checkpoint number
  */
