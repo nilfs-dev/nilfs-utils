@@ -110,9 +110,9 @@ int main(int argc, char *argv[])
 		}
 	}
 
-	if (optind < argc - 1) {
+	if (optind < argc - 1)
 		errx(EXIT_FAILURE, "too many arguments");
-	} else if (optind > argc - 1)
+	else if (optind > argc - 1)
 		dev = NULL;
 	else
 		dev = argv[optind];

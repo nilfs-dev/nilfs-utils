@@ -466,13 +466,12 @@ int main(int argc, char *argv[])
 		}
 	}
 
-	if (optind < argc - 1) {
+	if (optind < argc - 1)
 		errx(EXIT_FAILURE, "too many arguments");
-	} else if (optind == argc - 1) {
+	else if (optind == argc - 1)
 		dev = argv[optind++];
-	} else {
+	else
 		dev = NULL;
-	}
 
 	nilfs = nilfs_open(dev, NULL, NILFS_OPEN_RDONLY);
 	if (nilfs == NULL)

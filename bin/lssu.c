@@ -353,13 +353,12 @@ int main(int argc, char *argv[])
 		}
 	}
 
-	if (optind > argc - 1) {
+	if (optind > argc - 1)
 		dev = NULL;
-	} else if (optind == argc - 1) {
+	else if (optind == argc - 1)
 		dev = argv[optind++];
-	} else {
+	else
 		errx(EXIT_FAILURE, "too many arguments");
-	}
 
 	open_flags = NILFS_OPEN_RDONLY;
 	if (latest)
