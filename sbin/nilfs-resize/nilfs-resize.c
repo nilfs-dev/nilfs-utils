@@ -61,9 +61,7 @@
 #include <signal.h>
 #include "nilfs.h"
 #include "util.h"
-#include "vector.h"
 #include "nilfs_gc.h"
-#include "cnoconv.h"
 
 extern int check_mount(const char *device);
 
