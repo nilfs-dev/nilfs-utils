@@ -186,7 +186,7 @@ struct nilfs_segimp {
 };
 
 /* command line option value */
-static volatile unsigned long protection_period;
+static unsigned long protection_period;
 
 /* global variables */
 static struct nilfs_cleanerd *nilfs_cleanerd;
