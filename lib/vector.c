@@ -12,6 +12,10 @@
 #include "config.h"
 #endif	/* HAVE_CONFIG_H */
 
+#if HAVE_STDINT_H
+#include <stdint.h>
+#endif /* HAVE_STDINT_H */
+
 #if HAVE_STDLIB_H
 #include <stdlib.h>
 #endif	/* HAVE_STDLIB_H */
@@ -94,6 +98,11 @@ void *nilfs_vector_get_new_element(struct nilfs_vector *vector)
 
 	/* resize array if necessary */
 	if (vector->v_nelems >= vector->v_maxelems) {
+		if (vector->v_maxelems >
+		    (SIZE_MAX / NILFS_VECTOR_FACTOR) / vector->v_elemsize) {
+			errno = EOVERFLOW;
+			return NULL;
+		}
 		maxelems = vector->v_maxelems * NILFS_VECTOR_FACTOR;
 		data = realloc(vector->v_data, vector->v_elemsize * maxelems);
 		if (!data)
