@@ -39,6 +39,11 @@ struct nilfs_vector *nilfs_vector_create(size_t elemsize)
 {
 	struct nilfs_vector *vector;
 
+	if (elemsize == 0) {
+		errno = EINVAL;
+		return NULL;
+	}
+
 	vector = malloc(sizeof(struct nilfs_vector));
 	if (!vector)
 		return NULL;
