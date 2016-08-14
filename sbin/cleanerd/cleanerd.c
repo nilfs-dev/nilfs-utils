@@ -654,8 +654,7 @@ nilfs_cleanerd_select_segments(struct nilfs_cleanerd *cleanerd,
 	}
 	nilfs_vector_sort(smv, nilfs_comp_segimp);
 
-	nssegs = (nilfs_vector_get_size(smv) < nsegs) ?
-		nilfs_vector_get_size(smv) : nsegs;
+	nssegs = min_t(size_t, nilfs_vector_get_size(smv), nsegs);
 	for (i = 0; i < nssegs; i++) {
 		sm = nilfs_vector_get_element(smv, i);
 		assert(sm != NULL);
