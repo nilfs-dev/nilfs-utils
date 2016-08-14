@@ -112,7 +112,7 @@ static int all;
 static int latest;
 static int disp_mode;		/* display mode */
 static nilfs_cno_t protcno;
-static __u64 prottime;
+static __s64 prottime;
 static __u64 param_index;
 static __u64 param_lines;
 
@@ -190,7 +190,7 @@ static ssize_t lssu_print_suinfo(struct nilfs *nilfs, __u64 segnum,
 		case LSSU_MODE_LATEST_USAGE:
 			nliveblks = 0;
 			ratio = 0;
-			protected = suinfos[i].sui_lastmod >= prottime;
+			protected = t >= prottime;
 
 			if (!nilfs_suinfo_dirty(&suinfos[i]) ||
 			    nilfs_suinfo_error(&suinfos[i]))
@@ -256,7 +256,7 @@ static int lssu_list_suinfo(struct nilfs *nilfs)
 
 static int lssu_get_protcno(struct nilfs *nilfs,
 			    unsigned long protection_period,
-			    __u64 *prottimep, nilfs_cno_t *protcnop)
+			    __s64 *prottimep, nilfs_cno_t *protcnop)
 {
 	struct nilfs_cnoconv *cnoconv;
 	struct timeval tv;
