@@ -585,7 +585,7 @@ nilfs_cleanerd_select_segments(struct nilfs_cleanerd *cleanerd,
 	struct nilfs_segimp *sm;
 	struct nilfs_suinfo si[NILFS_CLEANERD_NSUINFO];
 	struct timeval tv, tv2;
-	__s64 prottime, oldest, lastmod;
+	__s64 prottime, oldest, lastmod, now;
 	__u64 segnum;
 	size_t count, nsegs;
 	ssize_t nssegs, n;
@@ -606,8 +606,9 @@ nilfs_cleanerd_select_segments(struct nilfs_cleanerd *cleanerd,
 		goto out;
 	}
 	timersub(&tv, nilfs_cleanerd_protection_period(cleanerd), &tv2);
+	now = tv.tv_sec;
 	prottime = tv2.tv_sec;
-	oldest = tv.tv_sec;
+	oldest = NILFS_CLEANERD_NULLTIME;
 
 	/*
 	 * The segments that have larger importance than thr are not
@@ -634,14 +635,16 @@ nilfs_cleanerd_select_segments(struct nilfs_cleanerd *cleanerd,
 			lastmod = si[i].sui_lastmod;
 
 			/*
-			 * Timestamp policy.
+			 * Timestamp policy.  The importance value is
+			 * adjusted to include segments with a future
+			 * timestamp.
 			 */
-			imp = lastmod;
+			imp = lastmod <= now ? lastmod : thr - 1;
 
 			if (imp < thr) {
 				if (lastmod < oldest)
 					oldest = lastmod;
-				if (lastmod < prottime) {
+				if (lastmod < prottime || lastmod > now) {
 					sm = nilfs_vector_get_new_element(smv);
 					if (sm == NULL) {
 						nssegs = -1;
@@ -669,7 +672,7 @@ nilfs_cleanerd_select_segments(struct nilfs_cleanerd *cleanerd,
 		segnums[i] = sm->si_segnum;
 	}
 	*prottimep = prottime;
-	*oldestp = oldest < tv.tv_sec ? oldest : NILFS_CLEANERD_NULLTIME;
+	*oldestp = oldest;
 
  out:
 	nilfs_vector_destroy(smv);
@@ -875,8 +878,9 @@ static int nilfs_cleanerd_recalc_interval(struct nilfs_cleanerd *cleanerd,
 
 			pt = *(nilfs_cleanerd_protection_period(cleanerd));
 		} else {
-			pt.tv_sec = oldest > prottime ?
-				oldest - prottime + 1 : 1;
+			__s64 tgt = min_t(__s64, oldest, curr.tv_sec);
+
+			pt.tv_sec = tgt > prottime ? tgt - prottime + 1 : 1;
 			pt.tv_usec = 0;
 		}
 		if (timercmp(&pt,
