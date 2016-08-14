@@ -112,7 +112,7 @@ static int all;
 static int latest;
 static int disp_mode;		/* display mode */
 static nilfs_cno_t protcno;
-static __s64 prottime;
+static __s64 prottime, now;
 static __u64 param_index;
 static __u64 param_lines;
 
@@ -190,7 +190,7 @@ static ssize_t lssu_print_suinfo(struct nilfs *nilfs, __u64 segnum,
 		case LSSU_MODE_LATEST_USAGE:
 			nliveblks = 0;
 			ratio = 0;
-			protected = t >= prottime;
+			protected = (t >= prottime && t <= now);
 
 			if (!nilfs_suinfo_dirty(&suinfos[i]) ||
 			    nilfs_suinfo_error(&suinfos[i]))
@@ -259,22 +259,15 @@ static int lssu_get_protcno(struct nilfs *nilfs,
 			    __s64 *prottimep, nilfs_cno_t *protcnop)
 {
 	struct nilfs_cnoconv *cnoconv;
-	struct timeval tv;
 	int ret;
-
-	ret = gettimeofday(&tv, NULL);
-	if (ret < 0) {
-		warn("cannot get current time");
-		return -1;
-	}
 
 	if (protection_period == ULONG_MAX) {
 		*protcnop = NILFS_CNO_MAX;
-		*prottimep = tv.tv_sec;
+		*prottimep = now;
 		return 0;
 	}
 
-	*prottimep = tv.tv_sec - protection_period;
+	*prottimep = now - protection_period;
 
 	cnoconv = nilfs_cnoconv_create(nilfs);
 	if (!cnoconv) {
@@ -369,8 +362,19 @@ int main(int argc, char *argv[])
 		err(EXIT_FAILURE, "cannot open NILFS on %s", dev ? : "device");
 
 	if (latest) {
+		struct timeval tv;
+
+		ret = gettimeofday(&tv, NULL);
+		if (ret < 0) {
+			warn("cannot get current time");
+			status = EXIT_FAILURE;
+			goto out_close_nilfs;
+		}
+		now = tv.tv_sec;
+
 		blocks_per_segment = nilfs_get_blocks_per_segment(nilfs);
 		disp_mode = LSSU_MODE_LATEST_USAGE;
+
 		ret = lssu_get_protcno(nilfs, protection_period, &prottime,
 				       &protcno);
 		if (ret < 0) {
