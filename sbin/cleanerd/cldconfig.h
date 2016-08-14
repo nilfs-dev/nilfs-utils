@@ -26,18 +26,6 @@
 #include <sys/time.h>
 #include <syslog.h>
 
-struct nilfs_suinfo;
-
-/**
- * struct nilfs_selection_policy -
- * @p_importance:
- * @p_threshold:
- */
-struct nilfs_selection_policy {
-	unsigned long long (*p_importance)(const struct nilfs_suinfo *);
-	unsigned long long p_threshold;
-};
-
 /**
  * struct nilfs_param - parameter with unit suffix
  * @num: scanned value
@@ -90,7 +78,7 @@ enum nilfs_size_unit {
  * if clean segments < min_clean_segments
  */
 struct nilfs_cldconfig {
-	struct nilfs_selection_policy cf_selection_policy;
+	int cf_selection_policy;
 	struct timeval cf_protection_period;
 	__u64 cf_min_clean_segments;
 	__u64 cf_max_clean_segments;
@@ -107,9 +95,11 @@ struct nilfs_cldconfig {
 	unsigned long cf_mc_min_reclaimable_blocks;
 };
 
-#define NILFS_CLDCONFIG_SELECTION_POLICY_IMPORTANCE	\
-			nilfs_cldconfig_selection_policy_timestamp
-#define NILFS_CLDCONFIG_SELECTION_POLICY_THRESHOLD	0
+enum nilfs_selection_policy {
+	NILFS_SELECTION_POLICY_TIMESTAMP = 0,
+	__NR_NILFS_SELECTION_POLICY
+};
+
 #define NILFS_CLDCONFIG_PROTECTION_PERIOD		3600
 #define NILFS_CLDCONFIG_MIN_CLEAN_SEGMENTS		10
 #define NILFS_CLDCONFIG_MIN_CLEAN_SEGMENTS_UNIT		NILFS_SIZE_UNIT_PERCENT

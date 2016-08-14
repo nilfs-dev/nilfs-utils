@@ -581,7 +581,6 @@ nilfs_cleanerd_select_segments(struct nilfs_cleanerd *cleanerd,
 			       __u64 *prottimep, __u64 *oldestp)
 {
 	struct nilfs *nilfs;
-	struct nilfs_cldconfig *config;
 	struct nilfs_vector *smv;
 	struct nilfs_segimp *sm;
 	struct nilfs_suinfo si[NILFS_CLEANERD_NSUINFO];
@@ -595,7 +594,6 @@ nilfs_cleanerd_select_segments(struct nilfs_cleanerd *cleanerd,
 
 	nsegs = nilfs_cleanerd_ncleansegs(cleanerd);
 	nilfs = cleanerd->nilfs;
-	config = &cleanerd->config;
 
 	smv = nilfs_vector_create(sizeof(struct nilfs_segimp));
 	if (!smv)
@@ -611,11 +609,11 @@ nilfs_cleanerd_select_segments(struct nilfs_cleanerd *cleanerd,
 	prottime = tv2.tv_sec;
 	oldest = tv.tv_sec;
 
-	/* The segments that have larger importance than thr are not
-	 * selected. */
-	thr = (config->cf_selection_policy.p_threshold != 0) ?
-		config->cf_selection_policy.p_threshold :
-		sustat->ss_nongc_ctime;
+	/*
+	 * The segments that have larger importance than thr are not
+	 * selected.
+	 */
+	thr = sustat->ss_nongc_ctime;
 
 	for (segnum = 0; segnum < sustat->ss_nsegs; segnum += n) {
 		count = min_t(__u64, sustat->ss_nsegs - segnum,
@@ -629,7 +627,11 @@ nilfs_cleanerd_select_segments(struct nilfs_cleanerd *cleanerd,
 			if (!nilfs_suinfo_reclaimable(&si[i]))
 				continue;
 
-			imp = config->cf_selection_policy.p_importance(&si[i]);
+			/*
+			 * Timestamp policy.
+			 */
+			imp = si[i].sui_lastmod;
+
 			if (imp < thr) {
 				if (si[i].sui_lastmod < oldest)
 					oldest = si[i].sui_lastmod;

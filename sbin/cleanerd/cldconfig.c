@@ -376,20 +376,11 @@ nilfs_cldconfig_handle_clean_check_interval(struct nilfs_cldconfig *config,
 		tokens, ntoks, &config->cf_clean_check_interval);
 }
 
-static unsigned long long
-nilfs_cldconfig_selection_policy_timestamp(const struct nilfs_suinfo *si)
-{
-	return si->sui_lastmod;
-}
-
 static int
 nilfs_cldconfig_handle_selection_policy_timestamp(struct nilfs_cldconfig *cf,
 						  char **tokens, size_t ntoks)
 {
-	cf->cf_selection_policy.p_importance =
-		NILFS_CLDCONFIG_SELECTION_POLICY_IMPORTANCE;
-	cf->cf_selection_policy.p_threshold =
-		NILFS_CLDCONFIG_SELECTION_POLICY_THRESHOLD;
+	cf->cf_selection_policy = NILFS_SELECTION_POLICY_TIMESTAMP;
 	return 0;
 }
 
@@ -676,10 +667,8 @@ static void nilfs_cldconfig_set_default(struct nilfs_cldconfig *config,
 {
 	struct nilfs_param param;
 
-	config->cf_selection_policy.p_importance =
-		NILFS_CLDCONFIG_SELECTION_POLICY_IMPORTANCE;
-	config->cf_selection_policy.p_threshold =
-		NILFS_CLDCONFIG_SELECTION_POLICY_THRESHOLD;
+	config->cf_selection_policy = NILFS_SELECTION_POLICY_TIMESTAMP;
+
 	config->cf_protection_period.tv_sec = NILFS_CLDCONFIG_PROTECTION_PERIOD;
 	config->cf_protection_period.tv_usec = 0;
 
