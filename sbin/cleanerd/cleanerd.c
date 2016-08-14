@@ -182,7 +182,7 @@ struct nilfs_cleanerd {
  */
 struct nilfs_segimp {
 	__u64 si_segnum;
-	unsigned long long si_importance;
+	long long si_importance;
 };
 
 /* command line option value */
@@ -573,23 +573,23 @@ static int nilfs_shrink_protected_region(struct nilfs *nilfs)
  * @oldestp: place to store the oldest mod-time
  */
 #define NILFS_CLEANERD_NSUINFO	512
-#define NILFS_CLEANERD_NULLTIME (~(__u64)0)
+#define NILFS_CLEANERD_NULLTIME 9223372036854775807LL	/* 64-bit int max */
 
 static ssize_t
 nilfs_cleanerd_select_segments(struct nilfs_cleanerd *cleanerd,
 			       struct nilfs_sustat *sustat, __u64 *segnums,
-			       __u64 *prottimep, __u64 *oldestp)
+			       __s64 *prottimep, __s64 *oldestp)
 {
 	struct nilfs *nilfs;
 	struct nilfs_vector *smv;
 	struct nilfs_segimp *sm;
 	struct nilfs_suinfo si[NILFS_CLEANERD_NSUINFO];
 	struct timeval tv, tv2;
-	__u64 prottime, oldest;
+	__s64 prottime, oldest, lastmod;
 	__u64 segnum;
 	size_t count, nsegs;
 	ssize_t nssegs, n;
-	unsigned long long imp, thr;
+	long long imp, thr;
 	int i;
 
 	nsegs = nilfs_cleanerd_ncleansegs(cleanerd);
@@ -628,14 +628,20 @@ nilfs_cleanerd_select_segments(struct nilfs_cleanerd *cleanerd,
 				continue;
 
 			/*
+			 * Use local variable 'lastmod' to treat the
+			 * segment timestamp as a signed type value.
+			 */
+			lastmod = si[i].sui_lastmod;
+
+			/*
 			 * Timestamp policy.
 			 */
-			imp = si[i].sui_lastmod;
+			imp = lastmod;
 
 			if (imp < thr) {
-				if (si[i].sui_lastmod < oldest)
-					oldest = si[i].sui_lastmod;
-				if (si[i].sui_lastmod < prottime) {
+				if (lastmod < oldest)
+					oldest = lastmod;
+				if (lastmod < prottime) {
 					sm = nilfs_vector_get_new_element(smv);
 					if (sm == NULL) {
 						nssegs = -1;
@@ -844,7 +850,7 @@ static int nilfs_cleanerd_init_interval(struct nilfs_cleanerd *cleanerd)
 
 static int nilfs_cleanerd_recalc_interval(struct nilfs_cleanerd *cleanerd,
 					  int nchosen, int ndone,
-					  __u64 prottime, __u64 oldest)
+					  __s64 prottime, __s64 oldest)
 {
 	struct timeval curr, *interval;
 
@@ -1388,7 +1394,7 @@ static void nilfs_cleanerd_progress(struct nilfs_cleanerd *cleanerd, int nsegs)
 
 static int nilfs_cleanerd_clean_segments(struct nilfs_cleanerd *cleanerd,
 					 __u64 *segnums, size_t nsegs,
-					 __u64 protseq, __u64 prottime,
+					 __u64 protseq, __s64 prottime,
 					 size_t *ndone)
 {
 	struct nilfs_reclaim_params params;
@@ -1479,7 +1485,7 @@ out:
 static int nilfs_cleanerd_clean_loop(struct nilfs_cleanerd *cleanerd)
 {
 	struct nilfs_sustat sustat;
-	__u64 prottime = 0, oldest = 0;
+	__s64 prottime = 0, oldest = 0;
 	__u64 segnums[NILFS_CLDCONFIG_NSEGMENTS_PER_CLEAN_MAX];
 	sigset_t sigset;
 	size_t ndone;
