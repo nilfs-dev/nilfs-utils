@@ -81,6 +81,29 @@ void nilfs_vector_destroy(struct nilfs_vector *vector)
 	}
 }
 
+static int nilfs_vector_enlarge(struct nilfs_vector *vector, size_t minelems)
+{
+	size_t maxelems = vector->v_maxelems;
+	const size_t nelems_limit = (SIZE_MAX / NILFS_VECTOR_FACTOR) /
+		vector->v_elemsize;
+	void *data;
+
+	do {
+		if (maxelems > nelems_limit) {
+			errno = EOVERFLOW;
+			return -1;
+		}
+		maxelems *= NILFS_VECTOR_FACTOR;
+	} while (maxelems < minelems);
+
+	data = realloc(vector->v_data, vector->v_elemsize * maxelems);
+	if (!data)
+		return -1;
+	vector->v_data = data;
+	vector->v_maxelems = maxelems;
+	return 0;
+}
+
 /**
  * nilfs_vector_get_new_element - add a new element
  * @vector: vector
@@ -93,22 +116,13 @@ void nilfs_vector_destroy(struct nilfs_vector *vector)
  */
 void *nilfs_vector_get_new_element(struct nilfs_vector *vector)
 {
-	void *data;
-	size_t maxelems;
+	int ret;
 
 	/* resize array if necessary */
 	if (vector->v_nelems >= vector->v_maxelems) {
-		if (vector->v_maxelems >
-		    (SIZE_MAX / NILFS_VECTOR_FACTOR) / vector->v_elemsize) {
-			errno = EOVERFLOW;
+		ret = nilfs_vector_enlarge(vector, vector->v_nelems + 1);
+		if (ret < 0)
 			return NULL;
-		}
-		maxelems = vector->v_maxelems * NILFS_VECTOR_FACTOR;
-		data = realloc(vector->v_data, vector->v_elemsize * maxelems);
-		if (!data)
-			return NULL;
-		vector->v_data = data;
-		vector->v_maxelems = maxelems;
 	}
 	return vector->v_data + vector->v_elemsize * vector->v_nelems++;
 }
@@ -141,4 +155,44 @@ int nilfs_vector_delete_elements(struct nilfs_vector *vector,
 			vector->v_elemsize);
 	vector->v_nelems -= nelems;
 	return 0;
+}
+
+/**
+ * nilfs_vector_insert_elements - insert elements
+ * @vector: vector
+ * @index: index
+ * @nelems: number of elements to be inserted
+ *
+ * Description: nilfs_vector_insert_elements() inserts @nelems elements at
+ * @index.
+ *
+ * Return Value: On success, 0 is returned. On error, -1 is returned.
+ */
+void *nilfs_vector_insert_elements(struct nilfs_vector *vector,
+				   unsigned int index, size_t nelems)
+{
+	int ret;
+
+	if (index > vector->v_nelems) {
+		errno = EINVAL;
+		return NULL;
+	}
+	if (nelems > SIZE_MAX - vector->v_nelems) {
+		errno = EOVERFLOW;
+		return NULL;
+	}
+
+	/* resize array if necessary */
+	if (vector->v_nelems + nelems > vector->v_maxelems) {
+		ret = nilfs_vector_enlarge(vector, vector->v_nelems + nelems);
+		if (ret < 0)
+			return NULL;
+	}
+
+	if (index < vector->v_nelems)
+		memmove(vector->v_data + vector->v_elemsize * (index + nelems),
+			vector->v_data + vector->v_elemsize * index,
+			(vector->v_nelems - index) * vector->v_elemsize);
+	vector->v_nelems += nelems;
+	return vector->v_data + index * vector->v_elemsize;
 }
