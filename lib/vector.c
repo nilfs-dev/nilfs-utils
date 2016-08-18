@@ -157,6 +157,25 @@ int nilfs_vector_delete_elements(struct nilfs_vector *vector,
 	return 0;
 }
 
+void nilfs_vector_clear(struct nilfs_vector *vector)
+{
+	const size_t maxelems = NILFS_VECTOR_INIT_MAXELEMS;
+
+	if (vector->v_maxelems > maxelems) {
+		int errsv = errno;
+		void *data;
+
+		data = realloc(vector->v_data, vector->v_elemsize * maxelems);
+		if (data) {
+			vector->v_data = data;
+			vector->v_maxelems = maxelems;
+		} else {
+			errno = errsv;
+		}
+	}
+	vector->v_nelems = 0;
+}
+
 /**
  * nilfs_vector_insert_elements - insert elements
  * @vector: vector
