@@ -53,7 +53,7 @@
 #include "nilfs.h"
 #include "util.h"
 #include "nilfs_gc.h"
-#include "cnoconv.h"
+#include "cnormap.h"
 #include "parser.h"
 
 #ifdef _GNU_SOURCE
@@ -258,7 +258,7 @@ static int lssu_get_protcno(struct nilfs *nilfs,
 			    unsigned long protection_period,
 			    __s64 *prottimep, nilfs_cno_t *protcnop)
 {
-	struct nilfs_cnoconv *cnoconv;
+	struct nilfs_cnormap *cnormap;
 	int ret;
 
 	if (protection_period == ULONG_MAX) {
@@ -269,17 +269,18 @@ static int lssu_get_protcno(struct nilfs *nilfs,
 
 	*prottimep = now - protection_period;
 
-	cnoconv = nilfs_cnoconv_create(nilfs);
-	if (!cnoconv) {
-		warn("cannot create checkpoint number converter");
+	cnormap = nilfs_cnormap_create(nilfs);
+	if (!cnormap) {
+		warn("failed to create checkpoint number reverse mapper");
 		return -1;
 	}
 
-	ret = nilfs_cnoconv_time2cno(cnoconv, *prottimep, protcnop);
+	ret = nilfs_cnormap_track_back(cnormap, protection_period, protcnop);
 	if (ret < 0)
-		warn("cannot convert protection time to checkpoint number");
+		warn("failed to get checkpoint number from protection period (%lu)",
+		     protection_period);
 
-	nilfs_cnoconv_destroy(cnoconv);
+	nilfs_cnormap_destroy(cnormap);
 	return ret;
 }
 
