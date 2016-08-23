@@ -81,7 +81,7 @@
 #include "nilfs_cleaner.h"
 #include "cleaner_msg.h"
 #include "cldconfig.h"
-#include "cnoconv.h"
+#include "cnormap.h"
 #include "realpath.h"
 
 
@@ -118,7 +118,7 @@ static const struct option long_option[] = {
 /**
  * struct nilfs_cleanerd - nilfs cleaner daemon
  * @nilfs: nilfs object
- * @cnoconv: checkpoint number converter
+ * @cnormap: checkpoint number reverse mapper
  * @config: config structure
  * @conffile: configuration file name
  * @running: running state
@@ -147,7 +147,7 @@ static const struct option long_option[] = {
  */
 struct nilfs_cleanerd {
 	struct nilfs *nilfs;
-	struct nilfs_cnoconv *cnoconv;
+	struct nilfs_cnormap *cnormap;
 	struct nilfs_cldconfig config;
 	char *conffile;
 	int running;
@@ -385,16 +385,16 @@ nilfs_cleanerd_create(const char *dev, const char *dir, const char *conffile)
 		goto out_cleanerd;
 	}
 
-	cleanerd->cnoconv = nilfs_cnoconv_create(cleanerd->nilfs);
-	if (cleanerd->cnoconv == NULL) {
+	cleanerd->cnormap = nilfs_cnormap_create(cleanerd->nilfs);
+	if (cleanerd->cnormap == NULL) {
 		syslog(LOG_ERR,
-		       "failed to create checkpoint number converter: %m");
+		       "failed to create checkpoint number reverse mapper: %m");
 		goto out_nilfs;
 	}
 
 	cleanerd->conffile = strdup(conffile ? : NILFS_CLEANERD_CONFFILE);
 	if (cleanerd->conffile == NULL)
-		goto out_cnoconv;
+		goto out_cnormap;
 
 	if (nilfs_cleanerd_config(cleanerd, NULL) < 0)
 		goto out_conffile;
@@ -409,8 +409,8 @@ nilfs_cleanerd_create(const char *dev, const char *dir, const char *conffile)
 	/* error */
 out_conffile:
 	free(cleanerd->conffile);
-out_cnoconv:
-	nilfs_cnoconv_destroy(cleanerd->cnoconv);
+out_cnormap:
+	nilfs_cnormap_destroy(cleanerd->cnormap);
 out_nilfs:
 	nilfs_close(cleanerd->nilfs);
 
@@ -423,7 +423,7 @@ static void nilfs_cleanerd_destroy(struct nilfs_cleanerd *cleanerd)
 {
 	nilfs_cleanerd_close_queue(cleanerd);
 	free(cleanerd->conffile);
-	nilfs_cnoconv_destroy(cleanerd->cnoconv);
+	nilfs_cnormap_destroy(cleanerd->cnormap);
 	nilfs_close(cleanerd->nilfs);
 	free(cleanerd);
 }
@@ -1398,11 +1398,11 @@ static void nilfs_cleanerd_progress(struct nilfs_cleanerd *cleanerd, int nsegs)
 
 static int nilfs_cleanerd_clean_segments(struct nilfs_cleanerd *cleanerd,
 					 __u64 *segnums, size_t nsegs,
-					 __u64 protseq, __s64 prottime,
-					 size_t *ndone)
+					 __u64 protseq, size_t *ndone)
 {
 	struct nilfs_reclaim_params params;
 	struct nilfs_reclaim_stat stat;
+	struct timeval *pt;
 	int ret, i, sumsegs;
 
 	params.flags = NILFS_RECLAIM_PARAM_PROTSEQ |
@@ -1412,13 +1412,18 @@ static int nilfs_cleanerd_clean_segments(struct nilfs_cleanerd *cleanerd,
 			nilfs_cleanerd_min_reclaimable_blocks(cleanerd);
 	params.protseq = protseq;
 
-	ret = nilfs_cnoconv_time2cno(cleanerd->cnoconv, prottime,
-				     &params.protcno);
+	pt = nilfs_cleanerd_protection_period(cleanerd);
+
+	ret = nilfs_cnormap_track_back(cleanerd->cnormap, pt->tv_sec,
+				       &params.protcno);
 	if (ret < 0) {
 		syslog(LOG_ERR,
-		       "cannot convert protection time to checkpoint number: %m");
+		       "cannot get checkpoint number from protection period (%llu): %m",
+		       (unsigned long long)pt->tv_sec);
 		goto out;
 	}
+	syslog(LOG_DEBUG, "got cno %llu from protection period %lu",
+	       (unsigned long long)params.protcno, (unsigned long)pt->tv_sec);
 
 	memset(&stat, 0, sizeof(stat));
 	ret = nilfs_xreclaim_segment(cleanerd->nilfs, segnums, nsegs, 0,
@@ -1516,7 +1521,6 @@ static int nilfs_cleanerd_clean_loop(struct nilfs_cleanerd *cleanerd)
 	cleanerd->running = 1;
 	cleanerd->fallback = 0;
 	cleanerd->retry_cleaning = 0;
-	nilfs_cnoconv_reset(cleanerd->cnoconv);
 	nilfs_gc_logger = syslog;
 
 	ret = nilfs_cleanerd_init_interval(cleanerd);
@@ -1570,7 +1574,7 @@ static int nilfs_cleanerd_clean_loop(struct nilfs_cleanerd *cleanerd)
 		if (ns > 0) {
 			ret = nilfs_cleanerd_clean_segments(
 				cleanerd, segnums, ns, sustat.ss_prot_seq,
-				prottime, &ndone);
+				&ndone);
 			if (ret < 0)
 				return -1;
 		} else {
