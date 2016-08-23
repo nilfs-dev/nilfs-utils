@@ -33,7 +33,7 @@ nilfsgc_REVISION = 0
 nilfsgc_AGE = 1
 nilfsgc_VERSIONINFO = $(nilfsgc_CURRENT):$(nilfsgc_REVISION):$(nilfsgc_AGE)
 
-libnilfsgc_la_SOURCES = gc.c vector.c cnoconv.c
+libnilfsgc_la_SOURCES = gc.c vector.c cnoconv.c cnormap.c
 libnilfsgc_la_LDFLAGS = -version-info $(nilfsgc_VERSIONINFO)
 libnilfsgc_la_LIBADD = libnilfs.la $(LIB_POSIX_SEM)
 
