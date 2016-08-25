@@ -447,8 +447,13 @@ static int nilfs_cpinfo_scan_backward(const struct nilfs_cpinfo *cpinfo,
 		cpspan->end.time = cpinfo->ci_create;
 		cpspan->approx_ncp = 1;
 		cnormap->cphist_elapsed_time = 0;
-		if (ctx->time > cpinfo->ci_create)
+		if (ctx->time > cpinfo->ci_create) {
+			if (ctx->period < ctx->time - cpinfo->ci_create) {
+				ctx->state = NILFS_CPINFO_SCAN_DONE_ST;
+				return 2; /* Escape */
+			}
 			ctx->period -= ctx->time - cpinfo->ci_create;
+		}
 		ctx->state = NILFS_CPINFO_SCAN_NORMAL_ST;
 		goto out;
 	}
