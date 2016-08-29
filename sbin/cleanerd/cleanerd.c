@@ -128,7 +128,7 @@ static const struct option long_option[] = {
  * @no_timeout: the next timeout will be 0 seconds
  * @ncleansegs: number of segments cleaned per cycle
  * @cleaning_interval: cleaning interval
- * @target: target time for sleeping
+ * @target: target time for sleeping (monotonic time)
  * @timeout: timeout value for sleeping
  * @min_reclaimable_blocks: min. number of reclaimable blocks
  * @prev_nongc_ctime: previous nongc ctime
@@ -849,9 +849,9 @@ static int nilfs_cleanerd_init_interval(struct nilfs_cleanerd *cleanerd)
 {
 	int ret;
 
-	ret = clock_gettime(CLOCK_REALTIME, &cleanerd->target);
+	ret = clock_gettime(CLOCK_MONOTONIC, &cleanerd->target);
 	if (ret < 0) {
-		syslog(LOG_ERR, "cannot get time: %m");
+		syslog(LOG_ERR, "cannot get monotonic time: %m");
 		return -1;
 	}
 	timespecadd(&cleanerd->target, &cleanerd->config.cf_cleaning_interval,
@@ -865,12 +865,6 @@ static int nilfs_cleanerd_recalc_interval(struct nilfs_cleanerd *cleanerd,
 {
 	struct timespec curr, *interval;
 	int ret;
-
-	ret = clock_gettime(CLOCK_REALTIME, &curr);
-	if (ret < 0) {
-		syslog(LOG_ERR, "cannot get current time: %m");
-		return -1;
-	}
 
 	if (nchosen == 0 ||
 	    (!cleanerd->fallback && ndone == 0 && !cleanerd->retry_cleaning)) {
@@ -888,8 +882,14 @@ static int nilfs_cleanerd_recalc_interval(struct nilfs_cleanerd *cleanerd,
 
 			pt = *(nilfs_cleanerd_protection_period(cleanerd));
 		} else {
-			__s64 tgt = min_t(__s64, oldest, curr.tv_sec);
+			__s64 tgt;
 
+			ret = clock_gettime(CLOCK_REALTIME, &curr);
+			if (ret < 0) {
+				syslog(LOG_ERR, "cannot get current time: %m");
+				return -1;
+			}
+			tgt = min_t(__s64, oldest, curr.tv_sec);
 			pt.tv_sec = tgt > prottime ? tgt - prottime + 1 : 1;
 			pt.tv_nsec = 0;
 		}
@@ -900,6 +900,12 @@ static int nilfs_cleanerd_recalc_interval(struct nilfs_cleanerd *cleanerd,
 		else
 			cleanerd->timeout = pt;
 		return 0;
+	}
+
+	ret = clock_gettime(CLOCK_MONOTONIC, &curr);
+	if (ret < 0) {
+		syslog(LOG_ERR, "cannot get monotonic time: %m");
+		return -1;
 	}
 
 	if (cleanerd->fallback) {
