@@ -23,7 +23,10 @@
 #ifndef CLDCONFIG_H
 #define CLDCONFIG_H
 
-#include <sys/time.h>
+#if HAVE_TIME_H
+#include <time.h>	/* timespec */
+#endif	/* HAVE_TIME_H */
+
 #include <syslog.h>
 
 /**
@@ -79,15 +82,15 @@ enum nilfs_size_unit {
  */
 struct nilfs_cldconfig {
 	int cf_selection_policy;
-	struct timeval cf_protection_period;
+	struct timespec cf_protection_period;
 	__u64 cf_min_clean_segments;
 	__u64 cf_max_clean_segments;
-	struct timeval cf_clean_check_interval;
+	struct timespec cf_clean_check_interval;
 	int cf_nsegments_per_clean;
 	int cf_mc_nsegments_per_clean;
-	struct timeval cf_cleaning_interval;
-	struct timeval cf_mc_cleaning_interval;
-	struct timeval cf_retry_interval;
+	struct timespec cf_cleaning_interval;
+	struct timespec cf_mc_cleaning_interval;
+	struct timespec cf_retry_interval;
 	int cf_use_mmap;
 	int cf_use_set_suinfo;
 	int cf_log_priority;

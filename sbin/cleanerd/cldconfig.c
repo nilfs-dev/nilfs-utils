@@ -52,6 +52,10 @@
 #include <sys/stat.h>
 #endif	/* HAVE_SYS_STAT_H */
 
+#if HAVE_TIME_H
+#include <time.h>	/* timespec */
+#endif	/* HAVE_TIME_H */
+
 #if HAVE_SYSLOG_H
 #include <syslog.h>
 #endif	/* HAVE_SYSLOG_H */
@@ -135,8 +139,8 @@ static int nilfs_cldconfig_get_ulong_argument(char **tokens, size_t ntoks,
 	return 0;
 }
 
-static int nilfs_cldconfig_get_timeval_argument(char **tokens, size_t ntoks,
-						struct timeval *tval)
+static int nilfs_cldconfig_get_time_argument(char **tokens, size_t ntoks,
+					     struct timespec *ts)
 {
 	unsigned long num;
 	double fnum;
@@ -153,15 +157,15 @@ static int nilfs_cldconfig_get_timeval_argument(char **tokens, size_t ntoks,
 			goto failed;
 		if (errno == ERANGE)
 			goto failed_too_large;
-		tval->tv_sec = num;
-		tval->tv_usec = (fnum - num) * 1000000;
+		ts->tv_sec = num;
+		ts->tv_nsec = (fnum - num) * 1000000000L;
 	} else if (*endptr != '\0') {
 		goto failed;
 	} else {
 		if (num == ULONG_MAX)
 			goto failed_too_large;
-		tval->tv_sec = num;
-		tval->tv_usec = 0;
+		ts->tv_sec = num;
+		ts->tv_nsec = 0;
 	}
 	return 0;
 
@@ -270,7 +274,7 @@ nilfs_cldconfig_handle_protection_period(struct nilfs_cldconfig *config,
 					 char **tokens, size_t ntoks,
 					 struct nilfs *nilfs)
 {
-	return nilfs_cldconfig_get_timeval_argument(
+	return nilfs_cldconfig_get_time_argument(
 		tokens, ntoks, &config->cf_protection_period);
 }
 
@@ -372,7 +376,7 @@ nilfs_cldconfig_handle_clean_check_interval(struct nilfs_cldconfig *config,
 					    char **tokens, size_t ntoks,
 					    struct nilfs *nilfs)
 {
-	return nilfs_cldconfig_get_timeval_argument(
+	return nilfs_cldconfig_get_time_argument(
 		tokens, ntoks, &config->cf_clean_check_interval);
 }
 
@@ -503,7 +507,7 @@ nilfs_cldconfig_handle_cleaning_interval(struct nilfs_cldconfig *config,
 					 char **tokens, size_t ntoks,
 					 struct nilfs *nilfs)
 {
-	return nilfs_cldconfig_get_timeval_argument(
+	return nilfs_cldconfig_get_time_argument(
 		tokens, ntoks, &config->cf_cleaning_interval);
 }
 
@@ -512,7 +516,7 @@ nilfs_cldconfig_handle_mc_cleaning_interval(struct nilfs_cldconfig *config,
 					    char **tokens, size_t ntoks,
 					    struct nilfs *nilfs)
 {
-	return nilfs_cldconfig_get_timeval_argument(
+	return nilfs_cldconfig_get_time_argument(
 		tokens, ntoks, &config->cf_mc_cleaning_interval);
 }
 
@@ -521,7 +525,7 @@ nilfs_cldconfig_handle_retry_interval(struct nilfs_cldconfig *config,
 				      char **tokens, size_t ntoks,
 				      struct nilfs *nilfs)
 {
-	return nilfs_cldconfig_get_timeval_argument(
+	return nilfs_cldconfig_get_time_argument(
 		tokens, ntoks, &config->cf_retry_interval);
 }
 
@@ -670,7 +674,7 @@ static void nilfs_cldconfig_set_default(struct nilfs_cldconfig *config,
 	config->cf_selection_policy = NILFS_SELECTION_POLICY_TIMESTAMP;
 
 	config->cf_protection_period.tv_sec = NILFS_CLDCONFIG_PROTECTION_PERIOD;
-	config->cf_protection_period.tv_usec = 0;
+	config->cf_protection_period.tv_nsec = 0;
 
 	param.num = NILFS_CLDCONFIG_MIN_CLEAN_SEGMENTS;
 	param.unit = NILFS_CLDCONFIG_MIN_CLEAN_SEGMENTS_UNIT;
@@ -684,17 +688,17 @@ static void nilfs_cldconfig_set_default(struct nilfs_cldconfig *config,
 
 	config->cf_clean_check_interval.tv_sec =
 		NILFS_CLDCONFIG_CLEAN_CHECK_INTERVAL;
-	config->cf_clean_check_interval.tv_usec = 0;
+	config->cf_clean_check_interval.tv_nsec = 0;
 	config->cf_nsegments_per_clean = NILFS_CLDCONFIG_NSEGMENTS_PER_CLEAN;
 	config->cf_mc_nsegments_per_clean =
 		NILFS_CLDCONFIG_MC_NSEGMENTS_PER_CLEAN;
 	config->cf_cleaning_interval.tv_sec = NILFS_CLDCONFIG_CLEANING_INTERVAL;
-	config->cf_cleaning_interval.tv_usec = 0;
+	config->cf_cleaning_interval.tv_nsec = 0;
 	config->cf_mc_cleaning_interval.tv_sec =
 		NILFS_CLDCONFIG_MC_CLEANING_INTERVAL;
-	config->cf_mc_cleaning_interval.tv_usec = 0;
+	config->cf_mc_cleaning_interval.tv_nsec = 0;
 	config->cf_retry_interval.tv_sec = NILFS_CLDCONFIG_RETRY_INTERVAL;
-	config->cf_retry_interval.tv_usec = 0;
+	config->cf_retry_interval.tv_nsec = 0;
 	config->cf_use_mmap = NILFS_CLDCONFIG_USE_MMAP;
 	config->cf_use_set_suinfo = NILFS_CLDCONFIG_USE_SET_SUINFO;
 	config->cf_log_priority = NILFS_CLDCONFIG_LOG_PRIORITY;

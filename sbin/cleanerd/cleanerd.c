@@ -75,6 +75,7 @@
 #include <assert.h>
 #include <uuid/uuid.h>
 #include "nilfs.h"
+#include "compat.h"
 #include "util.h"
 #include "vector.h"
 #include "nilfs_gc.h"
@@ -156,9 +157,9 @@ struct nilfs_cleanerd {
 	int no_timeout;
 	int shutdown;
 	long ncleansegs;
-	struct timeval cleaning_interval;
-	struct timeval target;
-	struct timeval timeout;
+	struct timespec cleaning_interval;
+	struct timespec target;
+	struct timespec timeout;
 	unsigned long min_reclaimable_blocks;
 	__u64 prev_nongc_ctime;
 	mqd_t recvq;
@@ -170,8 +171,8 @@ struct nilfs_cleanerd {
 	int mm_nrestpasses;
 	long mm_nrestsegs;
 	long mm_ncleansegs;
-	struct timeval mm_protection_period;
-	struct timeval mm_cleaning_interval;
+	struct timespec mm_protection_period;
+	struct timespec mm_cleaning_interval;
 	unsigned long mm_min_reclaimable_blocks;
 };
 
@@ -249,7 +250,7 @@ static int nilfs_cleanerd_config(struct nilfs_cleanerd *cleanerd,
 		syslog(LOG_INFO, "override protection period to %lu",
 		       protection_period);
 		config->cf_protection_period.tv_sec = protection_period;
-		config->cf_protection_period.tv_usec = 0;
+		config->cf_protection_period.tv_nsec = 0;
 	}
 	return 0;
 }
@@ -451,7 +452,7 @@ static long nilfs_cleanerd_ncleansegs(struct nilfs_cleanerd *cleanerd)
 		cleanerd->mm_ncleansegs : cleanerd->ncleansegs;
 }
 
-static struct timeval *
+static struct timespec *
 nilfs_cleanerd_cleaning_interval(struct nilfs_cleanerd *cleanerd)
 {
 	return cleanerd->running == 2 ?
@@ -459,7 +460,7 @@ nilfs_cleanerd_cleaning_interval(struct nilfs_cleanerd *cleanerd)
 		&cleanerd->cleaning_interval;
 }
 
-static struct timeval *
+static struct timespec *
 nilfs_cleanerd_protection_period(struct nilfs_cleanerd *cleanerd)
 {
 	return cleanerd->running == 2 ?
@@ -584,12 +585,13 @@ nilfs_cleanerd_select_segments(struct nilfs_cleanerd *cleanerd,
 	struct nilfs_vector *smv;
 	struct nilfs_segimp *sm;
 	struct nilfs_suinfo si[NILFS_CLEANERD_NSUINFO];
-	struct timeval tv, tv2;
+	struct timespec ts, ts2;
 	__s64 prottime, oldest, lastmod, now;
 	__u64 segnum;
 	size_t count, nsegs;
 	ssize_t nssegs, n;
 	long long imp, thr;
+	int ret;
 	int i;
 
 	nsegs = nilfs_cleanerd_ncleansegs(cleanerd);
@@ -599,15 +601,18 @@ nilfs_cleanerd_select_segments(struct nilfs_cleanerd *cleanerd,
 	if (!smv)
 		return -1;
 
-	/* The segments that were more recently written to disk than
-	 * prottime are not selected. */
-	if (gettimeofday(&tv, NULL) < 0) {
+	/*
+	 * The segments that were more recently written to disk than
+	 * prottime are not selected.
+	 */
+	ret = clock_gettime(CLOCK_REALTIME, &ts);
+	if (ret < 0) {
 		nssegs = -1;
 		goto out;
 	}
-	timersub(&tv, nilfs_cleanerd_protection_period(cleanerd), &tv2);
-	now = tv.tv_sec;
-	prottime = tv2.tv_sec;
+	timespecsub(&ts, nilfs_cleanerd_protection_period(cleanerd), &ts2);
+	now = ts.tv_sec;
+	prottime = ts2.tv_sec;
 	oldest = NILFS_CLEANERD_NULLTIME;
 
 	/*
@@ -842,12 +847,15 @@ static void nilfs_cleanerd_manual_stop(struct nilfs_cleanerd *cleanerd)
 
 static int nilfs_cleanerd_init_interval(struct nilfs_cleanerd *cleanerd)
 {
-	if (gettimeofday(&cleanerd->target, NULL) < 0) {
+	int ret;
+
+	ret = clock_gettime(CLOCK_REALTIME, &cleanerd->target);
+	if (ret < 0) {
 		syslog(LOG_ERR, "cannot get time: %m");
 		return -1;
 	}
-	timeradd(&cleanerd->target, &cleanerd->config.cf_cleaning_interval,
-		 &cleanerd->target);
+	timespecadd(&cleanerd->target, &cleanerd->config.cf_cleaning_interval,
+		    &cleanerd->target);
 	return 0;
 }
 
@@ -855,16 +863,18 @@ static int nilfs_cleanerd_recalc_interval(struct nilfs_cleanerd *cleanerd,
 					  int nchosen, int ndone,
 					  __s64 prottime, __s64 oldest)
 {
-	struct timeval curr, *interval;
+	struct timespec curr, *interval;
+	int ret;
 
-	if (gettimeofday(&curr, NULL) < 0) {
+	ret = clock_gettime(CLOCK_REALTIME, &curr);
+	if (ret < 0) {
 		syslog(LOG_ERR, "cannot get current time: %m");
 		return -1;
 	}
 
 	if (nchosen == 0 ||
 	    (!cleanerd->fallback && ndone == 0 && !cleanerd->retry_cleaning)) {
-		struct timeval pt;
+		struct timespec pt;
 
 		/* no segment were cleaned */
 		if (cleanerd->running == 2) {
@@ -881,10 +891,10 @@ static int nilfs_cleanerd_recalc_interval(struct nilfs_cleanerd *cleanerd,
 			__s64 tgt = min_t(__s64, oldest, curr.tv_sec);
 
 			pt.tv_sec = tgt > prottime ? tgt - prottime + 1 : 1;
-			pt.tv_usec = 0;
+			pt.tv_nsec = 0;
 		}
-		if (timercmp(&pt,
-			     &cleanerd->config.cf_clean_check_interval, <))
+		if (timespeccmp(&pt,
+				&cleanerd->config.cf_clean_check_interval, <))
 			cleanerd->timeout =
 				cleanerd->config.cf_clean_check_interval;
 		else
@@ -893,25 +903,25 @@ static int nilfs_cleanerd_recalc_interval(struct nilfs_cleanerd *cleanerd,
 	}
 
 	if (cleanerd->fallback) {
-		timeradd(&curr, &cleanerd->config.cf_retry_interval,
-			 &cleanerd->target);
-		timersub(&cleanerd->target, &curr, &cleanerd->timeout);
+		timespecadd(&curr, &cleanerd->config.cf_retry_interval,
+			    &cleanerd->target);
+		timespecsub(&cleanerd->target, &curr, &cleanerd->timeout);
 		syslog(LOG_DEBUG, "retry interval");
 		return 0;
 	}
 
 	interval = nilfs_cleanerd_cleaning_interval(cleanerd);
-	/* timercmp() does not work for '>=' or '<='. */
+	/* timespeccmp() does not work for '>=' or '<='. */
 	/* curr >= target */
-	if (!timercmp(&curr, &cleanerd->target, <) || cleanerd->no_timeout) {
+	if (!timespeccmp(&curr, &cleanerd->target, <) || cleanerd->no_timeout) {
 		cleanerd->timeout.tv_sec = 0;
-		cleanerd->timeout.tv_usec = 0;
-		timeradd(&curr, interval, &cleanerd->target);
+		cleanerd->timeout.tv_nsec = 0;
+		timespecadd(&curr, interval, &cleanerd->target);
 		syslog(LOG_DEBUG, "adjust interval");
 		return 0;
 	}
-	timersub(&cleanerd->target, &curr, &cleanerd->timeout);
-	timeradd(&cleanerd->target, interval, &cleanerd->target);
+	timespecsub(&cleanerd->target, &curr, &cleanerd->timeout);
+	timespecadd(&cleanerd->target, interval, &cleanerd->target);
 	return 0;
 }
 
@@ -1002,7 +1012,7 @@ static int nilfs_cleanerd_cmd_run(struct nilfs_cleanerd *cleanerd,
 			goto error_inval;
 		cleanerd->mm_protection_period.tv_sec =
 			req2->args.protection_period;
-		cleanerd->mm_protection_period.tv_usec = 0;
+		cleanerd->mm_protection_period.tv_nsec = 0;
 	} else {
 		cleanerd->mm_protection_period =
 			cleanerd->config.cf_protection_period;
@@ -1022,8 +1032,8 @@ static int nilfs_cleanerd_cmd_run(struct nilfs_cleanerd *cleanerd,
 	if (req2->args.valid & NILFS_CLEANER_ARG_CLEANING_INTERVAL) {
 		cleanerd->mm_cleaning_interval.tv_sec =
 			req2->args.cleaning_interval;
-		cleanerd->mm_cleaning_interval.tv_usec =
-			req2->args.cleaning_interval_nsec / 1000;
+		cleanerd->mm_cleaning_interval.tv_nsec =
+			req2->args.cleaning_interval_nsec;
 	} else {
 		cleanerd->mm_cleaning_interval =
 			cleanerd->cleaning_interval;
@@ -1223,20 +1233,20 @@ out:
 
 static int nilfs_cleanerd_wait(struct nilfs_cleanerd *cleanerd)
 {
-	struct timeval curr, next;
-	struct timespec abs_timeout;
-	struct timeval *timeout = &cleanerd->timeout;
+	struct timespec curr, abs_timeout;
+	struct timespec *timeout = &cleanerd->timeout;
 	ssize_t bytes;
+	int ret;
 
-	syslog(LOG_DEBUG, "wait %ld.%06ld",
-	       timeout->tv_sec, timeout->tv_usec);
+	syslog(LOG_DEBUG, "wait %ld.%09ld",
+	       timeout->tv_sec, timeout->tv_nsec);
 
-	if (gettimeofday(&curr, NULL) < 0) {
+	ret = clock_gettime(CLOCK_REALTIME, &curr);
+	if (ret < 0) {
 		syslog(LOG_ERR, "cannot get current time: %m");
 		return -1;
 	}
-	timeradd(&curr, timeout, &next);
-	timeval_to_timespec(&next, &abs_timeout);
+	timespecadd(&curr, timeout, &abs_timeout);
 
 	bytes = mq_timedreceive(cleanerd->recvq, nilfs_cleanerd_msgbuf,
 				sizeof(nilfs_cleanerd_msgbuf), NULL,
@@ -1402,7 +1412,7 @@ static int nilfs_cleanerd_clean_segments(struct nilfs_cleanerd *cleanerd,
 {
 	struct nilfs_reclaim_params params;
 	struct nilfs_reclaim_stat stat;
-	struct timeval *pt;
+	struct timespec *pt;
 	int ret, i, sumsegs;
 
 	params.flags = NILFS_RECLAIM_PARAM_PROTSEQ |
