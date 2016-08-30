@@ -920,8 +920,7 @@ static int nilfs_cleanerd_recalc_interval(struct nilfs_cleanerd *cleanerd,
 	/* timespeccmp() does not work for '>=' or '<='. */
 	/* curr >= target */
 	if (!timespeccmp(&curr, &cleanerd->target, <) || cleanerd->no_timeout) {
-		cleanerd->timeout.tv_sec = 0;
-		cleanerd->timeout.tv_nsec = 0;
+		timespecclear(&cleanerd->timeout);
 		timespecadd(&curr, interval, &cleanerd->target);
 		syslog(LOG_DEBUG, "adjust interval");
 		return 0;
