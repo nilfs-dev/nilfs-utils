@@ -1,5 +1,5 @@
 /*
- * cnoconv.h - checkpoint number converter
+ * cnoconv.h - checkpoint number converter (obsolete)
  *
  * Licensed under LGPLv2: the complete text of the GNU Lesser General
  * Public License can be found in COPYING file of the nilfs-utils
