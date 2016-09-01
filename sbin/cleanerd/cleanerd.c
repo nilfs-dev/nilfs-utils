@@ -780,9 +780,9 @@ static int set_sigterm_handler(void)
 {
 	struct sigaction act;
 
+	memset(&act, 0, sizeof(act));
 	act.sa_handler = handle_sigterm;
 	sigfillset(&act.sa_mask);
-	act.sa_flags = 0;
 	return sigaction(SIGTERM, &act, NULL);
 }
 
@@ -790,9 +790,9 @@ static int set_sighup_handler(void)
 {
 	struct sigaction act;
 
+	memset(&act, 0, sizeof(act));
 	act.sa_handler = handle_sighup;
 	sigfillset(&act.sa_mask);
-	act.sa_flags = 0;
 	return sigaction(SIGHUP, &act, NULL);
 }
 
