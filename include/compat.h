@@ -8,6 +8,15 @@
 #include <time.h>
 #endif	/* HAVE_TIME_H */
 
+/* Sizes of integral types */
+#ifndef U64_MAX
+#define U64_MAX		18446744073709551615LL	/* __u64 (or u64) max */
+#endif
+
+#ifndef S64_MAX
+#define S64_MAX		9223372036854775807LL	/* __s64 (or s64) max */
+#endif
+
 /* Linux specific system clocks */
 #ifndef CLOCK_REALTIME_COARSE
 #define CLOCK_REALTIME_COARSE	5  /* Supported on Linux 2.6.32 or later */

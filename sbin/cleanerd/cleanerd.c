@@ -574,7 +574,7 @@ static int nilfs_shrink_protected_region(struct nilfs *nilfs)
  * @oldestp: place to store the oldest mod-time
  */
 #define NILFS_CLEANERD_NSUINFO	512
-#define NILFS_CLEANERD_NULLTIME 9223372036854775807LL	/* 64-bit int max */
+#define NILFS_CLEANERD_NULLTIME S64_MAX
 
 static ssize_t
 nilfs_cleanerd_select_segments(struct nilfs_cleanerd *cleanerd,
