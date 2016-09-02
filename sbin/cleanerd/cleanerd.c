@@ -69,6 +69,10 @@
 #include <mqueue.h>
 #endif	/* HAVE_MQUEUE_H */
 
+#if HAVE_POLL_H
+#include <poll.h>
+#endif	/* HAVE_POLL_H */
+
 #include <errno.h>
 #include <signal.h>
 #include <setjmp.h>
@@ -319,7 +323,8 @@ static int nilfs_cleanerd_open_queue(struct nilfs_cleanerd *cleanerd,
 	if (!cleanerd->recvq_name)
 		goto failed;
 
-	cleanerd->recvq = mq_open(nambuf, O_RDONLY | O_CREAT, 0600, &attr);
+	cleanerd->recvq = mq_open(nambuf, O_RDONLY | O_CREAT | O_NONBLOCK,
+				  0600, &attr);
 	if (cleanerd->recvq < 0) {
 		free(cleanerd->recvq_name);
 		goto failed;
@@ -1238,34 +1243,49 @@ out:
 
 static int nilfs_cleanerd_wait(struct nilfs_cleanerd *cleanerd)
 {
-	struct timespec curr, abs_timeout;
-	struct timespec *timeout = &cleanerd->timeout;
+	struct pollfd pfd;
 	ssize_t bytes;
 	int ret;
 
 	syslog(LOG_DEBUG, "wait %ld.%09ld",
-	       timeout->tv_sec, timeout->tv_nsec);
+	       cleanerd->timeout.tv_sec, cleanerd->timeout.tv_nsec);
 
-	ret = clock_gettime(CLOCK_REALTIME, &curr);
+	memset(&pfd, 0, sizeof(pfd));
+	pfd.fd = cleanerd->recvq;
+	pfd.events = POLLIN;
+
+	ret = ppoll(&pfd, 1, &cleanerd->timeout, NULL);
 	if (ret < 0) {
-		syslog(LOG_ERR, "cannot get current time: %m");
+		if (errno == EINTR) {
+			syslog(LOG_INFO, "wake up (interrupted)");
+			goto out;
+		}
+		syslog(LOG_ERR, "ppoll failed: %m");
 		return -1;
 	}
-	timespecadd(&curr, timeout, &abs_timeout);
 
-	bytes = mq_timedreceive(cleanerd->recvq, nilfs_cleanerd_msgbuf,
-				sizeof(nilfs_cleanerd_msgbuf), NULL,
-				&abs_timeout);
+	if (!(pfd.revents & POLLIN)) {
+		syslog(LOG_DEBUG, "wake up (timed out)");
+		goto out;
+	}
+	syslog(LOG_DEBUG, "wake up to handle message");
+
+	bytes = mq_receive(cleanerd->recvq, nilfs_cleanerd_msgbuf,
+			   sizeof(nilfs_cleanerd_msgbuf), NULL);
 	if (bytes < 0) {
-		if (errno != ETIMEDOUT && errno != EINTR) {
-			syslog(LOG_ERR, "cannot sleep: %m");
+		if (errno == EINTR || errno == EAGAIN) {
+			syslog(LOG_INFO, "mq_receive aborted: %s",
+			       errno == EINTR ?
+			       "interrupted" : "no message found");
+		} else {
+			syslog(LOG_ERR, "mq_receive failed: %m");
 			return -1;
 		}
-		syslog(LOG_DEBUG, "wake up");
 	} else {
 		nilfs_cleanerd_handle_message(cleanerd, nilfs_cleanerd_msgbuf,
 					      bytes);
 	}
+out:
 	return 0;
 }
 
