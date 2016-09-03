@@ -66,6 +66,10 @@
 #include <mqueue.h>
 #endif	/* HAVE_MQUEUE_H */
 
+#if HAVE_POLL_H
+#include <poll.h>
+#endif	/* HAVE_POLL_H */
+
 #include <signal.h>
 #include <stdarg.h>
 #include <errno.h>
@@ -718,18 +722,20 @@ out:
 	return ret;
 }
 
-int nilfs_cleaner_wait(struct nilfs_cleaner *cleaner, uint32_t jobid,
-		       const struct timespec *abs_timeout)
+static int nilfs_cleaner_wait_common(struct nilfs_cleaner *cleaner,
+				     uint32_t jobid)
 {
 	struct nilfs_cleaner_request_with_jobid req;
-	struct nilfs_cleaner_response res;
-	int bytes, ret = -1;
+	int ret;
 
 	if (cleaner->sendq < 0 || cleaner->recvq < 0) {
+		ret = -1;
 		errno = EBADF;
 		goto out;
 	}
-	if (nilfs_cleaner_clear_queueu(cleaner) < 0)
+
+	ret = nilfs_cleaner_clear_queueu(cleaner);
+	if (ret < 0)
 		goto out;
 
 	req.hdr.cmd = NILFS_CLEANER_CMD_WAIT;
@@ -739,11 +745,62 @@ int nilfs_cleaner_wait(struct nilfs_cleaner *cleaner, uint32_t jobid,
 
 	ret = mq_send(cleaner->sendq, (char *)&req, sizeof(req),
 		      NILFS_CLEANER_PRIO_NORMAL);
+out:
+	return ret;
+}
+
+int nilfs_cleaner_wait(struct nilfs_cleaner *cleaner, uint32_t jobid,
+		       const struct timespec *abs_timeout)
+{
+	struct nilfs_cleaner_response res;
+	int bytes, ret;
+
+	ret = nilfs_cleaner_wait_common(cleaner, jobid);
 	if (ret < 0)
-		goto out; /* ETIMEDOUT will be returned in case of timeout */
+		goto out;
 
 	bytes = mq_timedreceive(cleaner->recvq, (char *)&res, sizeof(res),
 				NULL, abs_timeout);
+	if (bytes < sizeof(res)) {
+		if (bytes >= 0)
+			errno = EIO;
+		ret = -1;
+		goto out;
+	}
+	if (res.result == NILFS_CLEANER_RSP_NACK) {
+		ret = -1;
+		errno = res.err;
+	}
+out:
+	return ret;
+}
+
+int nilfs_cleaner_wait_r(struct nilfs_cleaner *cleaner, uint32_t jobid,
+			 const struct timespec *timeout)
+{
+	struct nilfs_cleaner_response res;
+	struct pollfd pfd;
+	int bytes, ret;
+
+	ret = nilfs_cleaner_wait_common(cleaner, jobid);
+	if (ret < 0)
+		goto out;
+
+	memset(&pfd, 0, sizeof(0));
+	pfd.fd = cleaner->recvq;
+	pfd.events = POLLIN;
+
+	ret = ppoll(&pfd, 1, timeout, NULL);
+	if (ret < 0)
+		goto out;
+
+	if (!(pfd.revents & POLLIN)) {
+		ret = -1;
+		errno = ETIMEDOUT;
+		goto out;
+	}
+
+	bytes = mq_receive(cleaner->recvq, (char *)&res, sizeof(res), NULL);
 	if (bytes < sizeof(res)) {
 		if (bytes >= 0)
 			errno = EIO;

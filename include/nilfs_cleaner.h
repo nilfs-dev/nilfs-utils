@@ -97,6 +97,8 @@ int nilfs_cleaner_tune(struct nilfs_cleaner *cleaner,
 int nilfs_cleaner_reload(struct nilfs_cleaner *cleaner, const char *conffile);
 int nilfs_cleaner_wait(struct nilfs_cleaner *cleaner, uint32_t jobid,
 		       const struct timespec *abs_timeout);
+int nilfs_cleaner_wait_r(struct nilfs_cleaner *cleaner, uint32_t jobid,
+			 const struct timespec *timeout);
 int nilfs_cleaner_stop(struct nilfs_cleaner *cleaner);
 int nilfs_cleaner_shutdown(struct nilfs_cleaner *cleaner);
 
