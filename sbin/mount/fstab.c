@@ -33,7 +33,9 @@
 #include <sys/time.h>
 #endif	/* HAVE_SYS_TIME_H */
 
+#if HAVE_TIME_H
 #include <time.h>
+#endif	/* HAVE_TIME_H */
 
 #if HAVE_MNTENT_H
 #include <mntent.h>		/* for MNTTYPE_IGNORE */
@@ -45,6 +47,7 @@
 #include "xmalloc.h"
 #include "pathnames.h"
 #include "nls.h"
+#include "compat.h"
 
 #define streq(s, t)	(strcmp((s), (t)) == 0)
 
@@ -395,8 +398,9 @@ void lock_mtab(void)
 {
 	int i;
 	struct timespec waittime;
-	struct timeval maxtime;
+	struct timespec maxtime;
 	char linktargetfile[MOUNTLOCK_LINKTARGET_LTH];
+	int errsv, ret;
 
 	if (!signals_have_been_setup) {
 		int sig = 0;
@@ -421,18 +425,26 @@ void lock_mtab(void)
 
 	i = open(linktargetfile, O_WRONLY|O_CREAT, S_IRUSR|S_IWUSR);
 	if (i < 0) {
-		int errsv = errno;
-
-		/* linktargetfile does not exist (as a file)
-		   and we cannot create it. Read-only filesystem?
-		   Too many files open in the system?
-		   Filesystem full? */
-		die(EX_FILEIO, _("can't create lock file %s: %s (use -n flag to override)"),
-			 linktargetfile, strerror(errsv));
+		errsv = errno;
+		/*
+		 * linktargetfile does not exist (as a file)
+		 * and we cannot create it. Read-only filesystem?
+		 * Too many files open in the system?
+		 * Filesystem full?
+		 */
+		die(EX_FILEIO,
+		    _("can't create lock file %s: %s (use -n flag to override)"),
+		    linktargetfile, strerror(errsv));
 	}
 	close(i);
 
-	gettimeofday(&maxtime, NULL);
+	ret = clock_gettime(CLOCK_MONOTONIC, &maxtime);
+	if (ret < 0) {
+		errsv = errno;
+		die(EX_SYSERR, _("cannot get monotonic clock: %s"),
+		    strerror(errsv));
+	}
+
 	maxtime.tv_sec += MOUNTLOCK_MAXTIME;
 
 	waittime.tv_sec = 0;
@@ -440,9 +452,9 @@ void lock_mtab(void)
 
 	/* Repeat until it was us who made the link */
 	while (!we_created_lockfile) {
-		struct timeval now;
+		struct timespec now;
 		struct flock flock;
-		int errsv, j;
+		int j;
 
 		j = link(linktargetfile, _PATH_MOUNTED_LOCK);
 		errsv = errno;
@@ -460,10 +472,17 @@ void lock_mtab(void)
 
 		if (lockfile_fd < 0) {
 			/* Strange... Maybe the file was just deleted? */
-			int errsv = errno;
+			errsv = errno;
+			ret = clock_gettime(CLOCK_MONOTONIC, &now);
+			if (ret < 0) {
+				errsv = errno;
+				unlink(linktargetfile);
+				die(EX_SYSERR,
+				    _("cannot get monotonic clock: %s"),
+				    strerror(errsv));
+			}
 
-			gettimeofday(&now, NULL);
-			if (errsv == ENOENT && now.tv_sec < maxtime.tv_sec) {
+			if (errsv == ENOENT && timespeccmp(&now, &maxtime, <)) {
 				we_created_lockfile = 0;
 				continue;
 			}
@@ -481,8 +500,7 @@ void lock_mtab(void)
 			/* We made the link. Now claim the lock. */
 			if (fcntl(lockfile_fd, F_SETLK, &flock) == -1) {
 				if (verbose) {
-					int errsv = errno;
-
+					errsv = errno;
 					printf(_("Can't lock lock file %s: %s\n"),
 					       _PATH_MOUNTED_LOCK,
 					       strerror(errsv));
@@ -495,15 +513,20 @@ void lock_mtab(void)
 			(void) unlink(linktargetfile);
 		} else {
 			/* Someone else made the link. Wait. */
-			gettimeofday(&now, NULL);
-			if (now.tv_sec < maxtime.tv_sec) {
-				int ret;
+			ret = clock_gettime(CLOCK_MONOTONIC, &now);
+			if (ret < 0) {
+				errsv = errno;
+				unlink(linktargetfile);
+				die(EX_SYSERR,
+				    _("cannot get monotonic clock: %s"),
+				    strerror(errsv));
+			}
 
+			if (timespeccmp(&now, &maxtime, <)) {
 				alarm(maxtime.tv_sec - now.tv_sec);
 				ret = fcntl(lockfile_fd, F_SETLKW, &flock);
 				if (ret == -1) {
-					int errsv = errno;
-
+					errsv = errno;
 					(void) unlink(linktargetfile);
 					die(EX_FILEIO,
 					    _("can't lock lock file %s: %s"),
