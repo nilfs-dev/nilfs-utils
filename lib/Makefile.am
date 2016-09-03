@@ -35,7 +35,7 @@ nilfsgc_VERSIONINFO = $(nilfsgc_CURRENT):$(nilfsgc_REVISION):$(nilfsgc_AGE)
 
 libnilfsgc_la_SOURCES = gc.c vector.c cnoconv.c cnormap.c
 libnilfsgc_la_LDFLAGS = -version-info $(nilfsgc_VERSIONINFO)
-libnilfsgc_la_LIBADD = libnilfs.la $(LIB_POSIX_SEM)
+libnilfsgc_la_LIBADD = libnilfs.la $(LIB_POSIX_SEM) $(LIB_POSIX_TIMER)
 
 cleanerctl_CURRENT = 0
 cleanerctl_REVISION = 1
@@ -44,4 +44,5 @@ cleanerctl_VERSIONINFO = $(cleanerctl_CURRENT):$(cleanerctl_REVISION):$(cleanerc
 
 libnilfscleaner_la_SOURCES = cleaner_ctl.c
 libnilfscleaner_la_LDFLAGS = -version-info $(cleanerctl_VERSIONINFO)
-libnilfscleaner_la_LIBADD = librealpath.la libcleanerexec.la $(LIB_POSIX_MQ) -luuid
+libnilfscleaner_la_LIBADD = librealpath.la libcleanerexec.la $(LIB_POSIX_MQ) \
+	-luuid $(LIB_POSIX_TIMER)

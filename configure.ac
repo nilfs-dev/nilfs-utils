@@ -87,6 +87,12 @@ AC_CHECK_FUNC(sem_open,,
 	[AC_MSG_ERROR([posix semaphore not found])])])])])
 AC_SUBST(LIB_POSIX_SEM)
 
+LIB_POSIX_TIMER=''
+AC_CHECK_FUNC(clock_gettime,,
+	[AC_CHECK_LIB(rt, clock_gettime, LIB_POSIX_TIMER=-lrt,
+	[AC_MSG_ERROR([clock_gettime not found])])])
+AC_SUBST(LIB_POSIX_TIMER)
+
 # Checks for header files.
 AC_HEADER_STDC
 AC_HEADER_SYS_WAIT

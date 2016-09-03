@@ -9,7 +9,8 @@ LEGACYHEADERS = fstab.h mount_constants.h mount_mntent.h mount_opts.h
 AM_CFLAGS = -Wall
 AM_CPPFLAGS = -I$(top_srcdir)/include
 LDADD = $(top_builddir)/lib/librealpath.la \
-	$(top_builddir)/lib/libcleanerexec.la $(LIB_MOUNT) $(LIB_SELINUX)
+	$(top_builddir)/lib/libcleanerexec.la $(LIB_MOUNT) $(LIB_SELINUX) \
+	$(LIB_POSIX_TIMER)
 
 root_sbin_PROGRAMS = mount.nilfs2 umount.nilfs2
 

@@ -64,6 +64,7 @@
 #include <assert.h>
 
 #include "cleaner_exec.h"
+#include "compat.h"
 #include "nls.h"
 
 /* Intervals for binary exponential backoff */
@@ -266,23 +267,35 @@ static void recalc_backoff_time(struct timespec *interval)
 static int nilfs_wait_cleanerd(const char *device, pid_t pid)
 {
 	struct timespec waittime;
-	struct timeval start, end, now;
+	struct timespec start, end, now;
+	int ret;
 
 	if (!process_is_alive(pid))
 		return 0;
 
-	gettimeofday(&start, NULL);
+	ret = clock_gettime(CLOCK_MONOTONIC, &start);
+	if (ret < 0) {
+		nilfs_cleaner_logger(LOG_ERR,
+				     _("failed to get monotonic clock: %s"),
+				     strerror(errno));
+		return -1;
+	}
+
 	waittime.tv_sec = 0;
 	waittime.tv_nsec = WAIT_CLEANERD_MIN_BACKOFF_TIME * 1000;
 	end.tv_sec = start.tv_sec + WAIT_CLEANERD_MAX_BACKOFF_TIME;
-	end.tv_usec = start.tv_usec;
+	end.tv_nsec = start.tv_nsec;
 
 	for (;;) {
-		nanosleep(&waittime, NULL);
+		ret = clock_nanosleep(CLOCK_MONOTONIC, 0, &waittime, NULL);
+		if (ret < 0 && errno == EINTR)
+			return -1;
+
 		if (!process_is_alive(pid))
 			return 0;
 
-		if (gettimeofday(&now, NULL) < 0 || !timercmp(&now, &end, <))
+		ret = clock_gettime(CLOCK_MONOTONIC, &now);
+		if (ret < 0 || !timespeccmp(&now, &end, <))
 			break;
 
 		recalc_backoff_time(&waittime);
@@ -295,11 +308,19 @@ static int nilfs_wait_cleanerd(const char *device, pid_t pid)
 	waittime.tv_sec = WAIT_CLEANERD_RETRY_INTERVAL;
 	waittime.tv_nsec = 0;
 	end.tv_sec = start.tv_sec + WAIT_CLEANERD_RETRY_TIMEOUT;
-	end.tv_usec = start.tv_usec;
+	end.tv_nsec = start.tv_nsec;
 
-	while (!gettimeofday(&now, NULL) && timercmp(&now, &end, <)) {
+	for (;;) {
+		ret = clock_gettime(CLOCK_MONOTONIC, &now);
+		if (ret < 0 || !timespeccmp(&now, &end, <))
+			break;
 
-		nanosleep(&waittime, NULL);
+		ret = clock_nanosleep(CLOCK_MONOTONIC, 0, &waittime, NULL);
+		if (ret < 0 && errno == EINTR) {
+			nilfs_cleaner_printf(_("interrupted\n"));
+			nilfs_cleaner_flush();
+			return -1;
+		}
 
 		if (!process_is_alive(pid)) {
 			nilfs_cleaner_printf(_("done\n"));
