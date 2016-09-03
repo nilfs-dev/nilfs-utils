@@ -463,7 +463,7 @@ void lock_mtab(void)
 			int errsv = errno;
 
 			gettimeofday(&now, NULL);
-			if (errno == ENOENT && now.tv_sec < maxtime.tv_sec) {
+			if (errsv == ENOENT && now.tv_sec < maxtime.tv_sec) {
 				we_created_lockfile = 0;
 				continue;
 			}
@@ -508,7 +508,7 @@ void lock_mtab(void)
 					die(EX_FILEIO,
 					    _("can't lock lock file %s: %s"),
 					    _PATH_MOUNTED_LOCK,
-					    (errno == EINTR) ?
+					    (errsv == EINTR) ?
 					    _("timed out") : strerror(errsv));
 				}
 				alarm(0);
