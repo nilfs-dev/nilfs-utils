@@ -19,4 +19,4 @@ void nilfs_cnormap_destroy(struct nilfs_cnormap *cnormap);
 int nilfs_cnormap_track_back(struct nilfs_cnormap *cnormap, __u64 period,
 			     nilfs_cno_t *cnop);
 
-#endif /* NILFS_CNORMAP */
+#endif /* NILFS_CNORMAP_H */
