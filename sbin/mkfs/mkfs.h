@@ -20,6 +20,9 @@
  * Revised by Ryusuke Konishi <konishi.ryusuke@lab.ntt.co.jp>.
  */
 
+#ifndef NILFS_MKFS_H
+#define NILFS_MKFS_H
+
 #include "nilfs2_ondisk.h"
 #include "util.h"	/* BUG() */
 
@@ -101,3 +104,5 @@ static inline __le16 nilfs_rec_len_to_disk(unsigned len)
 #endif
 	return cpu_to_le16(len);
 }
+
+#endif /* NILFS_MKFS_H */
