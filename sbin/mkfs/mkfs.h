@@ -24,7 +24,7 @@
 #define NILFS_MKFS_H
 
 #include "nilfs2_ondisk.h"
-#include "util.h"	/* BUG() */
+#include "util.h"	/* BUG_ON() */
 
 #define NILFS_DISKHDR_SIZE		4096 /* HDD header (MBR+superblock) */
 #define NILFS_DISK_ERASE_SIZE		1048576	/* size of first and last
@@ -83,26 +83,19 @@ extern int ext2fs_test_bit(int nr, const void *addr);
 #define DT_WHT		14
 
 /* Inline functions to convert record length of directory entries */
-static inline unsigned nilfs_rec_len_from_disk(__le16 dlen)
+static inline unsigned int nilfs_rec_len_from_disk(__le16 dlen)
 {
-	unsigned len = le16_to_cpu(dlen);
+	unsigned int len = le16_to_cpu(dlen);
 
-#if !defined(__KERNEL__) || (PAGE_CACHE_SIZE >= 65536)
-	if (len == NILFS_MAX_REC_LEN)
-		return 1 << 16;
-#endif
-	return len;
+	return len == NILFS_MAX_REC_LEN ? 1 << 16 : len;
 }
 
-static inline __le16 nilfs_rec_len_to_disk(unsigned len)
+static inline __le16 nilfs_rec_len_to_disk(unsigned int len)
 {
-#if !defined(__KERNEL__) || (PAGE_CACHE_SIZE >= 65536)
-	if (len == (1 << 16))
-		return cpu_to_le16(NILFS_MAX_REC_LEN);
-	else if (len > (1 << 16))
-		BUG();
-#endif
-	return cpu_to_le16(len);
+	BUG_ON(len > (1 << 16));
+
+	return len == (1 << 16) ? cpu_to_le16(NILFS_MAX_REC_LEN) :
+		cpu_to_le16(len);
 }
 
 #endif /* NILFS_MKFS_H */
