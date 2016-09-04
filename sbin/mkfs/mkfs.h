@@ -20,7 +20,7 @@
  * Revised by Ryusuke Konishi <konishi.ryusuke@lab.ntt.co.jp>.
  */
 
-#include "nilfs2_fs.h"
+#include "nilfs2_ondisk.h"
 #include "util.h"	/* BUG() */
 
 #define NILFS_DISKHDR_SIZE		4096 /* HDD header (MBR+superblock) */

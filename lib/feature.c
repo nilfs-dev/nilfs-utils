@@ -44,7 +44,6 @@
 #include <errno.h>
 #include <assert.h>
 #include "nilfs.h"
-#include "nilfs2_fs.h"
 #include "nilfs_feature.h"
 
 struct nilfs_feature {

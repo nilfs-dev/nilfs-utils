@@ -72,7 +72,8 @@ typedef __u64	__be64;
 #error "unknown endian"
 #endif	/* __BYTE_ORDER */
 
-#include "nilfs2_fs.h"
+#include "nilfs2_ondisk.h"
+#include "nilfs2_api.h"
 
 /* XXX: sector_t is not defined in user land */
 typedef __u64 sector_t;	/* XXX: __u64 ?? */
