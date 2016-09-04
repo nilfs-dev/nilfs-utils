@@ -7,6 +7,10 @@
 #include <assert.h>
 #include <stdlib.h>
 
+#ifndef BUG
+#define BUG()	abort()
+#endif
+
 #define BUG_ON(x)	   assert(!(x))
 /* Force a compilation error if the condition is true */
 #define BUILD_BUG_ON(condition) ((void)sizeof(struct { int: -!!(condition); }))
