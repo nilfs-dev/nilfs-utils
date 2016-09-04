@@ -1,3 +1,63 @@
+nilfs-utils-2.2.5  Sun Sep 4, 2016 JST
+
+	* fix the problem that checkpoints and blocks with a future timestamp
+	  are not reclaimed:
+	  - Add cnormap, a new checkpiont number reverse mapper
+	  - vector: add clear operation
+	  - vector: add insert operation
+	  - lssu: use nilfs_cnormap
+	  - cleanerd: use nilfs_cnormap
+	* fix the problem that cleanerd timeout can be too long when the
+	  system time is changed to earlier time:
+	  - compat.h: add operations on timespecs
+	  - cleanerd: use timespec and clock_gettime()
+	  - cleanerd: use monotonic clock for cleanerd->target
+	* fix other problems that can happen when the system time is changed
+	  to earlier time:
+	  - cleanerd: use ppoll() to wait for incoming mq-message
+	  - cleanerd: do not skip segments with a future timestamp
+	  - cleaner_ctl: add wait API function that supports relative timeout
+	  - cleaner_exec: use monotonic clock to wait for cleanerd
+	  - mount/fstab.c: use monotonic clock to wait for mtab lock
+	  - lssu: do not mark protected flag for segments with a future
+	    timestamp
+	* fix bugs:
+	  - cleaner_exec: fix device name in a message of nilfs_wait_cleanerd()
+	  - cleanerd: fix error return value of oom_adjust()
+	  - cleanerd: do not ignore error messages of oom_adjust()
+	  - cleanerd: add missing free() calls for canonicalized path names
+	  - lssu, rmcp: close nilfs object cleanly in error cases
+	  - vector: fix potential overflow in nilfs_vector_get_new_element()
+	  - mount/fstab.c: fix unstable errno references
+	* improve checkpatch script:
+	  - improve operator spacing check
+	  - add user space output functions to logFunctions
+	  - handle output functions with "_()" macro
+	* fix coding style issues:
+	  - remove FSF mailing address from GPL notices
+	  - add missing line spacing
+	  - mount/fstab.c: fix typo "attemps" in comment
+	  - use tabs for code indent
+	  - fix unnecessary line continuations for output messages
+	  - fix quoted string split across lines
+	  - fix suspect code indent for conditional statements
+	  - remove unnecessary else after return or break
+	  - remove unnecessary return statements
+	  - adjust long declarations to avoid checkpatch warning
+	  - keep code lines short
+	  - cleanerd: do not use volatile for protection_period static variable
+	* minor-amendments:
+	  - vector: reject zero-byte element
+	  - configure.ac: add stdint.h to headers to be checked
+	  - cleanerd, lssu: handle absolute time with signed type variables
+	  - cleanerd: initialize sigaction struct for safety
+	* cleanups:
+	  - clean up osrg.net e-mail addresses
+	  - use err(), warn() and their variants
+	  - use EXIT_SUCCESS and EXIT_FAILURE
+	  - use ARRAY_SIZE() macro
+	  - etc
+
 nilfs-utils-2.2.4  Wed Apr 27, 2016 JST
 
 	* lib/nilfs.c: add missing initialization of nilfs->n_opts
