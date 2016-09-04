@@ -285,6 +285,8 @@ int nilfs_read_sb(struct nilfs *);
 ssize_t nilfs_get_segment(struct nilfs *, unsigned long, void **);
 int nilfs_put_segment(struct nilfs *, void *);
 size_t nilfs_get_block_size(const struct nilfs *nilfs);
+__u64 nilfs_get_nsegments(const struct nilfs *nilfs);
+__u32 nilfs_get_blocks_per_segment(const struct nilfs *nilfs);
 __u64 nilfs_get_segment_seqnum(const struct nilfs *, void *, __u64);
 __u64 nilfs_get_reserved_segments(const struct nilfs *nilfs);
 
@@ -306,15 +308,5 @@ int nilfs_clean_segments(struct nilfs *, struct nilfs_vdesc *, size_t,
 int nilfs_sync(const struct nilfs *, nilfs_cno_t *);
 int nilfs_resize(struct nilfs *nilfs, off_t size);
 int nilfs_set_alloc_range(struct nilfs *nilfs, off_t start, off_t end);
-
-static inline __u64 nilfs_get_nsegments(const struct nilfs *nilfs)
-{
-	return le64_to_cpu(nilfs->n_sb->s_nsegments);
-}
-
-static inline __u32 nilfs_get_blocks_per_segment(const struct nilfs *nilfs)
-{
-	return le32_to_cpu(nilfs->n_sb->s_blocks_per_segment);
-}
 
 #endif	/* NILFS_H */

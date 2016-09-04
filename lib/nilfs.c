@@ -231,6 +231,24 @@ size_t nilfs_get_block_size(const struct nilfs *nilfs)
 }
 
 /**
+ * nilfs_get_nsegments - get number of segments
+ * @nilfs: nilfs object
+ */
+__u64 nilfs_get_nsegments(const struct nilfs *nilfs)
+{
+	return le64_to_cpu(nilfs->n_sb->s_nsegments);
+}
+
+/**
+ * nilfs_get_blocks_per_segment - get number of blocks per segment
+ * @nilfs: nilfs object
+ */
+__u32 nilfs_get_blocks_per_segment(const struct nilfs *nilfs)
+{
+	return le32_to_cpu(nilfs->n_sb->s_blocks_per_segment);
+}
+
+/**
  * nilfs_get_reserved_segments - get number of reserved segments
  * @nilfs: nilfs object
  */
