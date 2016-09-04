@@ -8,6 +8,11 @@
 #include <time.h>
 #endif	/* HAVE_TIME_H */
 
+/* Old linux/magic.h may not have the file system magic number of NILFS */
+#ifndef NILFS_SUPER_MAGIC
+#define NILFS_SUPER_MAGIC	0x3434	/* NILFS filesystem magic number */
+#endif
+
 /* Sizes of integral types */
 #ifndef U64_MAX
 #define U64_MAX		18446744073709551615LL	/* __u64 (or u64) max */

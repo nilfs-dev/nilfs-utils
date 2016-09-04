@@ -71,6 +71,7 @@
 #endif	/* HAVE_BLKID_BLKID_H */
 
 #include "nilfs.h"
+#include "compat.h"
 #include "util.h"
 #include "nilfs_feature.h"
 #include "mkfs.h"
@@ -1638,7 +1639,7 @@ static void prepare_segment(struct nilfs_segment_info *si)
 	/* initialize super root */
 	nilfs.super_root = map_disk_buffer(si->start + si->nblocks - 1, 1);
 	sr = nilfs.super_root;
-	sr->sr_bytes = cpu_to_le16(NILFS_SR_BYTES);
+	sr->sr_bytes = cpu_to_le16(NILFS_SR_BYTES(sizeof(struct nilfs_inode)));
 	sr->sr_nongc_ctime = cpu_to_le64(di->ctime);
 	sr->sr_flags = 0;
 
@@ -1657,6 +1658,7 @@ static void fill_in_checksums(struct nilfs_segment_info *si, __u32 crc_seed)
 	blocknr_t blocknr;
 	unsigned long rest_blocks;
 	int crc_offset;
+	int sr_bytes;
 	__u32 sum;
 
 	/* fill in segment summary checksum */
@@ -1669,9 +1671,10 @@ static void fill_in_checksums(struct nilfs_segment_info *si, __u32 crc_seed)
 
 	/* fill in super root checksum */
 	crc_offset = sizeof(nilfs.super_root->sr_sum);
+	sr_bytes = NILFS_SR_BYTES(sizeof(struct nilfs_inode));
 	sum = nilfs_crc32(crc_seed,
 			  (unsigned char *)nilfs.super_root + crc_offset,
-			  NILFS_SR_BYTES - crc_offset);
+			  sr_bytes - crc_offset);
 	nilfs.super_root->sr_sum = cpu_to_le32(sum);
 
 	/* fill in segment checksum */
