@@ -286,7 +286,7 @@ int nilfs_read_sb(struct nilfs *);
 
 ssize_t nilfs_get_segment(struct nilfs *, unsigned long, void **);
 int nilfs_put_segment(struct nilfs *, void *);
-size_t nilfs_get_block_size(struct nilfs *);
+size_t nilfs_get_block_size(const struct nilfs *nilfs);
 __u64 nilfs_get_segment_seqnum(const struct nilfs *, void *, __u64);
 __u64 nilfs_get_reserved_segments(const struct nilfs *nilfs);
 

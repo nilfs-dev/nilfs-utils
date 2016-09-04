@@ -225,7 +225,7 @@ static int nilfs_find_fs(struct nilfs *nilfs, const char *dev, const char *dir,
  * nilfs_get_block_size - get block size of the file system
  * @nilfs: nilfs object
  */
-size_t nilfs_get_block_size(struct nilfs *nilfs)
+size_t nilfs_get_block_size(const struct nilfs *nilfs)
 {
 	return 1UL << (le32_to_cpu(nilfs->n_sb->s_log_block_size) +
 		       NILFS_SB_BLOCK_SIZE_SHIFT);
@@ -809,8 +809,7 @@ ssize_t nilfs_get_segment(struct nilfs *nilfs, unsigned long segnum,
 	}
 
 	segsize = le32_to_cpu(nilfs->n_sb->s_blocks_per_segment) *
-		(1UL << (le32_to_cpu(nilfs->n_sb->s_log_block_size) +
-			 NILFS_SB_BLOCK_SIZE_SHIFT));
+		nilfs_get_block_size(nilfs);
 	offset = ((off_t)segnum) * segsize;
 
 #ifdef HAVE_MMAP
@@ -857,8 +856,7 @@ int nilfs_put_segment(struct nilfs *nilfs, void *segment)
 #ifdef HAVE_MUNMAP
 	if (nilfs_opt_test_mmap(nilfs)) {
 		segsize = le32_to_cpu(nilfs->n_sb->s_blocks_per_segment) *
-			(1UL << (le32_to_cpu(nilfs->n_sb->s_log_block_size) +
-				 NILFS_SB_BLOCK_SIZE_SHIFT));
+			nilfs_get_block_size(nilfs);
 		return munmap(segment, segsize);
 	}
 #endif	/* HAVE_MUNMAP */
@@ -876,9 +874,7 @@ __u64 nilfs_get_segment_seqnum(const struct nilfs *nilfs, void *segment,
 	blkoff = (segnum == 0) ?
 		le64_to_cpu(nilfs->n_sb->s_first_data_block) : 0;
 
-	segsum = segment + blkoff *
-		(1UL << (le32_to_cpu(nilfs->n_sb->s_log_block_size) +
-			 NILFS_SB_BLOCK_SIZE_SHIFT));
+	segsum = segment + blkoff * nilfs_get_block_size(nilfs);
 	return le64_to_cpu(segsum->ss_seq);
 }
 
@@ -909,8 +905,7 @@ void nilfs_psegment_init(struct nilfs_psegment *pseg, __u64 segnum,
 		le64_to_cpu(nilfs->n_sb->s_first_data_block) : 0;
 	nblocks_per_segment = le32_to_cpu(nilfs->n_sb->s_blocks_per_segment);
 
-	pseg->p_blksize = 1UL << (le32_to_cpu(nilfs->n_sb->s_log_block_size) +
-				  NILFS_SB_BLOCK_SIZE_SHIFT);
+	pseg->p_blksize = nilfs_get_block_size(nilfs);
 	pseg->p_nblocks = nblocks;
 	pseg->p_maxblocks = nblocks_per_segment - blkoff;
 	pseg->p_segblocknr = (sector_t)nblocks_per_segment * segnum + blkoff;
