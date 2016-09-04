@@ -60,10 +60,9 @@
 #include <assert.h>
 #include "nilfs.h"
 #include "compat.h"
+#include "crc32.h"
 
 #define NILFS_MAX_SB_SIZE	1024
-
-extern __u32 crc32_le(__u32 seed, unsigned char const *data, size_t length);
 
 static __u32 nilfs_sb_check_sum(struct nilfs_super_block *sbp)
 {

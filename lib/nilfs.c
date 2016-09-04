@@ -72,8 +72,7 @@
 #include "util.h"
 #include "pathnames.h"
 #include "realpath.h"
-
-extern __u32 crc32_le(__u32 seed, unsigned char const *data, size_t length);
+#include "crc32.h"
 
 static inline int iseol(int c)
 {
