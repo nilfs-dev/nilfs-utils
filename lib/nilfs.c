@@ -239,7 +239,7 @@ __u64 nilfs_get_reserved_segments(const struct nilfs *nilfs)
 	const struct nilfs_super_block *sb = nilfs->n_sb;
 	__u64 rn;
 
-	rn = (le64_to_cpu(sb->s_nsegments) *
+	rn = (nilfs_get_nsegments(nilfs) *
 	      le32_to_cpu(sb->s_r_segments_percentage) + 99) / 100;
 	if (rn < NILFS_MIN_NRSVSEGS)
 		rn = NILFS_MIN_NRSVSEGS;
@@ -802,7 +802,7 @@ ssize_t nilfs_get_segment(struct nilfs *nilfs, unsigned long segnum,
 		return -1;
 	}
 
-	if (segnum >= le64_to_cpu(nilfs->n_sb->s_nsegments)) {
+	if (segnum >= nilfs_get_nsegments(nilfs)) {
 		errno = EINVAL;
 		return -1;
 	}
