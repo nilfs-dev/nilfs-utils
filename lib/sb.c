@@ -99,8 +99,7 @@ static int nilfs_sb2_offset_is_too_small(struct nilfs_super_block *sbp,
 {
 	return sb2_offset < ((le64_to_cpu(sbp->s_nsegments) *
 			      le32_to_cpu(sbp->s_blocks_per_segment)) <<
-			     (le32_to_cpu(sbp->s_log_block_size) +
-			      NILFS_SB_BLOCK_SIZE_SHIFT));
+			     (le32_to_cpu(sbp->s_log_block_size) + 10));
 }
 
 static int __nilfs_sb_read(int devfd, struct nilfs_super_block **sbp,

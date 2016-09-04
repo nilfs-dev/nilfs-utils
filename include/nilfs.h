@@ -277,8 +277,6 @@ static inline int nilfs_block_is_node(const struct nilfs_block *blk)
 	     !nilfs_block_is_end(blk);		\
 	     nilfs_block_next(blk))
 
-#define NILFS_SB_BLOCK_SIZE_SHIFT	10
-
 struct nilfs_super_block *nilfs_sb_read(int devfd);
 int nilfs_sb_write(int devfd, struct nilfs_super_block *sbp, int mask);
 

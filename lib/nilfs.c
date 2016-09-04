@@ -227,8 +227,7 @@ static int nilfs_find_fs(struct nilfs *nilfs, const char *dev, const char *dir,
  */
 size_t nilfs_get_block_size(const struct nilfs *nilfs)
 {
-	return 1UL << (le32_to_cpu(nilfs->n_sb->s_log_block_size) +
-		       NILFS_SB_BLOCK_SIZE_SHIFT);
+	return 1UL << (le32_to_cpu(nilfs->n_sb->s_log_block_size) + 10);
 }
 
 /**
