@@ -258,7 +258,7 @@ int nilfs_opt_set_mmap(struct nilfs *nilfs)
 	pagesize = sysconf(_SC_PAGESIZE);
 	if (pagesize < 0)
 		return -1;
-	segsize = le32_to_cpu(nilfs->n_sb->s_blocks_per_segment) *
+	segsize = nilfs_get_blocks_per_segment(nilfs) *
 		nilfs_get_block_size(nilfs);
 	if (segsize % pagesize != 0)
 		return -1;
@@ -807,7 +807,7 @@ ssize_t nilfs_get_segment(struct nilfs *nilfs, unsigned long segnum,
 		return -1;
 	}
 
-	segsize = le32_to_cpu(nilfs->n_sb->s_blocks_per_segment) *
+	segsize = nilfs_get_blocks_per_segment(nilfs) *
 		nilfs_get_block_size(nilfs);
 	offset = ((off_t)segnum) * segsize;
 
@@ -854,7 +854,7 @@ int nilfs_put_segment(struct nilfs *nilfs, void *segment)
 
 #ifdef HAVE_MUNMAP
 	if (nilfs_opt_test_mmap(nilfs)) {
-		segsize = le32_to_cpu(nilfs->n_sb->s_blocks_per_segment) *
+		segsize = nilfs_get_blocks_per_segment(nilfs) *
 			nilfs_get_block_size(nilfs);
 		return munmap(segment, segsize);
 	}
@@ -902,7 +902,7 @@ void nilfs_psegment_init(struct nilfs_psegment *pseg, __u64 segnum,
 
 	blkoff = (segnum == 0) ?
 		le64_to_cpu(nilfs->n_sb->s_first_data_block) : 0;
-	nblocks_per_segment = le32_to_cpu(nilfs->n_sb->s_blocks_per_segment);
+	nblocks_per_segment = nilfs_get_blocks_per_segment(nilfs);
 
 	pseg->p_blksize = nilfs_get_block_size(nilfs);
 	pseg->p_nblocks = nblocks;

@@ -159,7 +159,7 @@ static void dumpseg_print_segment(struct nilfs *nilfs,
 
 	if (!nilfs_psegment_is_end(&pseg)) {
 		next = le64_to_cpu(pseg.p_segsum->ss_next) /
-			le32_to_cpu(nilfs_get_sb(nilfs)->s_blocks_per_segment);
+			nilfs_get_blocks_per_segment(nilfs);
 		printf("  sequence number = %llu, next segnum = %llu\n",
 		       (unsigned long long)le64_to_cpu(pseg.p_segsum->ss_seq),
 		       (unsigned long long)next);
