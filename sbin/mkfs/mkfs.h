@@ -21,6 +21,7 @@
  */
 
 #include "nilfs2_fs.h"
+#include "util.h"	/* BUG() */
 
 #define NILFS_DISKHDR_SIZE		4096 /* HDD header (MBR+superblock) */
 #define NILFS_DISK_ERASE_SIZE		1048576	/* size of first and last
