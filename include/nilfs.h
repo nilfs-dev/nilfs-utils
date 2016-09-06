@@ -280,8 +280,6 @@ static inline int nilfs_block_is_node(const struct nilfs_block *blk)
 struct nilfs_super_block *nilfs_sb_read(int devfd);
 int nilfs_sb_write(int devfd, struct nilfs_super_block *sbp, int mask);
 
-int nilfs_read_sb(struct nilfs *);
-
 ssize_t nilfs_get_segment(struct nilfs *, unsigned long, void **);
 int nilfs_put_segment(struct nilfs *, void *);
 size_t nilfs_get_block_size(const struct nilfs *nilfs);

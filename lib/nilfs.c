@@ -408,7 +408,9 @@ struct nilfs *nilfs_open(const char *dev, const char *dir, int flags)
 		nilfs->n_devfd = open(nilfs->n_dev, O_RDONLY);
 		if (nilfs->n_devfd < 0)
 			goto out_fd;
-		if (nilfs_read_sb(nilfs) < 0)
+
+		nilfs->n_sb = nilfs_sb_read(nilfs->n_devfd);
+		if (nilfs->n_sb == NULL)
 			goto out_fd;
 
 		features = le64_to_cpu(nilfs->n_sb->s_feature_incompat) &
@@ -891,15 +893,4 @@ nilfs_cno_t nilfs_get_oldest_cno(struct nilfs *nilfs)
 struct nilfs_super_block *nilfs_get_sb(struct nilfs *nilfs)
 {
 	return nilfs->n_sb;
-}
-
-int nilfs_read_sb(struct nilfs *nilfs)
-{
-	assert(nilfs->n_sb == NULL);
-
-	nilfs->n_sb = nilfs_sb_read(nilfs->n_devfd);
-	if (!nilfs->n_sb)
-		return -1;
-
-	return 0;
 }
