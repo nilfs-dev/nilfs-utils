@@ -197,6 +197,7 @@ static unsigned long protection_period;
 static struct nilfs_cleanerd *nilfs_cleanerd;
 static sigjmp_buf nilfs_cleanerd_env; /* for siglongjmp */
 static volatile sig_atomic_t nilfs_cleanerd_reload_config; /* reload flag */
+static volatile sig_atomic_t nilfs_cleanerd_dump_req; /* dump request */
 static char nilfs_cleanerd_msgbuf[NILFS_CLEANER_MSG_MAX_REQSZ];
 
 static const char *nilfs_cleaner_cmd_name[] = {
@@ -221,6 +222,57 @@ static void nilfs_cleanerd_usage(const char *progname)
 static void nilfs_cleanerd_set_log_priority(struct nilfs_cleanerd *cleanerd)
 {
 	setlogmask(LOG_UPTO(cleanerd->config.cf_log_priority));
+}
+
+static void nilfs_cleanerd_dump(struct nilfs_cleanerd *cleanerd)
+{
+	struct timespec ts;
+	int ret;
+
+	syslog(LOG_DEBUG, "============== nilfs_cleanerd dump ==============");
+	ret = clock_gettime(CLOCK_REALTIME, &ts);
+	if (ret < 0)
+		goto skip_current_time;
+	syslog(LOG_DEBUG, "current time: %ld.%09ld", ts.tv_sec, ts.tv_nsec);
+
+skip_current_time:
+	ret = clock_gettime(CLOCK_MONOTONIC, &ts);
+	if (ret < 0)
+		goto skip_monotonic_clock;
+	syslog(LOG_DEBUG, "monotonic clock: %ld.%09ld", ts.tv_sec, ts.tv_nsec);
+
+skip_monotonic_clock:
+	syslog(LOG_DEBUG, "---------------- cleanerd state -----------------");
+	syslog(LOG_DEBUG, "running: %d", cleanerd->running);
+	syslog(LOG_DEBUG, "fallback: %d", cleanerd->fallback);
+	syslog(LOG_DEBUG, "retry_cleaning: %d", cleanerd->retry_cleaning);
+	syslog(LOG_DEBUG, "no_timeout: %d", cleanerd->no_timeout);
+	syslog(LOG_DEBUG, "shutdown: %d", cleanerd->shutdown);
+	syslog(LOG_DEBUG, "ncleansegs: %ld", cleanerd->ncleansegs);
+	syslog(LOG_DEBUG, "cleaning_interval: %ld.%09ld",
+	       cleanerd->cleaning_interval.tv_sec,
+	       cleanerd->cleaning_interval.tv_nsec);
+	syslog(LOG_DEBUG, "target: %ld.%09ld",
+	       cleanerd->target.tv_sec, cleanerd->target.tv_nsec);
+	syslog(LOG_DEBUG, "timeout: %ld.%09ld",
+	       cleanerd->timeout.tv_sec, cleanerd->timeout.tv_nsec);
+	syslog(LOG_DEBUG, "min_reclaimable_blocks: %lu",
+	       cleanerd->min_reclaimable_blocks);
+	syslog(LOG_DEBUG, "prev_nongc_ctime: %llu",
+	       (unsigned long long)cleanerd->prev_nongc_ctime);
+	syslog(LOG_DEBUG, "mm_prev_state: %d", cleanerd->mm_prev_state);
+	syslog(LOG_DEBUG, "mm_nrestpasses: %d", cleanerd->mm_nrestpasses);
+	syslog(LOG_DEBUG, "mm_nrestsegs: %ld", cleanerd->mm_nrestsegs);
+	syslog(LOG_DEBUG, "mm_ncleansegs: %ld", cleanerd->mm_ncleansegs);
+	syslog(LOG_DEBUG, "mm_protection_period: %ld.%09ld",
+	       cleanerd->mm_protection_period.tv_sec,
+	       cleanerd->mm_protection_period.tv_nsec);
+	syslog(LOG_DEBUG, "mm_cleaning_interval: %ld.%09ld",
+	       cleanerd->mm_cleaning_interval.tv_sec,
+	       cleanerd->mm_cleaning_interval.tv_nsec);
+	syslog(LOG_DEBUG, "mm_min_reclaimable_blocks: %lu",
+	       cleanerd->mm_min_reclaimable_blocks);
+	syslog(LOG_DEBUG, "=================================================");
 }
 
 /**
@@ -781,24 +833,61 @@ static RETSIGTYPE handle_sighup(int signum)
 	nilfs_cleanerd_reload_config = 1;
 }
 
-static int set_sigterm_handler(void)
+static RETSIGTYPE handle_sigusr1(int signum)
 {
-	struct sigaction act;
-
-	memset(&act, 0, sizeof(act));
-	act.sa_handler = handle_sigterm;
-	sigfillset(&act.sa_mask);
-	return sigaction(SIGTERM, &act, NULL);
+	nilfs_cleanerd_dump_req = 1;
 }
 
-static int set_sighup_handler(void)
+static int set_signal_handler(int signum, RETSIGTYPE (*handler)(int))
 {
 	struct sigaction act;
 
 	memset(&act, 0, sizeof(act));
-	act.sa_handler = handle_sighup;
+	act.sa_handler = handler;
 	sigfillset(&act.sa_mask);
-	return sigaction(SIGHUP, &act, NULL);
+	return sigaction(signum, &act, NULL);
+}
+
+static int nilfs_cleanerd_init_signal_handlers(struct nilfs_cleanerd *cleanerd,
+					       sigset_t *sigmask)
+{
+	int ret;
+
+	ret = set_signal_handler(SIGTERM, handle_sigterm);
+	if (ret < 0) {
+		syslog(LOG_ERR, "cannot set SIGTERM signal handler: %m");
+		return -1;
+	}
+
+	ret = set_signal_handler(SIGHUP, handle_sighup);
+	if (ret < 0) {
+		syslog(LOG_ERR, "cannot set SIGHUP signal handler: %m");
+		return -1;
+	}
+
+	ret = set_signal_handler(SIGUSR1, handle_sigusr1);
+	if (ret < 0) {
+		syslog(LOG_ERR, "cannot set SIGUSR1 signal handler: %m");
+		return -1;
+	}
+
+	sigaddset(sigmask, SIGHUP);
+	sigaddset(sigmask, SIGUSR1);
+	return 0;
+}
+
+static void nilfs_cleanerd_handle_signals(struct nilfs_cleanerd *cleanerd)
+{
+	if (nilfs_cleanerd_reload_config) {
+		nilfs_cleanerd_reconfig(cleanerd, NULL);
+		nilfs_cleanerd_reload_config = 0;
+	}
+
+	if (nilfs_cleanerd_dump_req) {
+		if (cleanerd->config.cf_log_priority == LOG_DEBUG)
+			nilfs_cleanerd_dump(cleanerd);
+		nilfs_cleanerd_dump_req = 0;
+	}
 }
 
 static void nilfs_cleanerd_clean_check_pause(struct nilfs_cleanerd *cleanerd)
@@ -1540,18 +1629,13 @@ static int nilfs_cleanerd_clean_loop(struct nilfs_cleanerd *cleanerd)
 		syslog(LOG_ERR, "cannot set signal mask: %m");
 		return -1;
 	}
-	sigaddset(&sigset, SIGHUP);
 
-	if (set_sigterm_handler() < 0) {
-		syslog(LOG_ERR, "cannot set SIGTERM signal handler: %m");
+	ret = nilfs_cleanerd_init_signal_handlers(cleanerd, &sigset);
+	if (ret < 0)
 		return -1;
-	}
-	if (set_sighup_handler() < 0) {
-		syslog(LOG_ERR, "cannot set SIGHUP signal handler: %m");
-		return -1;
-	}
 
 	nilfs_cleanerd_reload_config = 0;
+	nilfs_cleanerd_dump_req = 0;
 
 	cleanerd->running = 1;
 	cleanerd->fallback = 0;
@@ -1579,11 +1663,7 @@ static int nilfs_cleanerd_clean_loop(struct nilfs_cleanerd *cleanerd)
 			return -1;
 		}
 
-		if (nilfs_cleanerd_reload_config) {
-			if (nilfs_cleanerd_reconfig(cleanerd, NULL) < 0)
-				return -1;
-			nilfs_cleanerd_reload_config = 0;
-		}
+		nilfs_cleanerd_handle_signals(cleanerd);
 
 		if (nilfs_get_sustat(cleanerd->nilfs, &sustat) < 0) {
 			syslog(LOG_ERR, "cannot get segment usage stat: %m");

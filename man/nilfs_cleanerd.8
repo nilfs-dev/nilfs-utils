@@ -1,7 +1,7 @@
 .\"  Copyright (C) 2007-2012 Nippon Telegraph and Telephone Corporation.
 .\"  Written by Ryusuke Konishi <konishi.ryusuke@lab.ntt.co.jp>
 .\"
-.TH NILFS_CLEANERD 8 "Apr 2014" "nilfs-utils version 2.2"
+.TH NILFS_CLEANERD 8 "Sep 2016" "nilfs-utils version 2.2"
 .SH NAME
 nilfs_cleanerd \- NILFS2 garbage collector
 .SH SYNOPSIS
@@ -63,8 +63,11 @@ reread.
 .B SIGTERM
 The \fBnilfs_cleanerd\fP will exit cleanly.
 .TP
-.B SIGUSR1, SIGUSR2
-Reserved for future use.  These let \fBnilfs_cleanerd\fP die at
+.B SIGUSR1
+This lets \fBnilfs_cleanerd\fP dump the state into the system logger.
+.TP
+.B SIGUSR2
+Reserved for future use.  This lets \fBnilfs_cleanerd\fP die at
 present.
 .SH FILES
 .TP
@@ -72,7 +75,7 @@ present.
 Configuration file for \fBnilfs_cleanerd\fP.
 See \fBnilfs_cleanerd.conf\fP(5) for details.
 .SH AUTHOR
-Koji Sato
+Koji Sato, Ryusuke Konishi <konishi.ryusuke@lab.ntt.co.jp>.
 .SH AVAILABILITY
 .B nilfs_cleanerd
 is part of the nilfs-utils package and available from
