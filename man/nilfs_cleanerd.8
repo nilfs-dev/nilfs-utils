@@ -67,8 +67,9 @@ The \fBnilfs_cleanerd\fP will exit cleanly.
 This lets \fBnilfs_cleanerd\fP dump the state into the system logger.
 .TP
 .B SIGUSR2
-Reserved for future use.  This lets \fBnilfs_cleanerd\fP die at
-present.
+Reserved for future use.  This signal is ignored.  If the version of
+nilfs-utils is equal to or older than 2.2.5, this lets
+\fBnilfs_cleanerd\fP die.
 .SH FILES
 .TP
 .I /etc/nilfs_cleanerd.conf

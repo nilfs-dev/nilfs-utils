@@ -848,6 +848,16 @@ static int set_signal_handler(int signum, RETSIGTYPE (*handler)(int))
 	return sigaction(signum, &act, NULL);
 }
 
+static int ignore_signal(int signum)
+{
+	struct sigaction act;
+
+	memset(&act, 0, sizeof(act));
+	act.sa_handler = SIG_IGN;
+	sigfillset(&act.sa_mask);
+	return sigaction(signum, &act, NULL);
+}
+
 static int nilfs_cleanerd_init_signal_handlers(struct nilfs_cleanerd *cleanerd,
 					       sigset_t *sigmask)
 {
@@ -868,6 +878,12 @@ static int nilfs_cleanerd_init_signal_handlers(struct nilfs_cleanerd *cleanerd,
 	ret = set_signal_handler(SIGUSR1, handle_sigusr1);
 	if (ret < 0) {
 		syslog(LOG_ERR, "cannot set SIGUSR1 signal handler: %m");
+		return -1;
+	}
+
+	ret = ignore_signal(SIGUSR2); /* Reserved for future use */
+	if (ret < 0) {
+		syslog(LOG_ERR, "cannot ignore SIGUSR2 signal: %m");
 		return -1;
 	}
 
