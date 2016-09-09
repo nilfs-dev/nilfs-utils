@@ -869,6 +869,12 @@ static int nilfs_cleanerd_init_signal_handlers(struct nilfs_cleanerd *cleanerd,
 		return -1;
 	}
 
+	ret = set_signal_handler(SIGINT, handle_sigterm);
+	if (ret < 0) {
+		syslog(LOG_ERR, "cannot set SIGINT signal handler: %m");
+		return -1;
+	}
+
 	ret = set_signal_handler(SIGHUP, handle_sighup);
 	if (ret < 0) {
 		syslog(LOG_ERR, "cannot set SIGHUP signal handler: %m");
