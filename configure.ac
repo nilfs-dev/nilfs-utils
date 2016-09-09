@@ -45,18 +45,9 @@ AC_DEFUN([UTIL_CHECK_LIB], [
 
 # Check for options.
 AC_ARG_WITH([libmount],
-	AS_HELP_STRING([--with-libmount],
-		       [compile mount.nilfs2 with libmount support]),
-	[with_libmount=$withval],
-	[with_libmount=no; \
-	 if test -L /etc/mtab; then with_libmount=yes; fi])
-
-# Leave --enable-libmount[=ARG] and --disable-libmount options for
-# compatibility reason.
-AC_ARG_ENABLE(libmount,
-	AS_HELP_STRING([--enable-libmount (obsolete)],
-		       [same as --with-libmount]),
-	[with_libmount=$enableval], [])
+	AS_HELP_STRING([--without-libmount],
+		       [compile mount.nilfs2 without libmount support]),
+	[], with_libmount=yes)
 
 AC_ARG_WITH([selinux],
 	AS_HELP_STRING([--without-selinux], [compile without SELinux support]),
@@ -101,6 +92,17 @@ AC_CHECK_HEADERS([ctype.h err.h fcntl.h grp.h libintl.h limits.h \
 		  strings.h sys/ioctl.h sys/mount.h sys/time.h syslog.h \
 		  time.h unistd.h])
 
+# Check /etc/mtab
+mtab_type=''
+AC_MSG_CHECKING([for /etc/mtab])
+if test -L /etc/mtab; then
+   AC_MSG_RESULT([symlink])
+   mtab_type=symlink
+elif test -f /etc/mtab; then
+   AC_MSG_RESULT([regular file])
+   mtab_type=file
+fi
+
 # Check for conditional libraries and headers.
 if test "${with_blkid}" = "yes"; then
    AC_CHECK_LIB(blkid, blkid_new_probe_from_filename,
@@ -114,6 +116,9 @@ fi
 AC_SUBST(LIB_BLKID)
 
 if test "${with_libmount}" = "yes"; then
+   if test "$mtab_type" = file; then
+      AC_MSG_WARN([Use --without-libmount option to generate mount helpers that work with the legacy mtab file.])
+   fi
    AC_CHECK_LIB(mount, mnt_context_do_mount, [LIB_MOUNT="-lmount $LIB_BLKID"],
    	AC_MSG_ERROR([Mount library is enabled but libmount not found]), [$LIB_BLKID])
    AC_CHECK_HEADERS([libmount/libmount.h])

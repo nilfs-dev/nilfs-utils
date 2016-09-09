@@ -1,23 +1,15 @@
 * Required packages
 
  - libuuid-devel or uuid-dev
- - libmount-devel (fedora 14 and later)
- - libselinux-devel (unless you specify --without-selinux or --with-libmount)
- - libblkid-devel (unless you specify --without-blkid)
+ - libmount-devel or libmount-dev
+ - libblkid-devel or libblkid-dev
+ - libselinux-devel or libselinux1-dev
+   (if /etc/mtab is a regular file and you use selinux context mount options)
 
 * How to compile
 
  $ ./configure
  $ make
-
-To link mount.nilfs2 and umount.nilfs2 helper programs with libmount
-library, install libmount-devel package and run the configure script
-with --with-libmount option:
-
- $ ./configure --with-libmount
-
-This option is set by default if /etc/mtab is a symlink to
-/proc/mounts in your system.
 
 If your system is a 64-bit architecture and libraries are installed
 into /usr/lib64 instead of /usr/lib, change the library directory with
@@ -25,6 +17,16 @@ into /usr/lib64 instead of /usr/lib, change the library directory with
 
  $ ./configure --libdir=/usr/lib64
 
+If /etc/mtab is not a symlink to /proc/self/mounts but a regular file
+in the target system, run the configure script with --without-libmount
+option:
+
+ $ ./configure --without-libmount
+
+This configures the build environment so as to make legacy
+mount/umount helpers (mount.nilfs2 and umount.nilfs2), in which the
+legacy mtab file is handled properly.  For CentOS 6 (and other RHEL 6
+clones), for instance, this options is needed.
 
 * Trouble shooting
 
@@ -40,10 +42,10 @@ unexpectedly overwriting an in-use device.
 You can compile legacy mount.nilfs2 and umount.nilfs2 without support
 of selinux context mount options (-o context=<context>, etc):
 
- $ ./configure --without-selinux
+ $ ./configure --without-libmount --without-selinux
 
-For mount.nilfs2 built with the --with-libmount option, support of
-the context mount depends on the libmount library.
+For helpers built with the --with-libmount option, support of the
+context mount depends on the libmount library distro provides.
 
 
 * How to get development sources
