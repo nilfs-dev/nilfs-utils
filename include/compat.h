@@ -4,6 +4,14 @@
 #ifndef __COMPAT_H__
 #define __COMPAT_H__
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif	/* HAVE_CONFIG_H */
+
+#if HAVE_SYS_IOCTL_H
+#include <sys/ioctl.h>
+#endif	/* HAVE_SYS_IOCTL_H */
+
 #if HAVE_TIME_H
 #include <time.h>
 #endif	/* HAVE_TIME_H */
@@ -20,6 +28,12 @@
 
 #ifndef S64_MAX
 #define S64_MAX		9223372036854775807LL	/* __s64 (or s64) max */
+#endif
+
+/* Ioctls for freeze and thaw */
+#ifndef FIFREEZE
+#define FIFREEZE	_IOWR('X', 119, int)
+#define FITHAW		_IOWR('X', 120, int)
 #endif
 
 /* Linux specific system clocks */
