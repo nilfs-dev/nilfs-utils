@@ -226,6 +226,7 @@ static int nilfs_find_fs(struct nilfs *nilfs, const char *dev, const char *dir,
  */
 size_t nilfs_get_block_size(const struct nilfs *nilfs)
 {
+	assert(nilfs->n_sb != NULL);
 	return 1UL << (le32_to_cpu(nilfs->n_sb->s_log_block_size) + 10);
 }
 
@@ -235,6 +236,7 @@ size_t nilfs_get_block_size(const struct nilfs *nilfs)
  */
 __u64 nilfs_get_nsegments(const struct nilfs *nilfs)
 {
+	assert(nilfs->n_sb != NULL);
 	return le64_to_cpu(nilfs->n_sb->s_nsegments);
 }
 
@@ -244,6 +246,7 @@ __u64 nilfs_get_nsegments(const struct nilfs *nilfs)
  */
 __u32 nilfs_get_blocks_per_segment(const struct nilfs *nilfs)
 {
+	assert(nilfs->n_sb != NULL);
 	return le32_to_cpu(nilfs->n_sb->s_blocks_per_segment);
 }
 
@@ -253,11 +256,11 @@ __u32 nilfs_get_blocks_per_segment(const struct nilfs *nilfs)
  */
 __u64 nilfs_get_reserved_segments(const struct nilfs *nilfs)
 {
-	const struct nilfs_super_block *sb = nilfs->n_sb;
 	__u64 rn;
 
+	assert(nilfs->n_sb != NULL);
 	rn = (nilfs_get_nsegments(nilfs) *
-	      le32_to_cpu(sb->s_r_segments_percentage) + 99) / 100;
+	      le32_to_cpu(nilfs->n_sb->s_r_segments_percentage) + 99) / 100;
 	if (rn < NILFS_MIN_NRSVSEGS)
 		rn = NILFS_MIN_NRSVSEGS;
 	return rn;
