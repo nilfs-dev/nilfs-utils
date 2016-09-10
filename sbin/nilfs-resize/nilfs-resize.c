@@ -868,13 +868,11 @@ static ssize_t nilfs_resize_move_segments(struct nilfs *nilfs,
 static int __nilfs_resize_try_update_log_cursor(struct nilfs *nilfs)
 {
 	nilfs_cno_t cno;
-	int arg = 0;
 	int ret = -1;
 
 	nilfs_sync(nilfs, &cno);
 
-	if (ioctl(nilfs->n_iocfd, FIFREEZE, &arg) == 0 &&
-	    ioctl(nilfs->n_iocfd, FITHAW, &arg) == 0)
+	if (nilfs_freeze(nilfs) == 0 && nilfs_thaw(nilfs) == 0)
 		ret = 0;
 
 	nilfs_resize_update_sustat(nilfs);
