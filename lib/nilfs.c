@@ -251,19 +251,13 @@ __u32 nilfs_get_blocks_per_segment(const struct nilfs *nilfs)
 }
 
 /**
- * nilfs_get_reserved_segments - get number of reserved segments
+ * nilfs_get_reserved_segments_ratio - get ratio of reserved segments
  * @nilfs: nilfs object
  */
-__u64 nilfs_get_reserved_segments(const struct nilfs *nilfs)
+__u32 nilfs_get_reserved_segments_ratio(const struct nilfs *nilfs)
 {
-	__u64 rn;
-
 	assert(nilfs->n_sb != NULL);
-	rn = (nilfs_get_nsegments(nilfs) *
-	      le32_to_cpu(nilfs->n_sb->s_r_segments_percentage) + 99) / 100;
-	if (rn < NILFS_MIN_NRSVSEGS)
-		rn = NILFS_MIN_NRSVSEGS;
-	return rn;
+	return le32_to_cpu(nilfs->n_sb->s_r_segments_percentage);
 }
 
 /**

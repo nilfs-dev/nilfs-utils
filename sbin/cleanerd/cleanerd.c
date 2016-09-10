@@ -1393,22 +1393,19 @@ out:
 	return 0;
 }
 
-static __u64 nilfs_cleanerd_get_nrsvsegs(struct nilfs *nilfs, __u64 nsegs)
+static __u64 nilfs_get_reserved_segments(const struct nilfs *nilfs, __u64 nsegs)
 {
-	const struct nilfs_super_block *sb = nilfs_get_sb(nilfs);
-	__u32 r_ratio = le32_to_cpu(sb->s_r_segments_percentage);
-	__u64 rn;
+	__u32 ratio = nilfs_get_reserved_segments_ratio(nilfs);
 
-	rn = max_t(__u64, (nsegs * r_ratio + 99) / 100, NILFS_MIN_NRSVSEGS);
-	return rn;
+	return max_t(__u64, (nsegs * ratio + 99) / 100, NILFS_MIN_NRSVSEGS);
 }
 
 static int nilfs_cleanerd_handle_clean_check(struct nilfs_cleanerd *cleanerd,
 					     struct nilfs_sustat *sustat)
 {
 	struct nilfs_cldconfig *config = &cleanerd->config;
-	int r_segments = nilfs_cleanerd_get_nrsvsegs(cleanerd->nilfs,
-						     sustat->ss_nsegs);
+	__u64 r_segments = nilfs_get_reserved_segments(cleanerd->nilfs,
+						       sustat->ss_nsegs);
 
 	if (cleanerd->running == 1) {
 		/* running (automatic suspend mode) */
