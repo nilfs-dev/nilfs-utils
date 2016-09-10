@@ -546,11 +546,6 @@ static int nilfs_segments_still_reclaimable(struct nilfs *nilfs,
 	return 0;
 }
 
-#ifndef FIFREEZE
-#define FIFREEZE	_IOWR('X', 119, int)
-#define FITHAW		_IOWR('X', 120, int)
-#endif
-
 /**
  * nilfs_shrink_protected_region - shrink region of protected segments
  * @nilfs: nilfs object
