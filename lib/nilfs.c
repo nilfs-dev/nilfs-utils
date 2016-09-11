@@ -221,6 +221,47 @@ static int nilfs_find_fs(struct nilfs *nilfs, const char *dev, const char *dir,
 }
 
 /**
+ * nilfs_get_layout - get layout information of nilfs
+ * @nilfs: nilfs object
+ * @layout: buffer to nilfs_layout struct
+ * @layout_size: size of layout structure (used to ensure compatibility)
+ */
+ssize_t nilfs_get_layout(const struct nilfs *nilfs,
+			 struct nilfs_layout *layout, size_t layout_size)
+{
+	const struct nilfs_super_block *sb = nilfs->n_sb;
+
+	if (layout_size < 0x50) {
+		errno = EINVAL;
+		return -1;
+	}
+
+	if (sb == NULL) {
+		errno = EPERM;
+		return -1;
+	}
+
+	layout->rev_level = le32_to_cpu(sb->s_rev_level);
+	layout->minor_rev_level = le16_to_cpu(sb->s_minor_rev_level);
+	layout->flags = le16_to_cpu(sb->s_flags);
+	layout->blocksize_bits = le32_to_cpu(sb->s_log_block_size) + 10;
+	layout->blocksize = 1UL << layout->blocksize_bits;
+	layout->devsize = le64_to_cpu(sb->s_dev_size);
+	layout->crc_seed = le32_to_cpu(sb->s_crc_seed);
+	layout->pad = 0;
+	layout->nsegments = le64_to_cpu(sb->s_nsegments);
+	layout->blocks_per_segment = le32_to_cpu(sb->s_blocks_per_segment);
+	layout->reserved_segments_ratio =
+		le32_to_cpu(sb->s_r_segments_percentage);
+	layout->first_segment_blkoff = le64_to_cpu(sb->s_first_data_block);
+	layout->feature_compat = le64_to_cpu(sb->s_feature_compat);
+	layout->feature_compat_ro = le64_to_cpu(sb->s_feature_compat_ro);
+	layout->feature_incompat = le64_to_cpu(sb->s_feature_incompat);
+
+	return sizeof(struct nilfs_layout);
+}
+
+/**
  * nilfs_get_block_size - get block size of the file system
  * @nilfs: nilfs object
  */

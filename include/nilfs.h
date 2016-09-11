@@ -83,6 +83,42 @@ typedef __u64 nilfs_cno_t;
 #define NILFS_SB_BLOCK_MAX		0x8000
 
 /**
+ * struct nilfs_layout - layout information of nilfs
+ * @rev_level: revison level
+ * @minor_rev_level: minor revision level
+ * @flags: flags (not used at present)
+ * @blocksize_bits: bit shift of block size
+ * @blocksize: block size
+ * @devsize: device size that the file system records
+ * @crc_seed: seed of crc
+ * @pad: padding (reserved)
+ * @nsegments: number of segments
+ * @blocks_per_segment: number of blocks per segment
+ * @reserved_segments_ratio: ratio of reserved segements in percent
+ * @first_segment_blkoff: block offset of the first segment
+ * @feature_compat: compatible feature set
+ * @feature_compat_ro: read-only compat feature set
+ * @feature_incompat: incompatible feature set
+ */
+struct nilfs_layout {
+/*00h*/	__u32 rev_level;
+	__u16 minor_rev_level;
+	__u16 flags;
+	__u32 blocksize_bits;
+	__u32 blocksize;
+/*10h*/	__u64 devsize;
+	__u32 crc_seed;
+	__u32 pad;
+/*20h*/	__u64 nsegments;
+	__u32 blocks_per_segment;
+	__u32 reserved_segments_ratio;
+/*30h*/	__u64 first_segment_blkoff;
+	__u64 feature_compat;
+/*40h*/	__u64 feature_compat_ro;
+	__u64 feature_incompat;
+};
+
+/**
  * struct nilfs - nilfs object
  * @n_sb: superblock
  * @n_dev: device file
@@ -132,6 +168,8 @@ int nilfs_opt_test_set_suinfo(struct nilfs *);
 nilfs_cno_t nilfs_get_oldest_cno(struct nilfs *);
 
 struct nilfs_super_block *nilfs_get_sb(struct nilfs *);
+ssize_t nilfs_get_layout(const struct nilfs *nilfs,
+			 struct nilfs_layout *layout, size_t layout_size);
 
 
 #define NILFS_LOCK_FNS(name, index)					\
