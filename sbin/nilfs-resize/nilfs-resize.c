@@ -113,14 +113,7 @@ static struct nilfs_suinfo suinfo[NILFS_RESIZE_NSUINFO];
 static __u64 segnums[NILFS_RESIZE_NSEGNUMS];
 
 /* filesystem parameters */
-static __u32 blocksize;
-static __u32 blocksize_bits;
-
-static __u64 fs_devsize;
-static __u32 blocks_per_segment;
-static __u32 rsvsegs_percentage;  /* reserved segment percentage */
-static __u64 first_data_block;
-static __u64 free_blocks_count;
+static struct nilfs_layout layout;
 
 /* cleaner parameter for shrink */
 static int nsegments_per_clean = 2;
@@ -240,30 +233,17 @@ static void myprintf(const char *fmt, ...)
 	va_end(args);
 }
 
-static void nilfs_resize_update_super(const struct nilfs_super_block *sb)
+static int nilfs_resize_load_layout(const struct nilfs *nilfs)
 {
-	blocksize_bits = le32_to_cpu(sb->s_log_block_size) + 10;
-	blocksize = 1UL << blocksize_bits;
-	blocks_per_segment = le32_to_cpu(sb->s_blocks_per_segment);
+	ssize_t res;
 
-	fs_devsize = le64_to_cpu(sb->s_dev_size);
-	rsvsegs_percentage = le32_to_cpu(sb->s_r_segments_percentage);
-	first_data_block = le64_to_cpu(sb->s_first_data_block);
-	free_blocks_count = le64_to_cpu(sb->s_free_blocks_count);
-}
-
-static int nilfs_resize_reload_super(struct nilfs *nilfs)
-{
-	struct nilfs_super_block *sb;
-
-	sb = nilfs_sb_read(nilfs->n_devfd);
-	if (!sb) {
-		myprintf("Error: cannot read super block: %s\n",
+	res = nilfs_get_layout(nilfs, &layout, sizeof(layout));
+	if (res < 0) {
+		myprintf("Error: failed to get layout information: %s\n",
 			 strerror(errno));
 		return -1;
 	}
-	nilfs_resize_update_super(sb);
-	free(sb);
+	assert(res >= sizeof(layout));
 	return 0;
 }
 
@@ -327,7 +307,12 @@ static void nilfs_resize_unlock_cleaner(struct nilfs *nilfs,
 static __u64 nilfs_resize_calc_nrsvsegs(__u64 nsegs)
 {
 	return max_t(__u64, NILFS_MIN_NRSVSEGS,
-		     DIV_ROUND_UP(nsegs * rsvsegs_percentage, 100));
+		     DIV_ROUND_UP(nsegs * layout.reserved_segments_ratio, 100));
+}
+
+static __u64 nilfs_resize_calc_size_of_segments(__u64 nsegs)
+{
+	return (nsegs * layout.blocks_per_segment) << layout.blocksize_bits;
 }
 
 static int nilfs_resize_check_free_space(struct nilfs *nilfs, __u64 newnsegs)
@@ -341,7 +326,7 @@ static int nilfs_resize_check_free_space(struct nilfs *nilfs, __u64 newnsegs)
 
 		nsegs = (sustat.ss_nsegs - newnsegs) - sustat.ss_ncleansegs
 			+ nrsvsegs;
-		nbytes  = (nsegs * blocks_per_segment) << blocksize_bits;
+		nbytes = nilfs_resize_calc_size_of_segments(nsegs);
 		myprintf("Error: the filesystem does not have enough free space.\n"
 			 "       At least %llu more segments (%llu bytes) are required.\n",
 			 nsegs, nbytes);
@@ -349,7 +334,7 @@ static int nilfs_resize_check_free_space(struct nilfs *nilfs, __u64 newnsegs)
 	} else if (verbose) {
 		nsegs = sustat.ss_ncleansegs - (sustat.ss_nsegs - newnsegs)
 			- nrsvsegs;
-		nbytes  = (nsegs * blocks_per_segment) << blocksize_bits;
+		nbytes = nilfs_resize_calc_size_of_segments(nsegs);
 		myprintf("%llu free segments (%llu bytes) will be left after shrinkage.\n",
 			 nsegs, nbytes);
 	}
@@ -360,7 +345,7 @@ static void nilfs_resize_restore_alloc_range(struct nilfs *nilfs)
 {
 	if (nilfs_resize_update_sustat(nilfs) < 0)
 		return;
-	nilfs_set_alloc_range(nilfs, 0, fs_devsize);
+	nilfs_set_alloc_range(nilfs, 0, layout.devsize);
 }
 
 static ssize_t
@@ -840,11 +825,12 @@ static int nilfs_shrink_online(struct nilfs *nilfs, const char *device,
 		return -1;
 
 	newsb2off = NILFS_SB2_OFFSET_BYTES(newsize);
-	newnsegs = (newsb2off >> blocksize_bits) / blocks_per_segment;
+	newnsegs = (newsb2off >> layout.blocksize_bits) /
+		layout.blocks_per_segment;
 
 	myprintf("Partition size = %llu bytes.\n"
 		 "Shrink the filesystem size from %llu bytes to %llu bytes.\n",
-		 devsize, fs_devsize, newsize);
+		 devsize, layout.devsize, newsize);
 
 	if (nilfs_resize_check_free_space(nilfs, newnsegs) < 0)
 		goto out;
@@ -914,9 +900,16 @@ static int nilfs_shrink_online(struct nilfs *nilfs, const char *device,
 			goto restore_alloc_range;
 		}
 
-		if (nilfs_resize_reload_super(nilfs) < 0 ||
-		    nilfs_resize_update_sustat(nilfs) < 0 ||
-		    nilfs_resize_check_free_space(nilfs, newnsegs) < 0)
+		ret = nilfs_resize_load_layout(nilfs);
+		if (ret < 0)
+			goto restore_alloc_range;
+
+		ret = nilfs_resize_update_sustat(nilfs);
+		if (ret < 0)
+			goto restore_alloc_range;
+
+		ret = nilfs_resize_check_free_space(nilfs, newnsegs);
+		if (ret < 0)
 			goto restore_alloc_range;
 
 		if (verbose) {
@@ -942,7 +935,7 @@ static int nilfs_extend_online(struct nilfs *nilfs, const char *device,
 
 	myprintf("Partition size = %llu bytes.\n"
 		 "Extend the filesystem size from %llu bytes to %llu bytes.\n",
-		 devsize, fs_devsize, newsize);
+		 devsize, layout.devsize, newsize);
 	if (!assume_yes && nilfs_resize_prompt(newsize) < 0)
 		goto out;
 
@@ -966,9 +959,9 @@ out:
 static int nilfs_resize_online(const char *device, unsigned long long newsize)
 {
 	struct nilfs *nilfs;
-	struct nilfs_super_block *sb;
 	nilfs_cno_t cno;
 	int status = EXIT_FAILURE;
+	int ret;
 
 	nilfs = nilfs_open(device, NULL,
 			   NILFS_OPEN_RAW | NILFS_OPEN_RDWR | NILFS_OPEN_GCLK);
@@ -977,11 +970,11 @@ static int nilfs_resize_online(const char *device, unsigned long long newsize)
 		goto out;
 	}
 
-	sb = nilfs_get_sb(nilfs);
-	assert(sb);
-	nilfs_resize_update_super(sb);
+	ret = nilfs_resize_load_layout(nilfs);
+	if (ret < 0)
+		goto out_unlock;
 
-	if (newsize == fs_devsize) {
+	if (newsize == layout.devsize) {
 		myprintf("No need to resize the filesystem on %s.\n"
 			 "It already fits the device.\n", device);
 		status = EXIT_SUCCESS;
@@ -990,7 +983,7 @@ static int nilfs_resize_online(const char *device, unsigned long long newsize)
 
 	nilfs_sync(nilfs, &cno);
 
-	if (newsize > fs_devsize)
+	if (newsize > layout.devsize)
 		status = nilfs_extend_online(nilfs, device, newsize);
 	else
 		status = nilfs_shrink_online(nilfs, device, newsize);
