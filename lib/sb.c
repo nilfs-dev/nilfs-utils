@@ -60,6 +60,7 @@
 #include <assert.h>
 #include "nilfs.h"
 #include "compat.h"
+#include "nilfs2_ondisk.h"
 #include "crc32.h"
 
 #define NILFS_MAX_SB_SIZE	1024

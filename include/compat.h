@@ -16,6 +16,9 @@
 #include <time.h>
 #endif	/* HAVE_TIME_H */
 
+#include <endian.h>
+#include <byteswap.h>
+
 /* Old linux/magic.h may not have the file system magic number of NILFS */
 #ifndef NILFS_SUPER_MAGIC
 #define NILFS_SUPER_MAGIC	0x3434	/* NILFS filesystem magic number */
@@ -89,5 +92,37 @@
 	 ((a)->tv_nsec cmp (b)->tv_nsec) :				\
 	 ((a)->tv_sec cmp (b)->tv_sec))
 #endif
+
+/* Byte order */
+#if __BYTE_ORDER == __LITTLE_ENDIAN
+#define le16_to_cpu(x)	((__u16)(x))
+#define le32_to_cpu(x)	((__u32)(x))
+#define le64_to_cpu(x)	((__u64)(x))
+#define cpu_to_le16(x)	((__u16)(x))
+#define cpu_to_le32(x)	((__u32)(x))
+#define cpu_to_le64(x)	((__u64)(x))
+#define be16_to_cpu(x)	bswap_16(x)
+#define be32_to_cpu(x)	bswap_32(x)
+#define be64_to_cpu(x)	bswap_64(x)
+#define cpu_to_be16(x)	bswap_16(x)
+#define cpu_to_be32(x)	bswap_32(x)
+#define cpu_to_be64(x)	bswap_64(x)
+#elif __BYTE_ORDER == __BIG_ENDIAN
+#define le16_to_cpu(x)	bswap_16(x)
+#define le32_to_cpu(x)	bswap_32(x)
+#define le64_to_cpu(x)	bswap_64(x)
+#define cpu_to_le16(x)	bswap_16(x)
+#define cpu_to_le32(x)	bswap_32(x)
+#define cpu_to_le64(x)	bswap_64(x)
+#define be16_to_cpu(x)	((__u16)(x))
+#define be32_to_cpu(x)	((__u32)(x))
+#define be64_to_cpu(x)	((__u64)(x))
+#define cpu_to_be16(x)	((__u16)(x))
+#define cpu_to_be32(x)	((__u32)(x))
+#define cpu_to_be64(x)	((__u64)(x))
+#else
+#error "unknown endian"
+#endif	/* __BYTE_ORDER */
+
 
 #endif /* __COMPAT_H__ */

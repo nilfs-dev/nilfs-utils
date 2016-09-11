@@ -40,10 +40,11 @@
 #endif	/* HAVE_LINUX_TYPES_H */
 
 #include <linux/fs.h>
-
 #include <errno.h>
 #include <assert.h>
-#include "nilfs.h"
+
+#include "compat.h"
+#include "nilfs2_ondisk.h"
 #include "nilfs_feature.h"
 
 struct nilfs_feature {

@@ -10,6 +10,7 @@ chcp_SOURCES = chcp.c
 chcp_LDADD = $(LDADD) $(LIB_POSIX_SEM) $(top_builddir)/lib/libparser.la
 
 dumpseg_SOURCES = dumpseg.c
+dumpseg_LDADD = $(LDADD) $(top_builddir)/lib/libsegment.la
 
 lscp_SOURCES = lscp.c
 

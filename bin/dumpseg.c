@@ -47,6 +47,7 @@
 #endif	/* HAVE_TIME_H */
 
 #include "nilfs.h"
+#include "segment.h"
 
 #ifdef _GNU_SOURCE
 #include <getopt.h>

@@ -23,6 +23,7 @@
 #ifndef NILFS_MKFS_H
 #define NILFS_MKFS_H
 
+#include "compat.h"
 #include "nilfs2_ondisk.h"
 #include "util.h"	/* BUG_ON() */
 

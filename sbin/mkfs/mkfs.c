@@ -71,10 +71,9 @@
 #endif	/* HAVE_BLKID_BLKID_H */
 
 #include "nilfs.h"
-#include "compat.h"
+#include "mkfs.h"
 #include "util.h"
 #include "nilfs_feature.h"
-#include "mkfs.h"
 #include "pathnames.h"
 #include "crc32.h"
 

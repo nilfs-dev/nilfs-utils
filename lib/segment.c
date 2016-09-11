@@ -19,6 +19,7 @@
 
 #include <errno.h>
 #include "nilfs.h"
+#include "segment.h"
 #include "util.h"
 #include "crc32.h"
 

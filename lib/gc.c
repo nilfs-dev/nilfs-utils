@@ -38,6 +38,7 @@
 #include <stdarg.h>
 #include <signal.h>
 #include "util.h"
+#include "segment.h"
 #include "vector.h"
 #include "nilfs_gc.h"
 

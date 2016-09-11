@@ -80,6 +80,7 @@
 #include <uuid/uuid.h>
 #include "nilfs.h"
 #include "compat.h"
+#include "nilfs2_ondisk.h"	/* NILFS_MIN_NRSVSEGS */
 #include "util.h"
 #include "vector.h"
 #include "nilfs_gc.h"

@@ -60,6 +60,8 @@
 #include <errno.h>
 #include <signal.h>
 #include "nilfs.h"
+#include "compat.h"
+#include "nilfs2_ondisk.h"
 #include "util.h"
 #include "nilfs_gc.h"
 
