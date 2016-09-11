@@ -44,8 +44,8 @@ of selinux context mount options (-o context=<context>, etc):
 
  $ ./configure --without-libmount --without-selinux
 
-For helpers built with the --with-libmount option, support of the
-context mount depends on the libmount library distro provides.
+For helpers built with mount library (libmount), support of the
+context mount depends on the libmount that distro provides.
 
 
 * How to get development sources
