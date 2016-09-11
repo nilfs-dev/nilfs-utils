@@ -854,14 +854,14 @@ int nilfs_put_segment(struct nilfs *nilfs, void *segment)
 		return -1;
 	}
 
-#ifdef HAVE_MUNMAP
+#ifdef HAVE_MMAP
 	if (nilfs_opt_test_mmap(nilfs)) {
 		segsize = le32_to_cpu(nilfs->n_sb->s_blocks_per_segment) *
 			(1UL << (le32_to_cpu(nilfs->n_sb->s_log_block_size) +
 				 NILFS_SB_BLOCK_SIZE_SHIFT));
 		return munmap(segment, segsize);
 	}
-#endif	/* HAVE_MUNMAP */
+#endif	/* HAVE_MMAP */
 
 	free(segment);
 	return 0;
