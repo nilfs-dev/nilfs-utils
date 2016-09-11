@@ -940,13 +940,13 @@ int nilfs_put_segment(struct nilfs *nilfs, void *segment)
 		return -1;
 	}
 
-#ifdef HAVE_MUNMAP
+#ifdef HAVE_MMAP
 	if (nilfs_opt_test_mmap(nilfs)) {
 		segsize = nilfs_get_blocks_per_segment(nilfs) *
 			nilfs_get_block_size(nilfs);
 		return munmap(segment, segsize);
 	}
-#endif	/* HAVE_MUNMAP */
+#endif	/* HAVE_MMAP */
 
 	free(segment);
 	return 0;
