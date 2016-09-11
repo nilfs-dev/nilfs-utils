@@ -167,7 +167,6 @@ int nilfs_opt_test_set_suinfo(struct nilfs *);
 
 nilfs_cno_t nilfs_get_oldest_cno(struct nilfs *);
 
-struct nilfs_super_block *nilfs_get_sb(struct nilfs *);
 ssize_t nilfs_get_layout(const struct nilfs *nilfs,
 			 struct nilfs_layout *layout, size_t layout_size);
 

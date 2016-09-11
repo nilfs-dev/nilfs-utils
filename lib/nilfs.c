@@ -958,8 +958,3 @@ nilfs_cno_t nilfs_get_oldest_cno(struct nilfs *nilfs)
 	nilfs_get_cpinfo(nilfs, nilfs->n_mincno, NILFS_CHECKPOINT, cpinfo, 1);
 	return nilfs->n_mincno;
 }
-
-struct nilfs_super_block *nilfs_get_sb(struct nilfs *nilfs)
-{
-	return nilfs->n_sb;
-}
