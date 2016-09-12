@@ -2,7 +2,7 @@ nilfs-utils-2.2.5  Sun Sep 4, 2016 JST
 
 	* fix the problem that checkpoints and blocks with a future timestamp
 	  are not reclaimed:
-	  - Add cnormap, a new checkpiont number reverse mapper
+	  - Add cnormap, a new checkpoint number reverse mapper
 	  - vector: add clear operation
 	  - vector: add insert operation
 	  - lssu: use nilfs_cnormap
@@ -163,7 +163,7 @@ nilfs-utils-2.1.4  Fri Jul 6, 2012 JST
 	* add --with-selinux configuration option.
 	* mount.nilfs2: use realloc instead of malloc(new_s); free(s) in
 	  string manipulation of options.
-	* cleanup usage of _PATH_*; this eliminates deprecated macros MOUTNED
+	* cleanup usage of _PATH_*; this eliminates deprecated macros MOUNTED
 	  and MNTTAB from nilfs-utils.
 	* update AUTHORS file.
 
@@ -233,7 +233,7 @@ nilfs-utils-2.1.0-rc1  Mon May 30, 2011 JST
 nilfs-utils-2.0.23  Sat Apr 30, 2011 JST
 
 	* make gc safe for duplicate invocation
-	* block interrupt singals while holding cleaner lock
+	* block interrupt signals while holding cleaner lock
 
 nilfs-utils-2.0.22  Sat Apr 16, 2011 JST
 
