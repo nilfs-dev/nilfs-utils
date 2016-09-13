@@ -1,5 +1,5 @@
 /*
- * nilfs.h - NILFS header file.
+ * nilfs.h - Header file of NILFS library
  *
  * Copyright (C) 2007-2012 Nippon Telegraph and Telephone Corporation.
  *
@@ -7,15 +7,6 @@
  * it under the terms of the GNU Lesser General Public License as published
  * by the Free Software Foundation; either version 2.1 of the License, or
  * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Lesser General Public License for more details.
- *
- * Written by Koji Sato.
- *
- * Maintained by Ryusuke Konishi <konishi.ryusuke@lab.ntt.co.jp> from 2008.
  */
 
 #ifndef NILFS_H
