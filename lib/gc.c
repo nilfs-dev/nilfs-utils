@@ -267,7 +267,10 @@ static ssize_t nilfs_acc_blocks(struct nilfs *nilfs,
 		if (nilfs_get_segment(nilfs, segnums[i], &segment) < 0)
 			return -1;
 
-		segseq = nilfs_get_segment_seqnum(nilfs, segment, segnums[i]);
+		ret = nilfs_get_segment_seqnum(nilfs, segnums[i], &segseq);
+		if (ret < 0)
+			return -1;
+
 		if (cnt64_ge(segseq, protseq)) {
 			n = nilfs_deselect_segment(segnums, n, i);
 			if (nilfs_put_segment(nilfs, segment) < 0)

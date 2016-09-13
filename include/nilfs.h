@@ -148,11 +148,13 @@ int nilfs_sb_write(int devfd, struct nilfs_super_block *sbp, int mask);
 
 ssize_t nilfs_get_segment(struct nilfs *, unsigned long, void **);
 int nilfs_put_segment(struct nilfs *, void *);
+int nilfs_get_segment_seqnum(const struct nilfs *nilfs, __u64 segnum,
+			     __u64 *seqnum);
+
 size_t nilfs_get_block_size(const struct nilfs *nilfs);
 __u64 nilfs_get_nsegments(const struct nilfs *nilfs);
 __u32 nilfs_get_blocks_per_segment(const struct nilfs *nilfs);
 __u32 nilfs_get_reserved_segments_ratio(const struct nilfs *nilfs);
-__u64 nilfs_get_segment_seqnum(const struct nilfs *, void *, __u64);
 
 int nilfs_change_cpmode(struct nilfs *, nilfs_cno_t, int);
 ssize_t nilfs_get_cpinfo(struct nilfs *, nilfs_cno_t, int,

@@ -261,21 +261,17 @@ static int nilfs_resize_update_sustat(struct nilfs *nilfs)
 
 static int nilfs_resize_segment_is_protected(struct nilfs *nilfs, __u64 segnum)
 {
-	void *segment;
 	__u64 segseq;
-	__u64 protseq = sustat.ss_prot_seq;
-	int ret = 0;
+	int ret;
 
 	/* need updating sustat before testing */
-	if (nilfs_get_segment(nilfs, segnum, &segment) < 0) {
+	ret = nilfs_get_segment_seqnum(nilfs, segnum, &segseq);
+	if (ret < 0) {
 		myprintf("Error: cannot read segment: %s\n", strerror(errno));
 		return -1;
 	}
-	segseq = nilfs_get_segment_seqnum(nilfs, segment, segnum);
-	if (cnt64_ge(segseq, protseq))
-		ret = 1;
-	nilfs_put_segment(nilfs, segment);
-	return ret;
+
+	return cnt64_ge(segseq, sustat.ss_prot_seq);
 }
 
 static int nilfs_resize_lock_cleaner(struct nilfs *nilfs, sigset_t *sigset)

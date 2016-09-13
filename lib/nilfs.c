@@ -13,9 +13,9 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU Lesser General Public License for more details.
  *
- * Written by Koji Sato.
- *
- * Maintained by Ryusuke Konishi <konishi.ryusuke@lab.ntt.co.jp> from 2008.
+ * Credits:
+ *    Koji Sato
+ *    Ryusuke Konishi <konishi.ryusuke@lab.ntt.co.jp>
  */
 
 #ifdef HAVE_CONFIG_H
@@ -949,6 +949,45 @@ int nilfs_put_segment(struct nilfs *nilfs, void *segment)
 #endif	/* HAVE_MMAP */
 
 	free(segment);
+	return 0;
+}
+
+/**
+ * nilfs_get_segment_seqnum - get sequence number of segment
+ * @nilfs: nilfs object
+ * @segnum: segment number
+ * @seqnum: buffer to store sequence number of the segment given by @segnum
+ */
+int nilfs_get_segment_seqnum(const struct nilfs *nilfs, __u64 segnum,
+			     __u64 *seqnum)
+{
+	const struct nilfs_super_block *sb = nilfs->n_sb;
+	__u32 blocks_per_segment, blkbits;
+	__le64 buf;
+	off_t segstart, offset;
+	ssize_t ret;
+
+	if (nilfs->n_devfd < 0 || sb == NULL) {
+		errno = EBADF;
+		return -1;
+	}
+
+	if (segnum >= nilfs_get_nsegments(nilfs)) {
+		errno = EINVAL;
+		return -1;
+	}
+
+	blkbits = le32_to_cpu(sb->s_log_block_size) + 10;
+	blocks_per_segment = le32_to_cpu(sb->s_blocks_per_segment);
+	segstart = (segnum == 0 ? le64_to_cpu(sb->s_first_data_block) :
+		    blocks_per_segment * segnum) << blkbits;
+
+	offset = segstart + offsetof(struct nilfs_segment_summary, ss_seq);
+	ret = pread(nilfs->n_devfd, &buf, sizeof(buf), offset);
+	if (ret < 0)
+		return -1;
+
+	*seqnum = le64_to_cpu(buf);
 	return 0;
 }
 

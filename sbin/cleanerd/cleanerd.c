@@ -555,18 +555,14 @@ nilfs_cleanerd_reduce_ncleansegs_for_retry(struct nilfs_cleanerd *cleanerd)
 static int nilfs_segment_is_protected(struct nilfs *nilfs, __u64 segnum,
 				      __u64 protseq)
 {
-	void *segment;
 	__u64 segseq;
-	int ret = 0;
+	int ret;
 
-	if (nilfs_get_segment(nilfs, segnum, &segment) < 0)
+	ret = nilfs_get_segment_seqnum(nilfs, segnum, &segseq);
+	if (ret < 0)
 		return -1;
 
-	segseq = nilfs_get_segment_seqnum(nilfs, segment, segnum);
-	if (cnt64_ge(segseq, protseq))
-		ret = 1;
-	nilfs_put_segment(nilfs, segment);
-	return ret;
+	return cnt64_ge(segseq, protseq);
 }
 
 /**

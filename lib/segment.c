@@ -23,19 +23,6 @@
 #include "util.h"
 #include "crc32.h"
 
-__u64 nilfs_get_segment_seqnum(const struct nilfs *nilfs, void *segment,
-			       __u64 segnum)
-{
-	struct nilfs_segment_summary *segsum;
-	unsigned long blkoff;
-
-	blkoff = (segnum == 0) ?
-		le64_to_cpu(nilfs->n_sb->s_first_data_block) : 0;
-
-	segsum = segment + blkoff * nilfs_get_block_size(nilfs);
-	return le64_to_cpu(segsum->ss_seq);
-}
-
 /* nilfs_psegment */
 static int nilfs_psegment_is_valid(const struct nilfs_psegment *pseg)
 {
