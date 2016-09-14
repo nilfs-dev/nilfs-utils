@@ -186,8 +186,10 @@ int nilfs_sb_write(int devfd, struct nilfs_super_block *sbp, int mask)
 
 	assert(devfd >= 0);
 
-	if (sbp == NULL)
+	if (sbp == NULL) {
+		errno = EINVAL;
 		return -1;
+	}
 
 	if (__nilfs_sb_read(devfd, sbps, offsets))
 		return -1;
