@@ -107,6 +107,7 @@ static int __nilfs_sb_read(int devfd, struct nilfs_super_block **sbp,
 {
 	__u64 devsize, sb2_offset;
 	int invalid_fs = 0;
+	ssize_t ret;
 
 	sbp[0] = malloc(NILFS_MAX_SB_SIZE);
 	sbp[1] = malloc(NILFS_MAX_SB_SIZE);
@@ -116,8 +117,8 @@ static int __nilfs_sb_read(int devfd, struct nilfs_super_block **sbp,
 	if (ioctl(devfd, BLKGETSIZE64, &devsize) != 0)
 		goto failed;
 
-	if (lseek(devfd, NILFS_SB_OFFSET_BYTES, SEEK_SET) >= 0 &&
-	    read(devfd, sbp[0], NILFS_MAX_SB_SIZE) >= 0) {
+	ret = pread(devfd, sbp[0], NILFS_MAX_SB_SIZE, NILFS_SB_OFFSET_BYTES);
+	if (ret == NILFS_MAX_SB_SIZE) {
 		if (nilfs_sb_is_valid(sbp[0], 0))
 			goto sb1_ok;
 		invalid_fs = 1;
@@ -133,8 +134,8 @@ sb1_ok:
 		offsets[1] = sb2_offset;
 	}
 
-	if (lseek(devfd, sb2_offset, SEEK_SET) >= 0 &&
-	    read(devfd, sbp[1], NILFS_MAX_SB_SIZE) >= 0) {
+	ret = pread(devfd, sbp[1], NILFS_MAX_SB_SIZE, sb2_offset);
+	if (ret == NILFS_MAX_SB_SIZE) {
 		if (nilfs_sb_is_valid(sbp[1], 0) &&
 		    !nilfs_sb2_offset_is_too_small(sbp[1], sb2_offset))
 			goto sb2_ok;
@@ -221,12 +222,10 @@ int nilfs_sb_write(int devfd, struct nilfs_super_block *sbp, int mask)
 
 		crc = nilfs_sb_check_sum(sbps[i]);
 		sbps[i]->s_sum = cpu_to_le32(crc);
-		if (lseek(devfd, offsets[i], SEEK_SET) > 0) {
-			count = write(devfd, sbps[i], NILFS_MAX_SB_SIZE);
-			if (count < NILFS_MAX_SB_SIZE) {
-				ret = -1;
-				break;
-			}
+		count = pwrite(devfd, sbps[i], NILFS_MAX_SB_SIZE, offsets[i]);
+		if (count < NILFS_MAX_SB_SIZE) {
+			ret = -1;
+			break;
 		}
 	}
 

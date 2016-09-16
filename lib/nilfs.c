@@ -884,6 +884,7 @@ ssize_t nilfs_get_segment(struct nilfs *nilfs, unsigned long segnum,
 	void *segment;
 	size_t segsize;
 	off_t offset;
+	ssize_t ret;
 
 	if (nilfs->n_devfd < 0) {
 		errno = EBADF;
@@ -910,11 +911,9 @@ ssize_t nilfs_get_segment(struct nilfs *nilfs, unsigned long segnum,
 		segment = malloc(segsize);
 		if (!segment)
 			return -1;
-		if (lseek(nilfs->n_devfd, offset, SEEK_SET) != offset) {
-			free(segment);
-			return -1;
-		}
-		if (read(nilfs->n_devfd, segment, segsize) != segsize) {
+
+		ret = pread(nilfs->n_devfd, segment, segsize, offset);
+		if (ret != segsize) {
 			free(segment);
 			return -1;
 		}
