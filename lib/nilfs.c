@@ -905,9 +905,10 @@ void nilfs_psegment_init(struct nilfs_psegment *pseg, __u64 segnum,
 {
 	unsigned long blkoff, nblocks_per_segment;
 
-	blkoff = (segnum == 0) ?
-		le64_to_cpu(nilfs->n_sb->s_first_data_block) : 0;
 	nblocks_per_segment = le32_to_cpu(nilfs->n_sb->s_blocks_per_segment);
+	blkoff = (segnum == 0 ?
+		  min_t(__u64, le64_to_cpu(nilfs->n_sb->s_first_data_block),
+			nblocks_per_segment) : 0);
 
 	pseg->p_blksize = 1UL << (le32_to_cpu(nilfs->n_sb->s_log_block_size) +
 				  NILFS_SB_BLOCK_SIZE_SHIFT);
