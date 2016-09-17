@@ -31,8 +31,7 @@ static int nilfs_psegment_is_valid(const struct nilfs_psegment *pseg)
 	if (le32_to_cpu(pseg->p_segsum->ss_magic) != NILFS_SEGSUM_MAGIC)
 		return 0;
 
-	offset = sizeof(pseg->p_segsum->ss_datasum) +
-		sizeof(pseg->p_segsum->ss_sumsum);
+	offset = offsetofend(struct nilfs_segment_summary, ss_sumsum);
 	restblocks = pseg->p_segblocknr + pseg->p_maxblocks - pseg->p_blocknr;
 	sumbytes = le32_to_cpu(pseg->p_segsum->ss_sumbytes);
 

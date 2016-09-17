@@ -1649,8 +1649,7 @@ static void fill_in_checksums(struct nilfs_segment_info *si, __u32 crc_seed)
 	__u32 sum;
 
 	/* fill in segment summary checksum */
-	crc_offset = sizeof(nilfs.segsum->ss_datasum) +
-		sizeof(nilfs.segsum->ss_sumsum);
+	crc_offset = offsetofend(struct nilfs_segment_summary, ss_sumsum);
 	sum = nilfs_crc32(crc_seed,
 			  (unsigned char *)nilfs.segsum + crc_offset,
 			  si->sumbytes - crc_offset);
