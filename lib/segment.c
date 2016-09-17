@@ -62,8 +62,8 @@ void nilfs_psegment_init(struct nilfs_psegment *pseg, __u64 segnum,
 int nilfs_psegment_is_end(const struct nilfs_psegment *pseg)
 {
 	return pseg->p_blocknr >= pseg->p_segblocknr + pseg->p_nblocks ||
-		pseg->p_segblocknr + pseg->p_maxblocks - pseg->p_blocknr <
-		NILFS_PSEG_MIN_BLOCKS ||
+		pseg->p_segblocknr + pseg->p_maxblocks <
+		pseg->p_blocknr + NILFS_PSEG_MIN_BLOCKS ||
 		!nilfs_psegment_is_valid(pseg);
 }
 
