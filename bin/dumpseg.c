@@ -132,7 +132,7 @@ static void dumpseg_print_psegment(struct nilfs_psegment *pseg)
 
 	printf("  partial segment: blocknr = %llu, nblocks = %llu\n",
 	       (unsigned long long)pseg->p_blocknr,
-	       (unsigned long long)le64_to_cpu(pseg->p_segsum->ss_nblocks));
+	       (unsigned long long)le32_to_cpu(pseg->p_segsum->ss_nblocks));
 
 	t = (time_t)le64_to_cpu(pseg->p_segsum->ss_create);
 	localtime_r(&t, &tm);
