@@ -26,17 +26,24 @@
 /* nilfs_psegment */
 static int nilfs_psegment_is_valid(const struct nilfs_psegment *pseg)
 {
-	int offset;
+	__u32 restblocks, sumbytes, offset;
 
 	if (le32_to_cpu(pseg->p_segsum->ss_magic) != NILFS_SEGSUM_MAGIC)
 		return 0;
 
 	offset = sizeof(pseg->p_segsum->ss_datasum) +
 		sizeof(pseg->p_segsum->ss_sumsum);
+	restblocks = pseg->p_segblocknr + pseg->p_maxblocks - pseg->p_blocknr;
+	sumbytes = le32_to_cpu(pseg->p_segsum->ss_sumbytes);
+
+	if (sumbytes < offset ||
+	    sumbytes > (__u64)restblocks * pseg->p_blksize)
+		return 0;
+
 	return le32_to_cpu(pseg->p_segsum->ss_sumsum) ==
 		crc32_le(pseg->p_seed,
 			 (unsigned char *)pseg->p_segsum + offset,
-			 le32_to_cpu(pseg->p_segsum->ss_sumbytes) - offset);
+			 sumbytes - offset);
 }
 
 void nilfs_psegment_init(struct nilfs_psegment *pseg, __u64 segnum,
