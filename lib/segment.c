@@ -23,10 +23,16 @@
 #include "util.h"
 #include "crc32.h"
 
+static const char *nilfs_psegment_error_strings[] = {
+	"success",
+	"bad alignment",
+};
+
 /* nilfs_psegment */
 static int nilfs_psegment_is_valid(struct nilfs_psegment *pseg)
 {
 	__u32 sumbytes, offset;
+	unsigned int hdrsize;
 	void *limit;
 
 	if (le32_to_cpu(pseg->segsum->ss_magic) != NILFS_SEGSUM_MAGIC)
@@ -39,10 +45,20 @@ static int nilfs_psegment_is_valid(struct nilfs_psegment *pseg)
 	if (sumbytes < offset || (void *)pseg->segsum + sumbytes >= limit)
 		return 0;
 
-	return le32_to_cpu(pseg->segsum->ss_sumsum) ==
-		crc32_le(pseg->segment->seed,
-			 (unsigned char *)pseg->segsum + offset,
-			 sumbytes - offset);
+	if (le32_to_cpu(pseg->segsum->ss_sumsum) !=
+	    crc32_le(pseg->segment->seed,
+		     (unsigned char *)pseg->segsum + offset,
+		     sumbytes - offset))
+		return 0;
+
+	/* Sanity check to prevent memory access errors */
+	hdrsize = le16_to_cpu(pseg->segsum->ss_bytes);
+	if (!IS_ALIGNED(hdrsize, 8)) {
+		pseg->error = NILFS_PSEGMENT_ERROR_ALIGNMENT;
+		errno = EINVAL;
+		return 0;
+	}
+	return 1;
 }
 
 void nilfs_psegment_init(struct nilfs_psegment *pseg,
@@ -53,6 +69,7 @@ void nilfs_psegment_init(struct nilfs_psegment *pseg,
 	pseg->blocknr = segment->blocknr;
 	pseg->blkcnt = min_t(__u32, blkcnt, segment->nblocks);
 	pseg->blkbits = segment->blkbits;
+	pseg->error = NILFS_PSEGMENT_SUCCESS;
 }
 
 int nilfs_psegment_is_end(struct nilfs_psegment *pseg)
@@ -68,6 +85,14 @@ void nilfs_psegment_next(struct nilfs_psegment *pseg)
 	pseg->segsum = (void *)pseg->segsum + ((__u64)nblocks << pseg->blkbits);
 	pseg->blkcnt = pseg->blkcnt >= nblocks ? pseg->blkcnt - nblocks : 0;
 	pseg->blocknr += nblocks;
+}
+
+const char *nilfs_psegment_strerror(int errnum)
+{
+	if (errnum < 0 || errnum >= ARRAY_SIZE(nilfs_psegment_error_strings))
+		return "unknown error";
+
+	return nilfs_psegment_error_strings[errnum];
 }
 
 /* nilfs_file */

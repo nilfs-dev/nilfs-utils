@@ -148,6 +148,7 @@ static void dumpseg_print_psegment(struct nilfs_psegment *pseg)
 static void dumpseg_print_segment(const struct nilfs_segment *segment)
 {
 	struct nilfs_psegment pseg;
+	const char *errstr;
 	__u64 next;
 
 	printf("segment: segnum = %llu\n",
@@ -164,6 +165,19 @@ static void dumpseg_print_segment(const struct nilfs_segment *segment)
 			dumpseg_print_psegment(&pseg);
 			nilfs_psegment_next(&pseg);
 		} while (!nilfs_psegment_is_end(&pseg));
+	}
+
+	if (nilfs_psegment_is_error(&pseg, &errstr)) {
+		switch (pseg.error) {
+		case NILFS_PSEGMENT_ERROR_ALIGNMENT:
+			printf("  error %d (%s) - header size = %u\n",
+			       pseg.error, errstr,
+			       le16_to_cpu(pseg.segsum->ss_bytes));
+			break;
+		default:
+			printf("  error %d (%s)\n", pseg.error, errstr);
+			break;
+		}
 	}
 }
 

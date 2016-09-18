@@ -198,10 +198,19 @@ static int nilfs_acc_blocks_segment(const struct nilfs_segment *segment,
 				    struct nilfs_vector *bdescv)
 {
 	struct nilfs_psegment psegment;
+	const char *errstr;
 
 	nilfs_psegment_for_each(&psegment, segment, nblocks) {
 		if (nilfs_acc_blocks_psegment(&psegment, vdescv, bdescv) < 0)
 			return -1;
+	}
+	if (nilfs_psegment_is_error(&psegment, &errstr)) {
+		nilfs_gc_logger(LOG_ERR,
+				"error %d (%s) while reading segment summary at pseg blocknr = %llu, segnum = %llu",
+				psegment.error, errstr,
+				(unsigned long long)psegment.blocknr,
+				(unsigned long long)segment->segnum);
+		return -1;
 	}
 	return 0;
 }

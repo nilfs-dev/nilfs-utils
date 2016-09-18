@@ -23,6 +23,7 @@ typedef __u64 sector_t;
  * @blocknr: block number of the partial segment
  * @blkcnt: count of remaining blocks
  * @blkbits: bit shift for block size
+ * @error: error code
  */
 struct nilfs_psegment {
 	const struct nilfs_segment *segment;
@@ -30,6 +31,14 @@ struct nilfs_psegment {
 	sector_t blocknr;
 	__u32 blkcnt;
 	unsigned int blkbits;
+	int error;
+};
+
+/* Error code of psegment iterator */
+enum {
+	NILFS_PSEGMENT_SUCCESS = 0,
+	NILFS_PSEGMENT_ERROR_ALIGNMENT,
+	__NR_NILFS_PSEGMENT_ERROR,
 };
 
 /**
@@ -88,10 +97,22 @@ void nilfs_psegment_init(struct nilfs_psegment *pseg,
 			 const struct nilfs_segment *segment, __u32 blkcnt);
 int nilfs_psegment_is_end(struct nilfs_psegment *pseg);
 void nilfs_psegment_next(struct nilfs_psegment *pseg);
+const char *nilfs_psegment_strerror(int errnum);
 
 #define nilfs_psegment_for_each(pseg, seg, blkcnt)			\
 	for (nilfs_psegment_init(pseg, seg, blkcnt);			\
 	     !nilfs_psegment_is_end(pseg); nilfs_psegment_next(pseg))	\
+
+static inline int nilfs_psegment_is_error(const struct nilfs_psegment *pseg,
+					  const char **errstr)
+{
+	if (pseg->error) {
+		if (errstr != NULL)
+			*errstr = nilfs_psegment_strerror(pseg->error);
+		return 1;
+	}
+	return 0;
+}
 
 /* file iterator */
 void nilfs_file_init(struct nilfs_file *, const struct nilfs_psegment *);
