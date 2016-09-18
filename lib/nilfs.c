@@ -876,18 +876,29 @@ int nilfs_thaw(struct nilfs *nilfs)
  * nilfs_get_segment - read or mmap segment to a memory region
  * @nilfs: nilfs object
  * @segnum: segment number
- * @segmentp: buffer to store start address of allocated memory region in
+ * @segment: pointer to a segment object (nilfs_segment struct)
  */
-ssize_t nilfs_get_segment(struct nilfs *nilfs, unsigned long segnum,
-			  void **segmentp)
+int nilfs_get_segment(struct nilfs *nilfs, __u64 segnum,
+		      struct nilfs_segment *segment)
 {
-	void *segment;
+	const struct nilfs_super_block *sb = nilfs->n_sb;
+	struct nilfs_segment_summary *segsum;
+	long pagesize;
+	__u32 blocks_per_segment, blkbits, nblocks;
+	__u64 segblocknr;
 	size_t segsize;
-	off_t offset;
+	off_t segstart;
+	void *addr;
 	ssize_t ret;
 
-	if (nilfs->n_devfd < 0) {
+	if (nilfs->n_devfd < 0 || sb == NULL) {
 		errno = EBADF;
+		return -1;
+	}
+
+	pagesize = sysconf(_SC_PAGESIZE);
+	if (pagesize <= 0) {
+		errno = EINVAL;
 		return -1;
 	}
 
@@ -896,58 +907,112 @@ ssize_t nilfs_get_segment(struct nilfs *nilfs, unsigned long segnum,
 		return -1;
 	}
 
-	segsize = nilfs_get_blocks_per_segment(nilfs) *
-		nilfs_get_block_size(nilfs);
-	offset = ((off_t)segnum) * segsize;
+	blkbits = le32_to_cpu(sb->s_log_block_size) + 10;
+	blocks_per_segment = le32_to_cpu(sb->s_blocks_per_segment);
+	if (blocks_per_segment < NILFS_SEG_MIN_BLOCKS) {
+		errno = EINVAL;
+		return -1;
+	}
+
+	if (segnum == 0) {
+		segblocknr = le64_to_cpu(sb->s_first_data_block);
+		if (segblocknr >= blocks_per_segment) {
+			errno = EINVAL;
+			return -1;
+		}
+		nblocks = blocks_per_segment - (__u32)segblocknr;
+	} else {
+		segblocknr = (__u64)blocks_per_segment * segnum;
+		nblocks = blocks_per_segment;
+	}
+	segsize = (__u64)nblocks << blkbits;
+	segstart = segblocknr << blkbits;
 
 #ifdef HAVE_MMAP
 	if (nilfs_opt_test_mmap(nilfs)) {
-		segment = mmap(0, segsize, PROT_READ, MAP_SHARED,
-			       nilfs->n_devfd, offset);
-		if (segment == MAP_FAILED)
-			return -1;
-	} else {
-#endif	/* HAVE_MMAP */
-		segment = malloc(segsize);
-		if (!segment)
-			return -1;
+		size_t alloc_size, page_offset;
+		int errsv = errno;
 
-		ret = pread(nilfs->n_devfd, segment, segsize, offset);
-		if (ret != segsize) {
-			free(segment);
-			return -1;
+		page_offset = segstart % pagesize;
+		alloc_size = roundup(segsize + page_offset, pagesize);
+
+		addr = mmap(0, alloc_size, PROT_READ, MAP_SHARED,
+			    nilfs->n_devfd, segstart - page_offset);
+		if (addr != MAP_FAILED) {
+			segment->mmapped = 1;
+			segment->adjusted = (page_offset != 0 ||
+					     alloc_size != pagesize);
+			goto success;
 		}
-#ifdef HAVE_MMAP
+
+		if (errno != ENODEV)
+			return -1;
+		/*
+		 * The underlying device does not support memory mapping -
+		 * fallback to malloc().
+		 */
+		errno = errsv;
 	}
 #endif	/* HAVE_MMAP */
 
-	*segmentp = segment;
-	return segsize;
+	addr = malloc(segsize);
+	if (addr == NULL)
+		return -1;
+
+	ret = pread(nilfs->n_devfd, addr, segsize, segstart);
+	if (ret < 0) {
+		free(addr);
+		return -1;
+	}
+	segment->mmapped = 0;
+	segment->adjusted = 0;
+
+success:
+	segment->addr = addr;
+	segment->segsize = segsize;
+	segment->segnum = segnum;
+	segsum = addr;
+	segment->seqnum = le64_to_cpu(segsum->ss_seq);
+	segment->blocknr = segblocknr;
+	segment->nblocks = nblocks;
+	segment->blocks_per_segment = blocks_per_segment;
+	segment->blkbits = blkbits;
+	segment->seed = le32_to_cpu(sb->s_crc_seed);
+	return 0;
 }
 
 /**
  * nilfs_put_segment - free memory used for raw segment access
- * @nilfs: nilfs object
- * @segment: start address of the memory region to be freed
+ * @segment: pointer to the segment object to be cleaned up
  */
-int nilfs_put_segment(struct nilfs *nilfs, void *segment)
+int nilfs_put_segment(struct nilfs_segment *segment)
 {
-	size_t segsize;
-
-	if (nilfs->n_devfd < 0) {
-		errno = EBADF;
-		return -1;
-	}
-
+	if (segment->mmapped) {
 #ifdef HAVE_MMAP
-	if (nilfs_opt_test_mmap(nilfs)) {
-		segsize = nilfs_get_blocks_per_segment(nilfs) *
-			nilfs_get_block_size(nilfs);
-		return munmap(segment, segsize);
-	}
-#endif	/* HAVE_MMAP */
+		size_t page_offset, size;
 
-	free(segment);
+		if (segment->adjusted) {
+			long pagesize = sysconf(_SC_PAGESIZE);
+
+			if (pagesize <= 0) {
+				errno = EINVAL;
+				return -1;
+			}
+			page_offset = (unsigned long)segment->addr % pagesize;
+			size = roundup(segment->segsize + page_offset,
+				       pagesize);
+		} else {
+			size = segment->segsize;
+			page_offset = 0;
+		}
+		return munmap(segment->addr - page_offset, size);
+#else
+		errno = EINVAL;
+		return -1;
+#endif	/* HAVE_MMAP */
+	}
+
+	free(segment->addr);
 	return 0;
 }
 

@@ -132,37 +132,33 @@ static void dumpseg_print_psegment(struct nilfs_psegment *pseg)
 	time_t t;
 
 	printf("  partial segment: blocknr = %llu, nblocks = %llu\n",
-	       (unsigned long long)pseg->p_blocknr,
-	       (unsigned long long)le32_to_cpu(pseg->p_segsum->ss_nblocks));
+	       (unsigned long long)pseg->blocknr,
+	       (unsigned long long)le32_to_cpu(pseg->segsum->ss_nblocks));
 
-	t = (time_t)le64_to_cpu(pseg->p_segsum->ss_create);
+	t = (time_t)le64_to_cpu(pseg->segsum->ss_create);
 	localtime_r(&t, &tm);
 	strftime(timebuf, DUMPSEG_BUFSIZE, "%F %T", &tm);
 	printf("    creation time = %s\n", timebuf);
-	printf("    nfinfo = %d\n", le32_to_cpu(pseg->p_segsum->ss_nfinfo));
+	printf("    nfinfo = %d\n", le32_to_cpu(pseg->segsum->ss_nfinfo));
 	nilfs_file_for_each(&file, pseg) {
 		dumpseg_print_file(&file);
 	}
 }
 
-static void dumpseg_print_segment(struct nilfs *nilfs,
-				  __u64 segnum,
-				  void *seg,
-				  size_t segsize)
+static void dumpseg_print_segment(const struct nilfs_segment *segment)
 {
 	struct nilfs_psegment pseg;
-	size_t blksize;
 	__u64 next;
 
-	printf("segment: segnum = %llu\n", (unsigned long long)segnum);
-	blksize = nilfs_get_block_size(nilfs);
-	nilfs_psegment_init(&pseg, segnum, seg, segsize / blksize, nilfs);
+	printf("segment: segnum = %llu\n",
+	       (unsigned long long)segment->segnum);
+	nilfs_psegment_init(&pseg, segment, segment->nblocks);
 
 	if (!nilfs_psegment_is_end(&pseg)) {
-		next = le64_to_cpu(pseg.p_segsum->ss_next) /
-			nilfs_get_blocks_per_segment(nilfs);
+		next = le64_to_cpu(pseg.segsum->ss_next) /
+			segment->blocks_per_segment;
 		printf("  sequence number = %llu, next segnum = %llu\n",
-		       (unsigned long long)le64_to_cpu(pseg.p_segsum->ss_seq),
+		       (unsigned long long)le64_to_cpu(pseg.segsum->ss_seq),
 		       (unsigned long long)next);
 		do {
 			dumpseg_print_psegment(&pseg);
@@ -176,9 +172,9 @@ int main(int argc, char *argv[])
 	struct nilfs *nilfs;
 	__u64 segnum;
 	char *dev, *endptr, *progname, *last;
-	void *seg;
-	ssize_t segsize;
+	struct nilfs_segment segment;
 	int c, i, status;
+	int ret;
 #ifdef _GNU_SOURCE
 	int option_index;
 #endif	/* _GNU_SOURCE */
@@ -233,15 +229,18 @@ int main(int argc, char *argv[])
 			status = EXIT_FAILURE;
 			continue;
 		}
-		segsize = nilfs_get_segment(nilfs, segnum, &seg);
-		if (segsize < 0) {
-			warn(NULL);
+		ret = nilfs_get_segment(nilfs, segnum, &segment);
+		if (ret < 0) {
+			warn("failed to read segment");
 			status = EXIT_FAILURE;
 			goto out;
 		}
-		dumpseg_print_segment(nilfs, segnum, seg, segsize);
-		if (nilfs_put_segment(nilfs, seg) < 0) {
-			warn(NULL);
+
+		dumpseg_print_segment(&segment);
+
+		ret = nilfs_put_segment(&segment);
+		if (ret < 0) {
+			warn("failed to release segment");
 			status = EXIT_FAILURE;
 			goto out;
 		}

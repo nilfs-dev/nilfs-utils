@@ -18,23 +18,18 @@ typedef __u64 sector_t;
 
 /**
  * struct nilfs_psegment - partial segment iterator
- * @p_segnum: segment number
- * @p_blocknr: block number of partial segment
- * @p_segblocknr: block number of segment
- * @p_nblocks: number of blocks in segment
- * @p_maxblocks: maximum number of blocks in segment
- * @p_blksize: block size
- * @p_seed: CRC seed
+ * @segment: pointer to segment object
+ * @segsum: pointer to segment summary of the partial segment
+ * @blocknr: block number of the partial segment
+ * @blkcnt: count of remaining blocks
+ * @blkbits: bit shift for block size
  */
 struct nilfs_psegment {
-	struct nilfs_segment_summary *p_segsum;
-	sector_t p_blocknr;
-
-	sector_t p_segblocknr;
-	size_t p_nblocks;
-	size_t p_maxblocks;
-	size_t p_blksize;
-	__u32 p_seed;
+	const struct nilfs_segment *segment;
+	struct nilfs_segment_summary *segsum;
+	sector_t blocknr;
+	__u32 blkcnt;
+	unsigned int blkbits;
 };
 
 /**
@@ -86,17 +81,17 @@ struct nilfs_block {
 
 
 struct nilfs;
+struct nilfs_segment;
 
 /* partial segment iterator */
-void nilfs_psegment_init(struct nilfs_psegment *, __u64,
-			 void *, size_t, const struct nilfs *);
-int nilfs_psegment_is_end(const struct nilfs_psegment *);
-void nilfs_psegment_next(struct nilfs_psegment *);
+void nilfs_psegment_init(struct nilfs_psegment *pseg,
+			 const struct nilfs_segment *segment, __u32 blkcnt);
+int nilfs_psegment_is_end(struct nilfs_psegment *pseg);
+void nilfs_psegment_next(struct nilfs_psegment *pseg);
 
-#define nilfs_psegment_for_each(pseg, segnum, seg, nblocks, nilfs)	\
-	for (nilfs_psegment_init(pseg, segnum, seg, nblocks, nilfs);	\
-	     !nilfs_psegment_is_end(pseg);				\
-	     nilfs_psegment_next(pseg))
+#define nilfs_psegment_for_each(pseg, seg, blkcnt)			\
+	for (nilfs_psegment_init(pseg, seg, blkcnt);			\
+	     !nilfs_psegment_is_end(pseg); nilfs_psegment_next(pseg))	\
 
 /* file iterator */
 void nilfs_file_init(struct nilfs_file *, const struct nilfs_psegment *);

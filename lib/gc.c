@@ -187,22 +187,19 @@ static int nilfs_acc_blocks_psegment(struct nilfs_psegment *psegment,
 
 /**
  * nilfs_acc_blocks_segment - collect summary of blocks in a segment
- * @nilfs: nilfs object
- * @segnum: segment number to be parsed
- * @segment: start address of segment data
+ * @segment: segment object
  * @nblocks: size of valid logs in the segment (per block)
  * @vdescv: vector object to store (descriptors of) virtual block numbers
  * @bdescv: vector object to store (descriptors of) disk block numbers
  */
-static int nilfs_acc_blocks_segment(struct nilfs *nilfs,
-				    __u64 segnum, void *segment,
-				    size_t nblocks,
+static int nilfs_acc_blocks_segment(const struct nilfs_segment *segment,
+				    __u32 nblocks,
 				    struct nilfs_vector *vdescv,
 				    struct nilfs_vector *bdescv)
 {
 	struct nilfs_psegment psegment;
 
-	nilfs_psegment_for_each(&psegment, segnum, segment, nblocks, nilfs) {
+	nilfs_psegment_for_each(&psegment, segment, nblocks) {
 		if (nilfs_acc_blocks_psegment(&psegment, vdescv, bdescv) < 0)
 			return -1;
 	}
@@ -244,10 +241,9 @@ static ssize_t nilfs_acc_blocks(struct nilfs *nilfs,
 				struct nilfs_vector *bdescv)
 {
 	struct nilfs_suinfo si;
-	void *segment;
+	struct nilfs_segment segment;
 	int ret, i = 0;
 	ssize_t n = nsegs;
-	__u64 segseq;
 
 	while (i < n) {
 		if (nilfs_get_suinfo(nilfs, segnums[i], &si, 1) < 0)
@@ -264,23 +260,24 @@ static ssize_t nilfs_acc_blocks(struct nilfs *nilfs,
 			continue;
 		}
 
-		if (nilfs_get_segment(nilfs, segnums[i], &segment) < 0)
-			return -1;
-
-		ret = nilfs_get_segment_seqnum(nilfs, segnums[i], &segseq);
+		ret = nilfs_get_segment(nilfs, segnums[i], &segment);
 		if (ret < 0)
 			return -1;
 
-		if (cnt64_ge(segseq, protseq)) {
+		if (cnt64_ge(segment.seqnum, protseq)) {
 			n = nilfs_deselect_segment(segnums, n, i);
-			if (nilfs_put_segment(nilfs, segment) < 0)
+			ret = nilfs_put_segment(&segment);
+			if (ret < 0)
 				return -1;
 			continue;
 		}
-		ret = nilfs_acc_blocks_segment(
-			nilfs, segnums[i], segment, si.sui_nblocks,
-			vdescv, bdescv);
-		if (nilfs_put_segment(nilfs, segment) < 0 || ret < 0)
+		ret = nilfs_acc_blocks_segment(&segment, si.sui_nblocks,
+					       vdescv, bdescv);
+		if (ret < 0)
+			return -1;
+
+		ret = nilfs_put_segment(&segment);
+		if (ret < 0)
 			return -1;
 		i++;
 	}

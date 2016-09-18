@@ -146,8 +146,37 @@ NILFS_LOCK_FNS(cleaner, 0)
 struct nilfs_super_block *nilfs_sb_read(int devfd);
 int nilfs_sb_write(int devfd, struct nilfs_super_block *sbp, int mask);
 
-ssize_t nilfs_get_segment(struct nilfs *, unsigned long, void **);
-int nilfs_put_segment(struct nilfs *, void *);
+/**
+ * struct nilfs_segment - segment object
+ * @addr: start address of segment on mapped or allocated region
+ * @segsize: segment size
+ * @segnum: segment number
+ * @seqnum: sequence number of the segment
+ * @blocknr: start block number
+ * @nblocks: number of blocks in the segment
+ * @blocks_per_segment: number of blocks per segment
+ * @blkbits: bit shift for block size
+ * @seed: crc seed
+ * @mmapped: flag to indicate that @addr is mapped with mmap()
+ * @adjusted: flag to indicate that @addr is adjusted to page boundary
+ */
+struct nilfs_segment {
+	void *addr;
+	__u64 segsize;
+	__u64 segnum;
+	__u64 seqnum;
+	__u64 blocknr;
+	__u32 nblocks;
+	__u32 blocks_per_segment;
+	__u32 blkbits;
+	__u32 seed;
+	unsigned int mmapped : 1;
+	unsigned int adjusted : 1;
+};
+
+int nilfs_get_segment(struct nilfs *nilfs, __u64 segnum,
+		      struct nilfs_segment *segment);
+int nilfs_put_segment(struct nilfs_segment *segment);
 int nilfs_get_segment_seqnum(const struct nilfs *nilfs, __u64 segnum,
 			     __u64 *seqnum);
 
