@@ -23,6 +23,7 @@
 	   1;							\
 	})
 
+#define IS_ALIGNED(x, a)	(((x) & ((typeof(x))(a) - 1)) == 0)
 
 #define DIV_ROUND_UP(n, m)	(((n) + (m) - 1) / (m))
 #define ARRAY_SIZE(arr)		(sizeof(arr) / sizeof((arr)[0]))
