@@ -50,6 +50,7 @@
 #include <signal.h>
 #include "nilfs.h"
 #include "parser.h"
+#include "util.h"
 
 
 #define CHCP_MODE_CP	"cp"
@@ -79,7 +80,7 @@ int main(int argc, char *argv[])
 	struct nilfs *nilfs;
 	nilfs_cno_t cno;
 	char *dev, *modestr, *progname, *endptr, *last;
-	int c, mode, status;
+	int c, mode, status, ret;
 #ifdef _GNU_SOURCE
 	int option_index;
 #endif	/* _GNU_SOURCE */
@@ -140,13 +141,15 @@ int main(int argc, char *argv[])
 	sigemptyset(&sigset);
 	sigaddset(&sigset, SIGINT);
 	sigaddset(&sigset, SIGTERM);
-	if (sigprocmask(SIG_BLOCK, &sigset, &oldset) < 0) {
+	ret = sigprocmask(SIG_BLOCK, &sigset, &oldset);
+	if (unlikely(ret < 0)) {
 		warn("cannot block signals");
 		status = EXIT_FAILURE;
 		goto out;
 	}
 
-	if (nilfs_lock_cleaner(nilfs) < 0) {
+	ret = nilfs_lock_cleaner(nilfs);
+	if (unlikely(ret < 0)) {
 		warnx("cannot lock NILFS");
 		status = EXIT_FAILURE;
 		goto out_unblock_signal;
@@ -155,7 +158,8 @@ int main(int argc, char *argv[])
 	for (; optind < argc; optind++) {
 		sigset_t waitset;
 
-		if (sigpending(&waitset) < 0) {
+		ret = sigpending(&waitset);
+		if (unlikely(ret < 0)) {
 			warn("cannot test signals");
 			status = EXIT_FAILURE;
 			break;
@@ -178,7 +182,8 @@ int main(int argc, char *argv[])
 			continue;
 		}
 
-		if (nilfs_change_cpmode(nilfs, cno, mode) < 0) {
+		ret = nilfs_change_cpmode(nilfs, cno, mode);
+		if (unlikely(ret < 0)) {
 			if (errno == ENOENT)
 				warnx("%llu: no checkpoint",
 				      (unsigned long long)cno);

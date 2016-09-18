@@ -53,7 +53,7 @@ static int nilfs_psegment_is_valid(struct nilfs_psegment *pseg)
 
 	/* Sanity check to prevent memory access errors */
 	hdrsize = le16_to_cpu(pseg->segsum->ss_bytes);
-	if (!IS_ALIGNED(hdrsize, 8)) {
+	if (unlikely(!IS_ALIGNED(hdrsize, 8))) {
 		pseg->error = NILFS_PSEGMENT_ERROR_ALIGNMENT;
 		errno = EINVAL;
 		return 0;

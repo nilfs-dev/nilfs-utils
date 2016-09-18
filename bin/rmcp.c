@@ -50,6 +50,7 @@
 #include <errno.h>
 #include "nilfs.h"
 #include "parser.h"
+#include "util.h"
 
 
 #ifdef _GNU_SOURCE
@@ -101,7 +102,7 @@ static int rmcp_remove_range(struct nilfs *nilfs,
 	int ret = 0;
 
 	for (cno = start; cno <= end; cno++) {
-		if (nilfs_delete_checkpoint(nilfs, cno) == 0) {
+		if (likely(nilfs_delete_checkpoint(nilfs, cno) == 0)) {
 			nd++;
 			continue;
 		}
@@ -189,7 +190,8 @@ int main(int argc, char *argv[])
 	if (nilfs == NULL)
 		err(EXIT_FAILURE, "cannot open NILFS on %s", dev ? : "device");
 
-	if (nilfs_get_cpstat(nilfs, &cpstat) < 0) {
+	ret = nilfs_get_cpstat(nilfs, &cpstat);
+	if (unlikely(ret < 0)) {
 		warn("%s: cannot get checkpoint status", dev);
 		status = EXIT_FAILURE;
 		goto out_close_nilfs;

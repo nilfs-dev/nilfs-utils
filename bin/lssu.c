@@ -145,7 +145,7 @@ static ssize_t lssu_get_latest_usage(struct nilfs *nilfs,
 	segnums[0] = segnum;
 
 	ret = nilfs_assess_segment(nilfs, segnums, 1, &params, &stat);
-	if (ret < 0)
+	if (unlikely(ret < 0))
 		return -1;
 
 	if (stat.protected_segs > 0)
@@ -201,7 +201,7 @@ static ssize_t lssu_print_suinfo(struct nilfs *nilfs, __u64 segnum,
 			if (ret >= 0) {
 				nliveblks = ret;
 				ratio = (ret * 100 + 99) / blocks_per_segment;
-			} else if (ret == -2) {
+			} else if (likely(ret == -2)) {
 				nliveblks = suinfos[i].sui_nblocks;
 				ratio = 100;
 				protected = 1;
@@ -231,9 +231,11 @@ static int lssu_list_suinfo(struct nilfs *nilfs)
 	struct nilfs_sustat sustat;
 	__u64 segnum, rest, count;
 	ssize_t nsi, n;
+	int ret;
 
 	lssu_print_header();
-	if (nilfs_get_sustat(nilfs, &sustat) < 0)
+	ret = nilfs_get_sustat(nilfs, &sustat);
+	if (unlikely(ret < 0))
 		return EXIT_FAILURE;
 	segnum = param_index;
 	rest = param_lines && param_lines < sustat.ss_nsegs ? param_lines :
@@ -242,11 +244,11 @@ static int lssu_list_suinfo(struct nilfs *nilfs)
 	for ( ; rest > 0 && segnum < sustat.ss_nsegs; rest -= n) {
 		count = min_t(__u64, rest, LSSU_NSEGS);
 		nsi = nilfs_get_suinfo(nilfs, segnum, suinfos, count);
-		if (nsi < 0)
+		if (unlikely(nsi < 0))
 			return EXIT_FAILURE;
 
 		n = lssu_print_suinfo(nilfs, segnum, nsi, sustat.ss_prot_seq);
-		if (n < 0)
+		if (unlikely(n < 0))
 			return EXIT_FAILURE;
 		segnum += nsi;
 	}
@@ -270,13 +272,13 @@ static int lssu_get_protcno(struct nilfs *nilfs,
 	*prottimep = now - protection_period;
 
 	cnormap = nilfs_cnormap_create(nilfs);
-	if (!cnormap) {
+	if (unlikely(!cnormap)) {
 		warn("failed to create checkpoint number reverse mapper");
 		return -1;
 	}
 
 	ret = nilfs_cnormap_track_back(cnormap, protection_period, protcnop);
-	if (ret < 0)
+	if (unlikely(ret < 0))
 		warn("failed to get checkpoint number from protection period (%lu)",
 		     protection_period);
 
@@ -366,7 +368,7 @@ int main(int argc, char *argv[])
 		struct timeval tv;
 
 		ret = gettimeofday(&tv, NULL);
-		if (ret < 0) {
+		if (unlikely(ret < 0)) {
 			warn("cannot get current time");
 			status = EXIT_FAILURE;
 			goto out_close_nilfs;
@@ -378,7 +380,7 @@ int main(int argc, char *argv[])
 
 		ret = lssu_get_protcno(nilfs, protection_period, &prottime,
 				       &protcno);
-		if (ret < 0) {
+		if (unlikely(ret < 0)) {
 			status = EXIT_FAILURE;
 			goto out_close_nilfs;
 		}

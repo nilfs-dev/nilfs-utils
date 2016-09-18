@@ -78,7 +78,7 @@ struct nilfs_cnormap *nilfs_cnormap_create(struct nilfs *nilfs)
 	int ret;
 
 	cnormap = malloc(sizeof(*cnormap));
-	if (!cnormap)
+	if (unlikely(!cnormap))
 		return NULL;
 
 	memset(cnormap, 0, sizeof(*cnormap));
@@ -100,7 +100,7 @@ struct nilfs_cnormap *nilfs_cnormap_create(struct nilfs *nilfs)
 	/* End of the clock feature test */
 
 	cnormap->cphist = nilfs_vector_create(sizeof(struct nilfs_cpspan));
-	if (!cnormap->cphist) {
+	if (unlikely(!cnormap->cphist)) {
 		free(cnormap);
 		return NULL;
 	}
@@ -151,7 +151,7 @@ static int nilfs_enum_cpinfo_forward(struct nilfs *nilfs,
 	sidx = opt_start ? opt_start : NILFS_CNO_MIN;
 
 	cpibuf = malloc(sizeof(*cpibuf) * _NCPINFO);
-	if (cpibuf == NULL)
+	if (unlikely(cpibuf == NULL))
 		return -1;
 
 	while (rest > 0 && sidx < cpstat->cs_cno) {
@@ -159,7 +159,7 @@ static int nilfs_enum_cpinfo_forward(struct nilfs *nilfs,
 
 		n = nilfs_get_cpinfo(nilfs, sidx, NILFS_CHECKPOINT, cpibuf,
 				     req_count);
-		if (n < 0)
+		if (unlikely(n < 0))
 			goto failed;
 		if (!n)
 			break;
@@ -168,7 +168,7 @@ static int nilfs_enum_cpinfo_forward(struct nilfs *nilfs,
 			int ret;
 
 			ret = out(cpi, ctx);
-			if (ret < 0)
+			if (unlikely(ret < 0))
 				goto failed;
 			else if (ret == 0)
 				continue;
@@ -239,7 +239,7 @@ static int nilfs_enum_cpinfo_backward(struct nilfs *nilfs,
 		opt_start + 1 : cpstat->cs_cno;
 
 	cpibuf = malloc(sizeof(*cpibuf) * _NCPINFO);
-	if (cpibuf == NULL)
+	if (unlikely(cpibuf == NULL))
 		return -1;
 
 recalc_delta:
@@ -257,7 +257,7 @@ recalc_delta:
 
 		n = nilfs_get_cpinfo(nilfs, sidx, NILFS_CHECKPOINT, cpibuf,
 				     req_count);
-		if (n < 0)
+		if (unlikely(n < 0))
 			goto failed;
 		if (!n)
 			break;
@@ -325,7 +325,7 @@ recalc_delta:
 				continue;
 
 			ret = out(cpi, ctx);
-			if (ret < 0)
+			if (unlikely(ret < 0))
 				goto failed;
 			else if (ret == 0)
 				continue;
@@ -439,7 +439,7 @@ static int nilfs_cpinfo_scan_backward(const struct nilfs_cpinfo *cpinfo,
 
 	if (ctx->state == NILFS_CPINFO_SCAN_INIT_ST) {
 		cpspan = nilfs_vector_get_new_element(cnormap->cphist);
-		if (!cpspan)
+		if (unlikely(!cpspan))
 			return -1;
 		cpspan->start.cno = cpinfo->ci_cno;
 		cpspan->start.time = cpinfo->ci_create;
@@ -459,12 +459,12 @@ static int nilfs_cpinfo_scan_backward(const struct nilfs_cpinfo *cpinfo,
 	}
 
 	cpspan = nilfs_vector_get_element(cnormap->cphist, ctx->index);
-	if (!cpspan) {
+	if (unlikely(!cpspan)) {
 		errno = EINVAL;
 		return -1;
 	}
 
-	if (ctx->state == NILFS_CPINFO_SCAN_NORMAL_ST) {
+	if (likely(ctx->state == NILFS_CPINFO_SCAN_NORMAL_ST)) {
 		__u64 elapsed_time;
 
 		if (cpinfo->ci_create == cpspan->start.time) {
@@ -483,7 +483,7 @@ static int nilfs_cpinfo_scan_backward(const struct nilfs_cpinfo *cpinfo,
 		if (cpinfo->ci_create > cpspan->start.time ||
 		    cpspan->approx_ncp >= NCP_PER_SPAN) {
 			cpspan = nilfs_vector_get_new_element(cnormap->cphist);
-			if (!cpspan)
+			if (unlikely(!cpspan))
 				return -1;
 			cpspan->start.cno = cpinfo->ci_cno;
 			cpspan->start.time = cpinfo->ci_create;
@@ -521,7 +521,7 @@ static int nilfs_cpinfo_scan_forward(const struct nilfs_cpinfo *cpinfo,
 	__u64 elapsed_time;
 
 	cpspan = nilfs_vector_get_element(cnormap->cphist, 0);
-	if (!cpspan || ctx->state != NILFS_CPINFO_SCAN_NORMAL_ST) {
+	if (unlikely(!cpspan || ctx->state != NILFS_CPINFO_SCAN_NORMAL_ST)) {
 		errno = EINVAL;
 		return -1;
 	}
@@ -542,7 +542,7 @@ static int nilfs_cpinfo_scan_forward(const struct nilfs_cpinfo *cpinfo,
 	if (cpinfo->ci_create < cpspan->end.time ||
 	    cpspan->approx_ncp >= NCP_PER_SPAN) {
 		cpspan = nilfs_vector_insert_element(cnormap->cphist, 0);
-		if (!cpspan)
+		if (unlikely(!cpspan))
 			return -1;
 		cpspan->start.cno = cpinfo->ci_cno;
 		cpspan->start.time = cpinfo->ci_create;
@@ -585,7 +585,7 @@ static int nilfs_cnormap_cphist_init(struct nilfs_cnormap *cnormap,
 	int ret;
 
 	ret = nilfs_cnormap_get_realtime_clock(cnormap, &realtime_clock);
-	if (ret < 0)
+	if (unlikely(ret < 0))
 		goto out;
 
 	ctx.cnormap = cnormap;
@@ -625,7 +625,7 @@ nilfs_cnormap_cphist_extend_forward(struct nilfs_cnormap *cnormap,
 	int ret;
 
 	ret = nilfs_cnormap_get_realtime_clock(cnormap, &realtime_clock);
-	if (ret < 0)
+	if (unlikely(ret < 0))
 		goto out;
 
 	latest = nilfs_vector_get_element(cnormap->cphist, 0);
@@ -666,7 +666,7 @@ nilfs_cnormap_cphist_extend_backward(struct nilfs_cnormap *cnormap,
 	struct nilfs_cpinfo_scan_context ctx;
 	int ret;
 
-	if (start_cno == 0) {
+	if (unlikely(start_cno == 0)) {
 		errno = EINVAL;
 		return -1;
 	}
@@ -732,7 +732,8 @@ static int nilfs_cnormap_cphist_search(struct nilfs_cnormap *cnormap,
 	__u64 delta;
 	int ret;
 
-	if (nilfs_vector_get_size(cnormap->cphist) == 0 || period == 0) {
+	if (unlikely(nilfs_vector_get_size(cnormap->cphist) == 0 ||
+		     period == 0)) {
 		errno = EINVAL; /* Bug */
 		return -1;
 	}
@@ -748,7 +749,7 @@ static int nilfs_cnormap_cphist_search(struct nilfs_cnormap *cnormap,
 		__u64 width, gap;
 
 		width = curr->end.time - curr->start.time;
-		if (index == 0) {
+		if (unlikely(index == 0)) {
 			errno = EINVAL;
 			return -1;
 		}
@@ -783,7 +784,7 @@ static int nilfs_cnormap_cphist_search(struct nilfs_cnormap *cnormap,
 		ret = nilfs_enum_cpinfo_forward(cnormap->nilfs, cpstat,
 						target->start.cno + 1, 1,
 						nilfs_cpinfo_find, &ctx);
-		if (ret < 0)
+		if (unlikely(ret < 0))
 			goto out;
 
 		if (ctx.max_excl_cp.cno > target->start.cno) {
@@ -838,11 +839,11 @@ int nilfs_cnormap_track_back(struct nilfs_cnormap *cnormap, __u64 period,
 	}
 
 	ret = nilfs_get_cpstat(cnormap->nilfs, &cpstat);
-	if (ret < 0)
+	if (unlikely(ret < 0))
 		return -1;
 
 	ret = nilfs_cnormap_get_monotonic_clock(cnormap, &monotonic_clock);
-	if (ret < 0)
+	if (unlikely(ret < 0))
 		return -1;
 
 	if (nilfs_vector_get_size(cnormap->cphist) == 0) {

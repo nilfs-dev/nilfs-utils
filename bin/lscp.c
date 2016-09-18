@@ -157,7 +157,7 @@ static int lscp_forward_cpinfo(struct nilfs *nilfs,
 
 	while (rest > 0 && sidx < cpstat->cs_cno) {
 		n = lscp_get_cpinfo(nilfs, sidx, NILFS_CHECKPOINT, rest);
-		if (n < 0)
+		if (unlikely(n < 0))
 			return n;
 		if (!n)
 			break;
@@ -204,7 +204,7 @@ recalc_delta:
 
 		n = lscp_get_cpinfo(nilfs, sidx, NILFS_CHECKPOINT,
 				    state == LSCP_NORMAL_ST ? eidx - sidx : 1);
-		if (n < 0)
+		if (unlikely(n < 0))
 			return n;
 		if (!n)
 			break;
@@ -294,7 +294,7 @@ static int lscp_search_snapshot(struct nilfs *nilfs,
 	for (cno = *sidx, nreq = 1; cno < cpstat->cs_cno;
 	     cno += n, nreq = cpstat->cs_cno - cno) {
 		n = lscp_get_cpinfo(nilfs, cno, NILFS_CHECKPOINT, nreq);
-		if (n < 0)
+		if (unlikely(n < 0))
 			return n;
 		if (!n)
 			break;
@@ -327,7 +327,7 @@ static int lscp_forward_ssinfo(struct nilfs *nilfs,
 	if (sidx > 0) {
 		/* find first snapshot */
 		ret = lscp_search_snapshot(nilfs, cpstat, &sidx);
-		if (ret < 0)
+		if (unlikely(ret < 0))
 			return ret;
 		else if (!ret)
 			return 0;  /* no snapshot found */
@@ -335,7 +335,7 @@ static int lscp_forward_ssinfo(struct nilfs *nilfs,
 
 	while (rest > 0 && sidx < cpstat->cs_cno) {
 		n = lscp_get_cpinfo(nilfs, sidx, NILFS_SNAPSHOT, rest);
-		if (n < 0)
+		if (unlikely(n < 0))
 			return n;
 		if (!n)
 			break;
@@ -373,7 +373,7 @@ static int lscp_backward_ssinfo(struct nilfs *nilfs,
 		sidx = (eidx >= NILFS_CNO_MIN + LSCP_NCPINFO) ?
 			eidx - LSCP_NCPINFO : NILFS_CNO_MIN;
 		n = lscp_get_cpinfo(nilfs, sidx, NILFS_CHECKPOINT, eidx - sidx);
-		if (n < 0)
+		if (unlikely(n < 0))
 			return n;
 		if (!n)
 			break;
@@ -394,7 +394,7 @@ static int lscp_backward_ssinfo(struct nilfs *nilfs,
  remainder:
 	/* remaining snapshots */
 	n = lscp_get_cpinfo(nilfs, 0, NILFS_SNAPSHOT, rns);
-	if (n < 0)
+	if (unlikely(n < 0))
 		return n;
 	for (i = 0; i < n && rest > 0; i++) {
 		if (cpinfos[n - i - 1].ci_cno >= eidx)
@@ -480,7 +480,7 @@ int main(int argc, char *argv[])
 	status = EXIT_SUCCESS;
 
 	ret = nilfs_get_cpstat(nilfs, &cpstat);
-	if (ret < 0)
+	if (unlikely(ret < 0))
 		goto out;
 
 #ifdef CONFIG_PRINT_CPSTAT

@@ -44,6 +44,7 @@
 
 #include <signal.h>
 #include "nilfs.h"
+#include "util.h"
 
 
 #ifdef _GNU_SOURCE
@@ -72,7 +73,7 @@ int main(int argc, char *argv[])
 	struct nilfs *nilfs;
 	nilfs_cno_t cno;
 	char *dev, *progname, *last;
-	int ss, print, c, status;
+	int ss, print, c, status, ret;
 #ifdef _GNU_SOURCE
 	int option_index;
 #endif	/* _GNU_SOURCE */
@@ -122,7 +123,8 @@ int main(int argc, char *argv[])
 		err(EXIT_FAILURE, "cannot open NILFS on %s", dev ? : "device");
 
 	status = EXIT_SUCCESS;
-	if (nilfs_sync(nilfs, &cno) < 0) {
+	ret = nilfs_sync(nilfs, &cno);
+	if (unlikely(ret < 0)) {
 		warn(NULL);
 		status = EXIT_FAILURE;
 		goto out;
@@ -131,23 +133,27 @@ int main(int argc, char *argv[])
 	sigemptyset(&sigset);
 	sigaddset(&sigset, SIGINT);
 	sigaddset(&sigset, SIGTERM);
-	if (sigprocmask(SIG_BLOCK, &sigset, &oldset) < 0) {
+	ret = sigprocmask(SIG_BLOCK, &sigset, &oldset);
+	if (unlikely(ret < 0)) {
 		warn("cannot block signals");
 		status = EXIT_FAILURE;
 		goto out;
 	}
 
 	if (ss) {
-		if (nilfs_lock_cleaner(nilfs) < 0) {
+		ret = nilfs_lock_cleaner(nilfs);
+		if (unlikely(ret < 0)) {
 			warn(NULL);
 			status = EXIT_FAILURE;
 			goto out_unblock_signal;
 		}
-		if (nilfs_change_cpmode(nilfs, cno, NILFS_SNAPSHOT) < 0) {
+		ret = nilfs_change_cpmode(nilfs, cno, NILFS_SNAPSHOT);
+		if (unlikely(ret < 0)) {
 			warn(NULL);
 			status = EXIT_FAILURE;
 		}
-		if (nilfs_unlock_cleaner(nilfs) < 0) {
+		ret = nilfs_unlock_cleaner(nilfs);
+		if (unlikely(ret < 0)) {
 			warn(NULL);
 			status = EXIT_FAILURE;
 		}

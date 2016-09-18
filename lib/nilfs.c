@@ -152,20 +152,20 @@ static int nilfs_find_fs(struct nilfs *nilfs, const char *dev, const char *dir,
 	ret = -1;
 	if (dev && myrealpath(dev, canonical, sizeof(canonical))) {
 		cdev = strdup(canonical);
-		if (!cdev)
+		if (unlikely(!cdev))
 			goto failed;
 		dev = cdev;
 	}
 
 	if (dir && myrealpath(dir, canonical, sizeof(canonical))) {
 		cdir = strdup(canonical);
-		if (!cdir)
+		if (unlikely(!cdir))
 			goto failed_dev;
 		dir = cdir;
 	}
 
 	fp = fopen(_PATH_PROC_MOUNTS, "r");
-	if (fp == NULL)
+	if (unlikely(fp == NULL))
 		goto failed_dir;
 
 	while (fgets(line, sizeof(line), fp) != NULL) {
@@ -193,10 +193,10 @@ static int nilfs_find_fs(struct nilfs *nilfs, const char *dev, const char *dir,
 
 		if (has_mntopt(mntent[MNTFLD_OPTS], opt)) {
 			nilfs->n_dev = strdup(mntent[MNTFLD_FS]);
-			if (nilfs->n_dev == NULL)
+			if (unlikely(nilfs->n_dev == NULL))
 				goto failed_proc_mounts;
 			nilfs->n_ioc = strdup(mntent[MNTFLD_DIR]);
-			if (nilfs->n_ioc == NULL) {
+			if (unlikely(nilfs->n_ioc == NULL)) {
 				free(nilfs->n_dev);
 				nilfs->n_dev = NULL;
 				goto failed_proc_mounts;
@@ -232,12 +232,12 @@ ssize_t nilfs_get_layout(const struct nilfs *nilfs,
 {
 	const struct nilfs_super_block *sb = nilfs->n_sb;
 
-	if (layout_size < 0x50) {
+	if (unlikely(layout_size < 0x50)) {
 		errno = EINVAL;
 		return -1;
 	}
 
-	if (sb == NULL) {
+	if (unlikely(sb == NULL)) {
 		errno = EPERM;
 		return -1;
 	}
@@ -312,7 +312,7 @@ int nilfs_opt_set_mmap(struct nilfs *nilfs)
 	size_t segsize;
 
 	pagesize = sysconf(_SC_PAGESIZE);
-	if (pagesize < 0)
+	if (unlikely(pagesize < 0))
 		return -1;
 	segsize = nilfs_get_blocks_per_segment(nilfs) *
 		nilfs_get_block_size(nilfs);
@@ -376,7 +376,7 @@ static int nilfs_open_sem(struct nilfs *nilfs)
 	int ret;
 
 	ret = stat(nilfs->n_dev, &stbuf);
-	if (ret < 0)
+	if (unlikely(ret < 0))
 		return -1;
 
 	if (S_ISBLK(stbuf.st_mode)) {
@@ -393,13 +393,13 @@ static int nilfs_open_sem(struct nilfs *nilfs)
 		return -1;
 	}
 
-	if (ret < 0)
+	if (unlikely(ret < 0))
 		return -1;
 
 	assert(ret < sizeof(semnambuf));
 
 	nilfs->n_sems[0] = sem_open(semnambuf, O_CREAT, S_IRWXU, 1);
-	if (nilfs->n_sems[0] == SEM_FAILED) {
+	if (unlikely(nilfs->n_sems[0] == SEM_FAILED)) {
 		nilfs->n_sems[0] = NULL;
 		return -1;
 	}
@@ -416,15 +416,16 @@ struct nilfs *nilfs_open(const char *dev, const char *dir, int flags)
 {
 	struct nilfs *nilfs;
 	__u64 features;
+	int ret;
 
-	if (!(flags & (NILFS_OPEN_RAW | NILFS_OPEN_RDONLY |
-		       NILFS_OPEN_WRONLY | NILFS_OPEN_RDWR))) {
+	if (unlikely(!(flags & (NILFS_OPEN_RAW | NILFS_OPEN_RDONLY |
+				NILFS_OPEN_WRONLY | NILFS_OPEN_RDWR)))) {
 		errno = EINVAL;
 		return NULL;
 	}
 
 	nilfs = malloc(sizeof(*nilfs));
-	if (nilfs == NULL)
+	if (unlikely(nilfs == NULL))
 		return NULL;
 
 	nilfs->n_sb = NULL;
@@ -442,20 +443,20 @@ struct nilfs *nilfs_open(const char *dev, const char *dir, int flags)
 				goto out_fd;
 		} else {
 			nilfs->n_dev = strdup(dev);
-			if (nilfs->n_dev == NULL)
+			if (unlikely(nilfs->n_dev == NULL))
 				goto out_fd;
 		}
 		nilfs->n_devfd = open(nilfs->n_dev, O_RDONLY);
-		if (nilfs->n_devfd < 0)
+		if (unlikely(nilfs->n_devfd < 0))
 			goto out_fd;
 
 		nilfs->n_sb = nilfs_sb_read(nilfs->n_devfd);
-		if (nilfs->n_sb == NULL)
+		if (unlikely(nilfs->n_sb == NULL))
 			goto out_fd;
 
 		features = le64_to_cpu(nilfs->n_sb->s_feature_incompat) &
 			~NILFS_FEATURE_INCOMPAT_SUPP;
-		if (features) {
+		if (unlikely(features)) {
 			errno = ENOTSUP;
 			goto out_fd;
 		}
@@ -470,13 +471,14 @@ struct nilfs *nilfs_open(const char *dev, const char *dir, int flags)
 				goto out_fd;
 		}
 		nilfs->n_iocfd = open(nilfs->n_ioc, O_RDONLY);
-		if (nilfs->n_iocfd < 0)
+		if (unlikely(nilfs->n_iocfd < 0))
 			goto out_fd;
 	}
 
 	if (flags & NILFS_OPEN_GCLK) {
 		/* Initialize cleaner semaphore */
-		if (nilfs_open_sem(nilfs) < 0)
+		ret = nilfs_open_sem(nilfs);
+		if (unlikely(ret < 0))
 			goto out_fd;
 	}
 
@@ -535,11 +537,11 @@ int nilfs_change_cpmode(struct nilfs *nilfs, nilfs_cno_t cno, int mode)
 {
 	struct nilfs_cpmode cpmode;
 
-	if (nilfs->n_iocfd < 0) {
+	if (unlikely(nilfs->n_iocfd < 0)) {
 		errno = EBADF;
 		return -1;
 	}
-	if (cno < NILFS_CNO_MIN) {
+	if (unlikely(cno < NILFS_CNO_MIN)) {
 		errno = EINVAL;
 		return -1;
 	}
@@ -562,13 +564,14 @@ ssize_t nilfs_get_cpinfo(struct nilfs *nilfs, nilfs_cno_t cno, int mode,
 			 struct nilfs_cpinfo *cpinfo, size_t nci)
 {
 	struct nilfs_argv argv;
+	int ret;
 
-	if (nilfs->n_iocfd < 0) {
+	if (unlikely(nilfs->n_iocfd < 0)) {
 		errno = EBADF;
 		return -1;
 	}
 	if (mode == NILFS_CHECKPOINT) {
-		if (cno < NILFS_CNO_MIN) {
+		if (unlikely(cno < NILFS_CNO_MIN)) {
 			errno = EINVAL;
 			return -1;
 		} else if (cno < nilfs->n_mincno)
@@ -580,7 +583,8 @@ ssize_t nilfs_get_cpinfo(struct nilfs *nilfs, nilfs_cno_t cno, int mode,
 	argv.v_size = sizeof(struct nilfs_cpinfo);
 	argv.v_index = cno;
 	argv.v_flags = mode;
-	if (ioctl(nilfs->n_iocfd, NILFS_IOCTL_GET_CPINFO, &argv) < 0)
+	ret = ioctl(nilfs->n_iocfd, NILFS_IOCTL_GET_CPINFO, &argv);
+	if (unlikely(ret < 0))
 		return -1;
 	if (mode == NILFS_CHECKPOINT && argv.v_nmembs > 0 &&
 	    cno == nilfs->n_mincno) {
@@ -597,7 +601,7 @@ ssize_t nilfs_get_cpinfo(struct nilfs *nilfs, nilfs_cno_t cno, int mode,
  */
 int nilfs_delete_checkpoint(struct nilfs *nilfs, nilfs_cno_t cno)
 {
-	if (nilfs->n_iocfd < 0) {
+	if (unlikely(nilfs->n_iocfd < 0)) {
 		errno = EBADF;
 		return -1;
 	}
@@ -611,7 +615,7 @@ int nilfs_delete_checkpoint(struct nilfs *nilfs, nilfs_cno_t cno)
  */
 int nilfs_get_cpstat(const struct nilfs *nilfs, struct nilfs_cpstat *cpstat)
 {
-	if (nilfs->n_iocfd < 0) {
+	if (unlikely(nilfs->n_iocfd < 0)) {
 		errno = EBADF;
 		return -1;
 	}
@@ -629,8 +633,9 @@ ssize_t nilfs_get_suinfo(const struct nilfs *nilfs, __u64 segnum,
 			 struct nilfs_suinfo *si, size_t nsi)
 {
 	struct nilfs_argv argv;
+	int ret;
 
-	if (nilfs->n_iocfd < 0) {
+	if (unlikely(nilfs->n_iocfd < 0)) {
 		errno = EBADF;
 		return -1;
 	}
@@ -640,7 +645,8 @@ ssize_t nilfs_get_suinfo(const struct nilfs *nilfs, __u64 segnum,
 	argv.v_size = sizeof(struct nilfs_suinfo);
 	argv.v_flags = 0;
 	argv.v_index = segnum;
-	if (ioctl(nilfs->n_iocfd, NILFS_IOCTL_GET_SUINFO, &argv) < 0)
+	ret = ioctl(nilfs->n_iocfd, NILFS_IOCTL_GET_SUINFO, &argv);
+	if (unlikely(ret < 0))
 		return -1;
 	return argv.v_nmembs;
 }
@@ -662,7 +668,7 @@ int nilfs_set_suinfo(const struct nilfs *nilfs,
 {
 	struct nilfs_argv argv;
 
-	if (nilfs->n_iocfd < 0) {
+	if (unlikely(nilfs->n_iocfd < 0)) {
 		errno = EBADF;
 		return -1;
 	}
@@ -683,7 +689,7 @@ int nilfs_set_suinfo(const struct nilfs *nilfs,
  */
 int nilfs_get_sustat(const struct nilfs *nilfs, struct nilfs_sustat *sustat)
 {
-	if (nilfs->n_iocfd < 0) {
+	if (unlikely(nilfs->n_iocfd < 0)) {
 		errno = EBADF;
 		return -1;
 	}
@@ -701,8 +707,9 @@ ssize_t nilfs_get_vinfo(const struct nilfs *nilfs,
 			struct nilfs_vinfo *vinfo, size_t nvi)
 {
 	struct nilfs_argv argv;
+	int ret;
 
-	if (nilfs->n_iocfd < 0) {
+	if (unlikely(nilfs->n_iocfd < 0)) {
 		errno = EBADF;
 		return -1;
 	}
@@ -712,7 +719,8 @@ ssize_t nilfs_get_vinfo(const struct nilfs *nilfs,
 	argv.v_size = sizeof(struct nilfs_vinfo);
 	argv.v_flags = 0;
 	argv.v_index = 0;
-	if (ioctl(nilfs->n_iocfd, NILFS_IOCTL_GET_VINFO, &argv) < 0)
+	ret = ioctl(nilfs->n_iocfd, NILFS_IOCTL_GET_VINFO, &argv);
+	if (unlikely(ret < 0))
 		return -1;
 	return argv.v_nmembs;
 }
@@ -727,8 +735,9 @@ ssize_t nilfs_get_bdescs(const struct nilfs *nilfs,
 			 struct nilfs_bdesc *bdescs, size_t nbdescs)
 {
 	struct nilfs_argv argv;
+	int ret;
 
-	if (nilfs->n_iocfd < 0) {
+	if (unlikely(nilfs->n_iocfd < 0)) {
 		errno = EBADF;
 		return -1;
 	}
@@ -738,7 +747,8 @@ ssize_t nilfs_get_bdescs(const struct nilfs *nilfs,
 	argv.v_size = sizeof(struct nilfs_bdesc);
 	argv.v_flags = 0;
 	argv.v_index = 0;
-	if (ioctl(nilfs->n_iocfd, NILFS_IOCTL_GET_BDESCS, &argv) < 0)
+	ret = ioctl(nilfs->n_iocfd, NILFS_IOCTL_GET_BDESCS, &argv);
+	if (unlikely(ret < 0))
 		return -1;
 	return argv.v_nmembs;
 }
@@ -766,7 +776,7 @@ int nilfs_clean_segments(struct nilfs *nilfs,
 {
 	struct nilfs_argv argv[5];
 
-	if (nilfs->n_iocfd < 0) {
+	if (unlikely(nilfs->n_iocfd < 0)) {
 		errno = EBADF;
 		return -1;
 	}
@@ -797,7 +807,7 @@ int nilfs_clean_segments(struct nilfs *nilfs,
  */
 int nilfs_sync(const struct nilfs *nilfs, nilfs_cno_t *cnop)
 {
-	if (nilfs->n_iocfd < 0) {
+	if (unlikely(nilfs->n_iocfd < 0)) {
 		errno = EBADF;
 		return -1;
 	}
@@ -814,7 +824,7 @@ int nilfs_resize(struct nilfs *nilfs, off_t size)
 {
 	__u64 range = size;
 
-	if (nilfs->n_iocfd < 0) {
+	if (unlikely(nilfs->n_iocfd < 0)) {
 		errno = EBADF;
 		return -1;
 	}
@@ -832,7 +842,7 @@ int nilfs_set_alloc_range(struct nilfs *nilfs, off_t start, off_t end)
 {
 	__u64 range[2] = { start, end };
 
-	if (nilfs->n_iocfd < 0) {
+	if (unlikely(nilfs->n_iocfd < 0)) {
 		errno = EBADF;
 		return -1;
 	}
@@ -848,7 +858,7 @@ int nilfs_freeze(struct nilfs *nilfs)
 {
 	int arg = 0;
 
-	if (nilfs->n_iocfd < 0) {
+	if (unlikely(nilfs->n_iocfd < 0)) {
 		errno = EBADF;
 		return -1;
 	}
@@ -864,7 +874,7 @@ int nilfs_thaw(struct nilfs *nilfs)
 {
 	int arg = 0;
 
-	if (nilfs->n_iocfd < 0) {
+	if (unlikely(nilfs->n_iocfd < 0)) {
 		errno = EBADF;
 		return -1;
 	}
@@ -891,32 +901,32 @@ int nilfs_get_segment(struct nilfs *nilfs, __u64 segnum,
 	void *addr;
 	ssize_t ret;
 
-	if (nilfs->n_devfd < 0 || sb == NULL) {
+	if (unlikely(nilfs->n_devfd < 0 || sb == NULL)) {
 		errno = EBADF;
 		return -1;
 	}
 
 	pagesize = sysconf(_SC_PAGESIZE);
-	if (pagesize <= 0) {
+	if (unlikely(pagesize <= 0)) {
 		errno = EINVAL;
 		return -1;
 	}
 
-	if (segnum >= nilfs_get_nsegments(nilfs)) {
+	if (unlikely(segnum >= nilfs_get_nsegments(nilfs))) {
 		errno = EINVAL;
 		return -1;
 	}
 
 	blkbits = le32_to_cpu(sb->s_log_block_size) + 10;
 	blocks_per_segment = le32_to_cpu(sb->s_blocks_per_segment);
-	if (blocks_per_segment < NILFS_SEG_MIN_BLOCKS) {
+	if (unlikely(blocks_per_segment < NILFS_SEG_MIN_BLOCKS)) {
 		errno = EINVAL;
 		return -1;
 	}
 
 	if (segnum == 0) {
 		segblocknr = le64_to_cpu(sb->s_first_data_block);
-		if (segblocknr >= blocks_per_segment) {
+		if (unlikely(segblocknr >= blocks_per_segment)) {
 			errno = EINVAL;
 			return -1;
 		}
@@ -938,7 +948,7 @@ int nilfs_get_segment(struct nilfs *nilfs, __u64 segnum,
 
 		addr = mmap(0, alloc_size, PROT_READ, MAP_SHARED,
 			    nilfs->n_devfd, segstart - page_offset);
-		if (addr != MAP_FAILED) {
+		if (likely(addr != MAP_FAILED)) {
 			segment->mmapped = 1;
 			segment->adjusted = (page_offset != 0 ||
 					     alloc_size != pagesize);
@@ -956,11 +966,11 @@ int nilfs_get_segment(struct nilfs *nilfs, __u64 segnum,
 #endif	/* HAVE_MMAP */
 
 	addr = malloc(segsize);
-	if (addr == NULL)
+	if (unlikely(addr == NULL))
 		return -1;
 
 	ret = pread(nilfs->n_devfd, addr, segsize, segstart);
-	if (ret < 0) {
+	if (unlikely(ret < 0)) {
 		free(addr);
 		return -1;
 	}
@@ -994,7 +1004,7 @@ int nilfs_put_segment(struct nilfs_segment *segment)
 		if (segment->adjusted) {
 			long pagesize = sysconf(_SC_PAGESIZE);
 
-			if (pagesize <= 0) {
+			if (unlikely(pagesize <= 0)) {
 				errno = EINVAL;
 				return -1;
 			}
@@ -1031,12 +1041,12 @@ int nilfs_get_segment_seqnum(const struct nilfs *nilfs, __u64 segnum,
 	off_t segstart, offset;
 	ssize_t ret;
 
-	if (nilfs->n_devfd < 0 || sb == NULL) {
+	if (unlikely(nilfs->n_devfd < 0 || sb == NULL)) {
 		errno = EBADF;
 		return -1;
 	}
 
-	if (segnum >= nilfs_get_nsegments(nilfs)) {
+	if (unlikely(segnum >= nilfs_get_nsegments(nilfs))) {
 		errno = EINVAL;
 		return -1;
 	}
@@ -1048,7 +1058,7 @@ int nilfs_get_segment_seqnum(const struct nilfs *nilfs, __u64 segnum,
 
 	offset = segstart + offsetof(struct nilfs_segment_summary, ss_seq);
 	ret = pread(nilfs->n_devfd, &buf, sizeof(buf), offset);
-	if (ret < 0)
+	if (unlikely(ret < 0))
 		return -1;
 
 	*seqnum = le64_to_cpu(buf);

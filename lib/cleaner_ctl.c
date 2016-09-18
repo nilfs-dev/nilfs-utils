@@ -82,6 +82,7 @@
 #include "nls.h"
 #include "pathnames.h"
 #include "realpath.h"
+#include "util.h"
 
 struct nilfs_cleaner {
 	pid_t cleanerd_pid;
@@ -114,7 +115,7 @@ static int nilfs_cleaner_get_device_id(struct nilfs_cleaner *cleaner)
 	int ret;
 
 	ret = stat(cleaner->device, &stbuf);
-	if (ret < 0)
+	if (unlikely(ret < 0))
 		goto error;
 
 	if (S_ISBLK(stbuf.st_mode)) {
@@ -181,20 +182,20 @@ static int nilfs_cleaner_find_fs(struct nilfs_cleaner *cleaner,
 
 	if (device && myrealpath(device, canonical, sizeof(canonical))) {
 		cdev = strdup(canonical);
-		if (!cdev)
+		if (unlikely(!cdev))
 			goto error;
 		cleaner->device = cdev;
 	}
 
 	if (mntdir && myrealpath(mntdir, canonical, sizeof(canonical))) {
 		cdir = strdup(canonical);
-		if (!cdir)
+		if (unlikely(!cdir))
 			goto error;
 		cleaner->mountdir = cdir;
 	}
 
 	fp = fopen(_PATH_MOUNTED, "r");
-	if (fp == NULL) {
+	if (unlikely(fp == NULL)) {
 		nilfs_cleaner_logger(LOG_ERR, _("Error: cannot open "
 						_PATH_MOUNTED "."));
 		goto abort;
@@ -293,17 +294,17 @@ static int nilfs_cleaner_open_queue(struct nilfs_cleaner *cleaner)
 
 	/* receive queue */
 	ret = snprintf(nambuf, sizeof(nambuf), "/nilfs-cleanerq-%s", uuidbuf);
-	if (ret < 0)
+	if (unlikely(ret < 0))
 		goto error;
 
 	assert(ret < sizeof(nambuf));
 	cleaner->recvq_name = strdup(nambuf);
-	if (!cleaner->recvq_name)
+	if (unlikely(!cleaner->recvq_name))
 		goto error;
 
 	cleaner->recvq = mq_open(nambuf, O_RDONLY | O_CREAT | O_EXCL, 0600,
 				 &attr);
-	if (cleaner->recvq < 0) {
+	if (unlikely(cleaner->recvq < 0)) {
 		nilfs_cleaner_logger(LOG_ERR,
 				     _("Error: cannot create receive queue: %s."),
 				     strerror(errno));
@@ -321,13 +322,13 @@ static int nilfs_cleaner_open_queue(struct nilfs_cleaner *cleaner)
 			       (unsigned long long)cleaner->dev_id,
 			       (unsigned long long)cleaner->dev_ino);
 	}
-	if (ret < 0)
+	if (unlikely(ret < 0))
 		goto error;
 
 	assert(ret < sizeof(nambuf));
 
 	cleaner->sendq = mq_open(nambuf, O_WRONLY);
-	if (cleaner->sendq < 0) {
+	if (unlikely(cleaner->sendq < 0)) {
 		if (errno == ENOENT) {
 			nilfs_cleaner_logger(LOG_NOTICE,
 					     _("No cleaner found on %s."),
@@ -377,9 +378,10 @@ struct nilfs_cleaner *nilfs_cleaner_launch(const char *device,
 					   unsigned long protperiod)
 {
 	struct nilfs_cleaner *cleaner;
+	int ret;
 
 	cleaner = malloc(sizeof(*cleaner));
-	if (!cleaner)
+	if (unlikely(!cleaner))
 		goto error;
 	memset(cleaner, 0, sizeof(*cleaner));
 	cleaner->sendq = -1;
@@ -387,14 +389,16 @@ struct nilfs_cleaner *nilfs_cleaner_launch(const char *device,
 
 	cleaner->device = strdup(device);
 	cleaner->mountdir = strdup(mntdir);
-	if (!cleaner->device || !cleaner->mountdir)
+	if (unlikely(!cleaner->device || !cleaner->mountdir))
 		goto error;
 
-	if (nilfs_launch_cleanerd(device, mntdir, protperiod,
-				  &cleaner->cleanerd_pid) < 0)
+	ret = nilfs_launch_cleanerd(device, mntdir, protperiod,
+				    &cleaner->cleanerd_pid);
+	if (unlikely(ret < 0))
 		goto abort;
 
-	if (nilfs_cleaner_get_device_id(cleaner) < 0)
+	ret = nilfs_cleaner_get_device_id(cleaner);
+	if (unlikely(ret < 0))
 		goto abort;
 
 	return cleaner; /* cleanerd started */
@@ -414,18 +418,21 @@ struct nilfs_cleaner *nilfs_cleaner_open(const char *device,
 					 const char *mntdir, int oflag)
 {
 	struct nilfs_cleaner *cleaner;
+	int ret;
 
 	cleaner = malloc(sizeof(*cleaner));
-	if (!cleaner)
+	if (unlikely(!cleaner))
 		goto error;
 	memset(cleaner, 0, sizeof(*cleaner));
 	cleaner->sendq = -1;
 	cleaner->recvq = -1;
 
-	if (nilfs_cleaner_find_fs(cleaner, device, mntdir) < 0)
+	ret = nilfs_cleaner_find_fs(cleaner, device, mntdir);
+	if (unlikely(ret < 0))
 		goto abort;
 
-	if (nilfs_cleaner_get_device_id(cleaner) < 0)
+	ret = nilfs_cleaner_get_device_id(cleaner);
+	if (unlikely(ret < 0))
 		goto abort;
 
 	if ((oflag & NILFS_CLEANER_OPEN_GCPID) && cleaner->cleanerd_pid == 0) {
@@ -479,21 +486,27 @@ static int nilfs_cleaner_clear_queueu(struct nilfs_cleaner *cleaner)
 	struct nilfs_cleaner_response res;
 	struct mq_attr attr;
 	unsigned count;
+	int ret;
 
 	assert(cleaner->recvq >= 0);
 
-	if (mq_getattr(cleaner->recvq, &attr) < 0)
+	ret = mq_getattr(cleaner->recvq, &attr);
+	if (unlikely(ret < 0))
 		goto failed;
 
 	while (attr.mq_curmsgs > 0) {
 		count = attr.mq_curmsgs;
 		do {
-			if (mq_receive(cleaner->recvq, (char *)&res,
-				       sizeof(res), NULL) < 0)
+			ssize_t bytes;
+
+			bytes = mq_receive(cleaner->recvq, (char *)&res,
+					   sizeof(res), NULL);
+			if (unlikely(bytes < 0))
 				goto failed;
 		} while (--count > 0);
 
-		if (mq_getattr(cleaner->recvq, &attr) < 0)
+		ret = mq_getattr(cleaner->recvq, &attr);
+		if (unlikely(ret < 0))
 			goto failed;
 	}
 	return 0;
@@ -509,13 +522,15 @@ static int nilfs_cleaner_command(struct nilfs_cleaner *cleaner, int cmd)
 {
 	struct nilfs_cleaner_request req;
 	struct nilfs_cleaner_response res;
-	int bytes, ret = -1;
+	int bytes, ret;
 
-	if (cleaner->sendq < 0 || cleaner->recvq < 0) {
+	if (unlikely(cleaner->sendq < 0 || cleaner->recvq < 0)) {
 		errno = EBADF;
+		ret = -1;
 		goto out;
 	}
-	if (nilfs_cleaner_clear_queueu(cleaner) < 0)
+	ret = nilfs_cleaner_clear_queueu(cleaner);
+	if (unlikely(ret < 0))
 		goto out;
 
 	req.cmd = cmd;
@@ -524,11 +539,11 @@ static int nilfs_cleaner_command(struct nilfs_cleaner *cleaner, int cmd)
 
 	ret = mq_send(cleaner->sendq, (char *)&req, sizeof(req),
 		      NILFS_CLEANER_PRIO_NORMAL);
-	if (ret < 0)
+	if (unlikely(ret < 0))
 		goto out;
 
 	bytes = mq_receive(cleaner->recvq, (char *)&res, sizeof(res), NULL);
-	if (bytes < sizeof(res)) {
+	if (unlikely(bytes < sizeof(res))) {
 		if (bytes >= 0)
 			errno = EIO;
 		ret = -1;
@@ -546,13 +561,15 @@ int nilfs_cleaner_get_status(struct nilfs_cleaner *cleaner, int *status)
 {
 	struct nilfs_cleaner_request req;
 	struct nilfs_cleaner_response res;
-	int bytes, ret = -1;
+	int bytes, ret;
 
-	if (cleaner->sendq < 0 || cleaner->recvq < 0) {
+	if (unlikely(cleaner->sendq < 0 || cleaner->recvq < 0)) {
 		errno = EBADF;
+		ret = -1;
 		goto out;
 	}
-	if (nilfs_cleaner_clear_queueu(cleaner) < 0)
+	ret = nilfs_cleaner_clear_queueu(cleaner);
+	if (unlikely(ret < 0))
 		goto out;
 
 	req.cmd = NILFS_CLEANER_CMD_GET_STATUS;
@@ -561,11 +578,11 @@ int nilfs_cleaner_get_status(struct nilfs_cleaner *cleaner, int *status)
 
 	ret = mq_send(cleaner->sendq, (char *)&req, sizeof(req),
 		      NILFS_CLEANER_PRIO_NORMAL);
-	if (ret < 0)
+	if (unlikely(ret < 0))
 		goto out;
 
 	bytes = mq_receive(cleaner->recvq, (char *)&res, sizeof(res), NULL);
-	if (bytes < sizeof(res)) {
+	if (unlikely(bytes < sizeof(res))) {
 		if (bytes >= 0)
 			errno = EIO;
 		ret = -1;
@@ -587,13 +604,15 @@ int nilfs_cleaner_run(struct nilfs_cleaner *cleaner,
 {
 	struct nilfs_cleaner_request_with_args req;
 	struct nilfs_cleaner_response res;
-	int bytes, ret = -1;
+	int bytes, ret;
 
-	if (cleaner->sendq < 0 || cleaner->recvq < 0) {
+	if (unlikely(cleaner->sendq < 0 || cleaner->recvq < 0)) {
 		errno = EBADF;
+		ret = -1;
 		goto out;
 	}
-	if (nilfs_cleaner_clear_queueu(cleaner) < 0)
+	ret = nilfs_cleaner_clear_queueu(cleaner);
+	if (unlikely(ret < 0))
 		goto out;
 
 	req.hdr.cmd = NILFS_CLEANER_CMD_RUN;
@@ -603,11 +622,11 @@ int nilfs_cleaner_run(struct nilfs_cleaner *cleaner,
 
 	ret = mq_send(cleaner->sendq, (char *)&req, sizeof(req),
 		      NILFS_CLEANER_PRIO_NORMAL);
-	if (ret < 0)
+	if (unlikely(ret < 0))
 		goto out;
 
 	bytes = mq_receive(cleaner->recvq, (char *)&res, sizeof(res), NULL);
-	if (bytes < sizeof(res)) {
+	if (unlikely(bytes < sizeof(res))) {
 		if (bytes >= 0)
 			errno = EIO;
 		ret = -1;
@@ -639,13 +658,15 @@ int nilfs_cleaner_tune(struct nilfs_cleaner *cleaner,
 {
 	struct nilfs_cleaner_request_with_args req;
 	struct nilfs_cleaner_response res;
-	int bytes, ret = -1;
+	int bytes, ret;
 
-	if (cleaner->sendq < 0 || cleaner->recvq < 0) {
+	if (unlikely(cleaner->sendq < 0 || cleaner->recvq < 0)) {
 		errno = EBADF;
+		ret = -1;
 		goto out;
 	}
-	if (nilfs_cleaner_clear_queueu(cleaner) < 0)
+	ret = nilfs_cleaner_clear_queueu(cleaner);
+	if (unlikely(ret < 0))
 		goto out;
 
 	req.hdr.cmd = NILFS_CLEANER_CMD_TUNE;
@@ -655,11 +676,11 @@ int nilfs_cleaner_tune(struct nilfs_cleaner *cleaner,
 
 	ret = mq_send(cleaner->sendq, (char *)&req, sizeof(req),
 		      NILFS_CLEANER_PRIO_NORMAL);
-	if (ret < 0)
+	if (unlikely(ret < 0))
 		goto out;
 
 	bytes = mq_receive(cleaner->recvq, (char *)&res, sizeof(res), NULL);
-	if (bytes < sizeof(res)) {
+	if (unlikely(bytes < sizeof(res))) {
 		if (bytes >= 0)
 			errno = EIO;
 		ret = -1;
@@ -678,18 +699,20 @@ int nilfs_cleaner_reload(struct nilfs_cleaner *cleaner, const char *conffile)
 	struct nilfs_cleaner_request_with_path req;
 	struct nilfs_cleaner_response res;
 	size_t pathlen, reqsz;
-	int bytes, ret = -1;
+	int bytes, ret;
 
-	if (cleaner->sendq < 0 || cleaner->recvq < 0) {
+	if (unlikely(cleaner->sendq < 0 || cleaner->recvq < 0)) {
 		errno = EBADF;
+		ret = -1;
 		goto out;
 	}
-	if (nilfs_cleaner_clear_queueu(cleaner) < 0)
+	ret = nilfs_cleaner_clear_queueu(cleaner);
+	if (unlikely(ret < 0))
 		goto out;
 
 	if (conffile) {
-		if (myrealpath(conffile, req.pathname,
-			       NILFS_CLEANER_MSG_MAX_PATH) == NULL)
+		if (unlikely(myrealpath(conffile, req.pathname,
+					NILFS_CLEANER_MSG_MAX_PATH) == NULL))
 			goto out;
 
 		pathlen = strlen(req.pathname);
@@ -704,11 +727,11 @@ int nilfs_cleaner_reload(struct nilfs_cleaner *cleaner, const char *conffile)
 
 	ret = mq_send(cleaner->sendq, (char *)&req, reqsz,
 		      NILFS_CLEANER_PRIO_NORMAL);
-	if (ret < 0)
+	if (unlikely(ret < 0))
 		goto out;
 
 	bytes = mq_receive(cleaner->recvq, (char *)&res, sizeof(res), NULL);
-	if (bytes < sizeof(res)) {
+	if (unlikely(bytes < sizeof(res))) {
 		if (bytes >= 0)
 			errno = EIO;
 		ret = -1;
@@ -728,14 +751,14 @@ static int nilfs_cleaner_wait_common(struct nilfs_cleaner *cleaner,
 	struct nilfs_cleaner_request_with_jobid req;
 	int ret;
 
-	if (cleaner->sendq < 0 || cleaner->recvq < 0) {
+	if (unlikely(cleaner->sendq < 0 || cleaner->recvq < 0)) {
 		ret = -1;
 		errno = EBADF;
 		goto out;
 	}
 
 	ret = nilfs_cleaner_clear_queueu(cleaner);
-	if (ret < 0)
+	if (unlikely(ret < 0))
 		goto out;
 
 	req.hdr.cmd = NILFS_CLEANER_CMD_WAIT;
@@ -756,12 +779,12 @@ int nilfs_cleaner_wait(struct nilfs_cleaner *cleaner, uint32_t jobid,
 	int bytes, ret;
 
 	ret = nilfs_cleaner_wait_common(cleaner, jobid);
-	if (ret < 0)
+	if (unlikely(ret < 0))
 		goto out;
 
 	bytes = mq_timedreceive(cleaner->recvq, (char *)&res, sizeof(res),
 				NULL, abs_timeout);
-	if (bytes < sizeof(res)) {
+	if (unlikely(bytes < sizeof(res))) {
 		if (bytes >= 0)
 			errno = EIO;
 		ret = -1;
@@ -783,7 +806,7 @@ int nilfs_cleaner_wait_r(struct nilfs_cleaner *cleaner, uint32_t jobid,
 	int bytes, ret;
 
 	ret = nilfs_cleaner_wait_common(cleaner, jobid);
-	if (ret < 0)
+	if (unlikely(ret < 0))
 		goto out;
 
 	memset(&pfd, 0, sizeof(0));
@@ -791,7 +814,7 @@ int nilfs_cleaner_wait_r(struct nilfs_cleaner *cleaner, uint32_t jobid,
 	pfd.events = POLLIN;
 
 	ret = ppoll(&pfd, 1, timeout, NULL);
-	if (ret < 0)
+	if (unlikely(ret < 0))
 		goto out;
 
 	if (!(pfd.revents & POLLIN)) {
@@ -801,7 +824,7 @@ int nilfs_cleaner_wait_r(struct nilfs_cleaner *cleaner, uint32_t jobid,
 	}
 
 	bytes = mq_receive(cleaner->recvq, (char *)&res, sizeof(res), NULL);
-	if (bytes < sizeof(res)) {
+	if (unlikely(bytes < sizeof(res))) {
 		if (bytes >= 0)
 			errno = EIO;
 		ret = -1;

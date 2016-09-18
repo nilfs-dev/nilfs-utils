@@ -13,6 +13,7 @@
 
 #include "compat.h"
 #include "nilfs2_ondisk.h"
+#include "util.h"
 
 typedef __u64 sector_t;
 
@@ -106,7 +107,7 @@ const char *nilfs_psegment_strerror(int errnum);
 static inline int nilfs_psegment_is_error(const struct nilfs_psegment *pseg,
 					  const char **errstr)
 {
-	if (pseg->error) {
+	if (unlikely(pseg->error)) {
 		if (errstr != NULL)
 			*errstr = nilfs_psegment_strerror(pseg->error);
 		return 1;
