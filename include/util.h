@@ -27,6 +27,12 @@
 #define DIV_ROUND_UP(n, m)	(((n) + (m) - 1) / (m))
 #define ARRAY_SIZE(arr)		(sizeof(arr) / sizeof((arr)[0]))
 
+#define roundup(x, y)						\
+	({							\
+	   const typeof(y) __y = (y);				\
+	   (((x) + __y - 1) / __y) * __y;			\
+	})
+
 /* offsetof, offsetofend */
 #define offsetof(TYPE, MEMBER)	((size_t)&((TYPE *)0)->MEMBER)
 #define offsetofend(TYPE, MEMBER) \
