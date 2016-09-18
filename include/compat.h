@@ -19,6 +19,17 @@
 #include <endian.h>
 #include <byteswap.h>
 
+/* GCC related declarations */
+#ifdef __GNUC__
+#define GCC_VERSION	(__GNUC__ * 10000				\
+			 + __GNUC_MINOR__ * 100				\
+			 + __GNUC_PATCHLEVEL__)
+#endif
+
+#if GCC_VERSION < 29600
+#define __builtin_expect(x, e)	(x)
+#endif
+
 /* Old linux/magic.h may not have the file system magic number of NILFS */
 #ifndef NILFS_SUPER_MAGIC
 #define NILFS_SUPER_MAGIC	0x3434	/* NILFS filesystem magic number */

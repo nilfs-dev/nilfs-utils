@@ -6,6 +6,11 @@
 
 #include <assert.h>
 #include <stdlib.h>
+#include "compat.h"
+
+/* likely() and unlikely() macros */
+#define likely(x)	__builtin_expect(!!(x), 1)
+#define unlikely(x)	__builtin_expect(!!(x), 0)
 
 #ifndef BUG
 #define BUG()	abort()
