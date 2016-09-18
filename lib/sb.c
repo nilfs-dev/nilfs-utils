@@ -86,7 +86,7 @@ static int nilfs_sb_is_valid(struct nilfs_super_block *sbp, int check_crc)
 
 	if (le16_to_cpu(sbp->s_magic) != NILFS_SUPER_MAGIC)
 		return 0;
-	if (le16_to_cpu(sbp->s_bytes) > NILFS_MAX_SB_SIZE)
+	if (unlikely(le16_to_cpu(sbp->s_bytes) > NILFS_MAX_SB_SIZE))
 		return 0;
 	if (!check_crc)
 		return 1;
@@ -115,7 +115,7 @@ static int __nilfs_sb_read(int devfd, struct nilfs_super_block **sbp,
 
 	sbp[0] = malloc(NILFS_MAX_SB_SIZE);
 	sbp[1] = malloc(NILFS_MAX_SB_SIZE);
-	if (sbp[0] == NULL || sbp[1] == NULL)
+	if (unlikely(sbp[0] == NULL || sbp[1] == NULL))
 		goto failed;
 
 	ret = fstat(devfd, &stat);
@@ -162,7 +162,7 @@ sb1_ok:
 	sbp[1] = NULL;
 sb2_ok:
 
-	if (!sbp[0] && !sbp[1]) {
+	if (unlikely(!sbp[0] && !sbp[1])) {
 		if (invalid_fs)
 			errno = EINVAL;
 		goto failed;
@@ -179,8 +179,10 @@ sb2_ok:
 struct nilfs_super_block *nilfs_sb_read(int devfd)
 {
 	struct nilfs_super_block *sbp[2];
+	int ret;
 
-	if (__nilfs_sb_read(devfd, sbp, NULL))
+	ret = __nilfs_sb_read(devfd, sbp, NULL);
+	if (unlikely(ret < 0))
 		return NULL;
 
 	if (!sbp[0]) {
@@ -203,12 +205,13 @@ int nilfs_sb_write(int devfd, struct nilfs_super_block *sbp, int mask)
 
 	assert(devfd >= 0);
 
-	if (sbp == NULL) {
+	if (unlikely(sbp == NULL)) {
 		errno = EINVAL;
 		return -1;
 	}
 
-	if (__nilfs_sb_read(devfd, sbps, offsets))
+	ret = __nilfs_sb_read(devfd, sbps, offsets);
+	if (unlikely(ret < 0))
 		return -1;
 
 	ret = 0;
@@ -240,7 +243,7 @@ int nilfs_sb_write(int devfd, struct nilfs_super_block *sbp, int mask)
 		sbps[i]->s_sum = cpu_to_le32(crc);
 		if (lseek(devfd, offsets[i], SEEK_SET) > 0) {
 			count = write(devfd, sbps[i], NILFS_MAX_SB_SIZE);
-			if (count < NILFS_MAX_SB_SIZE) {
+			if (unlikely(count < NILFS_MAX_SB_SIZE)) {
 				ret = -1;
 				break;
 			}

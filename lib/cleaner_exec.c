@@ -66,6 +66,7 @@
 #include "cleaner_exec.h"
 #include "compat.h"
 #include "nls.h"
+#include "util.h"
 
 /* Intervals for binary exponential backoff */
 #define WAIT_CLEANERD_MIN_BACKOFF_TIME	5000	/* in micro-seconds */
@@ -163,14 +164,15 @@ int nilfs_launch_cleanerd(const char *device, const char *mntdir,
 	char buf[256];
 	int pipes[2];
 
-	if (stat(cleanerd, &statbuf) != 0) {
+	ret = stat(cleanerd, &statbuf);
+	if (unlikely(ret != 0)) {
 		nilfs_cleaner_logger(LOG_ERR,  _("Error: %s not found"),
 				     NILFS_CLEANERD_NAME);
 		return -1;
 	}
 
 	ret = pipe(pipes);
-	if (ret < 0) {
+	if (unlikely(ret < 0)) {
 		nilfs_cleaner_logger(
 			LOG_ERR, _("Error: failed to create pipe: %m"));
 		return -1;
@@ -179,14 +181,16 @@ int nilfs_launch_cleanerd(const char *device, const char *mntdir,
 	ret = fork();
 	if (ret == 0) {
 		/* child */
-		if (setgid(getgid()) < 0) {
+		ret = setgid(getgid());
+		if (unlikely(ret < 0)) {
 			nilfs_cleaner_logger(
 				LOG_ERR,
 				_("Error: failed to drop setgid privileges"));
 			nilfs_cleaner_flush();
 			_exit(EXIT_FAILURE);
 		}
-		if (setuid(getuid()) < 0) {
+		ret = setuid(getuid());
+		if (unlikely(ret < 0)) {
 			nilfs_cleaner_logger(
 				LOG_ERR,
 				_("Error: failed to drop setuid privileges"));
@@ -210,7 +214,7 @@ int nilfs_launch_cleanerd(const char *device, const char *mntdir,
 
 		close(pipes[0]);
 		ret = dup2(pipes[1], STDOUT_FILENO);
-		if (ret < 0) {
+		if (unlikely(ret < 0)) {
 			nilfs_cleaner_logger(
 				LOG_ERR,
 				_("Error: failed to duplicate pipe: %m"));
@@ -221,7 +225,7 @@ int nilfs_launch_cleanerd(const char *device, const char *mntdir,
 
 		execv(cleanerd, (char **)dargs);
 		_exit(EXIT_FAILURE);   /* reach only if failed */
-	} else if (ret > 0) {
+	} else if (likely(ret > 0)) {
 		/* parent */
 		close(pipes[1]);
 
@@ -274,7 +278,7 @@ static int nilfs_wait_cleanerd(const char *device, pid_t pid)
 		return 0;
 
 	ret = clock_gettime(CLOCK_MONOTONIC, &start);
-	if (ret < 0) {
+	if (unlikely(ret < 0)) {
 		nilfs_cleaner_logger(LOG_ERR,
 				     _("failed to get monotonic clock: %s"),
 				     strerror(errno));
@@ -295,7 +299,7 @@ static int nilfs_wait_cleanerd(const char *device, pid_t pid)
 			return 0;
 
 		ret = clock_gettime(CLOCK_MONOTONIC, &now);
-		if (ret < 0 || !timespeccmp(&now, &end, <))
+		if (unlikely(ret < 0) || !timespeccmp(&now, &end, <))
 			break;
 
 		recalc_backoff_time(&waittime);
@@ -312,7 +316,7 @@ static int nilfs_wait_cleanerd(const char *device, pid_t pid)
 
 	for (;;) {
 		ret = clock_gettime(CLOCK_MONOTONIC, &now);
-		if (ret < 0 || !timespeccmp(&now, &end, <))
+		if (unlikely(ret < 0) || !timespeccmp(&now, &end, <))
 			break;
 
 		ret = clock_nanosleep(CLOCK_MONOTONIC, 0, &waittime, NULL);

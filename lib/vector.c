@@ -26,6 +26,7 @@
 
 #include <errno.h>
 #include "vector.h"
+#include "util.h"
 
 
 /**
@@ -43,17 +44,17 @@ struct nilfs_vector *nilfs_vector_create(size_t elemsize)
 {
 	struct nilfs_vector *vector;
 
-	if (elemsize == 0) {
+	if (unlikely(elemsize == 0)) {
 		errno = EINVAL;
 		return NULL;
 	}
 
 	vector = malloc(sizeof(struct nilfs_vector));
-	if (!vector)
+	if (unlikely(!vector))
 		return NULL;
 
 	vector->v_data = malloc(elemsize * NILFS_VECTOR_INIT_MAXELEMS);
-	if (!vector->v_data) {
+	if (unlikely(!vector->v_data)) {
 		free(vector);
 		return NULL;
 	}
@@ -89,7 +90,7 @@ static int nilfs_vector_enlarge(struct nilfs_vector *vector, size_t minelems)
 	void *data;
 
 	do {
-		if (maxelems > nelems_limit) {
+		if (unlikely(maxelems > nelems_limit)) {
 			errno = EOVERFLOW;
 			return -1;
 		}
@@ -97,7 +98,7 @@ static int nilfs_vector_enlarge(struct nilfs_vector *vector, size_t minelems)
 	} while (maxelems < minelems);
 
 	data = realloc(vector->v_data, vector->v_elemsize * maxelems);
-	if (!data)
+	if (unlikely(!data))
 		return -1;
 	vector->v_data = data;
 	vector->v_maxelems = maxelems;
@@ -121,7 +122,7 @@ void *nilfs_vector_get_new_element(struct nilfs_vector *vector)
 	/* resize array if necessary */
 	if (vector->v_nelems >= vector->v_maxelems) {
 		ret = nilfs_vector_enlarge(vector, vector->v_nelems + 1);
-		if (ret < 0)
+		if (unlikely(ret < 0))
 			return NULL;
 	}
 	return vector->v_data + vector->v_elemsize * vector->v_nelems++;
@@ -142,8 +143,8 @@ int nilfs_vector_delete_elements(struct nilfs_vector *vector,
 				 unsigned int index,
 				 size_t nelems)
 {
-	if ((index >= vector->v_nelems) ||
-	    (index + nelems - 1 >= vector->v_nelems)) {
+	if (unlikely(index >= vector->v_nelems ||
+		     index + nelems - 1 >= vector->v_nelems)) {
 		errno = EINVAL;
 		return -1;
 	}
@@ -192,11 +193,11 @@ void *nilfs_vector_insert_elements(struct nilfs_vector *vector,
 {
 	int ret;
 
-	if (index > vector->v_nelems) {
+	if (unlikely(index > vector->v_nelems)) {
 		errno = EINVAL;
 		return NULL;
 	}
-	if (nelems > SIZE_MAX - vector->v_nelems) {
+	if (unlikely(nelems > SIZE_MAX - vector->v_nelems)) {
 		errno = EOVERFLOW;
 		return NULL;
 	}
@@ -204,7 +205,7 @@ void *nilfs_vector_insert_elements(struct nilfs_vector *vector,
 	/* resize array if necessary */
 	if (vector->v_nelems + nelems > vector->v_maxelems) {
 		ret = nilfs_vector_enlarge(vector, vector->v_nelems + nelems);
-		if (ret < 0)
+		if (unlikely(ret < 0))
 			return NULL;
 	}
 

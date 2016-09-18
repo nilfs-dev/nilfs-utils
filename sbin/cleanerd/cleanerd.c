@@ -231,9 +231,11 @@ static int nilfs_cleanerd_config(struct nilfs_cleanerd *cleanerd,
 				 const char *conffile)
 {
 	struct nilfs_cldconfig *config = &cleanerd->config;
+	int ret;
 
-	if (nilfs_cldconfig_read(config, conffile ? : cleanerd->conffile,
-				 cleanerd->nilfs) < 0)
+	ret = nilfs_cldconfig_read(config, conffile ? : cleanerd->conffile,
+				   cleanerd->nilfs);
+	if (unlikely(ret < 0))
 		return -1;
 
 #ifdef HAVE_MMAP
@@ -270,7 +272,7 @@ static int nilfs_cleanerd_reconfig(struct nilfs_cleanerd *cleanerd,
 	int ret;
 
 	ret = nilfs_cleanerd_config(cleanerd, conffile);
-	if (ret < 0) {
+	if (unlikely(ret < 0)) {
 		syslog(LOG_ERR, "cannot configure: %m");
 	} else {
 		cleanerd->ncleansegs = config->cf_nsegments_per_clean;
@@ -300,7 +302,7 @@ static int nilfs_cleanerd_open_queue(struct nilfs_cleanerd *cleanerd,
 
 	/* receive queue */
 	ret = stat(device, &stbuf);
-	if (ret < 0)
+	if (unlikely(ret < 0))
 		goto failed;
 
 	if (S_ISBLK(stbuf.st_mode)) {
@@ -320,12 +322,12 @@ static int nilfs_cleanerd_open_queue(struct nilfs_cleanerd *cleanerd,
 	assert(ret < sizeof(nambuf));
 
 	cleanerd->recvq_name = strdup(nambuf);
-	if (!cleanerd->recvq_name)
+	if (unlikely(!cleanerd->recvq_name))
 		goto failed;
 
 	cleanerd->recvq = mq_open(nambuf, O_RDONLY | O_CREAT | O_NONBLOCK,
 				  0600, &attr);
-	if (cleanerd->recvq < 0) {
+	if (unlikely(cleanerd->recvq < 0)) {
 		free(cleanerd->recvq_name);
 		goto failed;
 	}
@@ -376,9 +378,10 @@ static struct nilfs_cleanerd *
 nilfs_cleanerd_create(const char *dev, const char *dir, const char *conffile)
 {
 	struct nilfs_cleanerd *cleanerd;
+	int ret;
 
 	cleanerd = malloc(sizeof(*cleanerd));
-	if (cleanerd == NULL)
+	if (unlikely(cleanerd == NULL))
 		return NULL;
 
 	memset(cleanerd, 0, sizeof(*cleanerd));
@@ -386,27 +389,29 @@ nilfs_cleanerd_create(const char *dev, const char *dir, const char *conffile)
 	cleanerd->nilfs = nilfs_open(dev, dir,
 				       NILFS_OPEN_RAW | NILFS_OPEN_RDWR |
 				       NILFS_OPEN_GCLK);
-	if (cleanerd->nilfs == NULL) {
+	if (unlikely(cleanerd->nilfs == NULL)) {
 		syslog(LOG_ERR, "cannot open nilfs on %s: %m", dev);
 		goto out_cleanerd;
 	}
 
 	cleanerd->cnormap = nilfs_cnormap_create(cleanerd->nilfs);
-	if (cleanerd->cnormap == NULL) {
+	if (unlikely(cleanerd->cnormap == NULL)) {
 		syslog(LOG_ERR,
 		       "failed to create checkpoint number reverse mapper: %m");
 		goto out_nilfs;
 	}
 
 	cleanerd->conffile = strdup(conffile ? : NILFS_CLEANERD_CONFFILE);
-	if (cleanerd->conffile == NULL)
+	if (unlikely(cleanerd->conffile == NULL))
 		goto out_cnormap;
 
-	if (nilfs_cleanerd_config(cleanerd, NULL) < 0)
+	ret = nilfs_cleanerd_config(cleanerd, NULL);
+	if (unlikely(ret < 0))
 		goto out_conffile;
 
-	if (nilfs_cleanerd_open_queue(cleanerd,
-				      nilfs_get_dev(cleanerd->nilfs)) < 0)
+	ret = nilfs_cleanerd_open_queue(cleanerd,
+					nilfs_get_dev(cleanerd->nilfs));
+	if (unlikely(ret < 0))
 		goto out_conffile;
 
 	/* success */
@@ -504,9 +509,10 @@ static int nilfs_segment_is_protected(struct nilfs *nilfs, __u64 segnum,
 {
 	void *segment;
 	__u64 segseq;
-	int ret = 0;
+	int ret;
 
-	if (nilfs_get_segment(nilfs, segnum, &segment) < 0)
+	ret = nilfs_get_segment(nilfs, segnum, &segment);
+	if (unlikely(ret < 0))
 		return -1;
 
 	segseq = nilfs_get_segment_seqnum(nilfs, segment, segnum);
@@ -601,7 +607,7 @@ nilfs_cleanerd_select_segments(struct nilfs_cleanerd *cleanerd,
 	nilfs = cleanerd->nilfs;
 
 	smv = nilfs_vector_create(sizeof(struct nilfs_segimp));
-	if (!smv)
+	if (unlikely(!smv))
 		return -1;
 
 	/*
@@ -609,7 +615,7 @@ nilfs_cleanerd_select_segments(struct nilfs_cleanerd *cleanerd,
 	 * prottime are not selected.
 	 */
 	ret = clock_gettime(CLOCK_REALTIME, &ts);
-	if (ret < 0) {
+	if (unlikely(ret < 0)) {
 		nssegs = -1;
 		goto out;
 	}
@@ -628,7 +634,7 @@ nilfs_cleanerd_select_segments(struct nilfs_cleanerd *cleanerd,
 		count = min_t(__u64, sustat->ss_nsegs - segnum,
 			      NILFS_CLEANERD_NSUINFO);
 		n = nilfs_get_suinfo(nilfs, segnum, si, count);
-		if (n < 0) {
+		if (unlikely(n < 0)) {
 			nssegs = n;
 			goto out;
 		}
@@ -654,7 +660,7 @@ nilfs_cleanerd_select_segments(struct nilfs_cleanerd *cleanerd,
 					oldest = lastmod;
 				if (lastmod < prottime || lastmod > now) {
 					sm = nilfs_vector_get_new_element(smv);
-					if (sm == NULL) {
+					if (unlikely(sm == NULL)) {
 						nssegs = -1;
 						goto out;
 					}
@@ -663,7 +669,7 @@ nilfs_cleanerd_select_segments(struct nilfs_cleanerd *cleanerd,
 				}
 			}
 		}
-		if (n == 0) {
+		if (unlikely(n == 0)) {
 			syslog(LOG_WARNING,
 			       "inconsistent number of segments: %llu (nsegs=%llu)",
 			       (unsigned long long)nilfs_vector_get_size(smv),
@@ -704,14 +710,14 @@ static int oom_adjust(void)
 	}
 
 	fd = open(path, O_WRONLY);
-	if (fd < 0) {
+	if (unlikely(fd < 0)) {
 		syslog(LOG_WARNING,
 		       "can't adjust oom-killer's pardon %s: %m", path);
 		return -1;
 	}
 
 	err = write(fd, score, strlen(score));
-	if (err < 0) {
+	if (unlikely(err < 0)) {
 		syslog(LOG_WARNING,
 		       "can't adjust oom-killer's pardon %s: %m", path);
 		close(fd);
@@ -729,27 +735,27 @@ static int daemonize(int nochdir, int noclose)
 	pid_t pid;
 
 	pid = fork();
-	if (pid < 0)
+	if (unlikely(pid < 0))
 		return -1;
 	else if (pid != 0)
 		/* parent */
 		_exit(EXIT_SUCCESS);
 
 	/* child */
-	if (setsid() < 0)
+	if (unlikely(setsid() < 0))
 		return -1;
 
 	/* umask(0); */
 
 	/* for ensuring I'm not a session leader */
 	pid = fork();
-	if (pid < 0)
+	if (unlikely(pid < 0))
 		return -1;
 	else if (pid != 0)
 		/* parent */
 		_exit(EXIT_SUCCESS);
 
-	if (!nochdir && (chdir(ROOTDIR) < 0))
+	if (unlikely(!nochdir && chdir(ROOTDIR) < 0))
 		return -1;
 
 	printf("NILFS_CLEANERD_PID=%lu\n", (unsigned long)getpid());
@@ -759,11 +765,11 @@ static int daemonize(int nochdir, int noclose)
 		close(0);
 		close(1);
 		close(2);
-		if (open(DEVNULL, O_RDONLY) < 0)
+		if (unlikely(open(DEVNULL, O_RDONLY) < 0))
 			return -1;
-		if (open(DEVNULL, O_WRONLY) < 0)
+		if (unlikely(open(DEVNULL, O_WRONLY) < 0))
 			return -1;
-		if (open(DEVNULL, O_WRONLY) < 0)
+		if (unlikely(open(DEVNULL, O_WRONLY) < 0))
 			return -1;
 	}
 	return 0;
@@ -853,7 +859,7 @@ static int nilfs_cleanerd_init_interval(struct nilfs_cleanerd *cleanerd)
 	int ret;
 
 	ret = clock_gettime(CLOCK_MONOTONIC, &cleanerd->target);
-	if (ret < 0) {
+	if (unlikely(ret < 0)) {
 		syslog(LOG_ERR, "cannot get monotonic time: %m");
 		return -1;
 	}
@@ -888,7 +894,7 @@ static int nilfs_cleanerd_recalc_interval(struct nilfs_cleanerd *cleanerd,
 			__s64 tgt;
 
 			ret = clock_gettime(CLOCK_REALTIME, &curr);
-			if (ret < 0) {
+			if (unlikely(ret < 0)) {
 				syslog(LOG_ERR, "cannot get current time: %m");
 				return -1;
 			}
@@ -906,7 +912,7 @@ static int nilfs_cleanerd_recalc_interval(struct nilfs_cleanerd *cleanerd,
 	}
 
 	ret = clock_gettime(CLOCK_MONOTONIC, &curr);
-	if (ret < 0) {
+	if (unlikely(ret < 0)) {
 		syslog(LOG_ERR, "cannot get monotonic time: %m");
 		return -1;
 	}
@@ -947,14 +953,14 @@ static int nilfs_cleanerd_respond(struct nilfs_cleanerd *cleanerd,
 		uuid_unparse_lower(req->client_uuid, uuidbuf);
 		ret = snprintf(nambuf, sizeof(nambuf),
 			       "/nilfs-cleanerq-%s", uuidbuf);
-		if (ret < 0)
+		if (unlikely(ret < 0))
 			goto out;
 
 		if (cleanerd->sendq >= 0)
 			mq_close(cleanerd->sendq);
 		ret = -1;
 		cleanerd->sendq = mq_open(nambuf, O_WRONLY | O_NONBLOCK);
-		if (cleanerd->sendq < 0) {
+		if (unlikely(cleanerd->sendq < 0)) {
 			syslog(LOG_ERR, "cannot open queue to client: %m");
 			goto out;
 		}
@@ -962,7 +968,7 @@ static int nilfs_cleanerd_respond(struct nilfs_cleanerd *cleanerd,
 	}
 	ret = mq_send(cleanerd->sendq, (char *)res, sizeof(*res),
 		      NILFS_CLEANER_PRIO_HIGH);
-	if (ret < 0) {
+	if (unlikely(ret < 0)) {
 		syslog(LOG_ERR, "cannot respond to client: %m");
 	} else {
 		if (req->cmd >= 0 &&
@@ -1253,7 +1259,7 @@ static int nilfs_cleanerd_wait(struct nilfs_cleanerd *cleanerd)
 	pfd.events = POLLIN;
 
 	ret = ppoll(&pfd, 1, &cleanerd->timeout, NULL);
-	if (ret < 0) {
+	if (unlikely(ret < 0)) {
 		if (errno == EINTR) {
 			syslog(LOG_INFO, "wake up (interrupted)");
 			goto out;
@@ -1270,7 +1276,7 @@ static int nilfs_cleanerd_wait(struct nilfs_cleanerd *cleanerd)
 
 	bytes = mq_receive(cleanerd->recvq, nilfs_cleanerd_msgbuf,
 			   sizeof(nilfs_cleanerd_msgbuf), NULL);
-	if (bytes < 0) {
+	if (unlikely(bytes < 0)) {
 		if (errno == EINTR || errno == EAGAIN) {
 			syslog(LOG_INFO, "mq_receive aborted: %s",
 			       errno == EINTR ?
@@ -1353,7 +1359,7 @@ nilfs_cleanerd_count_inuse_segments(struct nilfs_cleanerd *cleanerd,
 	while (rest > 0 && segnum < sustat->ss_nsegs) {
 		count = min_t(unsigned long, rest, NILFS_CLEANERD_NSUINFO);
 		nsi = nilfs_get_suinfo(cleanerd->nilfs, segnum, si, count);
-		if (nsi < 0) {
+		if (unlikely(nsi < 0)) {
 			syslog(LOG_ERR, "cannot get segment usage info: %m");
 			return -1;
 		}
@@ -1449,7 +1455,7 @@ static int nilfs_cleanerd_clean_segments(struct nilfs_cleanerd *cleanerd,
 
 	ret = nilfs_cnormap_track_back(cleanerd->cnormap, pt->tv_sec,
 				       &params.protcno);
-	if (ret < 0) {
+	if (unlikely(ret < 0)) {
 		syslog(LOG_ERR,
 		       "cannot get checkpoint number from protection period (%llu): %m",
 		       (unsigned long long)pt->tv_sec);
@@ -1461,7 +1467,7 @@ static int nilfs_cleanerd_clean_segments(struct nilfs_cleanerd *cleanerd,
 	memset(&stat, 0, sizeof(stat));
 	ret = nilfs_xreclaim_segment(cleanerd->nilfs, segnums, nsegs, 0,
 				     &params, &stat);
-	if (ret < 0) {
+	if (unlikely(ret < 0)) {
 		if (errno == ENOMEM) {
 			nilfs_cleanerd_reduce_ncleansegs_for_retry(cleanerd);
 			cleanerd->fallback = 1;
@@ -1534,17 +1540,20 @@ static int nilfs_cleanerd_clean_loop(struct nilfs_cleanerd *cleanerd)
 	int ns, ret;
 
 	sigemptyset(&sigset);
-	if (sigprocmask(SIG_SETMASK, &sigset, NULL) < 0) {
+	ret = sigprocmask(SIG_SETMASK, &sigset, NULL);
+	if (unlikely(ret < 0)) {
 		syslog(LOG_ERR, "cannot set signal mask: %m");
 		return -1;
 	}
 	sigaddset(&sigset, SIGHUP);
 
-	if (set_sigterm_handler() < 0) {
+	ret = set_sigterm_handler();
+	if (unlikely(ret < 0)) {
 		syslog(LOG_ERR, "cannot set SIGTERM signal handler: %m");
 		return -1;
 	}
-	if (set_sighup_handler() < 0) {
+	ret = set_sighup_handler();
+	if (unlikely(ret < 0)) {
 		syslog(LOG_ERR, "cannot set SIGHUP signal handler: %m");
 		return -1;
 	}
@@ -1557,7 +1566,7 @@ static int nilfs_cleanerd_clean_loop(struct nilfs_cleanerd *cleanerd)
 	nilfs_gc_logger = syslog;
 
 	ret = nilfs_cleanerd_init_interval(cleanerd);
-	if (ret < 0)
+	if (unlikely(ret < 0))
 		return -1;
 
 	cleanerd->ncleansegs = cleanerd->config.cf_nsegments_per_clean;
@@ -1572,7 +1581,8 @@ static int nilfs_cleanerd_clean_loop(struct nilfs_cleanerd *cleanerd)
 	while (!cleanerd->shutdown) {
 		cleanerd->no_timeout = 0;
 
-		if (sigprocmask(SIG_BLOCK, &sigset, NULL) < 0) {
+		ret = sigprocmask(SIG_BLOCK, &sigset, NULL);
+		if (unlikely(ret < 0)) {
 			syslog(LOG_ERR, "cannot set signal mask: %m");
 			return -1;
 		}
@@ -1583,7 +1593,8 @@ static int nilfs_cleanerd_clean_loop(struct nilfs_cleanerd *cleanerd)
 			nilfs_cleanerd_reload_config = 0;
 		}
 
-		if (nilfs_get_sustat(cleanerd->nilfs, &sustat) < 0) {
+		ret = nilfs_get_sustat(cleanerd->nilfs, &sustat);
+		if (unlikely(ret < 0)) {
 			syslog(LOG_ERR, "cannot get segment usage stat: %m");
 			return -1;
 		}
@@ -1597,7 +1608,7 @@ static int nilfs_cleanerd_clean_loop(struct nilfs_cleanerd *cleanerd)
 
 		ns = nilfs_cleanerd_select_segments(
 			cleanerd, &sustat, segnums, &prottime, &oldest);
-		if (ns < 0) {
+		if (unlikely(ns < 0)) {
 			syslog(LOG_ERR, "cannot select segments: %m");
 			return -1;
 		}
@@ -1608,7 +1619,7 @@ static int nilfs_cleanerd_clean_loop(struct nilfs_cleanerd *cleanerd)
 			ret = nilfs_cleanerd_clean_segments(
 				cleanerd, segnums, ns, sustat.ss_prot_seq,
 				&ndone);
-			if (ret < 0)
+			if (unlikely(ret < 0))
 				return -1;
 		} else {
 			cleanerd->retry_cleaning = 0;
@@ -1617,17 +1628,18 @@ static int nilfs_cleanerd_clean_loop(struct nilfs_cleanerd *cleanerd)
 
 		ret = nilfs_cleanerd_recalc_interval(
 			cleanerd, ns, ndone, prottime, oldest);
-		if (ret < 0)
+		if (unlikely(ret < 0))
 			return -1;
 
 sleep:
-		if (sigprocmask(SIG_UNBLOCK, &sigset, NULL) < 0) {
+		ret = sigprocmask(SIG_UNBLOCK, &sigset, NULL);
+		if (unlikely(ret < 0)) {
 			syslog(LOG_ERR, "cannot set signal mask: %m");
 			return -1;
 		}
 
 		ret = nilfs_cleanerd_wait(cleanerd);
-		if (ret < 0)
+		if (unlikely(ret < 0))
 			return -1;
 	}
 	return 0;
@@ -1638,7 +1650,7 @@ int main(int argc, char *argv[])
 	char *progname, *conffile;
 	char *dev, *dir;
 	char *endptr;
-	int status, c;
+	int status, c, ret;
 #ifdef _GNU_SOURCE
 	int option_index;
 #endif	/* _GNU_SOURCE */
@@ -1701,14 +1713,15 @@ int main(int argc, char *argv[])
 		const char *path = argv[optind++];
 
 		dir = get_canonical_path(path);
-		if (path && !dir) {
+		if (unlikely(path && !dir)) {
 			warn("failed to canonicalize directory path %s", path);
 			status = EXIT_FAILURE;
 			goto out_free;
 		}
 	}
 
-	if (daemonize(0, 0) < 0) {
+	ret = daemonize(0, 0);
+	if (unlikely(ret < 0)) {
 		warn(NULL);
 		status = EXIT_FAILURE;
 		goto out_free;
@@ -1717,19 +1730,21 @@ int main(int argc, char *argv[])
 	openlog(progname, LOG_PID, LOG_DAEMON);
 	syslog(LOG_INFO, "start");
 
-	if (oom_adjust() < 0)
+	ret = oom_adjust();
+	if (unlikely(ret < 0))
 		syslog(LOG_WARNING,
 		       "adjusting the OOM killer failed: %m");
 
 	nilfs_cleanerd = nilfs_cleanerd_create(dev, dir, conffile);
-	if (nilfs_cleanerd == NULL) {
+	if (unlikely(nilfs_cleanerd == NULL)) {
 		syslog(LOG_ERR, "cannot create cleanerd on %s: %m", dev);
 		status = EXIT_FAILURE;
 		goto out_close_log;
 	}
 
 	if (!sigsetjmp(nilfs_cleanerd_env, 1)) {
-		if (nilfs_cleanerd_clean_loop(nilfs_cleanerd) < 0)
+		ret = nilfs_cleanerd_clean_loop(nilfs_cleanerd);
+		if (unlikely(ret < 0))
 			status = EXIT_FAILURE;
 	}
 

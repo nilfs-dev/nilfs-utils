@@ -44,6 +44,7 @@
 #include <errno.h>
 #include <assert.h>
 #include "nilfs.h"
+#include "util.h"
 #include "nilfs_feature.h"
 
 struct nilfs_feature {
@@ -193,7 +194,7 @@ int nilfs_edit_feature(const char *str, __u64 *compat_array,
 		*bad_mask = 0;
 
 	buf = malloc(strlen(str) + 1);
-	if (!buf)
+	if (unlikely(!buf))
 		return -1;
 
 	strcpy(buf, str);
