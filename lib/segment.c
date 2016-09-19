@@ -26,12 +26,15 @@
 static const char *nilfs_psegment_error_strings[] = {
 	"success",
 	"bad alignment",
+	"too big partial segment",
+	"too big summary header",
+	"too big summary info",
 };
 
 /* nilfs_psegment */
 static int nilfs_psegment_is_valid(struct nilfs_psegment *pseg)
 {
-	__u32 sumbytes, offset;
+	__u32 sumbytes, offset, sumblks, nblocks;
 	unsigned int hdrsize;
 	void *limit;
 
@@ -55,10 +58,34 @@ static int nilfs_psegment_is_valid(struct nilfs_psegment *pseg)
 	hdrsize = le16_to_cpu(pseg->segsum->ss_bytes);
 	if (unlikely(!IS_ALIGNED(hdrsize, 8))) {
 		pseg->error = NILFS_PSEGMENT_ERROR_ALIGNMENT;
-		errno = EINVAL;
-		return 0;
+		goto error;
 	}
+
+	/* Sanity check on partial segment size */
+	nblocks = le32_to_cpu(pseg->segsum->ss_nblocks);
+	if (unlikely(pseg->blocknr + nblocks >
+		     pseg->segment->blocknr + pseg->segment->nblocks)) {
+		pseg->error = NILFS_PSEGMENT_ERROR_BIGPSEG;
+		goto error;
+	}
+
+	/* Sanity check on summary blocks */
+	if (unlikely(hdrsize > sumbytes)) {
+		pseg->error = NILFS_PSEGMENT_ERROR_BIGHDR;
+		goto error;
+	}
+
+	sumblks = (sumbytes + (1UL << pseg->blkbits) - 1) >> pseg->blkbits;
+	if (unlikely(sumblks >= nblocks)) {
+		pseg->error = NILFS_PSEGMENT_ERROR_BIGSUM;
+		goto error;
+	}
+
 	return 1;
+
+error:
+	errno = EINVAL;
+	return 0;
 }
 
 void nilfs_psegment_init(struct nilfs_psegment *pseg,

@@ -69,6 +69,46 @@ static const struct option long_option[] = {
 #define DUMPSEG_BASE	10
 #define DUMPSEG_BUFSIZE	128
 
+static void dumpseg_print_psegment_error(const struct nilfs_psegment *pseg,
+					 const char *errstr)
+{
+	const struct nilfs_segment_summary *segsum = pseg->segsum;
+	unsigned int hdrsize;
+	__u32 nblocks, sumbytes, excess;
+
+	switch (pseg->error) {
+	case NILFS_PSEGMENT_ERROR_ALIGNMENT:
+		hdrsize = le16_to_cpu(segsum->ss_bytes);
+		printf("  error %d (%s) - header size = %u\n",
+		       pseg->error, errstr, hdrsize);
+		break;
+	case NILFS_PSEGMENT_ERROR_BIGPSEG:
+		nblocks = le32_to_cpu(segsum->ss_nblocks);
+		excess = ((__u32)(pseg->blocknr - pseg->segment->blocknr) +
+			  nblocks) - pseg->segment->nblocks;
+		printf("  error %d (%s) - pseg blkcnt = %lu, excess blkcnt = %lu\n",
+		       pseg->error, errstr,
+		       (unsigned long)nblocks, (unsigned long)excess);
+		break;
+	case NILFS_PSEGMENT_ERROR_BIGHDR:
+		hdrsize = le16_to_cpu(segsum->ss_bytes);
+		sumbytes = le32_to_cpu(segsum->ss_sumbytes);
+		printf("  error %d (%s) - header size = %u, summary size = %lu\n",
+		       pseg->error, errstr, hdrsize, (unsigned long)sumbytes);
+		break;
+	case NILFS_PSEGMENT_ERROR_BIGSUM:
+		sumbytes = le32_to_cpu(segsum->ss_sumbytes);
+		nblocks = le32_to_cpu(segsum->ss_nblocks);
+		printf("  error %d (%s) - summary size = %lu, pseg size = %llu\n",
+		       pseg->error, errstr, (unsigned long)sumbytes,
+		       (unsigned long long)nblocks << pseg->blkbits);
+		break;
+	default:
+		printf("  error %d (%s)\n", pseg->error, errstr);
+		break;
+	}
+}
+
 static void dumpseg_print_block(struct nilfs_block *blk)
 {
 	__le64 *binfo = blk->b_binfo;
@@ -167,18 +207,8 @@ static void dumpseg_print_segment(const struct nilfs_segment *segment)
 		} while (!nilfs_psegment_is_end(&pseg));
 	}
 
-	if (nilfs_psegment_is_error(&pseg, &errstr)) {
-		switch (pseg.error) {
-		case NILFS_PSEGMENT_ERROR_ALIGNMENT:
-			printf("  error %d (%s) - header size = %u\n",
-			       pseg.error, errstr,
-			       le16_to_cpu(pseg.segsum->ss_bytes));
-			break;
-		default:
-			printf("  error %d (%s)\n", pseg.error, errstr);
-			break;
-		}
-	}
+	if (nilfs_psegment_is_error(&pseg, &errstr))
+		dumpseg_print_psegment_error(&pseg, errstr);
 }
 
 int main(int argc, char *argv[])

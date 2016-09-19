@@ -38,7 +38,10 @@ struct nilfs_psegment {
 /* Error code of psegment iterator */
 enum {
 	NILFS_PSEGMENT_SUCCESS = 0,
-	NILFS_PSEGMENT_ERROR_ALIGNMENT,
+	NILFS_PSEGMENT_ERROR_ALIGNMENT,		/* Bad alignment */
+	NILFS_PSEGMENT_ERROR_BIGPSEG,		/* Too big partial segment */
+	NILFS_PSEGMENT_ERROR_BIGHDR,		/* Too big summary header */
+	NILFS_PSEGMENT_ERROR_BIGSUM,		/* Too big summary info */
 	__NR_NILFS_PSEGMENT_ERROR,
 };
 
