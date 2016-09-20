@@ -54,9 +54,9 @@
 #include <limits.h>
 #endif	/* HAVE_LIMITS_H */
 
-#if HAVE_MMAP
+#if HAVE_SYS_MMAN_H
 #include <sys/mman.h>
-#endif	/* HAVE_MMAP */
+#endif	/* HAVE_SYS_MMAN_H */
 
 #if HAVE_TIME_H
 #include <time.h>
