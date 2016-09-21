@@ -71,6 +71,9 @@ int nilfs_xreclaim_segment(struct nilfs *nilfs,
 			   const struct nilfs_reclaim_params *params,
 			   struct nilfs_reclaim_stat *stat);
 
+int nilfs_segment_is_protected(struct nilfs *nilfs, __u64 segnum,
+			       __u64 protseq);
+
 static inline int
 nilfs_assess_segment(struct nilfs *nilfs,
 		     __u64 *segnums, size_t nsegs,

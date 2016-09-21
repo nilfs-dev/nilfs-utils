@@ -862,3 +862,21 @@ ssize_t nilfs_reclaim_segment(struct nilfs *nilfs,
 		ret = stat.cleaned_segs;
 	return ret;
 }
+
+/**
+ * nilfs_segment_is_protected - test if the segment is in protected region
+ * @nilfs: nilfs object
+ * @segnum: segment number to be tested
+ * @protseq: lower bound of sequence numbers of segments that must be protected
+ */
+int nilfs_segment_is_protected(struct nilfs *nilfs, __u64 segnum,
+__u64 protseq)
+{
+	__u64 seqnum;
+	int ret;
+
+	ret = nilfs_get_segment_seqnum(nilfs, segnum, &seqnum);
+	if (likely(!ret))
+		ret = cnt64_ge(seqnum, protseq);
+	return ret;
+}

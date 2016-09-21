@@ -262,21 +262,6 @@ static int nilfs_resize_update_sustat(struct nilfs *nilfs)
 	return 0;
 }
 
-static int nilfs_resize_segment_is_protected(struct nilfs *nilfs, __u64 segnum)
-{
-	__u64 segseq;
-	int ret;
-
-	/* need updating sustat before testing */
-	ret = nilfs_get_segment_seqnum(nilfs, segnum, &segseq);
-	if (unlikely(ret < 0)) {
-		myprintf("Error: cannot read segment: %s\n", strerror(errno));
-		return -1;
-	}
-
-	return cnt64_ge(segseq, sustat.ss_prot_seq);
-}
-
 static int nilfs_resize_lock_cleaner(struct nilfs *nilfs, sigset_t *sigset)
 {
 	sigset_t newset;
@@ -380,9 +365,14 @@ nilfs_resize_find_movable_segments(struct nilfs *nilfs, __u64 start,
 		for (i = 0; i < nsi; i++, segnum++) {
 			if (!nilfs_suinfo_reclaimable(&suinfo[i]))
 				continue;
-			ret = nilfs_resize_segment_is_protected(nilfs, segnum);
-			if (unlikely(ret < 0))
+
+			ret = nilfs_segment_is_protected(nilfs, segnum,
+							 sustat.ss_prot_seq);
+			if (unlikely(ret < 0)) {
+				myprintf("Error: failed to read segment: %s\n",
+					 strerror(errno));
 				return -1;
+			}
 			else if (ret)
 				continue;
 			*snp++ = segnum;
@@ -538,7 +528,8 @@ static int nilfs_resize_verify_failure(struct nilfs *nilfs,
 			if (!nilfs_suinfo_reclaimable(&si))
 				reason |= NILFS_RESIZE_SEGMENT_UNRECLAIMABLE;
 		}
-		ret = nilfs_resize_segment_is_protected(nilfs, segnumv[i]);
+		ret = nilfs_segment_is_protected(nilfs, segnumv[i],
+						 sustat.ss_prot_seq);
 		if (ret > 0)
 			reason |= NILFS_RESIZE_SEGMENT_PROTECTED;
 	}

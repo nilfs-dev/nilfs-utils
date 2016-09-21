@@ -552,25 +552,6 @@ nilfs_cleanerd_reduce_ncleansegs_for_retry(struct nilfs_cleanerd *cleanerd)
 }
 
 /**
- * nilfs_segment_is_protected - test if the segment is in protected region
- * @nilfs: nilfs object
- * @segnum: segment number to be tested
- * @protseq: lower limit of sequence numbers of protected segments
- */
-static int nilfs_segment_is_protected(struct nilfs *nilfs, __u64 segnum,
-				      __u64 protseq)
-{
-	__u64 segseq;
-	int ret;
-
-	ret = nilfs_get_segment_seqnum(nilfs, segnum, &segseq);
-	if (unlikely(ret < 0))
-		return -1;
-
-	return cnt64_ge(segseq, protseq);
-}
-
-/**
  * nilfs_segments_still_reclaimable - examine if segments are still reclaimable
  * @nilfs: nilfs object
  * @segnumv: array of segment numbers
