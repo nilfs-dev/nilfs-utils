@@ -109,7 +109,7 @@ static void dumpseg_print_psegment_error(const struct nilfs_psegment *pseg,
 	}
 }
 
-static void dumpseg_print_block(struct nilfs_block *blk)
+static void dumpseg_print_virtual_block(struct nilfs_block *blk)
 {
 	__le64 *binfo = blk->b_binfo;
 
@@ -125,7 +125,7 @@ static void dumpseg_print_block(struct nilfs_block *blk)
 	}
 }
 
-static void dumpseg_print_block_super(struct nilfs_block *blk)
+static void dumpseg_print_real_block(struct nilfs_block *blk)
 {
 	if (nilfs_block_is_data(blk)) {
 		__le64 *binfo = blk->b_binfo;
@@ -153,13 +153,13 @@ static void dumpseg_print_file(struct nilfs_file *file)
 	       (unsigned long long)le64_to_cpu(file->f_finfo->fi_cno),
 	       le32_to_cpu(file->f_finfo->fi_nblocks),
 	       le32_to_cpu(file->f_finfo->fi_ndatablk));
-	if (!nilfs_file_is_super(file)) {
+	if (!nilfs_file_use_real_blocknr(file)) {
 		nilfs_block_for_each(&blk, file) {
-			dumpseg_print_block(&blk);
+			dumpseg_print_virtual_block(&blk);
 		}
 	} else {
 		nilfs_block_for_each(&blk, file) {
-			dumpseg_print_block_super(&blk);
+			dumpseg_print_real_block(&blk);
 		}
 	}
 }

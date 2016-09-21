@@ -173,7 +173,7 @@ void nilfs_file_next(struct nilfs_file *file)
 
 	blksize = 1UL << file->f_psegment->blkbits;
 
-	if (!nilfs_file_is_super(file)) {
+	if (!nilfs_file_use_real_blocknr(file)) {
 		dsize = NILFS_BINFO_DATA_SIZE;
 		nsize = NILFS_BINFO_NODE_SIZE;
 	} else {
@@ -214,7 +214,7 @@ void nilfs_block_init(struct nilfs_block *blk, const struct nilfs_file *file)
 	blk->b_offset = file->f_offset + sizeof(struct nilfs_finfo);
 	blk->b_blocknr = file->f_blocknr;
 	blk->b_index = 0;
-	if (!nilfs_file_is_super(file)) {
+	if (!nilfs_file_use_real_blocknr(file)) {
 		blk->b_dsize = NILFS_BINFO_DATA_SIZE;
 		blk->b_nsize = NILFS_BINFO_NODE_SIZE;
 	} else {

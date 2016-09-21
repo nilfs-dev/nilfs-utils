@@ -123,12 +123,9 @@ void nilfs_file_init(struct nilfs_file *, const struct nilfs_psegment *);
 int nilfs_file_is_end(const struct nilfs_file *);
 void nilfs_file_next(struct nilfs_file *);
 
-static inline int nilfs_file_is_super(const struct nilfs_file *file)
+static inline int nilfs_file_use_real_blocknr(const struct nilfs_file *file)
 {
-	__u64 ino;
-
-	ino = le64_to_cpu(file->f_finfo->fi_ino);
-	return ino == NILFS_DAT_INO;
+	return le64_to_cpu(file->f_finfo->fi_ino) == NILFS_DAT_INO;
 }
 
 #define nilfs_file_for_each(file, pseg)		\

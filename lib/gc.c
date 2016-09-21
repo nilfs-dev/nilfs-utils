@@ -122,7 +122,7 @@ static int nilfs_acc_blocks_file(struct nilfs_file *file,
 	nilfs_cno_t cno;
 
 	ino = le64_to_cpu(file->f_finfo->fi_ino);
-	if (nilfs_file_is_super(file)) {
+	if (nilfs_file_use_real_blocknr(file)) {
 		nilfs_block_for_each(&blk, file) {
 			bdesc = nilfs_vector_get_new_element(bdescv);
 			if (unlikely(bdesc == NULL))
