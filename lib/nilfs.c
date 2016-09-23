@@ -901,10 +901,20 @@ static int nilfs_psegment_is_valid(const struct nilfs_psegment *pseg)
 	    sumbytes > (__u64)restblocks * pseg->p_blksize)
 		return 0;
 
-	return le32_to_cpu(pseg->p_segsum->ss_sumsum) ==
-		crc32_le(pseg->p_seed,
-			 (unsigned char *)pseg->p_segsum + offset,
-			 sumbytes - offset);
+	if (le32_to_cpu(pseg->p_segsum->ss_sumsum) !=
+	    crc32_le(pseg->p_seed,
+		     (unsigned char *)pseg->p_segsum + offset,
+		     sumbytes - offset))
+		return 0;
+
+	/*
+	 * Sanity check on segment summary information - violation
+	 * below should be handled as an error in a future release.
+	 */
+	if (le16_to_cpu(pseg->p_segsum->ss_bytes) > sumbytes)
+		return 0;
+
+	return 1;
 }
 
 void nilfs_psegment_init(struct nilfs_psegment *pseg, __u64 segnum,
