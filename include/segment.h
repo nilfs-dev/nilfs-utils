@@ -84,13 +84,13 @@ struct nilfs_block {
 };
 
 /* virtual block number and block offset */
-#define NILFS_BINFO_DATA_SIZE		(sizeof(__le64) + sizeof(__le64))
+#define NILFS_BINFO_DATA_SIZE		sizeof(struct nilfs_binfo_v)
 /* virtual block number */
 #define NILFS_BINFO_NODE_SIZE		sizeof(__le64)
 /* block offset */
 #define NILFS_BINFO_DAT_DATA_SIZE	sizeof(__le64)
 /* block offset and level */
-#define NILFS_BINFO_DAT_NODE_SIZE	(sizeof(__le64) + sizeof(__le64))
+#define NILFS_BINFO_DAT_NODE_SIZE	sizeof(struct nilfs_binfo_dat)
 
 
 struct nilfs;
