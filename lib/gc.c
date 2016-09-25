@@ -121,36 +121,36 @@ static int nilfs_acc_blocks_file(struct nilfs_file *file,
 	ino_t ino;
 	nilfs_cno_t cno;
 
-	ino = le64_to_cpu(file->f_finfo->fi_ino);
+	ino = le64_to_cpu(file->finfo->fi_ino);
 	if (nilfs_file_use_real_blocknr(file)) {
 		nilfs_block_for_each(&blk, file) {
 			bdesc = nilfs_vector_get_new_element(bdescv);
 			if (unlikely(bdesc == NULL))
 				return -1;
 			bdesc->bd_ino = ino;
-			bdesc->bd_oblocknr = blk.b_blocknr;
+			bdesc->bd_oblocknr = blk.blocknr;
 			if (nilfs_block_is_data(&blk)) {
 				bdesc->bd_offset =
-					le64_to_cpu(*(__le64 *)blk.b_binfo);
+					le64_to_cpu(*(__le64 *)blk.binfo);
 				bdesc->bd_level = 0;
 			} else {
-				binfo = blk.b_binfo;
+				binfo = blk.binfo;
 				bdesc->bd_offset =
 					le64_to_cpu(binfo->bi_dat.bi_blkoff);
 				bdesc->bd_level = binfo->bi_dat.bi_level;
 			}
 		}
 	} else {
-		cno = le64_to_cpu(file->f_finfo->fi_cno);
+		cno = le64_to_cpu(file->finfo->fi_cno);
 		nilfs_block_for_each(&blk, file) {
 			vdesc = nilfs_vector_get_new_element(vdescv);
 			if (unlikely(vdesc == NULL))
 				return -1;
 			vdesc->vd_ino = ino;
 			vdesc->vd_cno = cno;
-			vdesc->vd_blocknr = blk.b_blocknr;
+			vdesc->vd_blocknr = blk.blocknr;
 			if (nilfs_block_is_data(&blk)) {
-				binfo = blk.b_binfo;
+				binfo = blk.binfo;
 				vdesc->vd_vblocknr =
 					le64_to_cpu(binfo->bi_v.bi_vblocknr);
 				vdesc->vd_offset =
@@ -158,7 +158,7 @@ static int nilfs_acc_blocks_file(struct nilfs_file *file,
 				vdesc->vd_flags = 0;	/* data */
 			} else {
 				vdesc->vd_vblocknr =
-					le64_to_cpu(*(__le64 *)blk.b_binfo);
+					le64_to_cpu(*(__le64 *)blk.binfo);
 				vdesc->vd_flags = 1;	/* node */
 			}
 		}

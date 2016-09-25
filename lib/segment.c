@@ -123,136 +123,149 @@ const char *nilfs_psegment_strerror(int errnum)
 }
 
 /* nilfs_file */
-void nilfs_file_init(struct nilfs_file *file,
-		     const struct nilfs_psegment *pseg)
+static int nilfs_finfo_use_real_blocknr(const struct nilfs_finfo *finfo)
 {
-	size_t blksize, rest, hdrsize;
+	return le64_to_cpu(finfo->fi_ino) == NILFS_DAT_INO;
+}
 
-	file->f_psegment = pseg;
-	blksize = 1UL << pseg->blkbits;
-	hdrsize = le16_to_cpu(pseg->segsum->ss_bytes);
+static void nilfs_file_adjust_finfo_position(struct nilfs_file *file,
+					     __u32 blksize)
+{
+	__u32 rest = blksize - (file->offset & (blksize - 1));
 
-	file->f_finfo = (void *)pseg->segsum + hdrsize;
-	file->f_blocknr = pseg->blocknr +
-		DIV_ROUND_UP(le32_to_cpu(pseg->segsum->ss_sumbytes), blksize);
-	file->f_index = 0;
-	file->f_offset = hdrsize;
-
-	rest = blksize - file->f_offset % blksize;
 	if (sizeof(struct nilfs_finfo) > rest) {
-		file->f_finfo = (void *)file->f_finfo + rest;
-		file->f_offset += rest;
+		file->finfo = (void *)file->finfo + rest;
+		file->offset += rest;
 	}
 }
 
-int nilfs_file_is_end(const struct nilfs_file *file)
+void nilfs_file_init(struct nilfs_file *file,
+		     const struct nilfs_psegment *pseg)
 {
-	return file->f_index >=
-		le32_to_cpu(file->f_psegment->segsum->ss_nfinfo);
+	const __u32 blksize = 1UL << pseg->blkbits;
+	unsigned int hdrsize;
+
+	file->psegment = pseg;
+	file->blocknr = pseg->blocknr +
+		((le32_to_cpu(pseg->segsum->ss_sumbytes) + blksize - 1) >>
+		 pseg->blkbits);
+	file->index = 0;
+	file->nfinfo = le32_to_cpu(pseg->segsum->ss_nfinfo);
+
+	hdrsize = le16_to_cpu(pseg->segsum->ss_bytes);
+	file->offset = hdrsize;
+	file->finfo = (void *)pseg->segsum + hdrsize;
+	nilfs_file_adjust_finfo_position(file, blksize);
+
+	file->use_real_blocknr = nilfs_finfo_use_real_blocknr(file->finfo);
 }
 
-static size_t nilfs_binfo_total_size(unsigned long offset,
-				     size_t blksize, size_t bisize, size_t n)
+int nilfs_file_is_end(struct nilfs_file *file)
 {
-	size_t binfo_per_block, rest = blksize - offset % blksize;
+	return file->index >= file->nfinfo;
+}
 
-	if (bisize * n <= rest)
-		return bisize * n;
+static size_t nilfs_binfo_total_size(size_t offset, __u32 blksize,
+				     unsigned int binfosize, __u32 blkcnt)
+{
+	__u32 rest, binfo_per_block;
 
-	n -= rest / bisize;
-	binfo_per_block = blksize / bisize;
-	return rest + (n / binfo_per_block) * blksize +
-		(n % binfo_per_block) * bisize;
+	rest = blksize - (offset & (blksize - 1));
+	if (binfosize * blkcnt <= rest)
+		return binfosize * blkcnt;
+
+	blkcnt -= rest / binfosize;
+	binfo_per_block = blksize / binfosize;
+	return rest + (size_t)(blkcnt / binfo_per_block) * blksize +
+		(blkcnt % binfo_per_block) * binfosize;
 }
 
 void nilfs_file_next(struct nilfs_file *file)
 {
-	size_t blksize, rest, delta;
-	size_t dsize, nsize;
-	unsigned long ndatablk, nblocks;
+	const __u32 blksize = 1UL << file->psegment->blkbits;
+	const __u32 nblocks = le32_to_cpu(file->finfo->fi_nblocks);
+	unsigned int dsize, nsize;
+	__u32 ndatablk;
+	size_t delta;
 
-	blksize = 1UL << file->f_psegment->blkbits;
+	file->blocknr += nblocks;
 
-	if (!nilfs_file_use_real_blocknr(file)) {
-		dsize = NILFS_BINFO_DATA_SIZE;
-		nsize = NILFS_BINFO_NODE_SIZE;
-	} else {
+	if (file->use_real_blocknr) {
 		dsize = NILFS_BINFO_DAT_DATA_SIZE;
 		nsize = NILFS_BINFO_DAT_NODE_SIZE;
+	} else {
+		dsize = NILFS_BINFO_DATA_SIZE;
+		nsize = NILFS_BINFO_NODE_SIZE;
 	}
 
-	nblocks = le32_to_cpu(file->f_finfo->fi_nblocks);
-	ndatablk = le32_to_cpu(file->f_finfo->fi_ndatablk);
-
+	ndatablk = le32_to_cpu(file->finfo->fi_ndatablk);
 	delta = sizeof(struct nilfs_finfo);
-	delta += nilfs_binfo_total_size(file->f_offset + delta,
+	delta += nilfs_binfo_total_size(file->offset + delta,
 					blksize, dsize, ndatablk);
-	delta += nilfs_binfo_total_size(file->f_offset + delta,
+	delta += nilfs_binfo_total_size(file->offset + delta,
 					blksize, nsize, nblocks - ndatablk);
 
-	file->f_blocknr += nblocks;
-	file->f_offset += delta;
-	file->f_finfo = (void *)file->f_finfo + delta;
+	file->offset += delta;
+	file->finfo = (void *)file->finfo + delta;
+	nilfs_file_adjust_finfo_position(file, blksize);
 
-	rest = blksize - file->f_offset % blksize;
-	if (sizeof(struct nilfs_finfo) > rest) {
-		file->f_offset += rest;
-		file->f_finfo = (void *)file->f_finfo + rest;
-	}
-	file->f_index++;
+	file->use_real_blocknr = nilfs_finfo_use_real_blocknr(file->finfo);
+	file->index++;
 }
 
 /* nilfs_block */
+static void nilfs_block_adjust_binfo_position(struct nilfs_block *blk,
+					      __u32 blksize)
+{
+	unsigned int binfosize;
+	__u32 rest;
+
+	rest = blksize - (blk->offset & (blksize - 1));
+	binfosize = nilfs_block_is_data(blk) ? blk->dsize : blk->nsize;
+	if (binfosize > rest) {
+		blk->binfo += rest;
+		blk->offset += rest;
+	}
+}
+
 void nilfs_block_init(struct nilfs_block *blk, const struct nilfs_file *file)
 {
-	size_t blksize, bisize, rest;
+	const __u32 blksize = 1UL << file->psegment->blkbits;
 
-	blk->b_file = file;
-	blksize = 1UL << blk->b_file->f_psegment->blkbits;
+	blk->file = file;
+	blk->binfo = (void *)file->finfo + sizeof(struct nilfs_finfo);
+	blk->offset = file->offset + sizeof(struct nilfs_finfo);
+	blk->blocknr = file->blocknr;
+	blk->index = 0;
+	blk->nbinfo = le32_to_cpu(file->finfo->fi_nblocks);
+	blk->nbinfo_data = le32_to_cpu(file->finfo->fi_ndatablk);
 
-	blk->b_binfo = (void *)(file->f_finfo + 1);
-	blk->b_offset = file->f_offset + sizeof(struct nilfs_finfo);
-	blk->b_blocknr = file->f_blocknr;
-	blk->b_index = 0;
-	if (!nilfs_file_use_real_blocknr(file)) {
-		blk->b_dsize = NILFS_BINFO_DATA_SIZE;
-		blk->b_nsize = NILFS_BINFO_NODE_SIZE;
+	if (file->use_real_blocknr) {
+		blk->dsize = NILFS_BINFO_DAT_DATA_SIZE;
+		blk->nsize = NILFS_BINFO_DAT_NODE_SIZE;
 	} else {
-		blk->b_dsize = NILFS_BINFO_DAT_DATA_SIZE;
-		blk->b_nsize = NILFS_BINFO_DAT_NODE_SIZE;
+		blk->dsize = NILFS_BINFO_DATA_SIZE;
+		blk->nsize = NILFS_BINFO_NODE_SIZE;
 	}
 
-	bisize = nilfs_block_is_data(blk) ? blk->b_dsize : blk->b_nsize;
-	rest = blksize - blk->b_offset % blksize;
-	if (bisize > rest) {
-		blk->b_binfo += rest;
-		blk->b_offset += rest;
-	}
+	nilfs_block_adjust_binfo_position(blk, blksize);
 }
 
 int nilfs_block_is_end(const struct nilfs_block *blk)
 {
-	return blk->b_index >= le32_to_cpu(blk->b_file->f_finfo->fi_nblocks);
+	return blk->index >= blk->nbinfo;
 }
 
 void nilfs_block_next(struct nilfs_block *blk)
 {
-	size_t blksize, bisize, rest;
+	const __u32 blksize = 1UL << blk->file->psegment->blkbits;
+	unsigned int binfosize;
 
-	blksize = 1UL << blk->b_file->f_psegment->blkbits;
+	binfosize = nilfs_block_is_data(blk) ? blk->dsize : blk->nsize;
+	blk->binfo += binfosize;
+	blk->offset += binfosize;
+	blk->blocknr++;
+	blk->index++;
 
-	bisize = nilfs_block_is_data(blk) ? blk->b_dsize : blk->b_nsize;
-	blk->b_binfo += bisize;
-	blk->b_offset += bisize;
-	blk->b_index++;
-
-	bisize = nilfs_block_is_data(blk) ? blk->b_dsize : blk->b_nsize;
-	rest = blksize - blk->b_offset % blksize;
-	if (bisize > rest) {
-		blk->b_binfo += rest;
-		blk->b_offset += rest;
-	}
-
-	blk->b_blocknr++;
+	nilfs_block_adjust_binfo_position(blk, blksize);
 }
-

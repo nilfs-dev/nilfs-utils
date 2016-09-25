@@ -47,40 +47,46 @@ enum {
 
 /**
  * struct nilfs_file - file iterator
- * @f_finfo: file information
- * @f_blocknr: block number
- * @f_offset: byte offset from the beginning of segment
- * @f_index: index
- * @f_psegment: partial segment
+ * @psegment: back pointer to nilfs_psegment struct
+ * @finfo: file information
+ * @blocknr: block number
+ * @offset: byte offset from the beginning of partial segment
+ * @index: index number of finfo
+ * @nfinfo: number of finfo structures contained in the partial segment
+ * @use_real_blocknr: flag to indicate that blocks are not tranlated with DAT
  */
 struct nilfs_file {
-	struct nilfs_finfo *f_finfo;
-	sector_t f_blocknr;
-
-	unsigned long f_offset;
-	int f_index;
-	const struct nilfs_psegment *f_psegment;
+	const struct nilfs_psegment *psegment;
+	struct nilfs_finfo *finfo;
+	sector_t blocknr;
+	__u32 offset;
+	__u32 index;
+	__u32 nfinfo;
+	unsigned int use_real_blocknr : 1;
 };
 
 /**
  * struct nilfs_block - block iterator
- * @b_binfo: block information
- * @b_blocknr: block number
- * @b_offset: byte offset from the beginning of segment
- * @b_index: index
- * @b_dsize: size of data block information
- * @b_nsize: size of node block information
- * @b_file: file
+ * @file: back pointer to nilfs_file struct
+ * @binfo: block information
+ * @blocknr: block number
+ * @offset: byte offset from the beginning of partial segment
+ * @index: index number of binfo
+ * @nbinfo: number of binfo structures contained in the file
+ * @nbinfo_data: number of binfos for data blocks
+ * @dsize: size of data block information
+ * @nsize: size of node block information
  */
 struct nilfs_block {
-	void *b_binfo;
-	sector_t b_blocknr;
-
-	unsigned long b_offset;
-	int b_index;
-	size_t b_dsize;
-	size_t b_nsize;
-	const struct nilfs_file *b_file;
+	const struct nilfs_file *file;
+	void *binfo;
+	sector_t blocknr;
+	__u32 offset;
+	__u32 index;
+	__u32 nbinfo;
+	__u32 nbinfo_data;
+	unsigned int dsize;
+	unsigned int nsize;
 };
 
 /* virtual block number and block offset */
@@ -119,38 +125,37 @@ static inline int nilfs_psegment_is_error(const struct nilfs_psegment *pseg,
 }
 
 /* file iterator */
-void nilfs_file_init(struct nilfs_file *, const struct nilfs_psegment *);
-int nilfs_file_is_end(const struct nilfs_file *);
-void nilfs_file_next(struct nilfs_file *);
+void nilfs_file_init(struct nilfs_file *file,
+		     const struct nilfs_psegment *pseg);
+int nilfs_file_is_end(struct nilfs_file *file);
+void nilfs_file_next(struct nilfs_file *file);
 
 static inline int nilfs_file_use_real_blocknr(const struct nilfs_file *file)
 {
-	return le64_to_cpu(file->f_finfo->fi_ino) == NILFS_DAT_INO;
+	return file->use_real_blocknr;
 }
 
-#define nilfs_file_for_each(file, pseg)		\
-	for (nilfs_file_init(file, pseg);	\
-	     !nilfs_file_is_end(file);		\
+#define nilfs_file_for_each(file, pseg)					\
+	for (nilfs_file_init(file, pseg); !nilfs_file_is_end(file);	\
 	     nilfs_file_next(file))
 
 /* block iterator */
-void nilfs_block_init(struct nilfs_block *, const struct nilfs_file *);
-int nilfs_block_is_end(const struct nilfs_block *);
-void nilfs_block_next(struct nilfs_block *);
+void nilfs_block_init(struct nilfs_block *blk, const struct nilfs_file *file);
+int nilfs_block_is_end(const struct nilfs_block *blk);
+void nilfs_block_next(struct nilfs_block *blk);
 
 static inline int nilfs_block_is_data(const struct nilfs_block *blk)
 {
-	return blk->b_index < le32_to_cpu(blk->b_file->f_finfo->fi_ndatablk);
+	return blk->index < blk->nbinfo_data;
 }
 
 static inline int nilfs_block_is_node(const struct nilfs_block *blk)
 {
-	return blk->b_index >= le32_to_cpu(blk->b_file->f_finfo->fi_ndatablk);
+	return blk->index >= blk->nbinfo_data;
 }
 
-#define nilfs_block_for_each(blk, file)		\
-	for (nilfs_block_init(blk, file);	\
-	     !nilfs_block_is_end(blk);		\
+#define nilfs_block_for_each(blk, file)					\
+	for (nilfs_block_init(blk, file); !nilfs_block_is_end(blk);	\
 	     nilfs_block_next(blk))
 
 

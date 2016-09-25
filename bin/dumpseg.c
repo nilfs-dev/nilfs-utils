@@ -111,48 +111,49 @@ static void dumpseg_print_psegment_error(const struct nilfs_psegment *pseg,
 
 static void dumpseg_print_virtual_block(struct nilfs_block *blk)
 {
-	__le64 *binfo = blk->b_binfo;
+	__le64 *binfo = blk->binfo;
 
 	if (nilfs_block_is_data(blk)) {
 		printf("        vblocknr = %llu, blkoff = %llu, blocknr = %llu\n",
 		       (unsigned long long)le64_to_cpu(binfo[0]),
 		       (unsigned long long)le64_to_cpu(binfo[1]),
-		       (unsigned long long)blk->b_blocknr);
+		       (unsigned long long)blk->blocknr);
 	} else {
 		printf("        vblocknr = %llu, blocknr = %llu\n",
 		       (unsigned long long)le64_to_cpu(binfo[0]),
-		       (unsigned long long)blk->b_blocknr);
+		       (unsigned long long)blk->blocknr);
 	}
 }
 
 static void dumpseg_print_real_block(struct nilfs_block *blk)
 {
 	if (nilfs_block_is_data(blk)) {
-		__le64 *binfo = blk->b_binfo;
+		__le64 *binfo = blk->binfo;
 
 		printf("        blkoff = %llu, blocknr = %llu\n",
 		       (unsigned long long)le64_to_cpu(binfo[0]),
-		       (unsigned long long)blk->b_blocknr);
+		       (unsigned long long)blk->blocknr);
 	} else {
-		struct nilfs_binfo_dat *bid = blk->b_binfo;
+		struct nilfs_binfo_dat *bid = blk->binfo;
 
 		printf("        blkoff = %llu, level = %d, blocknr = %llu\n",
 		       (unsigned long long)le64_to_cpu(bid->bi_blkoff),
 		       bid->bi_level,
-		       (unsigned long long)blk->b_blocknr);
+		       (unsigned long long)blk->blocknr);
 	}
 }
 
 static void dumpseg_print_file(struct nilfs_file *file)
 {
 	struct nilfs_block blk;
+	struct nilfs_finfo *finfo = file->finfo;
 
 	printf("    finfo\n");
 	printf("      ino = %llu, cno = %llu, nblocks = %d, ndatblk = %d\n",
-	       (unsigned long long)le64_to_cpu(file->f_finfo->fi_ino),
-	       (unsigned long long)le64_to_cpu(file->f_finfo->fi_cno),
-	       le32_to_cpu(file->f_finfo->fi_nblocks),
-	       le32_to_cpu(file->f_finfo->fi_ndatablk));
+	       (unsigned long long)le64_to_cpu(finfo->fi_ino),
+	       (unsigned long long)le64_to_cpu(finfo->fi_cno),
+	       le32_to_cpu(finfo->fi_nblocks),
+	       le32_to_cpu(finfo->fi_ndatablk));
 	if (!nilfs_file_use_real_blocknr(file)) {
 		nilfs_block_for_each(&blk, file) {
 			dumpseg_print_virtual_block(&blk);
