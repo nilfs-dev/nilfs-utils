@@ -41,6 +41,13 @@ static const char *nilfs_psegment_error_strings[] = {
 	"too big summary info",
 };
 
+static const char *nilfs_file_error_strings[] = {
+	"success",
+	"too many payload blocks",
+	"inconsistent block count",
+	"finfo/binfo overrun",
+};
+
 /* nilfs_psegment */
 static __u32 nilfs_psegment_get_sumblks(const struct nilfs_psegment *pseg)
 {
@@ -213,28 +220,71 @@ void nilfs_file_init(struct nilfs_file *file,
 	nilfs_file_adjust_finfo_position(file, blksize);
 
 	file->use_real_blocknr = nilfs_finfo_use_real_blocknr(file->finfo);
+	file->sumlen = nilfs_file_info_size(file);
+	file->error = NILFS_FILE_SUCCESS;
+}
+
+static int nilfs_file_is_valid(struct nilfs_file *file)
+{
+	const struct nilfs_psegment *pseg = file->psegment;
+	__u32 nblocks, pseg_nblocks, ndatablk, sumbytes, blkoff;
+
+	/* Sanity check for payload block count */
+	nblocks = le32_to_cpu(file->finfo->fi_nblocks);
+	blkoff = file->blocknr - pseg->blocknr;
+	pseg_nblocks = le32_to_cpu(pseg->segsum->ss_nblocks);
+	if (unlikely(blkoff + nblocks > pseg_nblocks)) {
+		file->error = NILFS_FILE_ERROR_MANYBLKS;
+		goto error;
+	}
+
+	/* Do sanity check on finfo */
+	ndatablk = le32_to_cpu(file->finfo->fi_ndatablk);
+	if (unlikely(ndatablk > nblocks)) {
+		file->error = NILFS_FILE_ERROR_BLKCNT;
+		goto error;
+	}
+
+	/* Sanity check for total length of finfo + binfos */
+	sumbytes = le32_to_cpu(pseg->segsum->ss_sumbytes);
+	if (unlikely(file->offset + file->sumlen > sumbytes)) {
+		file->error = NILFS_FILE_ERROR_OVERRUN;
+		goto error;
+	}
+
+	return 1;
+
+error:
+	errno = EINVAL;
+	return 0;
 }
 
 int nilfs_file_is_end(struct nilfs_file *file)
 {
-	return file->index >= file->nfinfo;
+	return file->index >= file->nfinfo || !nilfs_file_is_valid(file);
 }
 
 void nilfs_file_next(struct nilfs_file *file)
 {
 	const __u32 blksize = 1UL << file->psegment->blkbits;
-	size_t delta;
 
 	file->blocknr += le32_to_cpu(file->finfo->fi_nblocks);
 
-	delta = nilfs_file_info_size(file);
-
-	file->offset += delta;
-	file->finfo = (void *)file->finfo + delta;
+	file->offset += file->sumlen;
+	file->finfo = (void *)file->finfo + file->sumlen;
 	nilfs_file_adjust_finfo_position(file, blksize);
 
 	file->use_real_blocknr = nilfs_finfo_use_real_blocknr(file->finfo);
+	file->sumlen = nilfs_file_info_size(file);
 	file->index++;
+}
+
+const char *nilfs_file_strerror(int errnum)
+{
+	if (errnum < 0 || errnum >= ARRAY_SIZE(nilfs_file_error_strings))
+		return "unknown error";
+
+	return nilfs_file_error_strings[errnum];
 }
 
 /* nilfs_block */

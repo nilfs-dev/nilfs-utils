@@ -109,6 +109,43 @@ static void dumpseg_print_psegment_error(const struct nilfs_psegment *pseg,
 	}
 }
 
+static void dumpseg_print_file_error(const struct nilfs_file *file,
+				     const char *errstr)
+{
+	const struct nilfs_psegment *pseg = file->psegment;
+	static const char *indent = "    ";
+	__u32 nblocks, ndatablk, sumbytes, pseg_nblocks;
+
+	switch (file->error) {
+	case NILFS_FILE_ERROR_MANYBLKS:
+		nblocks = le32_to_cpu(file->finfo->fi_nblocks);
+		pseg_nblocks = le32_to_cpu(pseg->segsum->ss_nblocks);
+		printf("%serror %d (%s) - file blkoff = %lu, file blkcnt = %lu, pseg blkcnt = %lu\n",
+		       indent, file->error, errstr,
+		       (unsigned long)(file->blocknr - pseg->blocknr),
+		       (unsigned long)nblocks, (unsigned long)pseg_nblocks);
+		break;
+	case NILFS_FILE_ERROR_BLKCNT:
+		nblocks = le32_to_cpu(file->finfo->fi_nblocks);
+		ndatablk = le32_to_cpu(file->finfo->fi_ndatablk);
+		printf("%serror %d (%s) - file blkcnt = %lu, data blkcnt = %lu\n",
+		       indent, file->error, errstr,
+		       (unsigned long)nblocks, (unsigned long)ndatablk);
+		break;
+	case NILFS_FILE_ERROR_OVERRUN:
+		sumbytes = le32_to_cpu(pseg->segsum->ss_sumbytes);
+		printf("%serror %d (%s) - finfo offset = %lu, finfo total size = %llu, summary size = %lu\n",
+		       indent, file->error, errstr,
+		       (unsigned long)file->offset,
+		       (unsigned long long)file->sumlen,
+		       (unsigned long)sumbytes);
+		break;
+	default:
+		printf("%serror %d (%s)\n", indent, file->error, errstr);
+		break;
+	}
+}
+
 static void dumpseg_print_virtual_block(struct nilfs_block *blk)
 {
 	__le64 *binfo = blk->binfo;
@@ -169,6 +206,7 @@ static void dumpseg_print_psegment(struct nilfs_psegment *pseg)
 {
 	struct nilfs_file file;
 	struct tm tm;
+	const char *errstr;
 	char timebuf[DUMPSEG_BUFSIZE];
 	time_t t;
 
@@ -184,6 +222,8 @@ static void dumpseg_print_psegment(struct nilfs_psegment *pseg)
 	nilfs_file_for_each(&file, pseg) {
 		dumpseg_print_file(&file);
 	}
+	if (nilfs_file_is_error(&file, &errstr))
+		dumpseg_print_file_error(&file, errstr);
 }
 
 static void dumpseg_print_segment(const struct nilfs_segment *segment)

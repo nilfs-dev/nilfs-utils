@@ -177,12 +177,22 @@ static int nilfs_acc_blocks_psegment(struct nilfs_psegment *psegment,
 				     struct nilfs_vector *bdescv)
 {
 	struct nilfs_file file;
+	const char *errstr;
 	int ret;
 
 	nilfs_file_for_each(&file, psegment) {
 		ret = nilfs_acc_blocks_file(&file, vdescv, bdescv);
 		if (unlikely(ret < 0))
 			return -1;
+	}
+	if (nilfs_file_is_error(&file, &errstr)) {
+		nilfs_gc_logger(LOG_ERR,
+				"error %d (%s) while reading finfo at offset = %lu at pseg blocknr = %llu, segnum = %llu",
+				file.error, errstr,
+				(unsigned long)file.offset,
+				(unsigned long long)psegment->blocknr,
+				(unsigned long long)psegment->segment->segnum);
+		return -1;
 	}
 	return 0;
 }

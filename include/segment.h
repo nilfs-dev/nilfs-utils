@@ -53,6 +53,8 @@ enum {
  * @offset: byte offset from the beginning of partial segment
  * @index: index number of finfo
  * @nfinfo: number of finfo structures contained in the partial segment
+ * @sumlen: total length of the finfo including successive binfo structures
+ * @error: error code
  * @use_real_blocknr: flag to indicate that blocks are not tranlated with DAT
  */
 struct nilfs_file {
@@ -62,7 +64,18 @@ struct nilfs_file {
 	__u32 offset;
 	__u32 index;
 	__u32 nfinfo;
+	size_t sumlen;
+	int error;
 	unsigned int use_real_blocknr : 1;
+};
+
+/* Error code of file iterator */
+enum {
+	NILFS_FILE_SUCCESS = 0,
+	NILFS_FILE_ERROR_MANYBLKS,		/* Too many payload blocks */
+	NILFS_FILE_ERROR_BLKCNT,		/* Inconsistent block count */
+	NILFS_FILE_ERROR_OVERRUN,		/* finfo/binfo overrun */
+	__NR_NILFS_FILE_ERROR,
 };
 
 /**
@@ -120,6 +133,7 @@ void nilfs_file_init(struct nilfs_file *file,
 		     const struct nilfs_psegment *pseg);
 int nilfs_file_is_end(struct nilfs_file *file);
 void nilfs_file_next(struct nilfs_file *file);
+const char *nilfs_file_strerror(int errnum);
 
 static inline int nilfs_file_use_real_blocknr(const struct nilfs_file *file)
 {
@@ -129,6 +143,17 @@ static inline int nilfs_file_use_real_blocknr(const struct nilfs_file *file)
 #define nilfs_file_for_each(file, pseg)					\
 	for (nilfs_file_init(file, pseg); !nilfs_file_is_end(file);	\
 	     nilfs_file_next(file))
+
+static inline int nilfs_file_is_error(const struct nilfs_file *file,
+				      const char **errstr)
+{
+	if (unlikely(file->error)) {
+		if (errstr != NULL)
+			*errstr = nilfs_file_strerror(file->error);
+		return 1;
+	}
+	return 0;
+}
 
 /* block iterator */
 void nilfs_block_init(struct nilfs_block *blk, const struct nilfs_file *file);
