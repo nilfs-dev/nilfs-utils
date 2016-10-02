@@ -1022,12 +1022,21 @@ static int nilfs_file_is_valid(const struct nilfs_file *file)
 {
 	const struct nilfs_psegment *pseg = file->f_psegment;
 	__u32 sumbytes = le32_to_cpu(pseg->p_segsum->ss_sumbytes);
+	__u32 nblocks, blkoff;
 
 	/*
 	 * Sanity checks on file summary information.  The violations
 	 * below should be handled as errors in a future release.
 	 */
 	if (file->f_offset + sizeof(struct nilfs_finfo) > sumbytes)
+		return 0;
+
+	nblocks = le32_to_cpu(file->f_finfo->fi_nblocks);
+	blkoff = file->f_blocknr - pseg->p_blocknr;
+	if (blkoff + nblocks > le32_to_cpu(pseg->p_segsum->ss_nblocks))
+		return 0;
+
+	if (le32_to_cpu(file->f_finfo->fi_ndatablk) > nblocks)
 		return 0;
 
 	if (file->f_offset + nilfs_file_info_size(file) > sumbytes)
