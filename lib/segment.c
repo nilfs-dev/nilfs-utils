@@ -196,6 +196,21 @@ static size_t nilfs_file_info_size(struct nilfs_file *file)
 	return delta;
 }
 
+static void nilfs_file_init_from_finfo(struct nilfs_file *file)
+{
+	if (file->offset + sizeof(struct nilfs_finfo) > file->sumbytes) {
+		/*
+		 * Set a dummy value to file->sumlen so that
+		 * nilfs_file_is_valid() will always fail.
+		 */
+		file->sumlen = sizeof(struct nilfs_finfo);
+		return;
+	}
+
+	file->use_real_blocknr = nilfs_finfo_use_real_blocknr(file->finfo);
+	file->sumlen = nilfs_file_info_size(file);
+}
+
 void nilfs_file_init(struct nilfs_file *file,
 		     const struct nilfs_psegment *pseg)
 {
@@ -214,9 +229,8 @@ void nilfs_file_init(struct nilfs_file *file,
 	file->offset = hdrsize;
 	file->finfo = (void *)pseg->segsum + hdrsize;
 	nilfs_file_adjust_finfo_position(file, blksize);
+	nilfs_file_init_from_finfo(file);
 
-	file->use_real_blocknr = nilfs_finfo_use_real_blocknr(file->finfo);
-	file->sumlen = nilfs_file_info_size(file);
 	file->error = NILFS_FILE_SUCCESS;
 }
 
@@ -224,6 +238,12 @@ static int nilfs_file_is_valid(struct nilfs_file *file)
 {
 	const struct nilfs_psegment *pseg = file->psegment;
 	__u32 nblocks, pseg_nblocks, ndatablk, blkoff;
+
+	/* Sanity check for total length of finfo + binfos */
+	if (unlikely(file->offset + file->sumlen > file->sumbytes)) {
+		file->error = NILFS_FILE_ERROR_OVERRUN;
+		goto error;
+	}
 
 	/* Sanity check for payload block count */
 	nblocks = le32_to_cpu(file->finfo->fi_nblocks);
@@ -238,12 +258,6 @@ static int nilfs_file_is_valid(struct nilfs_file *file)
 	ndatablk = le32_to_cpu(file->finfo->fi_ndatablk);
 	if (unlikely(ndatablk > nblocks)) {
 		file->error = NILFS_FILE_ERROR_BLKCNT;
-		goto error;
-	}
-
-	/* Sanity check for total length of finfo + binfos */
-	if (unlikely(file->offset + file->sumlen > file->sumbytes)) {
-		file->error = NILFS_FILE_ERROR_OVERRUN;
 		goto error;
 	}
 
@@ -268,9 +282,8 @@ void nilfs_file_next(struct nilfs_file *file)
 	file->offset += file->sumlen;
 	file->finfo = (void *)file->finfo + file->sumlen;
 	nilfs_file_adjust_finfo_position(file, blksize);
+	nilfs_file_init_from_finfo(file);
 
-	file->use_real_blocknr = nilfs_finfo_use_real_blocknr(file->finfo);
-	file->sumlen = nilfs_file_info_size(file);
 	file->index++;
 }
 
