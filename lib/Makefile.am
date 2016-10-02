@@ -37,8 +37,7 @@ nilfsgc_VERSIONINFO = $(nilfsgc_CURRENT):$(nilfsgc_REVISION):$(nilfsgc_AGE)
 
 libnilfsgc_la_SOURCES = gc.c vector.c cnormap.c
 libnilfsgc_la_LDFLAGS = -version-info $(nilfsgc_VERSIONINFO)
-libnilfsgc_la_LIBADD = libnilfs.la libsegment.la $(LIB_POSIX_SEM) \
-	$(LIB_POSIX_TIMER)
+libnilfsgc_la_LIBADD = libnilfs.la libsegment.la $(LIB_POSIX_TIMER)
 
 cleanerctl_CURRENT = 1
 cleanerctl_REVISION = 0

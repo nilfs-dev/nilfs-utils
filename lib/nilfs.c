@@ -54,6 +54,10 @@
 #include <limits.h>
 #endif	/* HAVE_LIMITS_H */
 
+#if HAVE_SEMAPHORE_H
+#include <semaphore.h>
+#endif	/* HAVE_SEMAPHORE_H */
+
 #if HAVE_SYS_MMAN_H
 #include <sys/mman.h>
 #endif	/* HAVE_SYS_MMAN_H */
@@ -525,6 +529,48 @@ void nilfs_close(struct nilfs *nilfs)
 const char *nilfs_get_dev(const struct nilfs *nilfs)
 {
 	return nilfs->n_dev;
+}
+
+/**
+ * nilfs_lock - acquire a lock
+ * @nilfs: nilfs object
+ * @index: index of the lock to be acquired
+ */
+int nilfs_lock(struct nilfs *nilfs, unsigned int index)
+{
+	if (unlikely(index >= ARRAY_SIZE(nilfs->n_sems))) {
+		errno = EINVAL;
+		return -1;
+	}
+	return sem_wait(nilfs->n_sems[index]);
+}
+
+/**
+ * nilfs_trylock - try to acquire a lock
+ * @nilfs: nilfs object
+ * @index: index of the lock to be tried
+ */
+int nilfs_trylock(struct nilfs *nilfs, unsigned int index)
+{
+	if (unlikely(index >= ARRAY_SIZE(nilfs->n_sems))) {
+		errno = EINVAL;
+		return -1;
+	}
+	return sem_trywait(nilfs->n_sems[index]);
+}
+
+/**
+ * nilfs_unlock - release a lock
+ * @nilfs: nilfs object
+ * @index: index of the lock to be released
+ */
+int nilfs_unlock(struct nilfs *nilfs, unsigned int index)
+{
+	if (unlikely(index >= ARRAY_SIZE(nilfs->n_sems))) {
+		errno = EINVAL;
+		return -1;
+	}
+	return sem_post(nilfs->n_sems[index]);
 }
 
 /**

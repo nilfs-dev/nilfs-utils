@@ -125,19 +125,22 @@ nilfs_cno_t nilfs_get_oldest_cno(struct nilfs *);
 ssize_t nilfs_get_layout(const struct nilfs *nilfs,
 			 struct nilfs_layout *layout, size_t layout_size);
 
+int nilfs_lock(struct nilfs *nilfs, unsigned int index);
+int nilfs_trylock(struct nilfs *nilfs, unsigned int index);
+int nilfs_unlock(struct nilfs *nilfs, unsigned int index);
 
 #define NILFS_LOCK_FNS(name, index)					\
 static inline int nilfs_lock_##name(struct nilfs *nilfs)		\
 {									\
-	return sem_wait(nilfs->n_sems[index]);				\
+	return nilfs_lock(nilfs, index);				\
 }									\
 static inline int nilfs_trylock_##name(struct nilfs *nilfs)		\
 {									\
-	return sem_trywait(nilfs->n_sems[index]);			\
+	return nilfs_trylock(nilfs, index);				\
 }									\
 static inline int nilfs_unlock_##name(struct nilfs *nilfs)		\
 {									\
-	return sem_post(nilfs->n_sems[index]);				\
+	return nilfs_unlock(nilfs, index);				\
 }
 
 NILFS_LOCK_FNS(cleaner, 0)
