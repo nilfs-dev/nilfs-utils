@@ -956,6 +956,45 @@ void nilfs_psegment_next(struct nilfs_psegment *pseg)
 }
 
 /* nilfs_file */
+static size_t nilfs_binfo_total_size(unsigned long offset, size_t blksize,
+				     unsigned int binfosize, size_t blkcnt)
+{
+	size_t binfo_per_block, rest = blksize - offset % blksize;
+
+	if (binfosize * blkcnt <= rest)
+		return binfosize * blkcnt;
+
+	blkcnt -= rest / binfosize;
+	binfo_per_block = blksize / binfosize;
+	return rest + (blkcnt / binfo_per_block) * blksize +
+		(blkcnt % binfo_per_block) * binfosize;
+}
+
+static size_t nilfs_file_info_size(const struct nilfs_file *file)
+{
+	unsigned int dsize, nsize;
+	__u32 nblocks, ndatablk;
+	size_t delta, blksize = file->f_psegment->p_blksize;
+
+	if (!nilfs_file_is_super(file)) {
+		dsize = NILFS_BINFO_DATA_SIZE;
+		nsize = NILFS_BINFO_NODE_SIZE;
+	} else {
+		dsize = NILFS_BINFO_DAT_DATA_SIZE;
+		nsize = NILFS_BINFO_DAT_NODE_SIZE;
+	}
+
+	nblocks = le32_to_cpu(file->f_finfo->fi_nblocks);
+	ndatablk = le32_to_cpu(file->f_finfo->fi_ndatablk);
+
+	delta = sizeof(struct nilfs_finfo);
+	delta += nilfs_binfo_total_size(file->f_offset + delta,
+					blksize, dsize, ndatablk);
+	delta += nilfs_binfo_total_size(file->f_offset + delta,
+					blksize, nsize, nblocks - ndatablk);
+	return delta;
+}
+
 void nilfs_file_init(struct nilfs_file *file,
 		     const struct nilfs_psegment *pseg)
 {
@@ -979,55 +1018,42 @@ void nilfs_file_init(struct nilfs_file *file,
 	}
 }
 
+static int nilfs_file_is_valid(const struct nilfs_file *file)
+{
+	const struct nilfs_psegment *pseg = file->f_psegment;
+	__u32 sumbytes = le32_to_cpu(pseg->p_segsum->ss_sumbytes);
+
+	/*
+	 * Sanity checks on file summary information.  The violations
+	 * below should be handled as errors in a future release.
+	 */
+	if (file->f_offset + sizeof(struct nilfs_finfo) > sumbytes)
+		return 0;
+
+	if (file->f_offset + nilfs_file_info_size(file) > sumbytes)
+		return 0;
+
+	return 1;
+}
+
 int nilfs_file_is_end(const struct nilfs_file *file)
 {
 	return file->f_index >=
-		le32_to_cpu(file->f_psegment->p_segsum->ss_nfinfo);
-}
-
-static size_t nilfs_binfo_total_size(unsigned long offset,
-				     size_t blksize, size_t bisize, size_t n)
-{
-	size_t binfo_per_block, rest = blksize - offset % blksize;
-
-	if (bisize * n <= rest)
-		return bisize * n;
-
-	n -= rest / bisize;
-	binfo_per_block = blksize / bisize;
-	return rest + (n / binfo_per_block) * blksize +
-		(n % binfo_per_block) * bisize;
+		le32_to_cpu(file->f_psegment->p_segsum->ss_nfinfo) ||
+		!nilfs_file_is_valid(file);
 }
 
 void nilfs_file_next(struct nilfs_file *file)
 {
 	size_t blksize, rest, delta;
-	size_t dsize, nsize;
-	unsigned long ndatablk, nblocks;
 
-	blksize = file->f_psegment->p_blksize;
+	delta = nilfs_file_info_size(file);
 
-	if (!nilfs_file_is_super(file)) {
-		dsize = NILFS_BINFO_DATA_SIZE;
-		nsize = NILFS_BINFO_NODE_SIZE;
-	} else {
-		dsize = NILFS_BINFO_DAT_DATA_SIZE;
-		nsize = NILFS_BINFO_DAT_NODE_SIZE;
-	}
-
-	nblocks = le32_to_cpu(file->f_finfo->fi_nblocks);
-	ndatablk = le32_to_cpu(file->f_finfo->fi_ndatablk);
-
-	delta = sizeof(struct nilfs_finfo);
-	delta += nilfs_binfo_total_size(file->f_offset + delta,
-					blksize, dsize, ndatablk);
-	delta += nilfs_binfo_total_size(file->f_offset + delta,
-					blksize, nsize, nblocks - ndatablk);
-
-	file->f_blocknr += nblocks;
+	file->f_blocknr += le32_to_cpu(file->f_finfo->fi_nblocks);
 	file->f_offset += delta;
 	file->f_finfo = (void *)file->f_finfo + delta;
 
+	blksize = file->f_psegment->p_blksize;
 	rest = blksize - file->f_offset % blksize;
 	if (sizeof(struct nilfs_finfo) > rest) {
 		file->f_offset += rest;
