@@ -49,13 +49,6 @@ static const char *nilfs_file_error_strings[] = {
 };
 
 /* nilfs_psegment */
-static __u32 nilfs_psegment_get_sumblks(const struct nilfs_psegment *pseg)
-{
-	const __u32 sumbytes = le32_to_cpu(pseg->segsum->ss_sumbytes);
-
-	return (sumbytes + (1UL << pseg->blkbits) - 1) >> pseg->blkbits;
-}
-
 static int nilfs_psegment_is_valid(struct nilfs_psegment *pseg)
 {
 	__u32 sumbytes, offset, sumblks, nblocks;
@@ -210,9 +203,12 @@ void nilfs_file_init(struct nilfs_file *file,
 	unsigned int hdrsize;
 
 	file->psegment = pseg;
-	file->blocknr = pseg->blocknr + nilfs_psegment_get_sumblks(pseg);
-	file->index = 0;
 	file->nfinfo = le32_to_cpu(pseg->segsum->ss_nfinfo);
+	file->sumbytes = le32_to_cpu(pseg->segsum->ss_sumbytes);
+
+	file->blocknr = pseg->blocknr +
+		((file->sumbytes + blksize - 1) >> pseg->blkbits);
+	file->index = 0;
 
 	hdrsize = le16_to_cpu(pseg->segsum->ss_bytes);
 	file->offset = hdrsize;
@@ -227,7 +223,7 @@ void nilfs_file_init(struct nilfs_file *file,
 static int nilfs_file_is_valid(struct nilfs_file *file)
 {
 	const struct nilfs_psegment *pseg = file->psegment;
-	__u32 nblocks, pseg_nblocks, ndatablk, sumbytes, blkoff;
+	__u32 nblocks, pseg_nblocks, ndatablk, blkoff;
 
 	/* Sanity check for payload block count */
 	nblocks = le32_to_cpu(file->finfo->fi_nblocks);
@@ -246,8 +242,7 @@ static int nilfs_file_is_valid(struct nilfs_file *file)
 	}
 
 	/* Sanity check for total length of finfo + binfos */
-	sumbytes = le32_to_cpu(pseg->segsum->ss_sumbytes);
-	if (unlikely(file->offset + file->sumlen > sumbytes)) {
+	if (unlikely(file->offset + file->sumlen > file->sumbytes)) {
 		file->error = NILFS_FILE_ERROR_OVERRUN;
 		goto error;
 	}

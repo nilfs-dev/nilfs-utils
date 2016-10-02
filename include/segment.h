@@ -53,6 +53,7 @@ enum {
  * @offset: byte offset from the beginning of partial segment
  * @index: index number of finfo
  * @nfinfo: number of finfo structures contained in the partial segment
+ * @sumbytes: size of segment summary information
  * @sumlen: total length of the finfo including successive binfo structures
  * @error: error code
  * @use_real_blocknr: flag to indicate that blocks are not tranlated with DAT
@@ -64,6 +65,7 @@ struct nilfs_file {
 	__u32 offset;
 	__u32 index;
 	__u32 nfinfo;
+	__u32 sumbytes;
 	size_t sumlen;
 	int error;
 	unsigned int use_real_blocknr : 1;
