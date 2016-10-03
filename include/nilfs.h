@@ -18,7 +18,6 @@
 #include <fcntl.h>
 #include <time.h>
 #include <sys/ioctl.h>
-#include <semaphore.h>
 
 #include "nilfs2_api.h"
 
@@ -36,6 +35,7 @@ typedef __u64 nilfs_cno_t;
 #define NILFS_SB_BLOCK_MAX		0x8000
 
 struct nilfs_super_block;
+struct nilfs;
 
 /**
  * struct nilfs_layout - layout information of nilfs
@@ -73,38 +73,11 @@ struct nilfs_layout {
 	__u64 feature_incompat;
 };
 
-/**
- * struct nilfs - nilfs object
- * @n_sb: superblock
- * @n_dev: device file
- * @n_ioc: ioctl file
- * @n_devfd: file descriptor of device file
- * @n_iocfd: file descriptor of ioctl file
- * @n_opts: options
- * @n_mincno: the minimum of valid checkpoint numbers
- * @n_sems: array of semaphores
- *     sems[0] protects garbage collection process
- */
-struct nilfs {
-	struct nilfs_super_block *n_sb;
-	char *n_dev;
-	/* char *n_mnt; */
-	char *n_ioc;
-	int n_devfd;
-	int n_iocfd;
-	int n_opts;
-	nilfs_cno_t n_mincno;
-	sem_t *n_sems[1];
-};
-
 #define NILFS_OPEN_RAW		0x0001	/* Open RAW device */
 #define NILFS_OPEN_RDONLY	0x0002	/* Open NILFS API in read only mode */
 #define NILFS_OPEN_WRONLY	0x0004	/* Open NILFS API in write only mode */
 #define NILFS_OPEN_RDWR		0x0008	/* Open NILFS API in read/write mode */
 #define NILFS_OPEN_GCLK		0x1000	/* Open GC lock primitive */
-
-#define NILFS_OPT_MMAP		0x01
-#define NILFS_OPT_SET_SUINFO	0x02
 
 
 struct nilfs *nilfs_open(const char *, const char *, int);

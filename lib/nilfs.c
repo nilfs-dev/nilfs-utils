@@ -79,6 +79,34 @@
 #include "pathnames.h"
 #include "realpath.h"
 
+/**
+ * struct nilfs - nilfs object
+ * @n_sb: superblock
+ * @n_dev: device file
+ * @n_ioc: ioctl file
+ * @n_devfd: file descriptor of device file
+ * @n_iocfd: file descriptor of ioctl file
+ * @n_opts: options
+ * @n_mincno: the minimum of valid checkpoint numbers
+ * @n_sems: array of semaphores
+ *     sems[0] protects garbage collection process
+ */
+struct nilfs {
+	struct nilfs_super_block *n_sb;
+	char *n_dev;
+	/* char *n_mnt; */
+	char *n_ioc;
+	int n_devfd;
+	int n_iocfd;
+	int n_opts;
+	nilfs_cno_t n_mincno;
+	sem_t *n_sems[1];
+};
+
+#define NILFS_OPT_MMAP		0x01
+#define NILFS_OPT_SET_SUINFO	0x02
+
+
 static inline int iseol(int c)
 {
 	return c == '\n' || c == '\0';
