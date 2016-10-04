@@ -85,13 +85,26 @@ void nilfs_close(struct nilfs *);
 
 const char *nilfs_get_dev(const struct nilfs *);
 
-void nilfs_opt_clear_mmap(struct nilfs *);
-int nilfs_opt_set_mmap(struct nilfs *);
-int nilfs_opt_test_mmap(struct nilfs *);
+int nilfs_opt_test(const struct nilfs *nilfs, unsigned int index);
+int nilfs_opt_set(struct nilfs *nilfs, unsigned int index);
+int nilfs_opt_clear(struct nilfs *nilfs, unsigned int index);
 
-void nilfs_opt_clear_set_suinfo(struct nilfs *);
-int nilfs_opt_set_set_suinfo(struct nilfs *);
-int nilfs_opt_test_set_suinfo(struct nilfs *);
+#define NILFS_OPT_FNS(name, index)					\
+static inline int nilfs_opt_test_##name(const struct nilfs *nilfs)	\
+{									\
+	return nilfs_opt_test(nilfs, index);				\
+}									\
+static inline int nilfs_opt_set_##name(struct nilfs *nilfs)		\
+{									\
+	return nilfs_opt_set(nilfs, index);				\
+}									\
+static inline int nilfs_opt_clear_##name(struct nilfs *nilfs)		\
+{									\
+	return nilfs_opt_clear(nilfs, index);				\
+}
+
+NILFS_OPT_FNS(mmap, 0)
+NILFS_OPT_FNS(set_suinfo, 1)
 
 nilfs_cno_t nilfs_get_oldest_cno(struct nilfs *);
 

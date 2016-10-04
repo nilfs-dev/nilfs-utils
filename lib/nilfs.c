@@ -103,8 +103,11 @@ struct nilfs {
 	sem_t *n_sems[1];
 };
 
-#define NILFS_OPT_MMAP		0x01
-#define NILFS_OPT_SET_SUINFO	0x02
+enum {
+	NILFS_OPT_MMAP,
+	NILFS_OPT_SET_SUINFO,
+	__NR_NILFS_OPT,
+};
 
 
 static inline int iseol(int c)
@@ -334,11 +337,7 @@ __u32 nilfs_get_reserved_segments_ratio(const struct nilfs *nilfs)
 	return le32_to_cpu(nilfs->n_sb->s_r_segments_percentage);
 }
 
-/**
- * nilfs_opt_set_mmap - set mmap option
- * @nilfs: nilfs object
- */
-int nilfs_opt_set_mmap(struct nilfs *nilfs)
+static int __nilfs_opt_set_mmap(struct nilfs *nilfs)
 {
 	long pagesize;
 	size_t segsize;
@@ -346,59 +345,70 @@ int nilfs_opt_set_mmap(struct nilfs *nilfs)
 	pagesize = sysconf(_SC_PAGESIZE);
 	if (unlikely(pagesize < 0))
 		return -1;
+
+	if (unlikely(nilfs->n_sb == NULL)) {
+		errno = EPERM;
+		return -1;
+	}
+
 	segsize = nilfs_get_blocks_per_segment(nilfs) *
 		nilfs_get_block_size(nilfs);
 	if (segsize % pagesize != 0)
 		return -1;
 
-	nilfs->n_opts |= NILFS_OPT_MMAP;
 	return 0;
 }
 
 /**
- * nilfs_opt_clear_mmap - clear mmap option
+ * nilfs_opt_test - test whether the specified option is set or not
  * @nilfs: nilfs object
+ * @index: index of the option to be tested
  */
-void nilfs_opt_clear_mmap(struct nilfs *nilfs)
+int nilfs_opt_test(const struct nilfs *nilfs, unsigned int index)
 {
-	nilfs->n_opts &= ~NILFS_OPT_MMAP;
+	if (unlikely(index >= __NR_NILFS_OPT)) {
+		errno = EINVAL;
+		return 0;	/* return false for unknown options */
+	}
+	return !!(nilfs->n_opts & (1 << index));
 }
 
 /**
- * nilfs_opt_test_mmap - test whether mmap option is set or not
+ * nilfs_opt_set - set the specified option
  * @nilfs: nilfs object
+ * @index: index of the option to be set
  */
-int nilfs_opt_test_mmap(struct nilfs *nilfs)
+int nilfs_opt_set(struct nilfs *nilfs, unsigned int index)
 {
-	return !!(nilfs->n_opts & NILFS_OPT_MMAP);
-}
+	int ret;
 
-/**
- * nilfs_opt_set_set_suinfo - set set_suinfo option
- * @nilfs: nilfs object
- */
-int nilfs_opt_set_set_suinfo(struct nilfs *nilfs)
-{
-	nilfs->n_opts |= NILFS_OPT_SET_SUINFO;
+	if (unlikely(index >= __NR_NILFS_OPT)) {
+		errno = EINVAL;
+		return -1;
+	}
+
+	if (index == NILFS_OPT_MMAP) {
+		ret = __nilfs_opt_set_mmap(nilfs);
+		if (ret < 0)
+			return ret;
+	}
+	nilfs->n_opts |= (1 << index);
 	return 0;
 }
 
 /**
- * nilfs_opt_clear_set_suinfo - clear set_suinfo option
+ * nilfs_opt_clear - clear the specified option
  * @nilfs: nilfs object
+ * @index: index of the option to be cleared
  */
-void nilfs_opt_clear_set_suinfo(struct nilfs *nilfs)
+int nilfs_opt_clear(struct nilfs *nilfs, unsigned int index)
 {
-	nilfs->n_opts &= ~NILFS_OPT_SET_SUINFO;
-}
-
-/**
- * nilfs_opt_test_set_suinfo - test whether set_suinfo option is set or not
- * @nilfs: nilfs object
- */
-int nilfs_opt_test_set_suinfo(struct nilfs *nilfs)
-{
-	return !!(nilfs->n_opts & NILFS_OPT_SET_SUINFO);
+	if (unlikely(index >= __NR_NILFS_OPT)) {
+		errno = EINVAL;
+		return -1;
+	}
+	nilfs->n_opts &= ~(1 << index);
+	return 0;
 }
 
 static int nilfs_open_sem(struct nilfs *nilfs)
