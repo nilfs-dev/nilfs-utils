@@ -13,7 +13,6 @@
 
 #include <sys/types.h>
 #include <stdint.h>
-#include "nilfs.h"
 
 struct nilfs_cleaner;
 
