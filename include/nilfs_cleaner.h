@@ -11,8 +11,9 @@
 #ifndef NILFS_CLEANER_H
 #define NILFS_CLEANER_H
 
-#include <sys/types.h>
+#include <sys/types.h>	/* pid_t */
 #include <stdint.h>
+#include <time.h>	/* timespec */
 
 struct nilfs_cleaner;
 
