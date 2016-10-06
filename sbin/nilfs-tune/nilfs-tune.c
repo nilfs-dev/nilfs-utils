@@ -28,6 +28,14 @@
 #include <err.h>
 #endif	/* HAVE_ERR_H */
 
+#if HAVE_FCNTL_H
+#include <fcntl.h>	/* open, O_RDWR, O_RDONLY, etc */
+#endif	/* HAVE_FCNTL_H */
+
+#if HAVE_UNISTD_H
+#include <unistd.h>	/* getopt, close, etc */
+#endif	/* HAVE_UNISTD_H */
+
 #if HAVE_STRINGS_H
 #include <strings.h>
 #endif	/* HAVE_STRINGS_H */
