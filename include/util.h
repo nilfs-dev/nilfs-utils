@@ -5,6 +5,7 @@
 #define __UTIL_H__
 
 #include <assert.h>
+#include <stddef.h>	/* offsetof() */
 #include <stdlib.h>
 #include "compat.h"
 
@@ -39,8 +40,7 @@
 	   (((x) + __y - 1) / __y) * __y;			\
 	})
 
-/* offsetof, offsetofend */
-#define offsetof(TYPE, MEMBER)	((size_t)&((TYPE *)0)->MEMBER)
+/* offsetofend */
 #define offsetofend(TYPE, MEMBER) \
 	(offsetof(TYPE, MEMBER) + sizeof(((TYPE *)0)->MEMBER))
 

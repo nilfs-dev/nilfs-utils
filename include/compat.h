@@ -8,6 +8,10 @@
 #include "config.h"
 #endif	/* HAVE_CONFIG_H */
 
+#if HAVE_STDDEF_H
+#include <stddef.h>	/* size_t */
+#endif	/* HAVE_STDDEF_H */
+
 #if HAVE_SYS_IOCTL_H
 #include <sys/ioctl.h>
 #endif	/* HAVE_SYS_IOCTL_H */
@@ -42,6 +46,11 @@
 
 #ifndef S64_MAX
 #define S64_MAX		9223372036854775807LL	/* __s64 (or s64) max */
+#endif
+
+/* offsetof() macro */
+#ifndef offsetof
+#define offsetof(TYPE, MEMBER)	((size_t)&((TYPE *)0)->MEMBER)
 #endif
 
 /* Ioctls for freeze and thaw */
