@@ -12,13 +12,7 @@
 #ifndef NILFS_H
 #define NILFS_H
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <unistd.h>
-#include <fcntl.h>
-#include <time.h>
-#include <sys/ioctl.h>
-
+#include <sys/types.h>	/* off_t, size_t */
 #include "nilfs2_api.h"
 
 typedef __u64 nilfs_cno_t;
