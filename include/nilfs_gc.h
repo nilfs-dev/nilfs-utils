@@ -11,8 +11,9 @@
 #ifndef NILFS_GC_H
 #define NILFS_GC_H
 
-#include <sys/types.h>
-#include "nilfs.h"
+#include <stddef.h>	/* size_t */
+#include "nilfs2_api.h"	/* nilfs_suinfo_{dirty,active,error}, nilfs_suinfo */
+#include "nilfs.h"	/* nilfs_cno_t, struct nilfs */
 
 /* flags for nilfs_reclaim_params struct */
 #define NILFS_RECLAIM_PARAM_PROTSEQ			(1UL << 0)
