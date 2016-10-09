@@ -373,7 +373,7 @@ nilfs_resize_find_movable_segments(struct nilfs *nilfs, __u64 start,
 					 strerror(errno));
 				return -1;
 			}
-			else if (ret)
+			if (ret)
 				continue;
 			*snp++ = segnum;
 			rest--;
