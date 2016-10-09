@@ -329,9 +329,6 @@ static int lockfile_fd = -1;
 /* Flag to indicate that signals have been set up. */
 static int signals_have_been_setup;
 
-/* Ensure that the lock is released if we are interrupted.  */
-extern char *strsignal(int sig);	/* not always in <string.h> */
-
 static void handler(int sig)
 {
 	die(EX_USER, "%s", strsignal(sig));
