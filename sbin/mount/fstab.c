@@ -58,8 +58,8 @@ static int have_mtab_info;
 static int var_mtab_does_not_exist;
 static int var_mtab_is_a_symlink;
 
-static void
-get_mtab_info(void) {
+static void get_mtab_info(void)
+{
 	if (!have_mtab_info) {
 		struct stat mtab_stat;
 
@@ -74,20 +74,20 @@ get_mtab_info(void) {
 	}
 }
 
-int
-mtab_does_not_exist(void) {
+int mtab_does_not_exist(void)
+{
 	get_mtab_info();
 	return var_mtab_does_not_exist;
 }
 
-static int
-mtab_is_a_symlink(void) {
+static int mtab_is_a_symlink(void)
+{
 	get_mtab_info();
 	return var_mtab_is_a_symlink;
 }
 
-int
-mtab_is_writable() {
+int mtab_is_writable(void)
+{
 	int fd;
 
 	/* Should we write to /etc/mtab upon an update?
@@ -101,8 +101,8 @@ mtab_is_writable() {
 	if (fd >= 0) {
 		close(fd);
 		return 1;
-	} else
-		return 0;
+	}
+	return 0;
 }
 
 /* Contents of mtab and fstab ---------------------------------*/
@@ -111,17 +111,18 @@ struct mntentchn mounttable, fstab;
 static int got_mtab;
 static int got_fstab;
 
-static void read_mounttable(void), read_fstab(void);
+static void read_mounttable(void);
+static void read_fstab(void);
 
-struct mntentchn *
-mtab_head() {
+struct mntentchn *mtab_head(void)
+{
 	if (!got_mtab)
 		read_mounttable();
 	return &mounttable;
 }
 
-struct mntentchn *
-fstab_head() {
+struct mntentchn *fstab_head(void)
+{
 	if (!got_fstab)
 		read_fstab();
 	return &fstab;
@@ -138,9 +139,8 @@ static void my_free_mc(struct mntentchn *mc)
 	}
 }
 
-
-static void
-discard_mntentchn(struct mntentchn *mc0) {
+static void discard_mntentchn(struct mntentchn *mc0)
+{
 	struct mntentchn *mc, *mc1;
 
 	for (mc = mc0->nxt; mc && mc != mc0; mc = mc1) {
@@ -149,8 +149,9 @@ discard_mntentchn(struct mntentchn *mc0) {
 	}
 }
 
-static void
-read_mntentchn(mntFILE *mfp, const char *fnam, struct mntentchn *mc0) {
+static void read_mntentchn(mntFILE *mfp, const char *fnam,
+			   struct mntentchn *mc0)
+{
 	struct mntentchn *mc = mc0;
 	struct my_mntent *mnt;
 
@@ -179,8 +180,8 @@ read_mntentchn(mntFILE *mfp, const char *fnam, struct mntentchn *mc0) {
  * This produces a linked list. The list head mounttable is a dummy.
  * Return 0 on success.
  */
-static void
-read_mounttable() {
+static void read_mounttable(void)
+{
 	mntFILE *mfp;
 	const char *fnam;
 	struct mntentchn *mc = &mounttable;
@@ -207,8 +208,8 @@ read_mounttable() {
 	read_mntentchn(mfp, fnam, mc);
 }
 
-static void
-read_fstab() {
+static void read_fstab(void)
+{
 	mntFILE *mfp = NULL;
 	const char *fnam;
 	struct mntentchn *mc = &fstab;
@@ -279,8 +280,8 @@ struct mntentchn *getmntdevbackward(const char *name, struct mntentchn *mcprev)
 /*
  * Given the name NAME, check that it occurs precisely once as dir or dev.
  */
-int
-is_mounted_once(const char *name) {
+int is_mounted_once(const char *name)
+{
 	struct mntentchn *mc, *mc0;
 	int ct = 0;
 
