@@ -5,6 +5,7 @@
 #define __UTIL_H__
 
 #include <assert.h>
+#include <stdint.h>	/* uint64_t, int64_t */
 #include <stddef.h>	/* offsetof() */
 #include <stdlib.h>
 #include "compat.h"
@@ -51,11 +52,11 @@
 
 
 #define cnt64_gt(a, b)						\
-	(typecheck(__u64, a) && typecheck(__u64, b) &&		\
-	 ((__s64)(b) - (__s64)(a) < 0))
+	(typecheck(uint64_t, a) && typecheck(uint64_t, b) &&	\
+	 ((int64_t)(b) - (int64_t)(a) < 0))
 #define cnt64_ge(a, b)						\
-	(typecheck(__u64, a) && typecheck(__u64, b) &&		\
-	 ((__s64)(a) - (__s64)(b) >= 0))
+	(typecheck(uint64_t, a) && typecheck(uint64_t, b) &&	\
+	 ((int64_t)(a) - (int64_t)(b) >= 0))
 #define cnt64_lt(a, b)		cnt64_gt(b, a)
 #define cnt64_le(a, b)		cnt64_ge(b, a)
 

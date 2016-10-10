@@ -37,7 +37,7 @@
 #include <assert.h>
 #include <ctype.h>
 #include <errno.h>
-#include "nilfs.h"
+#include "parser.h"
 
 nilfs_cno_t nilfs_parse_cno(const char *arg, char **endptr, int base)
 {
@@ -51,7 +51,8 @@ nilfs_cno_t nilfs_parse_cno(const char *arg, char **endptr, int base)
 	return strtoull(arg, endptr, base);
 }
 
-int nilfs_parse_cno_range(const char *arg, __u64 *start, __u64 *end, int base)
+int nilfs_parse_cno_range(const char *arg, uint64_t *start, uint64_t *end,
+			  int base)
 {
 	const char *delim;
 	char *endptr;

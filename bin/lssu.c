@@ -112,9 +112,9 @@ static int all;
 static int latest;
 static int disp_mode;		/* display mode */
 static nilfs_cno_t protcno;
-static __s64 prottime, now;
-static __u64 param_index;
-static __u64 param_lines;
+static int64_t prottime, now;
+static uint64_t param_index;
+static uint64_t param_lines;
 
 static size_t blocks_per_segment;
 static struct nilfs_suinfo suinfos[LSSU_NSEGS];
@@ -125,7 +125,7 @@ static void lssu_print_header(void)
 }
 
 static ssize_t lssu_get_latest_usage(struct nilfs *nilfs,
-				     __u64 segnum, __u64 protseq,
+				     uint64_t segnum, uint64_t protseq,
 				     nilfs_cno_t protcno)
 {
 	struct nilfs_reclaim_stat stat;
@@ -133,7 +133,7 @@ static ssize_t lssu_get_latest_usage(struct nilfs *nilfs,
 		.flags = NILFS_RECLAIM_PARAM_PROTSEQ,
 		.protseq = protseq
 	};
-	__u64 segnums[1];
+	uint64_t segnums[1];
 	int ret;
 
 	if (protcno != NILFS_CNO_MAX) {
@@ -154,8 +154,8 @@ static ssize_t lssu_get_latest_usage(struct nilfs *nilfs,
 	return stat.live_blks;
 }
 
-static ssize_t lssu_print_suinfo(struct nilfs *nilfs, __u64 segnum,
-				 ssize_t nsi, __u64 protseq)
+static ssize_t lssu_print_suinfo(struct nilfs *nilfs, uint64_t segnum,
+				 ssize_t nsi, uint64_t protseq)
 {
 	struct tm tm;
 	time_t t;
@@ -229,7 +229,7 @@ skip_scan:
 static int lssu_list_suinfo(struct nilfs *nilfs)
 {
 	struct nilfs_sustat sustat;
-	__u64 segnum, rest, count;
+	uint64_t segnum, rest, count;
 	ssize_t nsi, n;
 	int ret;
 
@@ -242,7 +242,7 @@ static int lssu_list_suinfo(struct nilfs *nilfs)
 		sustat.ss_nsegs;
 
 	for ( ; rest > 0 && segnum < sustat.ss_nsegs; rest -= n) {
-		count = min_t(__u64, rest, LSSU_NSEGS);
+		count = min_t(uint64_t, rest, LSSU_NSEGS);
 		nsi = nilfs_get_suinfo(nilfs, segnum, suinfos, count);
 		if (unlikely(nsi < 0))
 			return EXIT_FAILURE;
@@ -258,7 +258,7 @@ static int lssu_list_suinfo(struct nilfs *nilfs)
 
 static int lssu_get_protcno(struct nilfs *nilfs,
 			    unsigned long protection_period,
-			    __s64 *prottimep, nilfs_cno_t *protcnop)
+			    int64_t *prottimep, nilfs_cno_t *protcnop)
 {
 	struct nilfs_cnormap *cnormap;
 	int ret;
@@ -317,13 +317,13 @@ int main(int argc, char *argv[])
 			all = 1;
 			break;
 		case 'i':
-			param_index = (__u64)atoll(optarg);
+			param_index = (uint64_t)atoll(optarg);
 			break;
 		case 'l':
 			latest = 1;
 			break;
 		case 'n':
-			param_lines = (__u64)atoll(optarg);
+			param_lines = (uint64_t)atoll(optarg);
 			break;
 		case 'h':
 			fprintf(stderr, LSSU_USAGE, progname);

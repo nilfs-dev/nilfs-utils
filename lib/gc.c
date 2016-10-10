@@ -205,7 +205,7 @@ static int nilfs_acc_blocks_psegment(struct nilfs_psegment *psegment,
  * @bdescv: vector object to store (descriptors of) disk block numbers
  */
 static int nilfs_acc_blocks_segment(const struct nilfs_segment *segment,
-				    __u32 nblocks,
+				    uint32_t nblocks,
 				    struct nilfs_vector *vdescv,
 				    struct nilfs_vector *bdescv)
 {
@@ -235,15 +235,15 @@ static int nilfs_acc_blocks_segment(const struct nilfs_segment *segment,
  * @nsegs: size of @segnums array
  * @nr: index number for @segnums array to be deselected
  */
-static ssize_t nilfs_deselect_segment(__u64 *segnums, size_t nsegs, int nr)
+static ssize_t nilfs_deselect_segment(uint64_t *segnums, size_t nsegs, int nr)
 {
 	if (unlikely(nr >= nsegs || nsegs == 0))
 		return -1;
 	if (nr < nsegs - 1) {
-		__u64 tn = segnums[nr];
+		uint64_t tn = segnums[nr];
 
 		memmove(&segnums[nr], &segnums[nr + 1],
-			sizeof(__u64) * (nsegs - 1 - nr));
+			sizeof(uint64_t) * (nsegs - 1 - nr));
 		segnums[nsegs - 1] = tn;
 	}
 	return nsegs - 1;
@@ -259,7 +259,8 @@ static ssize_t nilfs_deselect_segment(__u64 *segnums, size_t nsegs, int nr)
  * @bdescv: vector object to store (descriptors of) disk block numbers
  */
 static ssize_t nilfs_acc_blocks(struct nilfs *nilfs,
-				__u64 *segnums, size_t nsegs, __u64 protseq,
+				uint64_t *segnums, size_t nsegs,
+				uint64_t protseq,
 				struct nilfs_vector *vdescv,
 				struct nilfs_vector *bdescv)
 {
@@ -357,7 +358,7 @@ static ssize_t nilfs_get_snapshot(struct nilfs *nilfs, nilfs_cno_t **ssp)
 	struct nilfs_cpinfo cpinfo[NILFS_GC_NCPINFO];
 	nilfs_cno_t cno, *ss, prev = 0;
 	ssize_t n;
-	__u64 nss = 0;
+	uint64_t nss = 0;
 	int i, j;
 	int ret;
 
@@ -484,7 +485,7 @@ static int nilfs_toss_vdescs(struct nilfs *nilfs,
 {
 	struct nilfs_vdesc *vdesc;
 	struct nilfs_period *periodp;
-	__u64 *vblocknrp;
+	uint64_t *vblocknrp;
 	nilfs_cno_t *ss, last_hit;
 	ssize_t n;
 	int i, j, ret;
@@ -635,7 +636,7 @@ static int nilfs_toss_bdescs(struct nilfs_vector *bdescv)
  * @stat: reclaim statistics
  */
 int nilfs_xreclaim_segment(struct nilfs *nilfs,
-			   __u64 *segnums, size_t nsegs, int dryrun,
+			   uint64_t *segnums, size_t nsegs, int dryrun,
 			   const struct nilfs_reclaim_params *params,
 			   struct nilfs_reclaim_stat *stat)
 {
@@ -644,7 +645,7 @@ int nilfs_xreclaim_segment(struct nilfs *nilfs,
 	nilfs_cno_t protcno;
 	ssize_t n, i, ret = -1;
 	size_t nblocks;
-	__u32 reclaimable_blocks;
+	uint32_t reclaimable_blocks;
 	struct nilfs_suinfo_update *sup;
 	struct timeval tv;
 
@@ -664,7 +665,7 @@ int nilfs_xreclaim_segment(struct nilfs *nilfs,
 	vdescv = nilfs_vector_create(sizeof(struct nilfs_vdesc));
 	bdescv = nilfs_vector_create(sizeof(struct nilfs_bdesc));
 	periodv = nilfs_vector_create(sizeof(struct nilfs_period));
-	vblocknrv = nilfs_vector_create(sizeof(__u64));
+	vblocknrv = nilfs_vector_create(sizeof(uint64_t));
 	supv = nilfs_vector_create(sizeof(struct nilfs_suinfo_update));
 	if (unlikely(!vdescv || !bdescv || !periodv || !vblocknrv || !supv))
 		goto out_vec;
@@ -852,8 +853,8 @@ out_vec:
  * @protcno: start checkpoint number of protected period
  */
 ssize_t nilfs_reclaim_segment(struct nilfs *nilfs,
-			      __u64 *segnums, size_t nsegs,
-			      __u64 protseq, nilfs_cno_t protcno)
+			      uint64_t *segnums, size_t nsegs,
+			      uint64_t protseq, nilfs_cno_t protcno)
 {
 	struct nilfs_reclaim_params params;
 	struct nilfs_reclaim_stat stat;
@@ -879,10 +880,10 @@ ssize_t nilfs_reclaim_segment(struct nilfs *nilfs,
  * @segnum: segment number to be tested
  * @protseq: lower bound of sequence numbers of segments that must be protected
  */
-int nilfs_segment_is_protected(struct nilfs *nilfs, __u64 segnum,
-__u64 protseq)
+int nilfs_segment_is_protected(struct nilfs *nilfs, uint64_t segnum,
+			       uint64_t protseq)
 {
-	__u64 seqnum;
+	uint64_t seqnum;
 	int ret;
 
 	ret = nilfs_get_segment_seqnum(nilfs, segnum, &seqnum);

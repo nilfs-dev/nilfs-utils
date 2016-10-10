@@ -2,4 +2,13 @@
  * crc32.h - crc32 calculation
  */
 
-extern __u32 crc32_le(__u32 seed, unsigned char const *data, size_t length);
+#ifndef __CRC32_H__
+#define __CRC32_H__
+
+#include <stddef.h>	/* size_t */
+#include <stdint.h>	/* uint32_t */
+
+extern uint32_t crc32_le(uint32_t seed, unsigned char const *data,
+			 size_t length);
+
+#endif /* __CRC32_H__ */

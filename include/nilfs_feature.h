@@ -10,6 +10,8 @@
 #ifndef NILFS_FEATURE_H
 #define NILFS_FEATURE_H
 
+#include <stdint.h>	/* uint64_t, etc */
+
 enum nilfs_feature_type {
 	NILFS_FEATURE_TYPE_COMPAT = 0,
 	NILFS_FEATURE_TYPE_COMPAT_RO,
@@ -21,11 +23,12 @@ enum nilfs_feature_type {
 	NILFS_FEATURE_TYPE_NEGATE_FLAG = 0x80,
 };
 
-extern const char *nilfs_feature2string(int compat_type, __u64 mask);
-extern int nilfs_string2feature(const char *str, int *compat_type, __u64 *mask);
-extern int nilfs_edit_feature(const char *str, __u64 *compat_array,
-			      const __u64 *ok_array,
-			      const __u64 *clear_ok_array,
-			      int *bad_type, __u64 *bad_mask);
+extern const char *nilfs_feature2string(int compat_type, uint64_t mask);
+extern int nilfs_string2feature(const char *str, int *compat_type,
+				uint64_t *mask);
+extern int nilfs_edit_feature(const char *str, uint64_t *compat_array,
+			      const uint64_t *ok_array,
+			      const uint64_t *clear_ok_array,
+			      int *bad_type, uint64_t *bad_mask);
 
 #endif	/* NILFS_FEATURE_H */

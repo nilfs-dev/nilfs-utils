@@ -311,7 +311,7 @@ size_t nilfs_get_block_size(const struct nilfs *nilfs)
  * nilfs_get_nsegments - get number of segments
  * @nilfs: nilfs object
  */
-__u64 nilfs_get_nsegments(const struct nilfs *nilfs)
+uint64_t nilfs_get_nsegments(const struct nilfs *nilfs)
 {
 	assert(nilfs->n_sb != NULL);
 	return le64_to_cpu(nilfs->n_sb->s_nsegments);
@@ -321,7 +321,7 @@ __u64 nilfs_get_nsegments(const struct nilfs *nilfs)
  * nilfs_get_blocks_per_segment - get number of blocks per segment
  * @nilfs: nilfs object
  */
-__u32 nilfs_get_blocks_per_segment(const struct nilfs *nilfs)
+uint32_t nilfs_get_blocks_per_segment(const struct nilfs *nilfs)
 {
 	assert(nilfs->n_sb != NULL);
 	return le32_to_cpu(nilfs->n_sb->s_blocks_per_segment);
@@ -331,7 +331,7 @@ __u32 nilfs_get_blocks_per_segment(const struct nilfs *nilfs)
  * nilfs_get_reserved_segments_ratio - get ratio of reserved segments
  * @nilfs: nilfs object
  */
-__u32 nilfs_get_reserved_segments_ratio(const struct nilfs *nilfs)
+uint32_t nilfs_get_reserved_segments_ratio(const struct nilfs *nilfs)
 {
 	assert(nilfs->n_sb != NULL);
 	return le32_to_cpu(nilfs->n_sb->s_r_segments_percentage);
@@ -457,7 +457,7 @@ static int nilfs_open_sem(struct nilfs *nilfs)
 struct nilfs *nilfs_open(const char *dev, const char *dir, int flags)
 {
 	struct nilfs *nilfs;
-	__u64 features;
+	uint64_t features;
 	int ret;
 
 	if (unlikely(!(flags & (NILFS_OPEN_RAW | NILFS_OPEN_RDONLY |
@@ -713,7 +713,7 @@ int nilfs_get_cpstat(const struct nilfs *nilfs, struct nilfs_cpstat *cpstat)
  * @si: array of nilfs_suinfo structs to store information in
  * @nsi: size of @si array (number of items)
  */
-ssize_t nilfs_get_suinfo(const struct nilfs *nilfs, __u64 segnum,
+ssize_t nilfs_get_suinfo(const struct nilfs *nilfs, uint64_t segnum,
 			 struct nilfs_suinfo *si, size_t nsi)
 {
 	struct nilfs_argv argv;
@@ -854,9 +854,9 @@ ssize_t nilfs_get_bdescs(const struct nilfs *nilfs,
 int nilfs_clean_segments(struct nilfs *nilfs,
 			 struct nilfs_vdesc *vdescs, size_t nvdescs,
 			 struct nilfs_period *periods, size_t nperiods,
-			 __u64 *vblocknrs, size_t nvblocknrs,
+			 uint64_t *vblocknrs, size_t nvblocknrs,
 			 struct nilfs_bdesc *bdescs, size_t nbdescs,
-			 __u64 *segnums, size_t nsegs)
+			 uint64_t *segnums, size_t nsegs)
 {
 	struct nilfs_argv argv[5];
 
@@ -874,13 +874,13 @@ int nilfs_clean_segments(struct nilfs *nilfs,
 	argv[1].v_size = sizeof(struct nilfs_period);
 	argv[2].v_base = (unsigned long)vblocknrs;
 	argv[2].v_nmembs = nvblocknrs;
-	argv[2].v_size = sizeof(__u64);
+	argv[2].v_size = sizeof(uint64_t);
 	argv[3].v_base = (unsigned long)bdescs;
 	argv[3].v_nmembs = nbdescs;
 	argv[3].v_size = sizeof(struct nilfs_bdesc);
 	argv[4].v_base = (unsigned long)segnums;
 	argv[4].v_nmembs = nsegs;
-	argv[4].v_size = sizeof(__u64);
+	argv[4].v_size = sizeof(uint64_t);
 	return ioctl(nilfs->n_iocfd, NILFS_IOCTL_CLEAN_SEGMENTS, argv);
 }
 
@@ -906,7 +906,7 @@ int nilfs_sync(const struct nilfs *nilfs, nilfs_cno_t *cnop)
  */
 int nilfs_resize(struct nilfs *nilfs, off_t size)
 {
-	__u64 range = size;
+	uint64_t range = size;
 
 	if (unlikely(nilfs->n_iocfd < 0)) {
 		errno = EBADF;
@@ -924,7 +924,7 @@ int nilfs_resize(struct nilfs *nilfs, off_t size)
  */
 int nilfs_set_alloc_range(struct nilfs *nilfs, off_t start, off_t end)
 {
-	__u64 range[2] = { start, end };
+	uint64_t range[2] = { start, end };
 
 	if (unlikely(nilfs->n_iocfd < 0)) {
 		errno = EBADF;
@@ -972,14 +972,14 @@ int nilfs_thaw(struct nilfs *nilfs)
  * @segnum: segment number
  * @segment: pointer to a segment object (nilfs_segment struct)
  */
-int nilfs_get_segment(struct nilfs *nilfs, __u64 segnum,
+int nilfs_get_segment(struct nilfs *nilfs, uint64_t segnum,
 		      struct nilfs_segment *segment)
 {
 	const struct nilfs_super_block *sb = nilfs->n_sb;
 	struct nilfs_segment_summary *segsum;
 	long pagesize;
-	__u32 blocks_per_segment, blkbits, nblocks;
-	__u64 segblocknr;
+	uint32_t blocks_per_segment, blkbits, nblocks;
+	uint64_t segblocknr;
 	size_t segsize;
 	off_t segstart;
 	void *addr;
@@ -1014,12 +1014,12 @@ int nilfs_get_segment(struct nilfs *nilfs, __u64 segnum,
 			errno = EINVAL;
 			return -1;
 		}
-		nblocks = blocks_per_segment - (__u32)segblocknr;
+		nblocks = blocks_per_segment - (uint32_t)segblocknr;
 	} else {
-		segblocknr = (__u64)blocks_per_segment * segnum;
+		segblocknr = (uint64_t)blocks_per_segment * segnum;
 		nblocks = blocks_per_segment;
 	}
-	segsize = (__u64)nblocks << blkbits;
+	segsize = (uint64_t)nblocks << blkbits;
 	segstart = segblocknr << blkbits;
 
 #ifdef HAVE_MMAP
@@ -1116,11 +1116,11 @@ int nilfs_put_segment(struct nilfs_segment *segment)
  * @segnum: segment number
  * @seqnum: buffer to store sequence number of the segment given by @segnum
  */
-int nilfs_get_segment_seqnum(const struct nilfs *nilfs, __u64 segnum,
-			     __u64 *seqnum)
+int nilfs_get_segment_seqnum(const struct nilfs *nilfs, uint64_t segnum,
+			     uint64_t *seqnum)
 {
 	const struct nilfs_super_block *sb = nilfs->n_sb;
-	__u32 blocks_per_segment, blkbits;
+	uint32_t blocks_per_segment, blkbits;
 	__le64 buf;
 	off_t segstart, offset;
 	ssize_t ret;

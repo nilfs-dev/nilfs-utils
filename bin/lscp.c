@@ -90,8 +90,8 @@ enum lscp_state {
 	LSCP_DECEL_ST,		/* Decelerate state */
 };
 
-static __u64 param_index;
-static __u64 param_lines;
+static uint64_t param_index;
+static uint64_t param_lines;
 static struct nilfs_cpinfo cpinfos[LSCP_NCPINFO];
 static int show_block_count = 1;
 static int show_all;
@@ -148,7 +148,7 @@ static int lscp_forward_cpinfo(struct nilfs *nilfs,
 {
 	struct nilfs_cpinfo *cpi;
 	nilfs_cno_t sidx;
-	__u64 rest;
+	uint64_t rest;
 	ssize_t n;
 
 	rest = param_lines && param_lines < cpstat->cs_ncps ? param_lines :
@@ -181,7 +181,7 @@ static int lscp_backward_cpinfo(struct nilfs *nilfs,
 	nilfs_cno_t sidx; /* start index (inclusive) */
 	nilfs_cno_t eidx; /* end index (exclusive) */
 	nilfs_cno_t prev_head = 0;
-	__u64 rest, delta, v;
+	uint64_t rest, delta, v;
 	int state = LSCP_INIT_ST;
 	ssize_t n;
 
@@ -193,7 +193,8 @@ static int lscp_backward_cpinfo(struct nilfs *nilfs,
 		cpstat->cs_cno;
 
 recalc_delta:
-	delta = min_t(__u64, LSCP_NCPINFO, max_t(__u64, rest, LSCP_MINDELTA));
+	delta = min_t(uint64_t, LSCP_NCPINFO,
+		      max_t(uint64_t, rest, LSCP_MINDELTA));
 	v = delta;
 
 	while (eidx > NILFS_CNO_MIN) {
@@ -288,7 +289,7 @@ static int lscp_search_snapshot(struct nilfs *nilfs,
 				struct nilfs_cpstat *cpstat, nilfs_cno_t *sidx)
 {
 	nilfs_cno_t cno;
-	__u64 nreq;
+	uint64_t nreq;
 	ssize_t n, i;
 
 	for (cno = *sidx, nreq = 1; cno < cpstat->cs_cno;
@@ -313,7 +314,7 @@ static int lscp_forward_ssinfo(struct nilfs *nilfs,
 			       struct nilfs_cpstat *cpstat)
 {
 	nilfs_cno_t sidx;
-	__u64 rest;
+	uint64_t rest;
 	ssize_t n;
 	int i, ret;
 
@@ -356,8 +357,8 @@ static int lscp_backward_ssinfo(struct nilfs *nilfs,
 {
 	nilfs_cno_t sidx; /* start index (inclusive) */
 	nilfs_cno_t eidx; /* end index (exclusive) */
-	__u64 rest;
-	__u64 rns; /* remaining number of snapshots (always rest <= rns) */
+	uint64_t rest;
+	uint64_t rns; /* remaining number of snapshots (always rest <= rns) */
 	ssize_t n;
 	int i;
 
@@ -449,10 +450,10 @@ int main(int argc, char *argv[])
 			mode = NILFS_SNAPSHOT;
 			break;
 		case 'i':
-			param_index = (__u64)atoll(optarg);
+			param_index = (uint64_t)atoll(optarg);
 			break;
 		case 'n':
-			param_lines = (__u64)atoll(optarg);
+			param_lines = (uint64_t)atoll(optarg);
 			break;
 		case 'h':
 			fprintf(stderr, LSCP_USAGE, progname);

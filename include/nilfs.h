@@ -12,10 +12,11 @@
 #ifndef NILFS_H
 #define NILFS_H
 
+#include <stdint.h>	/* uint32_t, etc */
 #include <sys/types.h>	/* off_t, size_t */
 #include "nilfs2_api.h"
 
-typedef __u64 nilfs_cno_t;
+typedef uint64_t nilfs_cno_t;
 
 #define NILFS_FSTYPE	"nilfs2"
 
@@ -50,21 +51,21 @@ struct nilfs;
  * @feature_incompat: incompatible feature set
  */
 struct nilfs_layout {
-/*00h*/	__u32 rev_level;
-	__u16 minor_rev_level;
-	__u16 flags;
-	__u32 blocksize_bits;
-	__u32 blocksize;
-/*10h*/	__u64 devsize;
-	__u32 crc_seed;
-	__u32 pad;
-/*20h*/	__u64 nsegments;
-	__u32 blocks_per_segment;
-	__u32 reserved_segments_ratio;
-/*30h*/	__u64 first_segment_blkoff;
-	__u64 feature_compat;
-/*40h*/	__u64 feature_compat_ro;
-	__u64 feature_incompat;
+/*00h*/	uint32_t rev_level;
+	uint16_t minor_rev_level;
+	uint16_t flags;
+	uint32_t blocksize_bits;
+	uint32_t blocksize;
+/*10h*/	uint64_t devsize;
+	uint32_t crc_seed;
+	uint32_t pad;
+/*20h*/	uint64_t nsegments;
+	uint32_t blocks_per_segment;
+	uint32_t reserved_segments_ratio;
+/*30h*/	uint64_t first_segment_blkoff;
+	uint64_t feature_compat;
+/*40h*/	uint64_t feature_compat_ro;
+	uint64_t feature_incompat;
 };
 
 #define NILFS_OPEN_RAW		0x0001	/* Open RAW device */
@@ -145,44 +146,47 @@ int nilfs_sb_write(int devfd, struct nilfs_super_block *sbp, int mask);
  */
 struct nilfs_segment {
 	void *addr;
-	__u64 segsize;
-	__u64 segnum;
-	__u64 seqnum;
-	__u64 blocknr;
-	__u32 nblocks;
-	__u32 blocks_per_segment;
-	__u32 blkbits;
-	__u32 seed;
+	uint64_t segsize;
+	uint64_t segnum;
+	uint64_t seqnum;
+	uint64_t blocknr;
+	uint32_t nblocks;
+	uint32_t blocks_per_segment;
+	uint32_t blkbits;
+	uint32_t seed;
 	unsigned int mmapped : 1;
 	unsigned int adjusted : 1;
 };
 
-int nilfs_get_segment(struct nilfs *nilfs, __u64 segnum,
+int nilfs_get_segment(struct nilfs *nilfs, uint64_t segnum,
 		      struct nilfs_segment *segment);
 int nilfs_put_segment(struct nilfs_segment *segment);
-int nilfs_get_segment_seqnum(const struct nilfs *nilfs, __u64 segnum,
-			     __u64 *seqnum);
+int nilfs_get_segment_seqnum(const struct nilfs *nilfs, uint64_t segnum,
+			     uint64_t *seqnum);
 
 size_t nilfs_get_block_size(const struct nilfs *nilfs);
-__u64 nilfs_get_nsegments(const struct nilfs *nilfs);
-__u32 nilfs_get_blocks_per_segment(const struct nilfs *nilfs);
-__u32 nilfs_get_reserved_segments_ratio(const struct nilfs *nilfs);
+uint64_t nilfs_get_nsegments(const struct nilfs *nilfs);
+uint32_t nilfs_get_blocks_per_segment(const struct nilfs *nilfs);
+uint32_t nilfs_get_reserved_segments_ratio(const struct nilfs *nilfs);
 
 int nilfs_change_cpmode(struct nilfs *, nilfs_cno_t, int);
 ssize_t nilfs_get_cpinfo(struct nilfs *, nilfs_cno_t, int,
 			 struct nilfs_cpinfo *, size_t);
 int nilfs_delete_checkpoint(struct nilfs *, nilfs_cno_t);
 int nilfs_get_cpstat(const struct nilfs *, struct nilfs_cpstat *);
-ssize_t nilfs_get_suinfo(const struct nilfs *, __u64, struct nilfs_suinfo *,
-			 size_t);
+ssize_t nilfs_get_suinfo(const struct nilfs *nilfs, uint64_t segnum,
+			 struct nilfs_suinfo *suinfo, size_t nsi);
 int nilfs_set_suinfo(const struct nilfs *, struct nilfs_suinfo_update *,
 		     size_t);
 int nilfs_get_sustat(const struct nilfs *, struct nilfs_sustat *);
 ssize_t nilfs_get_vinfo(const struct nilfs *, struct nilfs_vinfo *, size_t);
 ssize_t nilfs_get_bdescs(const struct nilfs *, struct nilfs_bdesc *, size_t);
-int nilfs_clean_segments(struct nilfs *, struct nilfs_vdesc *, size_t,
-			 struct nilfs_period *, size_t, __u64 *, size_t,
-			 struct nilfs_bdesc *, size_t, __u64 *, size_t);
+int nilfs_clean_segments(struct nilfs *nilfs,
+			 struct nilfs_vdesc *vdescs, size_t nvdescs,
+			 struct nilfs_period *periods, size_t nperiods,
+			 uint64_t *vblocknrs, size_t nvblocknrs,
+			 struct nilfs_bdesc *bdescs, size_t nbdescs,
+			 uint64_t *segnums, size_t nsegs);
 int nilfs_sync(const struct nilfs *, nilfs_cno_t *);
 int nilfs_resize(struct nilfs *nilfs, off_t size);
 int nilfs_set_alloc_range(struct nilfs *nilfs, off_t start, off_t end);

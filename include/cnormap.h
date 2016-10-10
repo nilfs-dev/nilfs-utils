@@ -9,14 +9,14 @@
 #ifndef NILFS_CNORMAP_H
 #define NILFS_CNORMAP_H
 
-#include <sys/types.h>
-#include "nilfs.h"
+#include <stdint.h>	/* uint64_t */
+#include "nilfs.h"	/* nilfs_cno_t, struct nilfs */
 
 struct nilfs_cnormap;
 
 struct nilfs_cnormap *nilfs_cnormap_create(struct nilfs *nilfs);
 void nilfs_cnormap_destroy(struct nilfs_cnormap *cnormap);
-int nilfs_cnormap_track_back(struct nilfs_cnormap *cnormap, __u64 period,
+int nilfs_cnormap_track_back(struct nilfs_cnormap *cnormap, uint64_t period,
 			     nilfs_cno_t *cnop);
 
 #endif /* NILFS_CNORMAP_H */

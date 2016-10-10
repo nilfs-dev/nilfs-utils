@@ -49,9 +49,9 @@
 #include "nilfs_feature.h"
 
 struct nilfs_feature {
-	int	type;
-	__u64	mask;
-	char   *name;
+	int type;
+	uint64_t mask;
+	char *name;
 };
 
 static const struct nilfs_feature features[] = {
@@ -69,7 +69,7 @@ static const struct nilfs_feature features[] = {
  * @compat_type: compatibility type of the feature
  * @mask: bit mask of the feature
  */
-const char *nilfs_feature2string(int compat_type, __u64 mask)
+const char *nilfs_feature2string(int compat_type, uint64_t mask)
 {
 	const struct nilfs_feature *feature;
 	static char buf[32];
@@ -110,7 +110,7 @@ const char *nilfs_feature2string(int compat_type, __u64 mask)
  * Return Value: On success, zero is returned.  On error, minus one is
  * returned.
  */
-int nilfs_string2feature(const char *str, int *compat_type, __u64 *mask)
+int nilfs_string2feature(const char *str, int *compat_type, uint64_t *mask)
 {
 	const struct nilfs_feature *feature;
 	char *endptr;
@@ -176,12 +176,13 @@ static char *skip_over_word(char *cp)
  * Return Value: On success, zero is returned.  On error, minus one is
  * returned.
  */
-int nilfs_edit_feature(const char *str, __u64 *compat_array,
-		       const __u64 *ok_array, const __u64 *clear_ok_array,
-		       int *bad_type, __u64 *bad_mask)
+int nilfs_edit_feature(const char *str, uint64_t *compat_array,
+		       const uint64_t *ok_array,
+		       const uint64_t *clear_ok_array,
+		       int *bad_type, uint64_t *bad_mask)
 {
 	char *cp, *next, *buf;
-	__u64 mask;
+	uint64_t mask;
 	int type;
 	int neg;
 	int ret = 0;

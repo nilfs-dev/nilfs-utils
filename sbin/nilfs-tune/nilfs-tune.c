@@ -77,10 +77,10 @@ struct nilfs_tune_options {
 	int display;
 	int mask;
 	int force;
-	__u32 c_interval;
-	__u32 c_block_max;
+	uint32_t c_interval;
+	uint32_t c_block_max;
 	char label[80];
-	__u8 uuid[16];
+	uint8_t uuid[16];
 	char *fs_features;
 };
 
@@ -91,7 +91,7 @@ static void nilfs_tune_usage(void)
 	       "                  [-U UUID] device\n");
 }
 
-static const __u64 ok_features[NILFS_MAX_FEATURE_TYPES] = {
+static const uint64_t ok_features[NILFS_MAX_FEATURE_TYPES] = {
 	/* Compat */
 	0,
 	/* Read-only compat */
@@ -100,7 +100,7 @@ static const __u64 ok_features[NILFS_MAX_FEATURE_TYPES] = {
 	0
 };
 
-static const __u64 clear_ok_features[NILFS_MAX_FEATURE_TYPES] = {
+static const uint64_t clear_ok_features[NILFS_MAX_FEATURE_TYPES] = {
 	/* Compat */
 	0,
 	/* Read-only compat */
@@ -109,7 +109,7 @@ static const __u64 clear_ok_features[NILFS_MAX_FEATURE_TYPES] = {
 	0
 };
 
-static int parse_uuid(const char *uuid_string, __u8 *uuid)
+static int parse_uuid(const char *uuid_string, uint8_t *uuid)
 {
 	int i;
 	char p[3];
@@ -346,7 +346,7 @@ static void print_features(FILE *f, struct nilfs_super_block *sbp)
 
 	fputs("Filesystem features:     ", f);
 	for (i = 0; i < 3; i++) {
-		__u64 b, mask = le64_to_cpu(*(feature_p[i]));
+		uint64_t b, mask = le64_to_cpu(*(feature_p[i]));
 
 		for (j = 0, b = 1; j < 64; j++, b <<= 1) {
 			if (mask & b) {
@@ -463,8 +463,8 @@ static void show_nilfs_sb(struct nilfs_super_block *sbp)
 static int update_feature_set(struct nilfs_super_block *sbp,
 			      struct nilfs_tune_options *opts)
 {
-	__u64 features[NILFS_MAX_FEATURE_TYPES];
-	__u64 bad_mask;
+	uint64_t features[NILFS_MAX_FEATURE_TYPES];
+	uint64_t bad_mask;
 	int bad_type;
 	int ret;
 
@@ -505,7 +505,7 @@ static int modify_nilfs(const char *device, struct nilfs_tune_options *opts)
 	int devfd;
 	int ret = EXIT_SUCCESS;
 	struct nilfs_super_block *sbp;
-	__u64 features;
+	uint64_t features;
 
 	errno = 0;
 	devfd = open(device, opts->flags);
@@ -526,13 +526,13 @@ static int modify_nilfs(const char *device, struct nilfs_tune_options *opts)
 	features = le64_to_cpu(sbp->s_feature_incompat);
 	if (features & ~NILFS_FEATURE_INCOMPAT_SUPP)
 		warnx("Warning: %s: unknown incompatible features: 0x%llx",
-		      device, features);
+		      device, (unsigned long long)features);
 
 	features = le64_to_cpu(sbp->s_feature_compat_ro);
 	if (opts->flags == O_RDWR &&
 	    (features & ~NILFS_FEATURE_COMPAT_RO_SUPP))
 		warnx("Warning: %s: unknown read-only compatible features: 0x%llx",
-		      device, features);
+		      device, (unsigned long long)features);
 
 	if (opts->mask & NILFS_SB_LABEL)
 		memcpy(sbp->s_volume_name, opts->label,

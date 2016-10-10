@@ -78,7 +78,7 @@
 #include "crc32.h"
 
 
-typedef __u64  blocknr_t;
+typedef uint64_t  blocknr_t;
 
 #define nilfs_crc32(seed, data, length)  crc32_le(seed, data, length)
 
@@ -110,7 +110,7 @@ static unsigned long r_segments_percentage = NILFS_DEF_RESERVED_SEGMENTS;
 
 static time_t creation_time;
 static char volume_label[80];
-static __u64 compat_array[NILFS_MAX_FEATURE_TYPES] = {
+static uint64_t compat_array[NILFS_MAX_FEATURE_TYPES] = {
 	/* Compat */
 	0,
 	/* Read-only compat */
@@ -153,7 +153,7 @@ static const unsigned group_desc_blocks_per_group = 1;
 static const unsigned bitmap_blocks_per_group = 1;
 static const unsigned nr_initial_segments = 2; /* initial segment + next */
 static const unsigned nr_initial_inodes = 2;  /* root directory + .nilfs */
-static const __u64 first_cno = 1; /* Number of the first checkpoint */
+static const uint64_t first_cno = 1; /* Number of the first checkpoint */
 
 /* Segment layout information (per partial segment) */
 #define MAX_FILES        16
@@ -181,10 +181,10 @@ struct nilfs_segment_info {
 /* Disk layout information */
 struct nilfs_disk_info {
 	const char      *device;
-	__u64           dev_size;
+	uint64_t	dev_size;
 	int             blkbits;
 	time_t          ctime;
-	__u32           crc_seed;
+	uint32_t	crc_seed;
 
 	unsigned long   blocks_per_segment;
 	unsigned long   nsegments;
@@ -200,11 +200,11 @@ struct nilfs_disk_info {
 };
 
 struct nilfs_segment_ref {
-	__u64 seq;                      /* Sequence number of a full segment */
+	uint64_t seq;			/* Sequence number of a full segment */
 	blocknr_t start;                /* Start block of the partial segment
 					   having a valid super root */
 	blocknr_t free_blocks_count;
-	__u64 cno;                /* checkpoint number */
+	uint64_t cno;			/* checkpoint number */
 };
 
 static void init_disk_layout(struct nilfs_disk_info *di, int fd,
@@ -258,7 +258,7 @@ struct nilfs_fs_info {
 
 	blocknr_t next, altnext;
 	unsigned seq;
-	__u64 cno;
+	uint64_t cno;
 	blocknr_t vblocknr;
 };
 
@@ -306,9 +306,9 @@ static void too_small_segment(unsigned long, unsigned long);
  *
  * Returns zero if the discard succeeds.  Otherwise, -1 is returned.
  */
-static int nilfs_mkfs_discard_range(int fd, __u64 start, __u64 len)
+static int nilfs_mkfs_discard_range(int fd, uint64_t start, uint64_t len)
 {
-	__u64 range[2] = { start, len };
+	uint64_t range[2] = { start, len };
 	int ret;
 
 	ret = ioctl(fd, BLKDISCARD, &range);
@@ -470,7 +470,7 @@ static unsigned long nilfs_min_nsegments(struct nilfs_disk_info *di, long rp)
 static void init_disk_layout(struct nilfs_disk_info *di, int fd,
 			     const char *device)
 {
-	__u64 dev_size;
+	uint64_t dev_size;
 	time_t nilfs_time = time(NULL);
 	unsigned long min_nsegments;
 	unsigned long segment_size;
@@ -491,7 +491,7 @@ static void init_disk_layout(struct nilfs_disk_info *di, int fd,
 	di->blkbits = my_log2(blocksize);
 	di->ctime = (creation_time ? : nilfs_time);
 	srand48(nilfs_time);
-	di->crc_seed = (__u32)mrand48();
+	di->crc_seed = (uint32_t)mrand48();
 
 	di->blocks_per_segment = blocks_per_segment;
 	segment_size = di->blocks_per_segment * blocksize;
@@ -924,7 +924,7 @@ static int erase_disk(int fd, struct nilfs_disk_info *di)
 	 * not depend on the type of underlying device.
 	 */
 	start = device_has_boot_sector() ? NILFS_SB_OFFSET_BYTES : 0;
-	end = di->dev_size & ~((__u64)sector_size - 1);
+	end = di->dev_size & ~((uint64_t)sector_size - 1);
 
 	BUG_ON(end < NILFS_DISK_ERASE_SIZE ||
 	       end - NILFS_DISK_ERASE_SIZE < start);
@@ -1047,7 +1047,7 @@ static inline void check_ctime(time_t ctime)
 	}
 }
 
-static const __u64 ok_features[NILFS_MAX_FEATURE_TYPES] = {
+static const uint64_t ok_features[NILFS_MAX_FEATURE_TYPES] = {
 	/* Compat */
 	0,
 	/* Read-only compat */
@@ -1438,7 +1438,7 @@ static void prepare_cpfile(void)
 	blocknr_t entry_block = blocknr;
 	struct nilfs_cpfile_header *header;
 	struct nilfs_checkpoint *cp;
-	__u64 cno = 1;
+	uint64_t cno = 1;
 	int i;
 
 	header = map_disk_buffer(blocknr, 1);
@@ -1640,13 +1640,13 @@ static void prepare_segment(struct nilfs_segment_info *si)
 	prepare_ifile();
 }
 
-static void fill_in_checksums(struct nilfs_segment_info *si, __u32 crc_seed)
+static void fill_in_checksums(struct nilfs_segment_info *si, uint32_t crc_seed)
 {
 	blocknr_t blocknr;
 	unsigned long rest_blocks;
 	int crc_offset;
 	int sr_bytes;
-	__u32 sum;
+	uint32_t sum;
 
 	/* fill in segment summary checksum */
 	crc_offset = offsetofend(struct nilfs_segment_summary, ss_sumsum);
@@ -1765,7 +1765,7 @@ static void prepare_super_block(struct nilfs_disk_info *di)
 static void commit_super_block(struct nilfs_disk_info *di,
 			       const struct nilfs_segment_ref *segref)
 {
-	__u32 sbsum;
+	uint32_t sbsum;
 
 	BUG_ON(!raw_sb);
 

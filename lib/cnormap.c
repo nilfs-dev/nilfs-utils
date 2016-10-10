@@ -36,7 +36,7 @@
 /* Checkpoint number and the corresponding clock time */
 struct nilfs_cptime {
 	nilfs_cno_t cno;	/* Checkpoint number */
-	__s64 time;		/* Corresponding clock time */
+	int64_t time;		/* Corresponding clock time */
 };
 
 /* Span of checkpoints */
@@ -57,9 +57,9 @@ struct nilfs_cpspan {
 struct nilfs_cnormap {
 	struct nilfs *nilfs;
 	struct nilfs_vector *cphist;	/* History of time progress */
-	__u64 cphist_elapsed_time;	/* Elapsed time of cphist */
-	__s64 base_time;		/* Base time */
-	__s64 base_clock;		/* Monotonic clock at the base time */
+	uint64_t cphist_elapsed_time;	/* Elapsed time of cphist */
+	int64_t base_time;		/* Base time */
+	int64_t base_clock;		/* Monotonic clock at the base time */
 
 	int has_clock_boottime : 1;	/*
 					 * Flag that indicates whether
@@ -134,7 +134,7 @@ void nilfs_cnormap_destroy(struct nilfs_cnormap *cnormap)
 static int nilfs_enum_cpinfo_forward(struct nilfs *nilfs,
 				     const struct nilfs_cpstat *cpstat,
 				     nilfs_cno_t opt_start,
-				     __u64 opt_count,
+				     uint64_t opt_count,
 				     int (*out)(const struct nilfs_cpinfo *,
 						void *),
 				     void *ctx)
@@ -142,7 +142,7 @@ static int nilfs_enum_cpinfo_forward(struct nilfs *nilfs,
 	const size_t _NCPINFO = 512;
 	struct nilfs_cpinfo *cpibuf, *cpi;
 	nilfs_cno_t sidx; /* start index (inclusive) */
-	__u64 rest;
+	uint64_t rest;
 	size_t req_count;
 	ssize_t n;
 
@@ -208,7 +208,7 @@ failed:
 static int nilfs_enum_cpinfo_backward(struct nilfs *nilfs,
 				      const struct nilfs_cpstat *cpstat,
 				      nilfs_cno_t opt_start,
-				      __u64 opt_count,
+				      uint64_t opt_count,
 				      int (*out)(const struct nilfs_cpinfo *,
 						 void *),
 				      void *ctx)
@@ -226,7 +226,7 @@ static int nilfs_enum_cpinfo_backward(struct nilfs *nilfs,
 		DECEL_ST,	/* Decelerate state */
 	};
 	int state = INIT_ST;
-	__u64 rest, delta, v;
+	uint64_t rest, delta, v;
 	size_t req_count;
 	ssize_t n;
 
@@ -243,7 +243,7 @@ static int nilfs_enum_cpinfo_backward(struct nilfs *nilfs,
 		return -1;
 
 recalc_delta:
-	delta = min_t(__u64, _NCPINFO, max_t(__u64, rest, _MINDELTA));
+	delta = min_t(uint64_t, _NCPINFO, max_t(uint64_t, rest, _MINDELTA));
 	v = delta;
 
 	while (eidx > NILFS_CNO_MIN) {
@@ -350,7 +350,7 @@ failed:
 }
 
 static int nilfs_cnormap_get_monotonic_clock(struct nilfs_cnormap *cnormap,
-					     __s64 *monotonic_clock)
+					     int64_t *monotonic_clock)
 {
 	struct timespec ts;
 	clockid_t clkid;
@@ -383,7 +383,7 @@ retry_gettime:
 }
 
 static int nilfs_cnormap_get_realtime_clock(struct nilfs_cnormap *cnormap,
-					    __s64 *realtime_clock)
+					    int64_t *realtime_clock)
 {
 	struct timespec ts;
 	clockid_t clkid;
@@ -420,12 +420,12 @@ struct nilfs_cpinfo_scan_context {
 	struct nilfs_cnormap *cnormap;	/* cnormap struct */
 	unsigned int index;		/* Index of the current span */
 	int state;			/* Scan state */
-	__s64 time;			/* Base time in seconds */
-	__u64 period;			/* Period to be tracked back */
+	int64_t time;			/* Base time in seconds */
+	uint64_t period;		/* Period to be tracked back */
 	nilfs_cno_t min_incl_cno;	/* Min. included checkpoint number */
 };
 
-static __u64 gap_of_spans(__s64 gap_from, __s64 gap_to)
+static uint64_t gap_of_spans(int64_t gap_from, int64_t gap_to)
 {
 	return gap_to >= gap_from ? gap_to - gap_from : INTERVAL_ON_REWIND;
 }
@@ -465,7 +465,7 @@ static int nilfs_cpinfo_scan_backward(const struct nilfs_cpinfo *cpinfo,
 	}
 
 	if (likely(ctx->state == NILFS_CPINFO_SCAN_NORMAL_ST)) {
-		__u64 elapsed_time;
+		uint64_t elapsed_time;
 
 		if (cpinfo->ci_create == cpspan->start.time) {
 			cpspan->start.cno = cpinfo->ci_cno;
@@ -518,7 +518,7 @@ static int nilfs_cpinfo_scan_forward(const struct nilfs_cpinfo *cpinfo,
 	struct nilfs_cpinfo_scan_context *ctx = arg;
 	struct nilfs_cnormap *cnormap = ctx->cnormap;
 	struct nilfs_cpspan *cpspan;
-	__u64 elapsed_time;
+	uint64_t elapsed_time;
 
 	cpspan = nilfs_vector_get_element(cnormap->cphist, 0);
 	if (unlikely(!cpspan || ctx->state != NILFS_CPINFO_SCAN_NORMAL_ST)) {
@@ -577,11 +577,11 @@ static int nilfs_cpinfo_scan_forward(const struct nilfs_cpinfo *cpinfo,
  */
 static int nilfs_cnormap_cphist_init(struct nilfs_cnormap *cnormap,
 				     const struct nilfs_cpstat *cpstat,
-				     __s64 monotonic_clock, __u64 period,
+				     int64_t monotonic_clock, uint64_t period,
 				     nilfs_cno_t *cnop)
 {
 	struct nilfs_cpinfo_scan_context ctx;
-	__s64 realtime_clock;
+	int64_t realtime_clock;
 	int ret;
 
 	ret = nilfs_cnormap_get_realtime_clock(cnormap, &realtime_clock);
@@ -615,13 +615,13 @@ out:
 static int
 nilfs_cnormap_cphist_extend_forward(struct nilfs_cnormap *cnormap,
 				    const struct nilfs_cpstat *cpstat,
-				    __s64 monotonic_clock, __u64 period,
+				    int64_t monotonic_clock, uint64_t period,
 				    nilfs_cno_t end_cno, nilfs_cno_t *cnop)
 {
 	struct nilfs_cpinfo_scan_context ctx;
 	struct nilfs_cpspan *latest;
 	unsigned int max_index;
-	__s64 realtime_clock;
+	int64_t realtime_clock;
 	int ret;
 
 	ret = nilfs_cnormap_get_realtime_clock(cnormap, &realtime_clock);
@@ -660,7 +660,7 @@ out:
 static int
 nilfs_cnormap_cphist_extend_backward(struct nilfs_cnormap *cnormap,
 				     const struct nilfs_cpstat *cpstat,
-				     __u64 period, unsigned int index,
+				     uint64_t period, unsigned int index,
 				     nilfs_cno_t start_cno, nilfs_cno_t *cnop)
 {
 	struct nilfs_cpinfo_scan_context ctx;
@@ -690,7 +690,7 @@ nilfs_cnormap_cphist_extend_backward(struct nilfs_cnormap *cnormap,
 }
 
 struct nilfs_cpinfo_find_context {
-	__s64 time;			/* Target time */
+	int64_t time;			/* Target time */
 	nilfs_cno_t end_cno;		/* End checkpoint number */
 	struct nilfs_cptime min_incl_cp;/* Min. included checkpoint */
 	struct nilfs_cptime max_excl_cp;/* Max. excluded checkpoint */
@@ -724,12 +724,12 @@ static int nilfs_cpinfo_find(const struct nilfs_cpinfo *cpinfo, void *arg)
  */
 static int nilfs_cnormap_cphist_search(struct nilfs_cnormap *cnormap,
 				       const struct nilfs_cpstat *cpstat,
-				       __u64 period, nilfs_cno_t *cnop)
+				       uint64_t period, nilfs_cno_t *cnop)
 {
 	struct nilfs_cpspan *target;
 	unsigned int max_index, index;
 	nilfs_cno_t  min_incl_cno;
-	__u64 delta;
+	uint64_t delta;
 	int ret;
 
 	if (unlikely(nilfs_vector_get_size(cnormap->cphist) == 0 ||
@@ -746,7 +746,7 @@ static int nilfs_cnormap_cphist_search(struct nilfs_cnormap *cnormap,
 	delta = 0;
 	while (period > delta + target->end.time - target->start.time) {
 		struct nilfs_cpspan *curr = target;
-		__u64 width, gap;
+		uint64_t width, gap;
 
 		width = curr->end.time - curr->start.time;
 		if (unlikely(index == 0)) {
@@ -822,14 +822,14 @@ out:
  * If no valid checkpoint was found within the period, NILFS_CNO_MAX
  * is set in the buffer @cnop.
  */
-int nilfs_cnormap_track_back(struct nilfs_cnormap *cnormap, __u64 period,
+int nilfs_cnormap_track_back(struct nilfs_cnormap *cnormap, uint64_t period,
 			     nilfs_cno_t *cnop)
 {
 	struct nilfs_cpstat cpstat;
 	struct nilfs_cpspan *target, *latest;
-	__s64 monotonic_clock;	/* The current value of the monotonic clock */
-	__u64 call_interval;	/* Interval from the previous call */
-	__u64 cphist_offset;	/* Period b/w now and the last cp on cphist */
+	int64_t monotonic_clock; /* The current value of the monotonic clock */
+	uint64_t call_interval;	/* Interval from the previous call */
+	uint64_t cphist_offset;	/* Period b/w now and the last cp on cphist */
 	unsigned int max_index;
 	int ret;
 
@@ -876,7 +876,7 @@ int nilfs_cnormap_track_back(struct nilfs_cnormap *cnormap, __u64 period,
 	}
 
 	if (period < cphist_offset + cnormap->cphist_elapsed_time) {
-		__u64 t;
+		uint64_t t;
 
 		t = cphist_offset + cnormap->cphist_elapsed_time - period;
 		ret = nilfs_cnormap_cphist_search(cnormap, &cpstat, t, cnop);

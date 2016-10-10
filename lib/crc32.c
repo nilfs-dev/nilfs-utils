@@ -29,18 +29,9 @@
 #include "config.h"
 #endif	/* HAVE_CONFIG_H */
 
-#if HAVE_SYS_TYPES_H
-#include <sys/types.h>
-#endif	/* HAVE_SYS_TYPES_H */
+#include "crc32.h"
 
-#if HAVE_LINUX_TYPES_H
-#include <linux/types.h>
-#endif	/* HAVE_LINUX_TYPES_H */
-
-typedef __u8 u8;
-typedef __u32 u32;
-
-static const u32 crc32tab[] = { /* CRC polynomial 0xedb88320 */
+static const uint32_t crc32tab[] = { /* CRC polynomial 0xedb88320 */
 	0x00000000, 0x77073096, 0xee0e612c, 0x990951ba, 0x076dc419,
 	0x706af48f, 0xe963a535, 0x9e6495a3, 0x0edb8832, 0x79dcb8a4,
 	0xe0d5e91e, 0x97d2d988, 0x09b64c2b, 0x7eb17cbd, 0xe7b82d07,
@@ -95,12 +86,13 @@ static const u32 crc32tab[] = { /* CRC polynomial 0xedb88320 */
 	0x2d02ef8d
 };
 
-u32 crc32_le(u32 Crc_I, unsigned char  *Buffer_PC, size_t Length_I)
+uint32_t crc32_le(uint32_t Crc_I, const unsigned char *Buffer_PC,
+		  size_t Length_I)
 {
 	size_t c;
 
 	for (c = 0; c < Length_I; c++)
-		Crc_I = (Crc_I>>8) ^ crc32tab[(u8)Crc_I ^ Buffer_PC[c]];
+		Crc_I = (Crc_I >> 8) ^ crc32tab[(uint8_t)Crc_I ^ Buffer_PC[c]];
 
 	return Crc_I;
 }

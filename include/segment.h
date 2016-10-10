@@ -9,13 +9,14 @@
 #ifndef NILFS_SEGMENT_H
 #define NILFS_SEGMENT_H
 
+#include <stdint.h>	/* uint32_t, etc */
 #include <linux/types.h>
 
 #include "compat.h"
 #include "nilfs2_ondisk.h"
 #include "util.h"
 
-typedef __u64 sector_t;
+typedef uint64_t sector_t;
 
 /**
  * struct nilfs_psegment - partial segment iterator
@@ -30,7 +31,7 @@ struct nilfs_psegment {
 	const struct nilfs_segment *segment;
 	struct nilfs_segment_summary *segsum;
 	sector_t blocknr;
-	__u32 blkcnt;
+	uint32_t blkcnt;
 	unsigned int blkbits;
 	int error;
 };
@@ -62,10 +63,10 @@ struct nilfs_file {
 	const struct nilfs_psegment *psegment;
 	struct nilfs_finfo *finfo;
 	sector_t blocknr;
-	__u32 offset;
-	__u32 index;
-	__u32 nfinfo;
-	__u32 sumbytes;
+	uint32_t offset;
+	uint32_t index;
+	uint32_t nfinfo;
+	uint32_t sumbytes;
 	size_t sumlen;
 	int error;
 	unsigned int use_real_blocknr : 1;
@@ -96,10 +97,10 @@ struct nilfs_block {
 	const struct nilfs_file *file;
 	void *binfo;
 	sector_t blocknr;
-	__u32 offset;
-	__u32 index;
-	__u32 nbinfo;
-	__u32 nbinfo_data;
+	uint32_t offset;
+	uint32_t index;
+	uint32_t nbinfo;
+	uint32_t nbinfo_data;
 	unsigned int dsize;
 	unsigned int nsize;
 };
@@ -110,7 +111,7 @@ struct nilfs_segment;
 
 /* partial segment iterator */
 void nilfs_psegment_init(struct nilfs_psegment *pseg,
-			 const struct nilfs_segment *segment, __u32 blkcnt);
+			 const struct nilfs_segment *segment, uint32_t blkcnt);
 int nilfs_psegment_is_end(struct nilfs_psegment *pseg);
 void nilfs_psegment_next(struct nilfs_psegment *pseg);
 const char *nilfs_psegment_strerror(int errnum);

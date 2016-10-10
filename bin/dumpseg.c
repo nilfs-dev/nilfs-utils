@@ -74,7 +74,7 @@ static void dumpseg_print_psegment_error(const struct nilfs_psegment *pseg,
 {
 	const struct nilfs_segment_summary *segsum = pseg->segsum;
 	unsigned int hdrsize;
-	__u32 nblocks, sumbytes, excess;
+	uint32_t nblocks, sumbytes, excess;
 
 	switch (pseg->error) {
 	case NILFS_PSEGMENT_ERROR_ALIGNMENT:
@@ -84,7 +84,7 @@ static void dumpseg_print_psegment_error(const struct nilfs_psegment *pseg,
 		break;
 	case NILFS_PSEGMENT_ERROR_BIGPSEG:
 		nblocks = le32_to_cpu(segsum->ss_nblocks);
-		excess = ((__u32)(pseg->blocknr - pseg->segment->blocknr) +
+		excess = ((uint32_t)(pseg->blocknr - pseg->segment->blocknr) +
 			  nblocks) - pseg->segment->nblocks;
 		printf("  error %d (%s) - pseg blkcnt = %lu, excess blkcnt = %lu\n",
 		       pseg->error, errstr,
@@ -114,7 +114,7 @@ static void dumpseg_print_file_error(const struct nilfs_file *file,
 {
 	const struct nilfs_psegment *pseg = file->psegment;
 	static const char *indent = "    ";
-	__u32 nblocks, ndatablk, sumbytes, pseg_nblocks;
+	uint32_t nblocks, ndatablk, sumbytes, pseg_nblocks;
 
 	switch (file->error) {
 	case NILFS_FILE_ERROR_MANYBLKS:
@@ -230,7 +230,7 @@ static void dumpseg_print_segment(const struct nilfs_segment *segment)
 {
 	struct nilfs_psegment pseg;
 	const char *errstr;
-	__u64 next;
+	uint64_t next;
 
 	printf("segment: segnum = %llu\n",
 	       (unsigned long long)segment->segnum);
@@ -255,7 +255,7 @@ static void dumpseg_print_segment(const struct nilfs_segment *segment)
 int main(int argc, char *argv[])
 {
 	struct nilfs *nilfs;
-	__u64 segnum;
+	uint64_t segnum;
 	char *dev, *endptr, *progname, *last;
 	struct nilfs_segment segment;
 	int c, i, status;

@@ -66,9 +66,9 @@
 
 #define NILFS_MAX_SB_SIZE	1024
 
-static __u32 nilfs_sb_check_sum(struct nilfs_super_block *sbp)
+static uint32_t nilfs_sb_check_sum(struct nilfs_super_block *sbp)
 {
-	__u32 seed, crc;
+	uint32_t seed, crc;
 	__le32 sum;
 
 	seed = le32_to_cpu(sbp->s_crc_seed);
@@ -81,7 +81,7 @@ static __u32 nilfs_sb_check_sum(struct nilfs_super_block *sbp)
 
 static int nilfs_sb_is_valid(struct nilfs_super_block *sbp, int check_crc)
 {
-	__u32 crc;
+	uint32_t crc;
 
 	if (le16_to_cpu(sbp->s_magic) != NILFS_SUPER_MAGIC)
 		return 0;
@@ -96,7 +96,7 @@ static int nilfs_sb_is_valid(struct nilfs_super_block *sbp, int check_crc)
 }
 
 static int nilfs_sb2_offset_is_too_small(struct nilfs_super_block *sbp,
-					 __u64 sb2_offset)
+					 uint64_t sb2_offset)
 {
 	return sb2_offset < ((le64_to_cpu(sbp->s_nsegments) *
 			      le32_to_cpu(sbp->s_blocks_per_segment)) <<
@@ -104,9 +104,9 @@ static int nilfs_sb2_offset_is_too_small(struct nilfs_super_block *sbp,
 }
 
 static int __nilfs_sb_read(int devfd, struct nilfs_super_block **sbp,
-			   __u64 *offsets)
+			   uint64_t *offsets)
 {
-	__u64 devsize, sb2_offset;
+	uint64_t devsize, sb2_offset;
 	int invalid_fs = 0;
 	ssize_t ret;
 
@@ -183,11 +183,11 @@ struct nilfs_super_block *nilfs_sb_read(int devfd)
 
 int nilfs_sb_write(int devfd, struct nilfs_super_block *sbp, int mask)
 {
-	__u64 offsets[2];
+	uint64_t offsets[2];
 	struct nilfs_super_block *sbps[2];
 	ssize_t count;
 	int i, ret;
-	__u32 crc;
+	uint32_t crc;
 
 	assert(devfd >= 0);
 

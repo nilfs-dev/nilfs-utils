@@ -103,16 +103,16 @@ static int assume_yes;
 static int show_progress = 1;
 
 /* global variables */
-static __u64 devsize;
+static uint64_t devsize;
 static unsigned int sector_size = 512;
 static struct nilfs_sustat sustat;
-static __u64 trunc_start, trunc_end;
+static uint64_t trunc_start, trunc_end;
 
 #define NILFS_RESIZE_NSUINFO	256
 #define NILFS_RESIZE_NSEGNUMS	256
 
 static struct nilfs_suinfo suinfo[NILFS_RESIZE_NSUINFO];
-static __u64 segnums[NILFS_RESIZE_NSEGNUMS];
+static uint64_t segnums[NILFS_RESIZE_NSEGNUMS];
 
 /* filesystem parameters */
 static struct nilfs_layout layout;
@@ -125,8 +125,8 @@ static struct timespec clean_interval = { 0, 100000000 };   /* 100 msec */
 static int pm_width = 60;
 static int pm_barwidth;
 static int pm_labelwidth = 10;
-static __u64 pm_max;
-static __u64 pm_done;
+static uint64_t pm_max;
+static uint64_t pm_done;
 static int pm_curpos;
 static int pm_in_progress;	/* 0: off, 1: on, -1: interrupted */
 static const char *pm_label;
@@ -163,7 +163,7 @@ static void nilfs_resize_progress_show(void)
 	fflush(stderr);
 }
 
-static void nilfs_resize_progress_init(__u64 maxval, const char *label)
+static void nilfs_resize_progress_init(uint64_t maxval, const char *label)
 {
 	pm_max = maxval;
 	pm_done = 0;
@@ -175,7 +175,7 @@ static void nilfs_resize_progress_init(__u64 maxval, const char *label)
 	pm_in_progress = 1;
 }
 
-static void nilfs_resize_progress_update(__u64 done)
+static void nilfs_resize_progress_update(uint64_t done)
 {
 	int pos, delta;
 	int i;
@@ -187,7 +187,7 @@ static void nilfs_resize_progress_update(__u64 done)
 		nilfs_resize_progress_show();
 		pm_in_progress = 1;
 	}
-	pos = pm_barwidth * min_t(__u64, done, pm_max) / pm_max;
+	pos = pm_barwidth * min_t(uint64_t, done, pm_max) / pm_max;
 
 	if (pos > pm_curpos) {
 		delta = pos - pm_curpos;
@@ -293,18 +293,19 @@ static void nilfs_resize_unlock_cleaner(struct nilfs *nilfs,
 	sigprocmask(SIG_SETMASK, sigset, NULL);
 }
 
-static __u64 nilfs_resize_calc_nrsvsegs(__u64 nsegs)
+static uint64_t nilfs_resize_calc_nrsvsegs(uint64_t nsegs)
 {
-	return max_t(__u64, NILFS_MIN_NRSVSEGS,
+	return max_t(uint64_t, NILFS_MIN_NRSVSEGS,
 		     DIV_ROUND_UP(nsegs * layout.reserved_segments_ratio, 100));
 }
 
-static __u64 nilfs_resize_calc_size_of_segments(__u64 nsegs)
+static uint64_t nilfs_resize_calc_size_of_segments(uint64_t nsegs)
 {
 	return (nsegs * layout.blocks_per_segment) << layout.blocksize_bits;
 }
 
-static int nilfs_resize_check_free_space(struct nilfs *nilfs, __u64 newnsegs)
+static int nilfs_resize_check_free_space(struct nilfs *nilfs,
+					 uint64_t newnsegs)
 {
 	unsigned long long nrsvsegs, nsegs, nbytes;
 
@@ -341,11 +342,11 @@ static void nilfs_resize_restore_alloc_range(struct nilfs *nilfs)
 }
 
 static ssize_t
-nilfs_resize_find_movable_segments(struct nilfs *nilfs, __u64 start,
-				   __u64 end, __u64 *segnumv,
+nilfs_resize_find_movable_segments(struct nilfs *nilfs, uint64_t start,
+				   uint64_t end, uint64_t *segnumv,
 				   unsigned long maxsegnums)
 {
-	__u64 segnum, *snp;
+	uint64_t segnum, *snp;
 	unsigned long rest, count;
 	ssize_t nsi, i;
 	int ret;
@@ -353,7 +354,7 @@ nilfs_resize_find_movable_segments(struct nilfs *nilfs, __u64 start,
 	assert(start <= end);
 
 	segnum = start;
-	rest = min_t(__u64, maxsegnums, end - start + 1);
+	rest = min_t(uint64_t, maxsegnums, end - start + 1);
 	for (snp = segnumv; rest > 0 && segnum <= end; ) {
 		count = min_t(unsigned long, rest, NILFS_RESIZE_NSUINFO);
 		nsi = nilfs_get_suinfo(nilfs, segnum, suinfo, count);
@@ -384,13 +385,13 @@ nilfs_resize_find_movable_segments(struct nilfs *nilfs, __u64 start,
 
 #if 0
 static int
-nilfs_resize_get_latest_segment(struct nilfs *nilfs, __u64 start, __u64 end,
-				__u64 *segnump)
+nilfs_resize_get_latest_segment(struct nilfs *nilfs, uint64_t start,
+				uint64_t end, uint64_t *segnump)
 {
-	__u64 segnum, latest_segnum = (~(__u64)0);
+	uint64_t segnum, latest_segnum = (~(uint64_t)0);
 	unsigned long count;
 	ssize_t nsi, i;
-	__u64 latest_time = 0;
+	uint64_t latest_time = 0;
 	int ret = 0;
 
 	assert(start <= end);
@@ -423,17 +424,18 @@ nilfs_resize_get_latest_segment(struct nilfs *nilfs, __u64 start, __u64 end,
 #endif
 
 static ssize_t
-nilfs_resize_find_active_segments(struct nilfs *nilfs, __u64 start, __u64 end,
-				  __u64 *segnumv, unsigned long maxsegnums)
+nilfs_resize_find_active_segments(struct nilfs *nilfs, uint64_t start,
+				  uint64_t end, uint64_t *segnumv,
+				  unsigned long maxsegnums)
 {
-	__u64 segnum, *snp;
+	uint64_t segnum, *snp;
 	unsigned long rest, count;
 	ssize_t nsi, i;
 
 	assert(start <= end);
 
 	segnum = start;
-	rest = min_t(__u64, maxsegnums, end - start + 1);
+	rest = min_t(uint64_t, maxsegnums, end - start + 1);
 	for (snp = segnumv; rest > 0 && segnum <= end; ) {
 		count = min_t(unsigned long, rest, NILFS_RESIZE_NSUINFO);
 		nsi = nilfs_get_suinfo(nilfs, segnum, suinfo, count);
@@ -454,17 +456,18 @@ nilfs_resize_find_active_segments(struct nilfs *nilfs, __u64 start, __u64 end,
 }
 
 static ssize_t
-nilfs_resize_find_inuse_segments(struct nilfs *nilfs, __u64 start, __u64 end,
-				 __u64 *segnumv, unsigned long maxsegnums)
+nilfs_resize_find_inuse_segments(struct nilfs *nilfs, uint64_t start,
+				 uint64_t end, uint64_t *segnumv,
+				 unsigned long maxsegnums)
 {
-	__u64 segnum, *snp;
+	uint64_t segnum, *snp;
 	unsigned long rest, count;
 	ssize_t nsi, i;
 
 	assert(start <= end);
 
 	segnum = start;
-	rest = min_t(__u64, maxsegnums, end - start + 1);
+	rest = min_t(uint64_t, maxsegnums, end - start + 1);
 	for (snp = segnumv; rest > 0 && segnum <= end; ) {
 		count = min_t(unsigned long, rest, NILFS_RESIZE_NSUINFO);
 		nsi = nilfs_get_suinfo(nilfs, segnum, suinfo, count);
@@ -484,9 +487,10 @@ nilfs_resize_find_inuse_segments(struct nilfs *nilfs, __u64 start, __u64 end,
 }
 
 static ssize_t
-nilfs_resize_count_inuse_segments(struct nilfs *nilfs, __u64 start, __u64 end)
+nilfs_resize_count_inuse_segments(struct nilfs *nilfs, uint64_t start,
+				  uint64_t end)
 {
-	__u64 segnum;
+	uint64_t segnum;
 	unsigned long rest, count;
 	ssize_t nsi, i;
 	ssize_t nfound = 0;
@@ -517,7 +521,7 @@ nilfs_resize_count_inuse_segments(struct nilfs *nilfs, __u64 start, __u64 end)
 #define NILFS_RESIZE_SEGMENT_UNRECLAIMABLE	0x02
 
 static int nilfs_resize_verify_failure(struct nilfs *nilfs,
-				       __u64 *segnumv, unsigned long nsegs)
+				       uint64_t *segnumv, unsigned long nsegs)
 {
 	struct nilfs_suinfo si;
 	int reason = 0;
@@ -537,11 +541,11 @@ static int nilfs_resize_verify_failure(struct nilfs *nilfs,
 }
 
 static ssize_t nilfs_resize_move_segments(struct nilfs *nilfs,
-					  __u64 *segnumv, unsigned long nsegs,
-					  int *reason)
+					  uint64_t *segnumv,
+					  unsigned long nsegs, int *reason)
 {
 	unsigned long rest = nsegs, nc;
-	__u64 *snp = segnumv;
+	uint64_t *snp = segnumv;
 	ssize_t nmoved = 0, i, nhits;
 	int rv = 0;
 	int ret;
@@ -615,7 +619,7 @@ static int nilfs_resize_reclaim_nibble(struct nilfs *nilfs,
 				       unsigned long long end,
 				       unsigned long count, int unprotect)
 {
-	__u64 segnumv[2], segnum;
+	uint64_t segnumv[2], segnum;
 	ssize_t nfound, nmoved = 0;
 	unsigned long nc;
 	unsigned long long end2 = end;
@@ -713,7 +717,7 @@ static int nilfs_resize_move_out_active_segments(struct nilfs *nilfs,
 	return retrycnt > 0;
 }
 
-static int nilfs_resize_reclaim_range(struct nilfs *nilfs, __u64 newnsegs)
+static int nilfs_resize_reclaim_range(struct nilfs *nilfs, uint64_t newnsegs)
 {
 	unsigned long long start, end, segnum;
 	ssize_t nfound;
@@ -817,7 +821,7 @@ static int nilfs_shrink_online(struct nilfs *nilfs, const char *device,
 	sigset_t sigset;
 	int status = EXIT_FAILURE;
 	unsigned long long newsb2off; /* new offset of secondary super block */
-	__u64 newnsegs, nuses;
+	uint64_t newnsegs, nuses;
 	unsigned retry;
 	int ret;
 

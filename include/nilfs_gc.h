@@ -12,6 +12,7 @@
 #define NILFS_GC_H
 
 #include <stddef.h>	/* size_t */
+#include <stdint.h>	/* uint64_t, etc */
 #include "nilfs2_api.h"	/* nilfs_suinfo_{dirty,active,error}, nilfs_suinfo */
 #include "nilfs.h"	/* nilfs_cno_t, struct nilfs */
 
@@ -31,7 +32,7 @@
 struct nilfs_reclaim_params {
 	unsigned long flags;
 	unsigned long min_reclaimable_blks;
-	__u64 protseq;
+	uint64_t protseq;
 	nilfs_cno_t protcno;
 };
 
@@ -64,20 +65,20 @@ struct nilfs_reclaim_stat {
 };
 
 ssize_t nilfs_reclaim_segment(struct nilfs *nilfs,
-			      __u64 *segnums, size_t nsegs,
-			      __u64 protseq, nilfs_cno_t protcno);
+			      uint64_t *segnums, size_t nsegs,
+			      uint64_t protseq, nilfs_cno_t protcno);
 
 int nilfs_xreclaim_segment(struct nilfs *nilfs,
-			   __u64 *segnums, size_t nsegs, int dryrun,
+			   uint64_t *segnums, size_t nsegs, int dryrun,
 			   const struct nilfs_reclaim_params *params,
 			   struct nilfs_reclaim_stat *stat);
 
-int nilfs_segment_is_protected(struct nilfs *nilfs, __u64 segnum,
-			       __u64 protseq);
+int nilfs_segment_is_protected(struct nilfs *nilfs, uint64_t segnum,
+			       uint64_t protseq);
 
 static inline int
 nilfs_assess_segment(struct nilfs *nilfs,
-		     __u64 *segnums, size_t nsegs,
+		     uint64_t *segnums, size_t nsegs,
 		     const struct nilfs_reclaim_params *params,
 		     struct nilfs_reclaim_stat *stat)
 {
