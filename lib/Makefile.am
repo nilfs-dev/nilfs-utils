@@ -20,7 +20,7 @@ libcrc32_la_SOURCES = crc32.c
 libcleanerexec_la_SOURCES = cleaner_exec.c
 
 libnilfs_CURRENT = 2
-libnilfs_REVISION = 3
+libnilfs_REVISION = 4
 libnilfs_AGE = 2
 libnilfs_VERSIONINFO = $(libnilfs_CURRENT):$(libnilfs_REVISION):$(libnilfs_AGE)
 

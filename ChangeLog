@@ -1,3 +1,18 @@
+nilfs-utils-2.2.6  Mon Oct 10, 2016 JST
+
+	* dumpseg: fix misuse of endian conversion macro for ss_nblocks
+	* libnilfs: fix potential memory access overrun at
+	  nilfs_psegment_is_valid()
+	* libnilfs: fix potential underflow at nilfs_psegment_is_end()
+	* libnilfs: fix potential underflow of p_maxblocks at
+	  nilfs_psegment_init()
+	* libnilfs: add missing errno setting at nilfs_sb_write()
+	* libnilfs: add sanity check on segment summary header size
+	* libnilfs: check range of finfo and binfos before reading them
+	* libnilfs: add sanity check for block counts in finfo
+	* libnilfs: get rid of HAVE_MUNMAP
+	* ChangeLog: fix typos
+
 nilfs-utils-2.2.5  Sun Sep 4, 2016 JST
 
 	* fix the problem that checkpoints and blocks with a future timestamp
