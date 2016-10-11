@@ -39,15 +39,6 @@
 #define NILFS_SUPER_MAGIC	0x3434	/* NILFS filesystem magic number */
 #endif
 
-/* Sizes of integral types */
-#ifndef U64_MAX
-#define U64_MAX		18446744073709551615LL	/* __u64 (or u64) max */
-#endif
-
-#ifndef S64_MAX
-#define S64_MAX		9223372036854775807LL	/* __s64 (or s64) max */
-#endif
-
 /* offsetof() macro */
 #ifndef offsetof
 #define offsetof(TYPE, MEMBER)	((size_t)&((TYPE *)0)->MEMBER)
