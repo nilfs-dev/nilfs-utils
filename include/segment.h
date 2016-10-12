@@ -16,8 +16,6 @@
 #include "nilfs2_ondisk.h"
 #include "util.h"
 
-typedef uint64_t sector_t;
-
 /**
  * struct nilfs_psegment - partial segment iterator
  * @segment: pointer to segment object
@@ -30,7 +28,7 @@ typedef uint64_t sector_t;
 struct nilfs_psegment {
 	const struct nilfs_segment *segment;
 	struct nilfs_segment_summary *segsum;
-	sector_t blocknr;
+	uint64_t blocknr;
 	uint32_t blkcnt;
 	unsigned int blkbits;
 	int error;
@@ -62,7 +60,7 @@ enum {
 struct nilfs_file {
 	const struct nilfs_psegment *psegment;
 	struct nilfs_finfo *finfo;
-	sector_t blocknr;
+	uint64_t blocknr;
 	uint32_t offset;
 	uint32_t index;
 	uint32_t nfinfo;
@@ -96,7 +94,7 @@ enum {
 struct nilfs_block {
 	const struct nilfs_file *file;
 	void *binfo;
-	sector_t blocknr;
+	uint64_t blocknr;
 	uint32_t offset;
 	uint32_t index;
 	uint32_t nbinfo;
