@@ -75,10 +75,10 @@ struct nilfs_layout {
 #define NILFS_OPEN_GCLK		0x1000	/* Open GC lock primitive */
 
 
-struct nilfs *nilfs_open(const char *, const char *, int);
-void nilfs_close(struct nilfs *);
+struct nilfs *nilfs_open(const char *dev, const char *dir, int flags);
+void nilfs_close(struct nilfs *nilfs);
 
-const char *nilfs_get_dev(const struct nilfs *);
+const char *nilfs_get_dev(const struct nilfs *nilfs);
 
 int nilfs_opt_test(const struct nilfs *nilfs, unsigned int index);
 int nilfs_opt_set(struct nilfs *nilfs, unsigned int index);
@@ -101,7 +101,7 @@ static inline int nilfs_opt_clear_##name(struct nilfs *nilfs)		\
 NILFS_OPT_FNS(mmap, 0)
 NILFS_OPT_FNS(set_suinfo, 1)
 
-nilfs_cno_t nilfs_get_oldest_cno(struct nilfs *);
+nilfs_cno_t nilfs_get_oldest_cno(struct nilfs *nilfs);
 
 ssize_t nilfs_get_layout(const struct nilfs *nilfs,
 			 struct nilfs_layout *layout, size_t layout_size);
@@ -169,25 +169,27 @@ uint64_t nilfs_get_nsegments(const struct nilfs *nilfs);
 uint32_t nilfs_get_blocks_per_segment(const struct nilfs *nilfs);
 uint32_t nilfs_get_reserved_segments_ratio(const struct nilfs *nilfs);
 
-int nilfs_change_cpmode(struct nilfs *, nilfs_cno_t, int);
-ssize_t nilfs_get_cpinfo(struct nilfs *, nilfs_cno_t, int,
-			 struct nilfs_cpinfo *, size_t);
-int nilfs_delete_checkpoint(struct nilfs *, nilfs_cno_t);
-int nilfs_get_cpstat(const struct nilfs *, struct nilfs_cpstat *);
+int nilfs_change_cpmode(struct nilfs *nilfs, nilfs_cno_t cno, int mode);
+ssize_t nilfs_get_cpinfo(struct nilfs *nilfs, nilfs_cno_t cno, int mode,
+			 struct nilfs_cpinfo *cpinfo, size_t nci);
+int nilfs_delete_checkpoint(struct nilfs *nilfs, nilfs_cno_t cno);
+int nilfs_get_cpstat(const struct nilfs *nilfs, struct nilfs_cpstat *cpstat);
 ssize_t nilfs_get_suinfo(const struct nilfs *nilfs, uint64_t segnum,
 			 struct nilfs_suinfo *suinfo, size_t nsi);
-int nilfs_set_suinfo(const struct nilfs *, struct nilfs_suinfo_update *,
-		     size_t);
-int nilfs_get_sustat(const struct nilfs *, struct nilfs_sustat *);
-ssize_t nilfs_get_vinfo(const struct nilfs *, struct nilfs_vinfo *, size_t);
-ssize_t nilfs_get_bdescs(const struct nilfs *, struct nilfs_bdesc *, size_t);
+int nilfs_set_suinfo(const struct nilfs *nilfs,
+		     struct nilfs_suinfo_update *sup, size_t nsup);
+int nilfs_get_sustat(const struct nilfs *nilfs, struct nilfs_sustat *sustat);
+ssize_t nilfs_get_vinfo(const struct nilfs *nilfs, struct nilfs_vinfo *vinfo,
+			size_t nvi);
+ssize_t nilfs_get_bdescs(const struct nilfs *nilfs, struct nilfs_bdesc *bdescs,
+			 size_t nbdescs);
 int nilfs_clean_segments(struct nilfs *nilfs,
 			 struct nilfs_vdesc *vdescs, size_t nvdescs,
 			 struct nilfs_period *periods, size_t nperiods,
 			 uint64_t *vblocknrs, size_t nvblocknrs,
 			 struct nilfs_bdesc *bdescs, size_t nbdescs,
 			 uint64_t *segnums, size_t nsegs);
-int nilfs_sync(const struct nilfs *, nilfs_cno_t *);
+int nilfs_sync(const struct nilfs *nilfs, nilfs_cno_t *cnop);
 int nilfs_resize(struct nilfs *nilfs, off_t size);
 int nilfs_set_alloc_range(struct nilfs *nilfs, off_t start, off_t end);
 int nilfs_freeze(struct nilfs *nilfs);
