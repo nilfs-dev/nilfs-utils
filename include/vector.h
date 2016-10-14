@@ -32,10 +32,11 @@ struct nilfs_vector {
 #define NILFS_VECTOR_FACTOR		2
 
 
-struct nilfs_vector *nilfs_vector_create(size_t);
-void nilfs_vector_destroy(struct nilfs_vector *);
-void *nilfs_vector_get_new_element(struct nilfs_vector *);
-int nilfs_vector_delete_elements(struct nilfs_vector *, unsigned int, size_t);
+struct nilfs_vector *nilfs_vector_create(size_t elemsize);
+void nilfs_vector_destroy(struct nilfs_vector *vector);
+void *nilfs_vector_get_new_element(struct nilfs_vector *vector);
+int nilfs_vector_delete_elements(struct nilfs_vector *vector,
+				 unsigned int index, size_t nelems);
 void *nilfs_vector_insert_elements(struct nilfs_vector *vector,
 				   unsigned int index, size_t nelems);
 void nilfs_vector_clear(struct nilfs_vector *vector);
