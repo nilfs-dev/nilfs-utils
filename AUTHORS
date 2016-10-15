@@ -6,7 +6,7 @@ Authors who worked or are working at labs of NTT Corporation:
 - Implemented mkfs.nilfs2, mount.nilfs2
 - Enhanced snapshot/checkpoint tools, cleanerd, and libraries.
 - Wrote nilfs-resize.
-- Wrote nilfs-clean, libnilfscleaner library.
+- Wrote nilfs-clean, libcleaner library.
 - Fixed many bugs
 - Wrote man pages
 - Initial development
