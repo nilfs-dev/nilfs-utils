@@ -2,7 +2,7 @@
 
 ACLOCAL_AMFLAGS = -I m4
 
-SUBDIRS = lib bin sbin include man scripts
+SUBDIRS = lib bin sbin include man etc scripts
 
 dist_noinst_SCRIPTS = autogen.sh
 

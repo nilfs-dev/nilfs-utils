@@ -12,6 +12,4 @@ nilfs_cleanerd_CPPFLAGS = -I$(top_srcdir)/include \
 # Use -static option to make nilfs_cleanerd self-contained.
 nilfs_cleanerd_LDFLAGS = -static
 
-dist_sysconf_DATA = nilfs_cleanerd.conf
-
 EXTRA_DIST = .gitignore

@@ -188,6 +188,7 @@ AC_SUBST([localstatedir], [/var])
 
 AC_CONFIG_FILES([Makefile
 		 bin/Makefile
+		 etc/Makefile
 		 include/Makefile
 		 lib/Makefile
 		 man/Makefile
