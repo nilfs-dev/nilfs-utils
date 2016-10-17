@@ -5,7 +5,9 @@
  * can be found in COPYING file of the nilfs-utils package.
  *
  * Copyright (C) 2011-2012 Nippon Telegraph and Telephone Corporation.
- * Written by Ryusuke Konishi <konishi.ryusuke@lab.ntt.co.jp>
+ *
+ * Credits:
+ *     Ryusuke Konishi <konishi.ryusuke@lab.ntt.co.jp>
  */
 
 #ifdef HAVE_CONFIG_H
