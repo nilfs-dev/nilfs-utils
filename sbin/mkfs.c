@@ -144,7 +144,7 @@ static void parse_options(int argc, char *argv[]);
 static const unsigned group_desc_blocks_per_group = 1;
 static const unsigned bitmap_blocks_per_group = 1;
 static const unsigned nr_initial_segments = 2; /* initial segment + next */
-static const unsigned nr_initial_inodes = 2;  /* root directory + .nilfs */
+static const unsigned nr_initial_inodes = 1;  /* root directory */
 static const uint64_t first_cno = 1; /* Number of the first checkpoint */
 
 /* Segment layout information (per partial segment) */
@@ -260,7 +260,6 @@ static void init_nilfs(struct nilfs_disk_info *di);
 static void prepare_segment(struct nilfs_segment_info *);
 static void commit_segment(void);
 static void nilfs_mkfs_make_rootdir(void);
-static void nilfs_mkfs_make_dot_nilfs(void);
 static void nilfs_mkfs_make_reserved_files(void);
 
 
@@ -608,7 +607,6 @@ int main(int argc, char *argv[])
 	si = new_segment(di);
 
 	add_file(si, NILFS_ROOT_INO, 1, 0);
-	add_file(si, NILFS_NILFS_INO, 0, 0);
 	add_file(si, NILFS_ATIME_INO, 0, 0);
 	add_file(si, 1, 0, 0);
 	add_file(si, 8, 0, 0);
@@ -629,7 +627,6 @@ int main(int argc, char *argv[])
 	init_nilfs(di);
 
 	prepare_segment(&di->seginfo[0]);
-	nilfs_mkfs_make_dot_nilfs(); /* Make .nilfs */
 	nilfs_mkfs_make_rootdir();  /* Make root directory */
 	nilfs_mkfs_make_reserved_files();
 	commit_segment();
@@ -1268,24 +1265,11 @@ static void nilfs_mkfs_make_rootdir(void)
 	de = next_dir_entry(de);
 	de->inode = cpu_to_le64(NILFS_ROOT_INO);
 	de->name_len = 2;
-	rec_end += (rec_len = NILFS_DIR_REC_LEN(2));
-	de->rec_len = nilfs_rec_len_to_disk(rec_len);
+	de->rec_len = nilfs_rec_len_to_disk(blocksize - rec_end);
 	de->file_type = NILFS_FT_DIR;
 	memcpy((void *)de->name, "..\0\0\0\0\0", 8);
 
-	de = next_dir_entry(de);
-	de->inode = cpu_to_le64(NILFS_NILFS_INO);
-	de->name_len = 6;
-	de->rec_len = nilfs_rec_len_to_disk(blocksize - rec_end);
-	de->file_type = NILFS_FT_REG_FILE;
-	memcpy((void *)de->name, ".nilfs\0", 8);
-
 	inc_link_count(NILFS_ROOT_INO);
-}
-
-static void nilfs_mkfs_make_dot_nilfs(void)
-{
-	init_inode(NILFS_NILFS_INO, DT_REG, 0644, 0);
 }
 
 static void nilfs_mkfs_make_reserved_files(void)

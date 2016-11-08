@@ -38,11 +38,7 @@
 #define NILFS_MIN_NUSERSEGS		8    /* Minimum number of user
 						(non-reserved) segments */
 
-/* Additional inode numbers */
-enum {
-	NILFS_NILFS_INO = NILFS_USER_INO,  /* .nilfs file */
-	NILFS_MAX_INITIAL_INO,
-};
+#define NILFS_MAX_INITIAL_INO		NILFS_USER_INO
 
 /* bit operations */
 extern int ext2fs_set_bit(int nr, void *addr);
