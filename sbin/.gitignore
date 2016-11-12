@@ -3,3 +3,8 @@
 /nilfs-clean
 /nilfs-resize
 /nilfs-tune
+
+# Do not ignore obsolete directories
+!nilfs-clean/
+!nilfs-resize/
+!nilfs-tune/
