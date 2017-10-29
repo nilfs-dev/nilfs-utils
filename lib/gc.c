@@ -433,6 +433,19 @@ static int nilfs_vdesc_is_live(const struct nilfs_vdesc *vdesc,
 		return vdesc->vd_period.p_end == NILFS_CNO_MAX;
 	}
 
+	if (vdesc->vd_period.p_end == vdesc->vd_cno) {
+		/*
+		 * This block was overwritten in the same logical segment, but
+		 * in a different partial segment. Probably because of
+		 * fdatasync() or a flush to disk.
+		 * Without this check, gc will cause buffer confliction error
+		 * if both partial segments are cleaned at the same time.
+		 * In that case there will be two vdesc with the same ino,
+		 * cno and offset.
+		 */
+		return 0;
+	}
+
 	if (vdesc->vd_period.p_end == NILFS_CNO_MAX ||
 	    vdesc->vd_period.p_end > protect)
 		return 1;
