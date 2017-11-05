@@ -41,6 +41,7 @@ Feb 7, 2014: shutcut for certain GC operations
     - add NILFS_IOCTL_SET_SUINFO ioctl support
     - add optimized version of nilfs_xreclaim_segment
     - and so forth.
+Oct 29, 2017: fix conflicting data buffer error
 
 * Dan McGee <dan@archlinux.org>
 Dec 21, 2011: bunch of fixes and cleanups including:

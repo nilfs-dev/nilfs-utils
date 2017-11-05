@@ -29,7 +29,7 @@ libnilfs_la_LDFLAGS = -version-info $(libnilfs_VERSIONINFO)
 libnilfs_la_LIBADD = librealpath.la libcrc32.la $(LIB_POSIX_SEM)
 
 nilfsgc_CURRENT = 2
-nilfsgc_REVISION = 0
+nilfsgc_REVISION = 1
 nilfsgc_AGE = 2
 nilfsgc_VERSIONINFO = $(nilfsgc_CURRENT):$(nilfsgc_REVISION):$(nilfsgc_AGE)
 

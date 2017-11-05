@@ -1,3 +1,9 @@
+nilfs-utils-2.2.7  Sun Nov 5, 2017 JST
+
+	* Fix conflicting data buffer error; this fixes a cleanerd crash
+	  issue in some high loads that leads the file system to a disk
+	  full.
+
 nilfs-utils-2.2.6  Mon Oct 10, 2016 JST
 
 	* dumpseg: fix misuse of endian conversion macro for ss_nblocks
