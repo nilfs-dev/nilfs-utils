@@ -47,6 +47,11 @@
 #include <limits.h>
 #endif	/* HAVE_LIMITS_H */
 
+/* define MAX_INPUT for musl */
+#ifndef MAX_INPUT
+#define MAX_INPUT _POSIX_MAX_INPUT
+#endif
+
 #include <errno.h>
 #include "nilfs.h"
 #include "parser.h"
