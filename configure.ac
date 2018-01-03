@@ -103,9 +103,20 @@ AC_CHECK_HEADERS([ctype.h err.h fcntl.h grp.h libintl.h limits.h \
 		  time.h unistd.h])
 
 # Check for conditional libraries and headers.
+if test "${with_blkid}" = "yes"; then
+   AC_CHECK_LIB(blkid, blkid_new_probe_from_filename,
+   		[AC_DEFINE(HAVE_LIBBLKID, 1,
+		    [Define to 1 if you have the 'blkid' library (-lblkid).])
+		 LIB_BLKID="-lblkid -luuid"
+		],
+		AC_MSG_ERROR([BLKID library not found]), [-luuid])
+   AC_CHECK_HEADERS([blkid/blkid.h])
+fi
+AC_SUBST(LIB_BLKID)
+
 if test "${with_libmount}" = "yes"; then
-   AC_CHECK_LIB(mount, mnt_context_do_mount, [LIB_MOUNT="-lmount"],
-   	AC_MSG_ERROR([Mount library is enabled but libmount not found]))
+   AC_CHECK_LIB(mount, mnt_context_do_mount, [LIB_MOUNT="-lmount $LIB_BLKID"],
+   	AC_MSG_ERROR([Mount library is enabled but libmount not found]), [$LIB_BLKID])
    AC_CHECK_HEADERS([libmount/libmount.h])
    with_selinux=no
 fi
@@ -123,17 +134,6 @@ if test "${with_selinux}" = "yes"; then
    AC_CHECK_FUNCS([security_get_initial_context])
 fi
 AC_SUBST([LIB_SELINUX])
-
-if test "${with_blkid}" = "yes"; then
-   AC_CHECK_LIB(blkid, blkid_new_probe_from_filename,
-   		[AC_DEFINE(HAVE_LIBBLKID, 1,
-		    [Define to 1 if you have the 'blkid' library (-lblkid).])
-		 LIB_BLKID="-lblkid"
-		],
-		AC_MSG_ERROR([BLKID library not found]))
-   AC_CHECK_HEADERS([blkid/blkid.h])
-fi
-AC_SUBST(LIB_BLKID)
 
 # Checks for typedefs, structures, and compiler characteristics.
 AC_C_CONST
