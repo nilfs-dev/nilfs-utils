@@ -10,7 +10,7 @@ root_sbin_PROGRAMS = mkfs.nilfs2 nilfs_cleanerd
 sbin_PROGRAMS = nilfs-clean nilfs-resize nilfs-tune
 
 mkfs_nilfs2_SOURCES = mkfs.c bitops.c mkfs.h
-mkfs_nilfs2_LDADD = -luuid $(LIB_BLKID) \
+mkfs_nilfs2_LDADD = $(LIB_BLKID) -luuid \
 	$(top_builddir)/lib/libcrc32.la \
 	$(top_builddir)/lib/libmountchk.la \
 	$(top_builddir)/lib/libnilfsfeature.la
