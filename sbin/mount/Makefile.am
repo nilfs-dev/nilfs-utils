@@ -6,10 +6,10 @@ COMMONHEADERS = mount.nilfs2.h sundries.h xmalloc.h
 LEGACYSOURCES = fstab.c mount_mntent.c mount_opts.c
 LEGACYHEADERS = fstab.h mount_constants.h mount_mntent.h mount_opts.h
 
-AM_CFLAGS = -Wall
+AM_CFLAGS = -Wall $(MOUNT_CFLAGS)
 AM_CPPFLAGS = -I$(top_srcdir)/include -DCORE_SBINDIR=\"$(core_sbindir)\"
 LDADD = $(top_builddir)/lib/librealpath.la \
-	$(top_builddir)/lib/libcleanerexec.la $(LIB_MOUNT) $(LIB_SELINUX) \
+	$(top_builddir)/lib/libcleanerexec.la $(MOUNT_LIBS) $(LIB_SELINUX) \
 	$(LIB_POSIX_TIMER)
 
 core_sbin_PROGRAMS = mount.nilfs2 umount.nilfs2

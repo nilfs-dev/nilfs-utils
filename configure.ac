@@ -134,29 +134,64 @@ elif test -f /etc/mtab; then
 fi
 
 # Check for conditional libraries and headers.
-if test "${with_blkid}" = "yes"; then
-   AC_CHECK_LIB(blkid, blkid_new_probe_from_filename,
-   		[AC_DEFINE(HAVE_LIBBLKID, 1,
-		    [Define to 1 if you have the 'blkid' library (-lblkid).])
-		 LIB_BLKID="-lblkid"
-		],
-		AC_MSG_ERROR([BLKID library not found]),
-		[$UUID_LIBS])  # Other libraries to link when compiling tests
-   AC_CHECK_HEADERS([blkid/blkid.h])
-fi
-AC_SUBST(LIB_BLKID)
+AS_IF([test "${with_blkid}" = "yes"], [
+    # Only try pkg-config if PKG_CHECK_MODULES macro is present
+    m4_ifdef([PKG_CHECK_MODULES], [
+        PKG_CHECK_MODULES([BLKID], [blkid], [
+            have_blkid_pkg_config=yes
+            AC_DEFINE([HAVE_LIBBLKID], 1,
+                      [Define to 1 if you have the 'blkid' library (-lblkid).])
+        ], [have_blkid_pkg_config=no])
+    ], [have_blkid_pkg_config=no])
 
-if test "${with_libmount}" = "yes"; then
-   if test "$mtab_type" = file; then
-      AC_MSG_WARN([Use --without-libmount option to generate mount helpers that work with the legacy mtab file.])
-   fi
-   AC_CHECK_LIB(mount, mnt_context_do_mount, [LIB_MOUNT="-lmount $LIB_BLKID"],
-   	AC_MSG_ERROR([Mount library is enabled but libmount not found]), [$LIB_BLKID])
-   AC_CHECK_HEADERS([libmount/libmount.h])
-   with_selinux=no
-fi
+    # Fall back
+    AS_IF([test "x$have_blkid_pkg_config" = "xno"], [
+        AC_CHECK_LIB(blkid, blkid_new_probe_from_filename, [
+            AC_DEFINE(HAVE_LIBBLKID, 1,
+                [Define to 1 if you have the 'blkid' library (-lblkid).])
+            AC_SUBST(BLKID_LIBS, ["-lblkid"])
+            AC_SUBST(BLKID_CFLAGS, ["-I/usr/include/blkid"])
+        ], [
+            AC_MSG_ERROR([BLKID library not found])
+        ], [$UUID_LIBS])  # Other libraries to link when compiling tests
+
+        AC_CHECK_HEADERS([blkid/blkid.h])
+    ])
+])
+
+AS_IF([test "${with_libmount}" = "yes"], [
+    AS_IF([test "$mtab_type" = file], [
+        AC_MSG_WARN(m4_normalize([
+            Use --without-libmount option to generate mount helpers that work
+            with the legacy mtab file.
+        ]))
+    ])
+
+    # Only try pkg-config if PKG_CHECK_MODULES macro is present
+    m4_ifdef([PKG_CHECK_MODULES], [
+        PKG_CHECK_MODULES([MOUNT], [mount], [
+            have_mount_pkg_config=yes
+            AC_DEFINE([HAVE_LIBMOUNT], 1,
+                      [Define to 1 if you have the 'mount' library (-lmount).])
+        ], [have_mount_pkg_config=no])
+    ], [have_mount_pkg_config=no])
+
+    # Fall back
+    AS_IF([test "x$have_mount_pkg_config" = "xno"], [
+        AC_CHECK_LIB(mount, mnt_context_do_mount, [
+            AC_DEFINE(HAVE_LIBMOUNT, 1,
+                [Define to 1 if you have the 'mount' library (-lmount).])
+            AC_SUBST(MOUNT_LIBS, ["-lmount $BLKID_LIBS"])
+            AC_SUBST(MOUNT_CFLAGS, ["-I/usr/include/libmount"])
+        ], [
+            AC_MSG_ERROR([MOUNT library is enabled but libmount not found])
+        ], [$BLKID_LIBS])  # Other libraries to link when compiling tests
+
+        AC_CHECK_HEADERS([libmount/libmount.h])
+    ])
+    with_selinux=no
+])
 AM_CONDITIONAL(CONFIG_LIBMOUNT, [test "$with_libmount" = "yes"])
-AC_SUBST(LIB_MOUNT)
 
 if test "${with_selinux}" = "yes"; then
    AC_CHECK_LIB(selinux, getprevcon,

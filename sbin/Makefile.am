@@ -11,8 +11,8 @@ sbin_PROGRAMS = nilfs-clean nilfs-resize nilfs-tune
 
 mkfs_nilfs2_SOURCES = mkfs.c bitops.c mkfs.h
 mkfs_nilfs2_CPPFLAGS = $(AM_CPPFLAGS) -DBADBLOCKSDIR=\"$(badblocksdir)\"
-mkfs_nilfs2_CFLAGS = $(AM_CFLAGS) $(UUID_CFLAGS)
-mkfs_nilfs2_LDADD = $(LIB_BLKID) $(UUID_LIBS) \
+mkfs_nilfs2_CFLAGS = $(AM_CFLAGS) $(BLKID_CFLAGS) $(UUID_CFLAGS)
+mkfs_nilfs2_LDADD = $(BLKID_LIBS) $(UUID_LIBS) \
 	$(top_builddir)/lib/libcrc32.la \
 	$(top_builddir)/lib/libmountchk.la \
 	$(top_builddir)/lib/libnilfsfeature.la

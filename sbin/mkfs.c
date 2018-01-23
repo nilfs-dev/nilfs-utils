@@ -58,9 +58,9 @@
 
 #include <errno.h>
 
-#if HAVE_BLKID_BLKID_H
-#include <blkid/blkid.h>
-#endif	/* HAVE_BLKID_BLKID_H */
+#if HAVE_LIBBLKID
+#include <blkid.h>
+#endif	/* HAVE_LIBBLKID */
 
 #include "nilfs.h"
 #include "mkfs.h"

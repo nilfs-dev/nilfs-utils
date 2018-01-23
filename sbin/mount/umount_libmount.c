@@ -59,9 +59,7 @@
 #include <syslog.h>
 #endif	/* HAVE_SYSLOG_H */
 
-#if HAVE_LIBMOUNT_LIBMOUNT_H
-#include <libmount/libmount.h>
-#endif	/* HAVE_LIBMOUNT_H */
+#include <libmount.h>
 
 #include <stdarg.h>
 #include <errno.h>
