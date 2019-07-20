@@ -1,7 +1,7 @@
 /*
  * code borrowed from util-linux-2.12r/mount/mntent.h
  *
- * modified by Ryusuke Konishi <konishi.ryusuke@lab.ntt.co.jp>
+ * modified by Ryusuke Konishi <konishi.ryusuke@gmail.com>
  */
 #ifndef MOUNT_MNTENT_H
 #define MOUNT_MNTENT_H

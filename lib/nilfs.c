@@ -15,7 +15,7 @@
  *
  * Credits:
  *    Koji Sato
- *    Ryusuke Konishi <konishi.ryusuke@lab.ntt.co.jp>
+ *    Ryusuke Konishi <konishi.ryusuke@gmail.com>
  */
 
 #ifdef HAVE_CONFIG_H

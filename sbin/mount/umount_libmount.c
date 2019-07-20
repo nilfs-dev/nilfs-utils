@@ -18,7 +18,7 @@
  * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
  * Boston, MA 021110-1307, USA.
  *
- * Written by Ryusuke Konishi <konishi.ryusuke@lab.ntt.co.jp>
+ * Written by Ryusuke Konishi <konishi.ryusuke@gmail.com>
  */
 
 #ifdef HAVE_CONFIG_H

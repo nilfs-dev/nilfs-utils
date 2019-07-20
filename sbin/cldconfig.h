@@ -8,7 +8,7 @@
  *
  * Credits:
  *    Koji Sato,
- *    Ryusuke Konishi <konishi.ryusuke@lab.ntt.co.jp>.
+ *    Ryusuke Konishi <konishi.ryusuke@gmail.com>.
  */
 
 #ifndef CLDCONFIG_H
