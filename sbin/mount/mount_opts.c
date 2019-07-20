@@ -502,7 +502,7 @@ char *fix_opts_string(int flags, const char *extra_opts, const char *user)
 
 /*
  * Following part was appended by
- * Ryusuke Konishi <konishi.ryusuke@lab.ntt.co.jp>.
+ * Ryusuke Konishi <konishi.ryusuke@gmail.com>.
  */
 static char *strchrnulq(char *s, int c, int qc)
 {

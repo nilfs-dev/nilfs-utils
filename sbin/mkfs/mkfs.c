@@ -17,7 +17,7 @@
  *
  * Written by Hisashi Hifumi,
  *            Amagai Yoshiji.
- * Revised by Ryusuke Konishi <konishi.ryusuke@lab.ntt.co.jp>.
+ * Revised by Ryusuke Konishi <konishi.ryusuke@gmail.com>.
  */
 
 #ifdef HAVE_CONFIG_H

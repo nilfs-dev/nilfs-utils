@@ -1,7 +1,7 @@
 PRIMARY AUTHORS AND MAJOR CONTRIBUTORS TO NILFS-UTILS
 
 Authors who worked or are working at labs of NTT Corporation:
-* Ryusuke Konishi <konishi.ryusuke@lab.ntt.co.jp>
+* Ryusuke Konishi <konishi.ryusuke@gmail.com>
 - Primary maintainer (02/2008-Present)
 - Implemented mkfs.nilfs2, mount.nilfs2
 - Enhanced snapshot/checkpoint tools, cleanerd, and libraries.
@@ -22,7 +22,7 @@ Authors who worked or are working at labs of NTT Corporation:
 - Enhanced lscp to allow specifying range of checkpoints
 - Enhanced lssu to allow specifying range of segments
 
-* Seiji Kihara <kihara.seiji@lab.ntt.co.jp>
+* Seiji Kihara
 - Maintainer of RPM packages of nilfs-utils and nilfs2 standalone modules
 - Initial development
 

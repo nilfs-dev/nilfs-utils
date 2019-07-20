@@ -17,7 +17,7 @@
  *
  * Written by Koji Sato.
  *
- * Maintained by Ryusuke Konishi <konishi.ryusuke@lab.ntt.co.jp> from 2008.
+ * Maintained by Ryusuke Konishi <konishi.ryusuke@gmail.com> from 2008.
  */
 
 #ifndef CLDCONFIG_H
