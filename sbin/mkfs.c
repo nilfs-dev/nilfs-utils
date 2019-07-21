@@ -500,7 +500,8 @@ static void init_disk_layout(struct nilfs_disk_info *di, int fd,
 		     "       device size=%llu bytes, required size=%llu bytes.\n"
 		     "       Please enlarge the device, or shorten segments with -B option.",
 		     dev_size,
-		     (unsigned long long)segment_size * min_nsegments);
+		     (unsigned long long)segment_size * min_nsegments +
+		     blocksize);
 	di->nseginfo = 0;
 }
 
