@@ -454,7 +454,7 @@ static unsigned long nilfs_min_nsegments(struct nilfs_disk_info *di, long rp)
 {
 	/* Minimum number of full segments */
 	return max_t(unsigned long,
-		     (rp * di->nsegments - 1) / 100 + 1, NILFS_MIN_NRSVSEGS) +
+		     (rp * di->nsegments + 99) / 100, NILFS_MIN_NRSVSEGS) +
 		max_t(unsigned long, nr_initial_segments, NILFS_MIN_NUSERSEGS);
 }
 
