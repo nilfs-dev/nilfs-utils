@@ -1,3 +1,16 @@
+nilfs-utils-2.2.8  Tue Aug 20, 2019 JST
+
+	* fix some build issues:
+	  - use _POSIX_MAX_INPUT
+	  - mount.nilfs: drop include rpc/types.h
+	  - libmount, libblkid: fix order of autoconf probing
+	  - mkfs.nilfs2: fix library order of libuuid
+	* fix bugs:
+	  - mkfs.nilfs2: fix underflow in calculation of minimum number of
+	    segments
+	  - mkfs.nilfs2: fix wrong suggestion of minimum device size
+	* update maintainer's email address
+
 nilfs-utils-2.2.7  Sun Nov 5, 2017 JST
 
 	* Fix conflicting data buffer error; this fixes a cleanerd crash

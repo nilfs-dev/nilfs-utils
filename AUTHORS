@@ -77,6 +77,12 @@ September 3, 2010: enhanced super block read/write routines
 September 3, 2010: implemented nilfs-tune
 November 19, 2010: replaced crc32 implementation
 
+* Kurt Van Dijck <dev.kurt@vandijck-laurijssen.be>
+January 3, 2017: fix some build issues
+    - libmount, libblkid: fix order of autoconf probing
+    - mount.nilfs: drop include rpc/types.h
+    - nilfs-utils: use _POSIX_MAX_INPUT
+
 * Matteo Frigo <athena@fftw.org>
 September 11, 2010: compare device number for mount check
 
