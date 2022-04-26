@@ -49,7 +49,7 @@ the context mount depends on the libmount library.
 * How to get development sources
 
  $ cd your-work-directory
- $ git clone git://github.com/nilfs-dev/nilfs-utils.git
+ $ git clone https://github.com/nilfs-dev/nilfs-utils.git
 
 Before compiling the development sources, you need to run autogen.sh
 script.  This is not required for packaged sources unless you changed
