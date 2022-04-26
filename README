@@ -66,8 +66,8 @@ The central resource for nilfs-utils development is the mailing list
 First, please read the following documents (in short, follow Linux
 kernel development rules):
 
-http://lxr.linux.no/source/Documentation/CodingStyle
-http://lxr.linux.no/source/Documentation/SubmittingPatches
+https://docs.kernel.org/process/coding-style.html
+https://docs.kernel.org/process/submitting-patches.html
 
 Then, check your patches with the patch style checker prior to
 submission (scripts/checkpatch.pl) like the following example:
