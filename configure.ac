@@ -9,7 +9,7 @@ AC_PREREQ(2.60)
 AC_INIT(NILFS utils, 2.2.5, linux-nilfs@vger.kernel.org)
 AM_INIT_AUTOMAKE
 AC_CONFIG_SRCDIR([config.h.in])
-AC_CONFIG_HEADER([config.h])
+AC_CONFIG_HEADERS([config.h])
 AC_CONFIG_MACRO_DIR([m4])
 
 # Checks for programs.
