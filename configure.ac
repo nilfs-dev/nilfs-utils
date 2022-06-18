@@ -94,7 +94,6 @@ AC_CHECK_FUNC(clock_gettime,,
 AC_SUBST(LIB_POSIX_TIMER)
 
 # Checks for header files.
-AC_HEADER_STDC
 AC_HEADER_SYS_WAIT
 AC_CHECK_HEADERS([ctype.h err.h fcntl.h grp.h libintl.h limits.h \
 		  linux/magic.h linux/types.h locale.h mntent.h mqueue.h \
