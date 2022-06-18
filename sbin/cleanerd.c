@@ -795,22 +795,22 @@ static int daemonize(int nochdir, int noclose)
 	return 0;
 }
 
-static RETSIGTYPE handle_sigterm(int signum)
+static void handle_sigterm(int signum)
 {
 	siglongjmp(nilfs_cleanerd_env, 1);
 }
 
-static RETSIGTYPE handle_sighup(int signum)
+static void handle_sighup(int signum)
 {
 	nilfs_cleanerd_reload_config = 1;
 }
 
-static RETSIGTYPE handle_sigusr1(int signum)
+static void handle_sigusr1(int signum)
 {
 	nilfs_cleanerd_dump_req = 1;
 }
 
-static int set_signal_handler(int signum, RETSIGTYPE (*handler)(int))
+static int set_signal_handler(int signum, void (*handler)(int))
 {
 	struct sigaction act;
 
