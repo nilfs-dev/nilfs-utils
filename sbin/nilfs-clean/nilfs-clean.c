@@ -159,7 +159,7 @@ static void myprintf(const char *fmt, ...)
 	va_end(args);
 }
 
-static RETSIGTYPE nilfs_clean_escape(int signum)
+static void nilfs_clean_escape(int signum)
 {
 	siglongjmp(nilfs_clean_env, 1);
 }
