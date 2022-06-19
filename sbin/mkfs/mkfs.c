@@ -1091,7 +1091,18 @@ static void parse_options(int argc, char *argv[])
 			discard = 0;
 			break;
 		case 'L':
+			/*
+			 * For the 'volume_label' buffer, truncation is
+			 * explicitly OK without a terminating '\0'.
+			 */
+#if defined(__GNUC__) && __GNUC__ >= 8
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wstringop-truncation"
+#endif
 			strncpy(volume_label, optarg, sizeof(volume_label));
+#if defined(__GNUC__) && __GNUC__ >= 8
+#pragma GCC diagnostic pop
+#endif
 			break;
 		case 'm':
 			r_segments_percentage = atol(optarg);

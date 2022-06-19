@@ -151,7 +151,18 @@ static void parse_options(int argc, char *argv[],
 			opts->flags = O_RDWR;
 			break;
 		case 'L':
+			/*
+			 * For the 'label' buffer, truncation is
+			 * explicitly OK without a terminating '\0'.
+			 */
+#if defined(__GNUC__) && __GNUC__ >= 8
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wstringop-truncation"
+#endif
 			strncpy(opts->label, optarg, sizeof(opts->label));
+#if defined(__GNUC__) && __GNUC__ >= 8
+#pragma GCC diagnostic pop
+#endif
 			opts->mask |= NILFS_SB_LABEL;
 			opts->flags = O_RDWR;
 			break;
