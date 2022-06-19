@@ -270,14 +270,12 @@ static const char *user_string(uid_t uid)
 	static char buf[LOGIN_NAME_MAX + 8];
 	struct passwd *pwd;
 
-	strcpy(buf, "user ");
-
 	pwd = getpwuid(uid);
-	if (pwd)
-		strncpy(tmp, pwd->pw_name, sizeof(tmp));
-	else
-		strcpy(tmp, "unknown");
-	strcat(buf, tmp);
+	strncpy(tmp, pwd ? pwd->pw_name : "unknown", sizeof(tmp));
+	tmp[sizeof(tmp) - 1] = '\0';
+
+	snprintf(buf, sizeof(buf), "user %s", tmp);
+	buf[sizeof(buf) - 1] = '\0';
 	return buf;
 }
 
@@ -287,14 +285,12 @@ static const char *group_string(gid_t gid)
 	static char buf[LOGIN_NAME_MAX + 8];
 	struct group *grp;
 
-	strcpy(buf, "group ");
-
 	grp = getgrgid(gid);
-	if (grp)
-		strncpy(tmp, grp->gr_name, sizeof(tmp));
-	else
-		strcpy(tmp, "unknown");
-	strcat(buf, tmp);
+	strncpy(tmp, grp ? grp->gr_name : "unknown", sizeof(tmp));
+	tmp[sizeof(tmp) - 1] = '\0';
+
+	snprintf(buf, sizeof(buf), "group %s", tmp);
+	buf[sizeof(buf) - 1] = '\0';
 	return buf;
 }
 
