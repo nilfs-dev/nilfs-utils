@@ -3,8 +3,11 @@
  - libuuid-devel or uuid-dev
  - libmount-devel or libmount-dev
  - libblkid-devel or libblkid-dev
- - libselinux-devel or libselinux1-dev
-   (if /etc/mtab is a regular file and you use selinux context mount options)
+ - libselinux-devel or libselinux1-dev (*1)
+
+ *1: required only if supporting selinux context mount options without
+     using libmount.  By default, libmount is used and support of the
+     context mount depends on the libmount that distro provides.
 
 * How to compile
 
