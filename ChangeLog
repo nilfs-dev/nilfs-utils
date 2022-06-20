@@ -1,3 +1,22 @@
+nilfs-utils-2.2.9  Mon Jun 20, 2022 JST
+
+	* {mount,umount}.nilfs2: use libmount by default
+	* fix build warnings in Autoconf 2.70 or later:
+	  - configure.ac: use AC_CONFIG_HEADERS instead of AC_CONFIG_HEADER
+	  - configure.ac: remove AC_PROG_CC_C99 macro
+	  - configure.ac: use AC_USE_SYSTEM_EXTENSIONS instead of AC_GNU_SOURCE
+	  - configure.ac: use LT_INIT instead of AC_PROG_LIBTOOL
+	  - configure.ac: remove obsolete AC_HEADER_STDC marco
+	  - configure.ac: remove obsolete AC_HEADER_TIME marco
+	  - do not use AC_TYPE_SIGNAL and RETSIGTYPE
+	* fix gcc8 -Wstringop-truncation warnings:
+	  - mkfs, nilfs-tune: fix gcc8 warnings for volume name buffers
+	  - nilfs-tune: fix gcc8 warnings at user_string() and group_string()
+	* update documents:
+	  - README: update git repository url
+	  - README: alter URLs referenced in the developer notes
+	  - README: remedy a note about dependency on the selinux library
+
 nilfs-utils-2.2.8  Tue Aug 20, 2019 JST
 
 	* fix some build issues:
