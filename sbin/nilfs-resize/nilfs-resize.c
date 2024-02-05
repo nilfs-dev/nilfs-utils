@@ -141,6 +141,21 @@ static int pm_curpos;
 static int pm_in_progress;	/* 0: off, 1: on, -1: interrupted */
 static const char *pm_label;
 
+
+/**
+ * nilfs_resize_logger - logger function to pass to libraries used
+ * @priority: log level
+ * @fmt:      format string
+ * @...:      variable arguments that provide values for the conversion
+ *            descriptors in the format string
+ *
+ * This function provides a message output function specific to the resize
+ * command to relay and display message output from libraries.
+ *
+ * Here, messages with @priority greater than or equal to %LOG_ERR are
+ * redirected to standard error and a newline is inserted at the end of the
+ * message.
+ */
 static void nilfs_resize_logger(int priority, const char *fmt, ...)
 {
 	va_list args;
@@ -153,6 +168,12 @@ static void nilfs_resize_logger(int priority, const char *fmt, ...)
 	va_end(args);
 }
 
+/**
+ * nilfs_resize_progress_show - show progress bar on standard error output
+ *
+ * This function displays a progress bar on the standard error output showing
+ * the current progress and flushes the file descriptor.
+ */
 static void nilfs_resize_progress_show(void)
 {
 	int i, len = strlen(pm_label);
@@ -173,6 +194,17 @@ static void nilfs_resize_progress_show(void)
 	fflush(stderr);
 }
 
+/**
+ * nilfs_resize_progress_init - initialize the progress bar and display the
+ *                              initial bar
+ * @maxval: maximum progress value
+ * @label:  label name displayed to the left of the progress bar
+ *
+ * This function initializes each variable representing the internal state
+ * of the progress bar, displays the progress bar in its initial state with
+ * a progress value of 0, and sets &pm_in_progress to one indicating that
+ * the progress bar is being displayed.
+ */
 static void nilfs_resize_progress_init(__u64 maxval, const char *label)
 {
 	pm_max = maxval;
@@ -185,6 +217,19 @@ static void nilfs_resize_progress_init(__u64 maxval, const char *label)
 	pm_in_progress = 1;
 }
 
+/**
+ * nilfs_resize_progress_update - update progress bar display
+ * @done: progress value
+ *
+ * This function does nothing if &pm_in_progress is off value (0).
+ * Otherwise, updates the progress bar with the progress value given by
+ * @done and sets the progress value in &pm_done and the updated cursor
+ * position in &pm_curpos.
+ * If the progress bar display is interrupted by other messages
+ * (&pm_in_progress < 0), it calls nilfs_resize_progress_show() to redisplay
+ * the entire progress bar.  Changing the cursor position is done locally
+ * using combination of character output and the backspace character code.
+ */
 static void nilfs_resize_progress_update(__u64 done)
 {
 	int pos, delta;
@@ -217,11 +262,29 @@ static void nilfs_resize_progress_update(__u64 done)
 	pm_done = done;
 }
 
+/**
+ * nilfs_resize_progress_inc - increase/decrease progress
+ * @n: difference in progress (positive values are incremented, negative
+ *     values are decremented)
+ *
+ * This function increases the progress by @n (decreases it if it is a
+ * negative value) and updates the progress bar display with
+ * nilfs_resize_progress_update().
+ */
 static void nilfs_resize_progress_inc(long n)
 {
 	nilfs_resize_progress_update(pm_done + n);
 }
 
+/**
+ * nilfs_resize_progress_exit - stop updating progress bar
+ *
+ * This function does nothing if the progress bar is not in display mode.
+ * If not, it sets &pm_in_progress to display disabled state (0).
+ * If the progress bar is being updated and is not interrupted by other
+ * messages, it outputs a newline code to the standard error output to
+ * advance the line.
+ */
 static void nilfs_resize_progress_exit(void)
 {
 	if (!pm_in_progress)
@@ -231,6 +294,19 @@ static void nilfs_resize_progress_exit(void)
 	pm_in_progress = 0;
 }
 
+/**
+ * myprintf - dedicated message output function (for coexistence with
+ *            progress bar)
+ * @fmt: format string
+ * @...: variable arguments that provide values for the conversion
+ *       descriptors in the format string
+ *
+ * This function is used to print a message concurrently with the progress
+ * bar.  The message is relayed to standard error.
+ * If the progress bar is being updated, it outputs a new line code to
+ * change the line, and sets the progress bar status to "interrupted"
+ * (&pm_in_progress = -1).
+ */
 static void myprintf(const char *fmt, ...)
 {
 	va_list args;
@@ -272,6 +348,16 @@ static int nilfs_resize_reload_super(struct nilfs *nilfs)
 	return 0;
 }
 
+/**
+ * nilfs_resize_update_sustat - update nilfs segment usage statistics
+ * @nilfs: nilfs object
+ *
+ * This is a wrapper function for nilfs_get_sustat() and stores segment
+ * usage statistics in the global variable &sustat.  This uses myprintf()
+ * to output an error message when errors occur.
+ *
+ * Return: 0 on success, -1 on failure.
+ */
 static int nilfs_resize_update_sustat(struct nilfs *nilfs)
 {
 	if (nilfs_get_sustat(nilfs, &sustat) < 0) {
@@ -301,6 +387,17 @@ static int nilfs_resize_segment_is_protected(struct nilfs *nilfs, __u64 segnum)
 	return ret;
 }
 
+/**
+ * nilfs_resize_lock_cleaner - block signals and lock cleaner
+ * @nilfs:  nilfs object
+ * @sigset: place to store the old signal set
+ *
+ * This is a wrapper function for sigprocmask() and nilfs_lock_cleaner(),
+ * and uses myprintf() to output an error message when errors occur.
+ * On success, %SIGINT and %SIGTERM are blocked, and the cleaner is locked.
+ *
+ * Return: 0 on success, -1 on failure.
+ */
 static int nilfs_resize_lock_cleaner(struct nilfs *nilfs, sigset_t *sigset)
 {
 	sigset_t newset;
@@ -322,6 +419,11 @@ static int nilfs_resize_lock_cleaner(struct nilfs *nilfs, sigset_t *sigset)
 	return 0;
 }
 
+/**
+ * nilfs_resize_unlock_cleaner - unlock cleaner and unblock signals
+ * @nilfs:  nilfs object
+ * @sigset: place to store the original signal set
+ */
 static void nilfs_resize_unlock_cleaner(struct nilfs *nilfs,
 					const sigset_t *sigset)
 {
@@ -329,12 +431,30 @@ static void nilfs_resize_unlock_cleaner(struct nilfs *nilfs,
 	sigprocmask(SIG_SETMASK, sigset, NULL);
 }
 
+/**
+ * nilfs_resize_calc_nrsvsegs - calculate the number of reserved segments
+ * @nsegs: number of segments
+ */
 static __u64 nilfs_resize_calc_nrsvsegs(__u64 nsegs)
 {
 	return max_t(__u64, NILFS_MIN_NRSVSEGS,
 		     DIV_ROUND_UP(nsegs * rsvsegs_percentage, 100));
 }
 
+/**
+ * nilfs_resize_check_free_space - check if free space remains after resizing
+ * @nilfs:    nilfs object
+ * @newnsegs: number of segments
+ *
+ * This function checks whether there is free space for at least the number
+ * of reserved segments when resizing to the number of segments specified by
+ * @newnsegs, and outputs an error message if not.
+ *
+ * In verbose mode, this function outputs information about the remaining
+ * space if there is enough space.
+ *
+ * Return: 0 if there is enough space, -1 otherwise.
+ */
 static int nilfs_resize_check_free_space(struct nilfs *nilfs, __u64 newnsegs)
 {
 	unsigned long long nrsvsegs, nsegs, nbytes;
@@ -361,6 +481,13 @@ static int nilfs_resize_check_free_space(struct nilfs *nilfs, __u64 newnsegs)
 	return 0;
 }
 
+/**
+ * nilfs_resize_restore_alloc_range - restore the allocatable range of segments
+ * @nilfs: nilfs object
+ *
+ * This function uses the saved original layout information to reset the
+ * range of allocatable segments back to before the start of shrinking.
+ */
 static void nilfs_resize_restore_alloc_range(struct nilfs *nilfs)
 {
 	if (nilfs_resize_update_sustat(nilfs) < 0)
@@ -368,6 +495,25 @@ static void nilfs_resize_restore_alloc_range(struct nilfs *nilfs)
 	nilfs_set_alloc_range(nilfs, 0, fs_devsize);
 }
 
+/**
+ * nilfs_resize_find_movable_segments - find movable segments within a
+ *                                      specified range
+ * @nilfs:      nilfs object
+ * @start:      starting segment number of search range (inclusive)
+ * @end:        ending segment number of search range (inclusive)
+ * @segnumv:    array of 64-bit integers that stores the discovered segment
+ *              numbers
+ * @maxsegnums: maximum number of segments to search (maximum number of
+ *              segment numbers that can be stored in @segnumv)
+ *
+ * This function searches for segments that are reclaimable and not
+ * protected by superblock log pointers within the range of the segment
+ * sequence specified by [@start, @end], and stores their numbers in
+ * @segnumv.
+ *
+ * Return: on success, the number of movable segments discovered, -1 on
+ * error.
+ */
 static ssize_t
 nilfs_resize_find_movable_segments(struct nilfs *nilfs, __u64 start,
 				   __u64 end, __u64 *segnumv,
@@ -406,6 +552,22 @@ nilfs_resize_find_movable_segments(struct nilfs *nilfs, __u64 start,
 }
 
 #if 0
+/**
+ * nilfs_resize_get_latest_segment - find latest segment within a specified
+ *                                   range
+ * @nilfs:      nilfs object
+ * @start:      starting segment number of search range (inclusive)
+ * @end:        ending segment number of search range (inclusive)
+ * @segnump     place to store the number of the most recently updated
+ *              segment
+ *
+ * This function searches for dirty (in-use) and non-error segments in
+ * the range specified by [@start, @end] of the segment sequence, and
+ * stores the number of the most recently updated segment in @segnump.
+ *
+ * Return: 1 on success, 0 if no segments were in use and not in error,
+ * -1 on error.
+ */
 static int
 nilfs_resize_get_latest_segment(struct nilfs *nilfs, __u64 start, __u64 end,
 				__u64 *segnump)
@@ -445,6 +607,25 @@ nilfs_resize_get_latest_segment(struct nilfs *nilfs, __u64 start, __u64 end,
 }
 #endif
 
+/**
+ * nilfs_resize_find_active_segments - find active (grabbed by log writer)
+ *                                     segments within a specified range
+ * @nilfs:      nilfs object
+ * @start:      starting segment number of search range (inclusive)
+ * @end:        ending segment number of search range (inclusive)
+ * @segnumv:    array of 64-bit integers that stores the discovered segment
+ *              numbers
+ * @maxsegnums: maximum number of segments to search (maximum number of
+ *              segment numbers that can be stored in @segnumv)
+ *
+ * This function searches for segments that are reclaimable and not
+ * protected by superblock log pointers within the range of the segment
+ * sequence specified by [@start, @end], and stores their numbers in
+ * @segnumv.
+ *
+ * Return: on success, the number of movable segments discovered, -1 on
+ * error.
+ */
 static ssize_t
 nilfs_resize_find_active_segments(struct nilfs *nilfs, __u64 start, __u64 end,
 				  __u64 *segnumv, unsigned long maxsegnums)
@@ -476,6 +657,24 @@ nilfs_resize_find_active_segments(struct nilfs *nilfs, __u64 start, __u64 end,
 	return snp - segnumv; /* return the number of found segments */
 }
 
+/**
+ * nilfs_resize_find_inuse_segments - find reclaimable segments within a
+ *                                    specified range
+ * @nilfs:      nilfs object
+ * @start:      starting segment number of search range (inclusive)
+ * @end:        ending segment number of search range (inclusive)
+ * @segnumv:    array of 64-bit integers that stores the discovered segment
+ *              numbers
+ * @maxsegnums: maximum number of segments to search (maximum number of
+ *              segment numbers that can be stored in @segnumv)
+ *
+ * This function searches for reclaimable (dirty, non-error, and non-active)
+ * segments within the range of the segment sequence specified by
+ * [@start, @end], and stores their numbers in @segnumv.
+ *
+ * Return: on success, the number of reclaimable segments discovered, -1 on
+ * error.
+ */
 static ssize_t
 nilfs_resize_find_inuse_segments(struct nilfs *nilfs, __u64 start, __u64 end,
 				 __u64 *segnumv, unsigned long maxsegnums)
@@ -506,6 +705,19 @@ nilfs_resize_find_inuse_segments(struct nilfs *nilfs, __u64 start, __u64 end,
 	return snp - segnumv; /* return the number of found segments */
 }
 
+/**
+ * nilfs_resize_count_inuse_segments - count the number of reclaimable
+ *                                     segments within a specified range
+ * @nilfs:      nilfs object
+ * @start:      starting segment number of search range (inclusive)
+ * @end:        ending segment number of search range (inclusive)
+ *
+ * This function counts and returns the number of reclaimable (dirty,
+ * non-error, and non-active) segments within the range of the segment
+ * sequence specified by [@start, @end].
+ *
+ * Return: number of reclaimable segments on success, -1 on error.
+ */
 static ssize_t
 nilfs_resize_count_inuse_segments(struct nilfs *nilfs, __u64 start, __u64 end)
 {
@@ -539,6 +751,21 @@ nilfs_resize_count_inuse_segments(struct nilfs *nilfs, __u64 start, __u64 end)
 #define	NILFS_RESIZE_SEGMENT_PROTECTED		0x01
 #define NILFS_RESIZE_SEGMENT_UNRECLAIMABLE	0x02
 
+/**
+ * nilfs_resize_verify_failure - check the cause of movement failure for a
+ *                               segment number array
+ * @nilfs:   nilfs object
+ * @segnumv: array of segment numbers
+ * @nsegs:   number of segment numbers stored in @segnumv
+ *
+ * This function examines the usage of each segment specified by the segment
+ * number array @segnumv, determines why they are not movable (unreclaimable
+ * and/or protected), and returns its summary.
+ *
+ * Return: OR value of the following reason bit flags.
+ * * %NILFS_RESIZE_SEGMENT_PROTECTED      - Protected segments exist
+ * * %NILFS_RESIZE_SEGMENT_UNRECLAIMABLE  - Unreclaimable segments exist
+ */
 static int nilfs_resize_verify_failure(struct nilfs *nilfs,
 				       __u64 *segnumv, unsigned long nsegs)
 {
@@ -558,6 +785,29 @@ static int nilfs_resize_verify_failure(struct nilfs *nilfs,
 	return reason;
 }
 
+/**
+ * nilfs_resize_move_segments - attempt to move segments and find out why
+ *                              some segments cannot be moved
+ * @nilfs:   nilfs object
+ * @segnumv: array of segment numbers
+ * @nsegs:   number of segment numbers stored in @segnumv
+ * @reason:  place to store the reason as an OR value of bit flags, if
+ *           there are segments that failed to move
+ *
+ * This function attempts to move each segment specified by the segment
+ * number array @segnumv, and if a successfully moved (evicted) segment
+ * is in the area to be truncated, it calls nilfs_resize_progress_inc()
+ * to advance the displayed truncation progress by the number of successful
+ * segments.
+ *
+ * If there are segments that fail to be moved and @reason is not %NULL, it
+ * uses nilfs_resize_verify_failure() to check the reason for the failure
+ * and stores it in @reason as an OR value of the following bit flags:
+ * * %NILFS_RESIZE_SEGMENT_PROTECTED      - Protected segments exist
+ * * %NILFS_RESIZE_SEGMENT_UNRECLAIMABLE  - Unreclaimable segments exist
+ *
+ * Return: Number of segments moved on success, -1 on error.
+ */
 static ssize_t nilfs_resize_move_segments(struct nilfs *nilfs,
 					  __u64 *segnumv, unsigned long nsegs,
 					  int *reason)
@@ -618,6 +868,26 @@ static int __nilfs_resize_try_update_log_cursor(struct nilfs *nilfs)
 	return ret;
 }
 
+/**
+ * nilfs_resize_try_to_update_log_cursor - attempt to update log cursors
+ * @nilfs:  nilfs object
+ * @reason: string representing the trigger for updating log cursors
+ *
+ * This function updates "log cursors", the starting points of segment
+ * chains pointed to by the two superblocks (the starting segments of log
+ * tracking during recovery mount).  Updates are performed using sync,
+ * freeze and thaw ioctls, which are effective for converging these
+ * cursors.
+ * Then, to obtain the latest information on the segments protected by the
+ * log cursors, it updates the segment usage statistics &sustat by calling
+ * nilfs_resize_update_sustat().
+ *
+ * In verbose mode, this function outputs a message containing the reason
+ * for the execution before updating log cursors, and a message containing
+ * the result after updating them.
+ *
+ * Return: 0 on success, -1 on failure.
+ */
 static int nilfs_resize_try_update_log_cursor(struct nilfs *nilfs,
 					      const char *reason)
 {
@@ -633,6 +903,29 @@ static int nilfs_resize_try_update_log_cursor(struct nilfs *nilfs,
 	return ret;
 }
 
+/**
+ * nilfs_resize_reclaim_nibble - somehow move a specified number of segments
+ *                               within a specified range or in front of it
+ * @nilfs:     nilfs object
+ * @start:     starting segment number of the segment range to reclaim
+ * @end:       ending segment number of the segment range to reclaim
+ * @count:     number of segments to attempt to reclaim
+ * @unprotect: flag whether to attempt to unprotect protected segments by
+ *             updating log cursors
+ *
+ * This function moves up to @count movable segments in the range specified
+ * by [@start, @end].  If there are not enough movable segments in the range,
+ * it tries to move movable segments in the [0, @start) range to force
+ * active or protected segments out of the area to be truncated.
+ * If no movable segments are found in both ranges, it attempts to update
+ * log cursors once.
+ *
+ * If the @unprotect flag is true and no attempt has been made to update
+ * log cursors, an attempt will be made even if the same or more segments
+ * have been moved.
+ *
+ * Return: 0 if the specified number of segments can be moved, -1 if not.
+ */
 static int nilfs_resize_reclaim_nibble(struct nilfs *nilfs,
 				       unsigned long long start,
 				       unsigned long long end,
@@ -697,6 +990,22 @@ failed:
 	return -1;
 }
 
+/**
+ * nilfs_resize_move_out_active_segments - kick active segments from
+ *                                         specified range
+ * @nilfs: nilfs object
+ * @start: starting segment number of the range to be evicted
+ * @end:   ending segment number of the range to be evicted
+ *
+ * This function kicks out active segments in the range specified by
+ * [@start, @end] by calling nilfs_resize_reclaim_nibble() with a count
+ * equal to that number.  This active segment eviction will be attempted
+ * up to 5 times.
+ *
+ * Return: 0 if there is no active segment, 1 if the eviction was successful
+ * in at least one attempt, or -1 in case of an error or if eviction cannot
+ * be achieved.
+ */
 static int nilfs_resize_move_out_active_segments(struct nilfs *nilfs,
 						 unsigned long long start,
 						 unsigned long long end)
@@ -734,6 +1043,27 @@ static int nilfs_resize_move_out_active_segments(struct nilfs *nilfs,
 	return retrycnt > 0;
 }
 
+/**
+ * nilfs_resize_reclaim_range - reclaim segments to shrink the file system
+ *                              to a specified number of segments
+ * @nilfs:    nilfs object
+ * @newnsegs: target number of segments for shrink
+ *
+ * This function evicts active segments and in-use (reclaimable) segments
+ * from the range that exceeds @newnsegs limit so that the used segment
+ * space stays below the @newnsegs limit.
+ *
+ * It first tries to evict active segments from outside the range, and if
+ * successful, reclaims the remaining reclaimable segments.
+ * If part of the eviction of reclaimable segments fails due to the
+ * presence of protected segments by log cursors, it attempts to remove
+ * them using nilfs_resize_reclaim_nibble().
+ *
+ * While the progress bar is being displayed, the progress is evaluated
+ * and the progress bar is updated between these operations.
+ *
+ * Return: 0 on success, -1 on failure.
+ */
 static int nilfs_resize_reclaim_range(struct nilfs *nilfs, __u64 newnsegs)
 {
 	unsigned long long start, end, segnum;
@@ -814,6 +1144,11 @@ out:
 	return ret;
 }
 
+/**
+ * nilfs_print_resize_error - output error message when resize operation fails
+ * @err:    error number
+ * @shrink: expand or shrink flag (non-zero for shrink)
+ */
 static void nilfs_print_resize_error(int err, int shrink)
 {
 	myprintf("Error: failed to %s the filesystem: %s\n",
@@ -822,6 +1157,12 @@ static void nilfs_print_resize_error(int err, int shrink)
 		myprintf("       This kernel does not support the resize API.\n");
 }
 
+/**
+ * nilfs_resize_prompt - output a confirmation prompt to confirm resizing,
+ *                       prompting the user to enter "y" (yes) or something
+ *                       else
+ * @newsize: target device size after resizing (in bytes)
+ */
 static int nilfs_resize_prompt(unsigned long long newsize)
 {
 	int c;
@@ -830,6 +1171,39 @@ static int nilfs_resize_prompt(unsigned long long newsize)
 	return ((c = getchar()) == 'y' || c == 'Y') ? 0 : -1;
 }
 
+/**
+ * nilfs_shrink_online - shrink a mounted file system
+ * @nilfs:   nilfs object
+ * @device:  device pathname
+ * @newsize: target device size after resizing (in bytes)
+ *
+ * This function shrinks the file system so that the device size can be
+ * truncated to @newsize bytes.
+ *
+ * This function first calculates the maximum number of segments that can
+ * truncate the file system below the target byte size, taking into account
+ * the second superblock.
+ *
+ * Then, if it is possible to downsize from calculating the remaining
+ * capacity, it prompts to confirm shrinking unless the "yes" option is
+ * specified.
+ *
+ * If the user requests execution interactively (or the confirmation is
+ * skipped with the "yes" option), it first sets the allocatable area of
+ * new segments to [0, @newsize) by calling nilfs_set_alloc_range ioctl.
+ *
+ * Next, it counts the reclaimable segments (segments in use) in the area
+ * to be truncated and displays the initial progress bar.
+ *
+ * It then calls nilfs_resize_reclaim_range() to move the data in the used
+ * segments in the area to be truncated, and if successful, it locks
+ * the cleaner and calls nilfs_resize ioctl to instruct the file system
+ * to finalize the resize.  If resize ioctl fails with error number %EBUSY,
+ * reclamation and resize finalization will be retried at most two more
+ * times.
+ *
+ * Return: %EXIT_SUCCESS on success, %EXIT_FAILURE on failure.
+ */
 static int nilfs_shrink_online(struct nilfs *nilfs, const char *device,
 			       unsigned long long newsize)
 {
@@ -941,6 +1315,24 @@ restore_alloc_range:
 	goto out;
 }
 
+/**
+ * nilfs_extend_online - extend a mounted file system
+ * @nilfs:   nilfs object
+ * @device:  device pathname
+ * @newsize: target device size after resizing (in bytes)
+ *
+ * This function expands the file system to use up to @newsize bytes on the
+ * device.
+ *
+ * This function first prompts to confirm the expansion unless the "yes"
+ * option is specified.
+ *
+ * If the user requests execution interactively (or the confirmation is
+ * skipped with the "yes" option), it locks the cleaner and calls
+ * nilfs_resize ioctl to instruct the file system to finalize the resize.
+ *
+ * Return: %EXIT_SUCCESS on success, %EXIT_FAILURE on failure.
+ */
 static int nilfs_extend_online(struct nilfs *nilfs, const char *device,
 			       unsigned long long newsize)
 {
@@ -970,6 +1362,24 @@ out:
 	return status;
 }
 
+/**
+ * nilfs_resize_online - resize a mounted file system
+ * @nilfs:   nilfs object
+ * @device:  device pathname
+ * @newsize: target device size after resizing (in bytes)
+ *
+ * This function resizes the file system so that the device size fits
+ * @newsize bytes.
+ *
+ * It first opens nilfs file system with nilfs_open() and reads its
+ * layout information.  Then, if @newsize is larger than the current
+ * device size recognized by the file system, it calls
+ * nilfs_extend_online(), or if it is smaller than the current device size,
+ * calls nilfs_shrink_online().  The nilfs object is eventually closed using
+ * nilfs_close().
+ *
+ * Return: %EXIT_SUCCESS on success, %EXIT_FAILURE on failure.
+ */
 static int nilfs_resize_online(const char *device, unsigned long long newsize)
 {
 	struct nilfs *nilfs;
@@ -1013,11 +1423,19 @@ out:
 	return status;
 }
 
+/**
+ * nilfs_resize_usage - show command usage
+ */
 static void nilfs_resize_usage(void)
 {
 	fprintf(stderr, NILFS_RESIZE_USAGE, progname);
 }
 
+/**
+ * nilfs_resize_parse_options - parse command options
+ * @argc: argument count of command line including command pathname
+ * @argv: argument vector
+ */
 static void nilfs_resize_parse_options(int argc, char *argv[])
 {
 #ifdef _GNU_SOURCE
@@ -1052,6 +1470,11 @@ static void nilfs_resize_parse_options(int argc, char *argv[])
 	}
 }
 
+/**
+ * nilfs_resize_parse_size - parse the size argument
+ * @arg:   size argument string
+ * @sizep: place to store the size
+ */
 static int nilfs_resize_parse_size(const char *arg, unsigned long long *sizep)
 {
 	unsigned long long size;
@@ -1092,6 +1515,10 @@ static int nilfs_resize_parse_size(const char *arg, unsigned long long *sizep)
 	return 0;
 }
 
+/**
+ * nilfs_resize_get_device_size - get the actual size of the device
+ * @device: device pathname
+ */
 static int nilfs_resize_get_device_size(const char *device)
 {
 	int devfd, ret = -1;
@@ -1114,6 +1541,11 @@ out:
 	return ret;
 }
 
+/**
+ * main - main function of nilfs-resize command
+ * @argc: argument count of command line including command pathname
+ * @argv: argument vector
+ */
 int main(int argc, char *argv[])
 {
 	char *last;
