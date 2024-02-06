@@ -86,6 +86,36 @@ static inline int nilfs_suinfo_reclaimable(const struct nilfs_suinfo *si)
 		!nilfs_suinfo_active(si) && !nilfs_suinfo_error(si);
 }
 
+/**
+ * nilfs_suinfo_empty - determine whether a segment is empty based on its
+ *                      usage status
+ * @si: pointer to a segment usage information structure
+ *
+ * This function determines whether a segment is empty from the contents of
+ * @si.  If nilfs_suinfo_reclaimable() returns true and then this function
+ * also returns true, the segment is considered "scrapped" and treated as
+ * "unprotected" by GC.  And since the sui_nblocks value of the segment
+ * that the log writer is grabbing for the next write is also 0, this should
+ * normally be used in conjunction with nilfs_suinfo_reclaimable() to
+ * distinguish that state with the "active" flag.  (Note that the "active"
+ * flag is not a flag recorded on the media, but only visible via the API).
+ *
+ * This helper function is used to clarify that this purpose and caveat
+ * applies.
+ *
+ * The "scrapped" state of a segment (dirty and not active and
+ * sui_nblocks == 0) ensures that the segment is not accidentally allocated
+ * and overwritten during log writes in the recovery context, and that the
+ * segment is later freed by GC without being parsed.
+ *
+ * Return: true if the segment is empty, false otherwise.
+ */
+static inline int nilfs_suinfo_empty(const struct nilfs_suinfo *si)
+{
+	return si->sui_nblocks == 0;
+}
+
+
 extern void (*nilfs_gc_logger)(int priority, const char *fmt, ...);
 
 #endif /* NILFS_GC_H */
