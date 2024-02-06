@@ -563,9 +563,12 @@ static int nilfs_segments_still_reclaimable(struct nilfs *nilfs,
 	int i, ret;
 
 	for (i = 0; i < nsegs; i++) {
-		if (nilfs_get_suinfo(nilfs, segnumv[i], &si, 1) == 1 &&
-		    !nilfs_suinfo_reclaimable(&si))
-			continue;
+		if (nilfs_get_suinfo(nilfs, segnumv[i], &si, 1) == 1) {
+			if (!nilfs_suinfo_reclaimable(&si))
+				continue;
+			if (nilfs_suinfo_empty(&si))
+				return 1;  /* Found a scrapped segment */
+		}
 
 		ret = nilfs_segment_is_protected(nilfs, segnumv[i], protseq);
 		if (ret > 0)

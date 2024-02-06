@@ -285,6 +285,17 @@ static ssize_t nilfs_acc_blocks(struct nilfs *nilfs,
 			continue;
 		}
 
+		if (nilfs_suinfo_empty(&si)) {
+			/*
+			 * "Scrapped" segment - the information in the segment
+			 * summary is not valid because it's unwritten.
+			 * Make it subject to reclaim without comparing
+			 * sequence numbers.
+			 */
+			i++;
+			continue;
+		}
+
 		ret = nilfs_get_segment(nilfs, segnums[i], &segment);
 		if (unlikely(ret < 0))
 			return -1;

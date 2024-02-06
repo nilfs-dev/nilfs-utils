@@ -533,6 +533,13 @@ nilfs_resize_find_movable_segments(struct nilfs *nilfs, uint64_t start,
 			if (!nilfs_suinfo_reclaimable(&suinfo[i]))
 				continue;
 
+			if (nilfs_suinfo_empty(&suinfo[i])) {
+				/* Scrapped segments can be removed */
+				*snp++ = segnum;
+				rest--;
+				continue;
+			}
+
 			ret = nilfs_segment_is_protected(nilfs, segnum,
 							 sustat.ss_prot_seq);
 			if (unlikely(ret < 0)) {
@@ -778,6 +785,17 @@ static int nilfs_resize_verify_failure(struct nilfs *nilfs,
 		if (nilfs_get_suinfo(nilfs, segnumv[i], &si, 1) == 1) {
 			if (!nilfs_suinfo_reclaimable(&si))
 				reason |= NILFS_RESIZE_SEGMENT_UNRECLAIMABLE;
+			else if (nilfs_suinfo_empty(&si))
+				continue;  /* Scrapped segment */
+			if (nilfs_suinfo_active(&si)) {
+				/*
+				 * Active segments may not have been written
+				 * either, so we determine them to be protected
+				 * without reading the segment summary.
+				 */
+				reason |= NILFS_RESIZE_SEGMENT_PROTECTED;
+				continue;
+			}
 		}
 		ret = nilfs_segment_is_protected(nilfs, segnumv[i],
 						 sustat.ss_prot_seq);
