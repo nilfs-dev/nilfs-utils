@@ -1230,7 +1230,8 @@ static int nilfs_shrink_online(struct nilfs *nilfs, const char *device,
 	sigset_t sigset;
 	int status = EXIT_FAILURE;
 	unsigned long long newsb2off; /* new offset of secondary super block */
-	__u64 newnsegs, nuses;
+	__u64 newnsegs;
+	ssize_t nuses;
 	unsigned retry;
 
 	/* set logger callback */
