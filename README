@@ -20,6 +20,11 @@ into /usr/lib64 instead of /usr/lib, change the library directory with
 
  $ ./configure --libdir=/usr/lib64
 
+If your want to separate the library files into a subdirectory, specify
+it as follows, for example:
+
+ $ ./configure --libdir=/usr/lib64/nilfs
+
 If /etc/mtab is not a symlink to /proc/self/mounts but a regular file
 in the target system, run the configure script with --without-libmount
 option:
