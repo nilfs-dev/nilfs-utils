@@ -428,11 +428,54 @@ out:
 	return res;
 }
 
+/**
+ * nilfs_mnt_context_complete_root - complete root of the mount
+ * @cxt: mount context
+ *
+ * This function tries to retrieve root from the mount entry information
+ * obtained by searching the mount table and sets it to @cxt.
+ *
+ * Return: 0 on success, or -errno on error.
+ */
+static int nilfs_mnt_context_complete_root(struct libmnt_context *cxt)
+{
+	struct libmnt_table *mtab;
+	struct libmnt_fs *fs;
+	int res;
+
+	res = mnt_context_get_mtab(cxt, &mtab);
+	if (res < 0) {
+		error(_("%s: failed to get mtab: %s"), progname,
+		      strerror(-res));
+		goto failed;
+	}
+
+	fs = nilfs_find_mount(cxt, mtab, mnt_context_get_target(cxt), NULL);
+	if (fs)
+		mnt_fs_set_root(mnt_context_get_fs(cxt), mnt_fs_get_root(fs));
+
+	res = 0;
+failed:
+	return res;
+}
+
 static int nilfs_update_mount_state(struct nilfs_mount_info *mi)
 {
 	struct libmnt_context *cxt = mi->cxt;
 	struct nilfs_mount_attrs *old_attrs;
 	int rungc, gc_ok;
+
+	if (!mnt_fs_get_root(mnt_context_get_fs(cxt)) &&
+	    ((mi->mflags & MS_REMOUNT) || mnt_context_is_fake(cxt))) {
+		/*
+		 * Complement the mount root against remount or fake mount
+		 * context to avoid problems due to incomplete utab entry
+		 * with the mount root "ROOT" missing, whose attributes cannot
+		 * be referenced by umount or remount, making cleanerd
+		 * uncontrollable.
+		 */
+		nilfs_mnt_context_complete_root(cxt);
+	}
 
 	gc_ok = !(mi->mflags & MS_RDONLY) && !(mi->mflags & MS_BIND);
 	rungc = gc_ok && !mi->new_attrs.nogc;
