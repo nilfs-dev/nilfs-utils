@@ -220,12 +220,33 @@ static void nilfs_mount_parse_options(int argc, char *argv[],
 	}
 }
 
-static struct libmnt_fs *nilfs_find_rw_mount(struct libmnt_context *cxt,
-					     struct libmnt_table *mtab)
+/**
+ * nilfs_find_mount - find matching nilfs entry from mount table
+ * @cxt:     mount context
+ * @mtab:    pointer to tab
+ * @target:  pointer to mountpoint path or %NULL
+ * @options: comma delimited list of options (and nooptions)
+ *
+ * This function searches in reverse order for an entry in the mount table
+ * given by @mtab that matches the device and file system type in @cxt.
+ * If @target and @options are not %NULL, the corresponding mount points and
+ * mount options are also added to the matching conditions.
+ *
+ * For details on the format of @options, see the specification of
+ * mnt_match_options().
+ *
+ * Return: If a matching entry is found, its FS description, or %NULL if not
+ * found.
+ */
+static struct libmnt_fs *nilfs_find_mount(struct libmnt_context *cxt,
+					  struct libmnt_table *mtab,
+					  const char *target,
+					  const char *options)
 {
 	struct libmnt_iter *iter = mnt_new_iter(MNT_ITER_BACKWARD);
 	const char *src = mnt_context_get_source(cxt);
 	const char *type = mnt_context_get_fstype(cxt);
+	struct libmnt_cache *cache = mnt_table_get_cache(mtab);
 	struct libmnt_fs *fs = NULL;
 
 	if (!iter)
@@ -233,13 +254,28 @@ static struct libmnt_fs *nilfs_find_rw_mount(struct libmnt_context *cxt,
 
 	while (mnt_table_next_fs(mtab, iter, &fs) == 0) {
 		if (mnt_fs_match_fstype(fs, type) &&
-		    mnt_fs_match_source(fs, src, mnt_table_get_cache(mtab)) &&
-		    mnt_fs_match_options(fs, "rw"))
+		    mnt_fs_match_source(fs, src, cache) &&
+		    (!target || mnt_fs_match_target(fs, target, cache)) &&
+		    (!options || mnt_fs_match_options(fs, options)))
 			break;
 	}
 
 	mnt_free_iter(iter);
 	return fs;
+}
+
+/**
+ * nilfs_find_rw_mount - find nilfs read/write mount entry from mount table
+ * @cxt:     mount context
+ * @mtab:    pointer to tab
+ *
+ * Return: If a matching entry is found, its FS description, or NULL if not
+ * found.
+ */
+static inline struct libmnt_fs *nilfs_find_rw_mount(struct libmnt_context *cxt,
+						    struct libmnt_table *mtab)
+{
+	return nilfs_find_mount(cxt, mtab, NULL, "rw");
 }
 
 static int nilfs_prepare_mount(struct nilfs_mount_info *mi)
