@@ -57,6 +57,12 @@ AC_ARG_WITH([blkid],
 	AS_HELP_STRING([--without-blkid], [compile without blkid support]),
 	[], with_blkid=yes)
 
+AC_ARG_ENABLE([uapi_header_install],
+	AS_HELP_STRING([--enable-uapi-header-install],
+		       [install kernel uapi header files]),
+	[enable_uapi_header_install="${enableval}"],
+	[enable_uapi_header_install=no])
+
 # Checks for libraries.
 AC_CHECK_LIB([uuid], [uuid_generate],
 	[AC_DEFINE([HAVE_LIBUUID], 1,
@@ -138,6 +144,9 @@ if test "${with_selinux}" = "yes"; then
    AC_CHECK_FUNCS([security_get_initial_context])
 fi
 AC_SUBST([LIB_SELINUX])
+
+AM_CONDITIONAL(CONFIG_UAPI_HEADER_INSTALL,
+	       [test "$enable_uapi_header_install" = yes])
 
 # Checks for typedefs, structures, and compiler characteristics.
 AC_C_CONST

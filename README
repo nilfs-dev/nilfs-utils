@@ -55,6 +55,23 @@ of selinux context mount options (-o context=<context>, etc):
 For helpers built with mount library (libmount), support of the
 context mount depends on the libmount that distro provides.
 
+If you are having problems due to the missing nilfs2 disk format or
+ioctl interface definition file (nilfs2_ondisk.h or nilfs2_api.h,
+respectively), try installing the Linux kernel source or header file
+package first.
+
+If you still cannot install these files, or if you want to overwrite
+them with files from this package, specify the
+"--enable-uapi-header-install" option as an argument to the configure
+script.  This will install the uapi header files included in this
+package:
+
+ $ ./configure --enable-uapi-header-install
+
+Note that the utility package itself references bundled local header
+files, so you don't need to install these files with this option to
+build.
+
 
 * How to get development sources
 
