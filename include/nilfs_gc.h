@@ -13,7 +13,7 @@
 
 #include <stddef.h>	/* size_t */
 #include <stdint.h>	/* uint64_t, etc */
-#include "nilfs2_api.h"	/* nilfs_suinfo_{dirty,active,error}, nilfs_suinfo */
+#include <linux/nilfs2_api.h>  /* nilfs_suinfo, etc */
 #include "nilfs.h"	/* nilfs_cno_t, struct nilfs */
 
 /* flags for nilfs_reclaim_params struct */

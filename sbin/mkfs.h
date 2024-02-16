@@ -15,8 +15,8 @@
 #ifndef NILFS_MKFS_H
 #define NILFS_MKFS_H
 
+#include <linux/nilfs2_ondisk.h>
 #include "compat.h"
-#include "nilfs2_ondisk.h"
 #include "util.h"	/* BUG_ON() */
 
 #define NILFS_DISKHDR_SIZE		4096 /* HDD header (MBR+superblock) */

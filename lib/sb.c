@@ -56,11 +56,11 @@
 #include <sys/ioctl.h>
 #endif	/* HAVE_SYS_IOCTL_H */
 
+#include <linux/nilfs2_ondisk.h>
 #include <errno.h>
 #include <assert.h>
 #include "nilfs.h"
 #include "compat.h"
-#include "nilfs2_ondisk.h"
 #include "util.h"
 #include "crc32.h"
 

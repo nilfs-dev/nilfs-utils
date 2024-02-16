@@ -11,9 +11,9 @@
 
 #include <stdint.h>	/* uint32_t, etc */
 #include <linux/types.h>
+#include <linux/nilfs2_ondisk.h>
 
 #include "compat.h"
-#include "nilfs2_ondisk.h"
 #include "util.h"
 
 /**

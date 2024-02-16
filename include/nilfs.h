@@ -14,7 +14,7 @@
 
 #include <stdint.h>	/* uint32_t, etc */
 #include <sys/types.h>	/* off_t, size_t */
-#include "nilfs2_api.h"
+#include <linux/nilfs2_api.h>
 
 typedef uint64_t nilfs_cno_t;
 

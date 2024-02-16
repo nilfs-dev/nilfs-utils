@@ -60,13 +60,13 @@
 #include <pwd.h>
 #endif	/* HAVE_PWD_H */
 
+#include <linux/nilfs2_ondisk.h>
 #include <sys/stat.h>
 #include <ctype.h>
 #include <assert.h>
 #include <errno.h>
 #include "nilfs.h"
 #include "compat.h"
-#include "nilfs2_ondisk.h"
 #include "nilfs_feature.h"
 
 

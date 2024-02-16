@@ -56,6 +56,7 @@
 #include <time.h>	/* timespec, nanosleep() */
 #endif	/* HAVE_TIME_H */
 
+#include <linux/nilfs2_ondisk.h>
 #include <sys/stat.h>
 #include <assert.h>
 #include <stdarg.h>	/* va_start, va_end, vfprintf */
@@ -63,7 +64,6 @@
 #include <signal.h>
 #include "nilfs.h"
 #include "compat.h"
-#include "nilfs2_ondisk.h"
 #include "util.h"
 #include "nilfs_gc.h"
 
