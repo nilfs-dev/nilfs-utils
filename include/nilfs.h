@@ -31,6 +31,8 @@
 #include <linux/types.h>
 #include <endian.h>
 #include <byteswap.h>
+#include <linux/nilfs2_ondisk.h>
+#include <linux/nilfs2_api.h>
 
 /* FIX ME */
 #ifndef __bitwise
@@ -72,8 +74,6 @@ typedef __u64	__be64;
 #error "unknown endian"
 #endif	/* __BYTE_ORDER */
 
-#include "nilfs2_ondisk.h"
-#include "nilfs2_api.h"
 
 /* XXX: sector_t is not defined in user land */
 typedef __u64 sector_t;	/* XXX: __u64 ?? */
