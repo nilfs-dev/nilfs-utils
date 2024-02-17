@@ -32,9 +32,6 @@
 #include <linux/nilfs2_ondisk.h>
 #include <linux/nilfs2_api.h>
 
-/* XXX: sector_t is not defined in user land */
-typedef __u64 sector_t;	/* XXX: __u64 ?? */
-typedef sector_t nilfs_blkoff_t;
 typedef __u64 nilfs_cno_t;
 
 #define NILFS_FSTYPE	"nilfs2"
@@ -128,9 +125,9 @@ NILFS_LOCK_FNS(cleaner, 0)
  */
 struct nilfs_psegment {
 	struct nilfs_segment_summary *p_segsum;
-	sector_t p_blocknr;
+	__u64 p_blocknr;
 
-	sector_t p_segblocknr;
+	__u64 p_segblocknr;
 	size_t p_nblocks;
 	size_t p_maxblocks;
 	size_t p_blksize;
@@ -147,7 +144,7 @@ struct nilfs_psegment {
  */
 struct nilfs_file {
 	struct nilfs_finfo *f_finfo;
-	sector_t f_blocknr;
+	__u64 f_blocknr;
 
 	unsigned long f_offset;
 	int f_index;
@@ -166,7 +163,7 @@ struct nilfs_file {
  */
 struct nilfs_block {
 	void *b_binfo;
-	sector_t b_blocknr;
+	__u64 b_blocknr;
 
 	unsigned long b_offset;
 	int b_index;

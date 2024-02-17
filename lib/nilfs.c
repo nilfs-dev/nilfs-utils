@@ -962,7 +962,7 @@ void nilfs_psegment_init(struct nilfs_psegment *pseg, __u64 segnum,
 				  NILFS_SB_BLOCK_SIZE_SHIFT);
 	pseg->p_nblocks = nblocks;
 	pseg->p_maxblocks = nblocks_per_segment - blkoff;
-	pseg->p_segblocknr = (sector_t)nblocks_per_segment * segnum + blkoff;
+	pseg->p_segblocknr = (__u64)nblocks_per_segment * segnum + blkoff;
 	pseg->p_seed = le32_to_cpu(nilfs->n_sb->s_crc_seed);
 
 	pseg->p_segsum = seg + blkoff * pseg->p_blksize;
