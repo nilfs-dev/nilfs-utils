@@ -29,51 +29,8 @@
 #include <sys/ioctl.h>
 #include <semaphore.h>
 #include <linux/types.h>
-#include <endian.h>
-#include <byteswap.h>
 #include <linux/nilfs2_ondisk.h>
 #include <linux/nilfs2_api.h>
-
-/* FIX ME */
-#ifndef __bitwise
-typedef __u16	__le16;
-typedef __u32	__le32;
-typedef __u64	__le64;
-typedef __u16	__be16;
-typedef __u32	__be32;
-typedef __u64	__be64;
-#endif
-
-#if __BYTE_ORDER == __LITTLE_ENDIAN
-#define le16_to_cpu(x)	((__u16)(x))
-#define le32_to_cpu(x)	((__u32)(x))
-#define le64_to_cpu(x)	((__u64)(x))
-#define cpu_to_le16(x)	((__u16)(x))
-#define cpu_to_le32(x)	((__u32)(x))
-#define cpu_to_le64(x)	((__u64)(x))
-#define be16_to_cpu(x)	bswap_16(x)
-#define be32_to_cpu(x)	bswap_32(x)
-#define be64_to_cpu(x)	bswap_64(x)
-#define cpu_to_be16(x)	bswap_16(x)
-#define cpu_to_be32(x)	bswap_32(x)
-#define cpu_to_be64(x)	bswap_64(x)
-#elif __BYTE_ORDER == __BIG_ENDIAN
-#define le16_to_cpu(x)	bswap_16(x)
-#define le32_to_cpu(x)	bswap_32(x)
-#define le64_to_cpu(x)	bswap_64(x)
-#define cpu_to_le16(x)	bswap_16(x)
-#define cpu_to_le32(x)	bswap_32(x)
-#define cpu_to_le64(x)	bswap_64(x)
-#define be16_to_cpu(x)	((__u16)(x))
-#define be32_to_cpu(x)	((__u32)(x))
-#define be64_to_cpu(x)	((__u64)(x))
-#define cpu_to_be16(x)	((__u16)(x))
-#define cpu_to_be32(x)	((__u32)(x))
-#define cpu_to_be64(x)	((__u64)(x))
-#else
-#error "unknown endian"
-#endif	/* __BYTE_ORDER */
-
 
 /* XXX: sector_t is not defined in user land */
 typedef __u64 sector_t;	/* XXX: __u64 ?? */
@@ -248,7 +205,7 @@ static inline int nilfs_file_is_super(const struct nilfs_file *file)
 {
 	__u64 ino;
 
-	ino = le64_to_cpu(file->f_finfo->fi_ino);
+	ino = __le64_to_cpu(file->f_finfo->fi_ino);
 	return ino == NILFS_DAT_INO;
 }
 
@@ -264,12 +221,12 @@ void nilfs_block_next(struct nilfs_block *);
 
 static inline int nilfs_block_is_data(const struct nilfs_block *blk)
 {
-	return blk->b_index < le32_to_cpu(blk->b_file->f_finfo->fi_ndatablk);
+	return blk->b_index < __le32_to_cpu(blk->b_file->f_finfo->fi_ndatablk);
 }
 
 static inline int nilfs_block_is_node(const struct nilfs_block *blk)
 {
-	return blk->b_index >= le32_to_cpu(blk->b_file->f_finfo->fi_ndatablk);
+	return blk->b_index >= __le32_to_cpu(blk->b_file->f_finfo->fi_ndatablk);
 }
 
 #define nilfs_block_for_each(blk, file)		\
@@ -313,12 +270,12 @@ int nilfs_thaw(struct nilfs *nilfs);
 
 static inline __u64 nilfs_get_nsegments(const struct nilfs *nilfs)
 {
-	return le64_to_cpu(nilfs->n_sb->s_nsegments);
+	return __le64_to_cpu(nilfs->n_sb->s_nsegments);
 }
 
 static inline __u32 nilfs_get_blocks_per_segment(const struct nilfs *nilfs)
 {
-	return le32_to_cpu(nilfs->n_sb->s_blocks_per_segment);
+	return __le32_to_cpu(nilfs->n_sb->s_blocks_per_segment);
 }
 
 #endif	/* NILFS_H */

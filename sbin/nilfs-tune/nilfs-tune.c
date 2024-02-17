@@ -57,6 +57,7 @@
 #include <assert.h>
 #include <errno.h>
 #include "nilfs.h"
+#include "compat.h"
 #include "nilfs_feature.h"
 
 
