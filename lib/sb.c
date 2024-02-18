@@ -57,6 +57,7 @@
 #endif	/* HAVE_SYS_IOCTL_H */
 
 #include <linux/nilfs2_ondisk.h>
+#include <sys/stat.h>  /* fstat(), S_ISBLK(), S_ISREG(), etc */
 #include <errno.h>
 #include <assert.h>
 #include "nilfs.h"
@@ -109,15 +110,27 @@ static int __nilfs_sb_read(int devfd, struct nilfs_super_block **sbp,
 	uint64_t devsize, sb2_offset;
 	int invalid_fs = 0;
 	ssize_t ret;
+	struct stat stat;
 
 	sbp[0] = malloc(NILFS_MAX_SB_SIZE);
 	sbp[1] = malloc(NILFS_MAX_SB_SIZE);
 	if (unlikely(sbp[0] == NULL || sbp[1] == NULL))
 		goto failed;
 
-	ret = ioctl(devfd, BLKGETSIZE64, &devsize);
-	if (unlikely(ret != 0))
+	ret = fstat(devfd, &stat);
+	if (unlikely(ret < 0))
 		goto failed;
+
+	if (S_ISBLK(stat.st_mode)) {
+		ret = ioctl(devfd, BLKGETSIZE64, &devsize);
+		if (unlikely(ret < 0))
+			goto failed;
+	} else if (S_ISREG(stat.st_mode)) {
+		devsize = stat.st_size;
+	} else {
+		errno = EBADF;
+		goto failed;
+	}
 
 	ret = pread(devfd, sbp[0], NILFS_MAX_SB_SIZE, NILFS_SB_OFFSET_BYTES);
 	if (likely(ret == NILFS_MAX_SB_SIZE)) {
