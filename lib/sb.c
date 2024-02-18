@@ -56,9 +56,11 @@
 #include <sys/ioctl.h>
 #endif	/* HAVE_SYS_IOCTL_H */
 
+#include <sys/stat.h>  /* fstat(), S_ISBLK(), S_ISREG(), etc */
 #include <errno.h>
 #include <assert.h>
 #include "nilfs.h"
+#include "util.h"
 #include "compat.h"
 
 #define NILFS_MAX_SB_SIZE	1024
@@ -108,14 +110,28 @@ static int __nilfs_sb_read(int devfd, struct nilfs_super_block **sbp,
 {
 	__u64 devsize, sb2_offset;
 	int invalid_fs = 0;
+	int ret;
+	struct stat stat;
 
 	sbp[0] = malloc(NILFS_MAX_SB_SIZE);
 	sbp[1] = malloc(NILFS_MAX_SB_SIZE);
 	if (sbp[0] == NULL || sbp[1] == NULL)
 		goto failed;
 
-	if (ioctl(devfd, BLKGETSIZE64, &devsize) != 0)
+	ret = fstat(devfd, &stat);
+	if (unlikely(ret < 0))
 		goto failed;
+
+	if (S_ISBLK(stat.st_mode)) {
+		ret = ioctl(devfd, BLKGETSIZE64, &devsize);
+		if (unlikely(ret < 0))
+			goto failed;
+	} else if (S_ISREG(stat.st_mode)) {
+		devsize = stat.st_size;
+	} else {
+		errno = EBADF;
+		goto failed;
+	}
 
 	if (lseek(devfd, NILFS_SB_OFFSET_BYTES, SEEK_SET) >= 0 &&
 	    read(devfd, sbp[0], NILFS_MAX_SB_SIZE) >= 0) {
