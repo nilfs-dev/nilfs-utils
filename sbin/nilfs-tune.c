@@ -89,7 +89,7 @@ static void nilfs_tune_usage(void)
 	printf("Usage: nilfs-tune -l device\n"
 	       "       nilfs-tune [-f] [-i interval] [-m block_max] [-L volume_name]\n"
 	       "                  [-O [^]feature[,...]] [-U UUID] device\n"
-	       "       nilfs-tune [-h]\n");
+	       "       nilfs-tune [-h|-V]\n");
 }
 
 static const uint64_t ok_features[NILFS_MAX_FEATURE_TYPES] = {
@@ -147,7 +147,7 @@ static void parse_options(int argc, char *argv[],
 	opts->force = 0;
 	opts->fs_features = NULL;
 
-	while ((c = getopt(argc, argv, "flhi:L:m:O:U:")) != EOF) {
+	while ((c = getopt(argc, argv, "flhi:L:m:O:U:V")) != EOF) {
 		switch (c) {
 		case 'f':
 			opts->force = 1;
@@ -200,6 +200,10 @@ static void parse_options(int argc, char *argv[],
 				errx(EXIT_FAILURE, "Invalid UUID format");
 			opts->mask |= NILFS_SB_UUID;
 			opts->flags = O_RDWR;
+			break;
+		case 'V':
+			printf("nilfs-tune (nilfs-utils %s)\n", VERSION);
+			exit(0);
 			break;
 		default:
 			nilfs_tune_usage();
@@ -580,7 +584,6 @@ int main(int argc, char *argv[])
 	struct nilfs_tune_options opts;
 	const char *device;
 
-	printf("nilfs-tune %s\n", VERSION);
 	if (argc < 2) {
 		nilfs_tune_usage();
 		exit(EXIT_SUCCESS);
