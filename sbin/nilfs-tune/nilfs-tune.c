@@ -587,11 +587,11 @@ int main(int argc, char *argv[])
 	}
 
 	if (!opts.force && opts.flags == O_RDWR && (check_mount(device) < 0)) {
-		fprintf(stderr, "ERROR: %s is currently mounted.  Aborting execution.\n"
-			"Running nilfs-tune on a mounted file system may cause SEVERE damage.\n"
-			"You can use the \"-f\" option to force this operation.\n",
-			device);
-		exit(EXIT_SUCCESS);
+		errx(EXIT_FAILURE,
+		     "ERROR: %s is mounted.  Abort execution.\n"
+		     "  Running nilfs-tune on a mounted file system may cause SEVERE damage.\n"
+		     "  You can use the \"-f\" option to force this operation.",
+		     device);
 	}
 
 	return modify_nilfs(device, &opts);
