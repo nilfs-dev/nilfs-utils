@@ -27,14 +27,6 @@
  * since the libc version has some security flaws.
  */
 
-#if HAVE_LIMITS_H
-#include <limits.h>		/* for PATH_MAX */
-#endif	/* HAVE_LIMITS_H */
-
-#ifndef PATH_MAX
-#define PATH_MAX 8192
-#endif
-
 #if HAVE_STDLIB_H
 #include <stdlib.h>		/* free() */
 #endif	/* HAVE_STDLIB_H */
@@ -48,6 +40,7 @@
 #endif	/* HAVE_STRINGS_H */
 
 #include <errno.h>
+#include "compat.h"	/* PATH_MAX */
 #include "realpath.h"
 
 #define MAX_READLINKS 32

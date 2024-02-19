@@ -136,6 +136,14 @@
 #endif	/* __BYTE_ORDER */
 
 
+#if HAVE_LIMITS_H
+#include <limits.h>  /* PATH_MAX */
+#endif  /* HAVE_LIMITS_H */
+
+#ifndef PATH_MAX
+#define PATH_MAX  8192
+#endif
+
 #if HAVE_SYS_SYSMACROS_H
 #include <sys/sysmacros.h>  /* major(), minor() */
 #else

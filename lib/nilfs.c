@@ -74,7 +74,7 @@
 #include <errno.h>
 #include <assert.h>
 #include "nilfs.h"
-#include "compat.h"
+#include "compat.h"	/* PATH_MAX, etc */
 #include "util.h"
 #include "pathnames.h"
 #include "realpath.h"
