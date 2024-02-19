@@ -78,6 +78,8 @@
 #include "pathnames.h"
 
 
+extern int check_mount(const char *device);
+
 typedef __u64  blocknr_t;
 
 extern __u32 crc32_le(__u32 seed, unsigned char const *data, size_t length);
@@ -338,7 +340,6 @@ static int nilfs_mkfs_discard_zeroes_data(int fd)
 #endif
 
 static void disk_scan(const char *device);
-static void check_mount(int fd, const char *device);
 
 #if HAVE_LIBBLKID
 static void check_safety_of_device_overwrite(int fd, const char *device);
@@ -594,7 +595,7 @@ int main(int argc, char *argv[])
 	struct nilfs_segment_info *si;
 	struct stat statbuf;
 	const char *device;
-	int fd;
+	int fd, ret;
 
 	parse_options(argc, argv);
 	device = argv[optind];
@@ -607,10 +608,18 @@ int main(int argc, char *argv[])
 	if (cflag)
 		disk_scan(device);  /* check the block device */
 
+	ret = check_mount(device);
+	if (ret < 0)
+		perr("Error checking mount status of %s: %s", device,
+		     strerror(errno));
+	if (ret > 0)
+		perr("Error: %s is currently mounted. You cannot make a filesystem on this device.",
+		     device);
+
 	fd = open(device, O_RDWR);
 	if (fd < 0)
 		perr("Error: cannot open device: %s", device);
-	check_mount(fd, device);
+
 	check_safety_of_device_overwrite(fd, device);
 
 	init_disk_layout(di, fd, device);
@@ -703,28 +712,6 @@ static void disk_scan(const char *device)
 	} else {
 		perr("Error: cannot fork: %s", strerror(errno));
 	}
-}
-
-static void check_mount(int fd, const char *device)
-{
-	FILE *fp;
-	char line[LINE_BUFFER_SIZE];
-
-	fp = fopen(_PATH_MOUNTED, "r");
-	if (fp == NULL) {
-		close(fd);
-		perr("Error: cannot open %s!", _PATH_MOUNTED);
-	}
-
-	while (fgets(line, LINE_BUFFER_SIZE, fp) != NULL) {
-		if (strncmp(strtok(line, " "), device, strlen(device)) == 0) {
-			fclose(fp);
-			close(fd);
-			perr("Error: %s is currently mounted. You cannot make a filesystem on this device.",
-			     device);
-		}
-	}
-	fclose(fp);
 }
 
 #if HAVE_LIBBLKID
