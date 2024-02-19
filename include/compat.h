@@ -136,4 +136,14 @@
 #endif	/* __BYTE_ORDER */
 
 
+#if HAVE_SYS_SYSMACROS_H
+#include <sys/sysmacros.h>  /* major(), minor() */
+#else
+#ifndef major
+#define major(dev)  gnu_dev_major(dev)
+#define minor(dev)  gnu_dev_minor(dev)
+#endif
+#endif  /* HAVE_SYS_SYSMACROS_H */
+
+
 #endif /* __COMPAT_H__ */
