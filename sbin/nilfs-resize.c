@@ -1658,11 +1658,13 @@ int main(int argc, char *argv[])
 		size = devsize;
 	}
 
-
-	if (check_mount(device) == 0) {
+	ret = check_mount(device);
+	if (unlikely(ret < 0)) {
+		myprintf("Error checking mount status of %s: %s\n", device,
+			 strerror(errno));
+	} else if (!ret) {
 		myprintf("Error: %s is not currently mounted. Offline resizing\n"
 			 "       is not supported at present.\n", device);
-		goto out;
 	} else {
 		status = nilfs_resize_online(device, size);
 	}

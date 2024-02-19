@@ -595,12 +595,18 @@ int main(int argc, char *argv[])
 		exit(EXIT_FAILURE);
 	}
 
-	if (!opts.force && opts.flags == O_RDWR && (check_mount(device) < 0)) {
-		errx(EXIT_FAILURE,
-		     "ERROR: %s is mounted.  Abort execution.\n"
-		     "  Running nilfs-tune on a mounted file system may cause SEVERE damage.\n"
-		     "  You can use the \"-f\" option to force this operation.",
-		     device);
+	if (!opts.force && opts.flags == O_RDWR) {
+		int ret = check_mount(device);
+
+		if (ret < 0)
+			err(EXIT_FAILURE, "ERROR checking mount status of %s",
+			    device);
+		if (ret > 0)
+			errx(EXIT_FAILURE,
+			     "ERROR: %s is mounted.  Abort execution.\n"
+			     "  Running nilfs-tune on a mounted file system may cause SEVERE damage.\n"
+			     "  You can use the \"-f\" option to force this operation.",
+			     device);
 	}
 
 	return modify_nilfs(device, &opts);
