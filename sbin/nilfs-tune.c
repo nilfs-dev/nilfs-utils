@@ -86,9 +86,10 @@ struct nilfs_tune_options {
 
 static void nilfs_tune_usage(void)
 {
-	printf("Usage: nilfs-tune [-h] [-l] [-i interval] [-L volume_name]\n"
-	       "                  [-m block_max] [-O [^]feature[,...]]\n"
-	       "                  [-U UUID] device\n");
+	printf("Usage: nilfs-tune -l device\n"
+	       "       nilfs-tune [-f] [-i interval] [-m block_max] [-L volume_name]\n"
+	       "                  [-O [^]feature[,...]] [-U UUID] device\n"
+	       "       nilfs-tune [-h]\n");
 }
 
 static const uint64_t ok_features[NILFS_MAX_FEATURE_TYPES] = {
