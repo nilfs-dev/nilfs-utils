@@ -390,7 +390,7 @@ static void show_nilfs_sb(struct nilfs_super_block *sbp)
 	       le16_to_cpu(sbp->s_magic));
 	printf("Filesystem revision #:\t  %d.%d\n",
 	       le32_to_cpu(sbp->s_rev_level),
-	       le32_to_cpu(sbp->s_minor_rev_level));
+	       le16_to_cpu(sbp->s_minor_rev_level));
 
 	print_features(stdout, sbp);
 
@@ -469,7 +469,7 @@ static void show_nilfs_sb(struct nilfs_super_block *sbp)
 
 	printf("CRC seed:\t\t  0x%08x\n", le32_to_cpu(sbp->s_crc_seed));
 	printf("CRC check sum:\t\t  0x%08x\n", le32_to_cpu(sbp->s_sum));
-	printf("CRC check data size:\t  0x%08x\n", le32_to_cpu(sbp->s_bytes));
+	printf("CRC check data size:\t  0x%04x\n", le16_to_cpu(sbp->s_bytes));
 }
 
 static int update_feature_set(struct nilfs_super_block *sbp,
