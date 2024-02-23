@@ -40,7 +40,7 @@
 
 
 /*
- * Pathname buffer size ofr loop device entry in sysfs
+ * Pathname buffer size of loop device entry in sysfs
  *
  * Logically 16 + 10 + 10 + 1 = 37 bytes would be enough to store output in
  * the format "/sys/dev/block/%d:%d", but rounding up to the power of 2.
