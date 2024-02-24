@@ -1235,12 +1235,20 @@ static int nilfs_shrink_online(struct nilfs *nilfs, const char *device,
 	if (nilfs_resize_update_sustat(nilfs) < 0)
 		return -1;
 
-	newsb2off = NILFS_SB2_OFFSET_BYTES(newsize);
-	newnsegs = (newsb2off >> blocksize_bits) / blocks_per_segment;
-
 	myprintf("Partition size = %llu bytes.\n"
 		 "Shrink the filesystem size from %llu bytes to %llu bytes.\n",
 		 devsize, fs_devsize, newsize);
+
+	if (newsize >= 4096) {
+		newsb2off = NILFS_SB2_OFFSET_BYTES(newsize);
+		newnsegs = (newsb2off >> blocksize_bits) / blocks_per_segment;
+	} else {
+		/*
+		 * Set dummy parameters to make the size check below fail
+		 * while avoiding underflow.
+		 */
+		newnsegs = 0;
+	}
 
 	if (nilfs_resize_check_free_space(nilfs, newnsegs) < 0)
 		goto out;
