@@ -464,15 +464,16 @@ static int nilfs_resize_check_free_space(struct nilfs *nilfs, __u64 newnsegs)
 			+ nrsvsegs;
 		nbytes  = (nsegs * blocks_per_segment) << blocksize_bits;
 		myprintf("Error: the filesystem does not have enough free space.\n"
-			 "       At least %llu more segments (%llu bytes) are required.\n",
-			 nsegs, nbytes);
+			 "       At least %llu more segment%s (%llu bytes) %s required.\n",
+			 nsegs, nsegs != 1 ? "s" : "", nbytes,
+			 nsegs != 1 ? "are" : "is");
 		return -1;
 	} else if (verbose) {
 		nsegs = sustat.ss_ncleansegs - (sustat.ss_nsegs - newnsegs)
 			- nrsvsegs;
-		nbytes  = (nsegs * blocks_per_segment) << blocksize_bits;
-		myprintf("%llu free segments (%llu bytes) will be left after shrinkage.\n",
-			 nsegs, nbytes);
+		nbytes = (nsegs * blocks_per_segment) << blocksize_bits;
+		myprintf("%llu free segment%s (%llu bytes) will be left after shrinkage.\n",
+			 nsegs, nsegs != 1 ? "s" : "", nbytes);
 	}
 	return 0;
 }
@@ -1245,8 +1246,10 @@ static int nilfs_shrink_online(struct nilfs *nilfs, const char *device,
 		goto out;
 
 	if (newnsegs < sustat.ss_nsegs) {
-		myprintf("%llu segments will be truncated from segnum %llu.\n",
-			 (unsigned long long)sustat.ss_nsegs - newnsegs,
+		__u64 truncsegs = sustat.ss_nsegs - newnsegs;
+
+		myprintf("%llu segment%s will be truncated from segnum %llu.\n",
+			 (unsigned long long)truncsegs, truncsegs != 1 ? "s" : "",
 			 (unsigned long long)newnsegs);
 	} else if (newnsegs == sustat.ss_nsegs) {
 		myprintf("No segments will be truncated.\n");
