@@ -462,11 +462,12 @@ static int nilfs_resize_check_free_space(struct nilfs *nilfs, __u64 newnsegs)
 
 		nsegs = (sustat.ss_nsegs - newnsegs) - sustat.ss_ncleansegs
 			+ nrsvsegs;
-		nbytes  = (nsegs * blocks_per_segment) << blocksize_bits;
-		myprintf("Error: the filesystem does not have enough free space.\n"
-			 "       At least %llu more segment%s (%llu bytes) %s required.\n",
-			 nsegs, nsegs != 1 ? "s" : "", nbytes,
-			 nsegs != 1 ? "are" : "is");
+		nbytes  = (((newnsegs + nsegs) * blocks_per_segment) <<
+			   blocksize_bits) + 4096;
+
+		myprintf("Error: Insufficient free space (needs %llu more segment%s).\n"
+			 "       The device size must be at least %llu bytes.\n",
+			 nsegs, nsegs != 1 ? "s" : "", nbytes);
 		return -1;
 	} else if (verbose) {
 		nsegs = sustat.ss_ncleansegs - (sustat.ss_nsegs - newnsegs)
