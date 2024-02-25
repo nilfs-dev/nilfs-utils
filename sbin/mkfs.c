@@ -609,7 +609,8 @@ int main(int argc, char *argv[])
 
 	fd = open(device, O_RDWR);
 	if (fd < 0)
-		perr("Error: cannot open device: %s", device);
+		perr("Error: cannot open device %s: %s", device,
+		     strerror(errno));
 
 	check_safety_of_device_overwrite(fd, device);
 

@@ -530,7 +530,7 @@ static int modify_nilfs(const char *device, struct nilfs_tune_options *opts)
 
 	sbp = nilfs_sb_read(devfd);
 	if (!sbp) {
-		warnx("%s: cannot open NILFS", device);
+		warn("%s: cannot open NILFS", device);
 		ret = EXIT_FAILURE;
 		goto close_fd;
 	}
