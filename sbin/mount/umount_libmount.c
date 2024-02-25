@@ -170,33 +170,33 @@ static void nilfs_umount_parse_options(int argc, char *argv[],
 	}
 }
 
-static void complain(int err, const char *dev)
+static void complain(int err, const char *node)
 {
 	switch (err) {
 	case ENXIO:
-		error(_("%s: %s: invalid block device"), progname, dev);
+		error(_("%s: %s: invalid block device"), progname, node);
 		break;
 	case EINVAL:
-		error(_("%s: %s: not mounted"), progname, dev);
+		error(_("%s: %s: not mounted"), progname, node);
 		break;
 	case EIO:
-		error(_("%s: %s: I/O error while unmounting"), progname, dev);
+		error(_("%s: %s: I/O error while unmounting"), progname, node);
 		break;
 	case EBUSY:
-		error(_("%s: %s: device is busy"), progname, dev);
+		error(_("%s: %s: target is busy"), progname, node);
 		break;
 	case ENOENT:
-		error(_("%s: %s: not found"), progname, dev);
+		error(_("%s: %s: not found"), progname, node);
 		break;
 	case EPERM:
-		error(_("%s: %s: must be superuser to umount"), progname, dev);
+		error(_("%s: %s: must be superuser to umount"), progname, node);
 		break;
 	case EACCES:
 		error(_("%s: %s: block devices not permitted on fs"), progname,
-		      dev);
+		      node);
 		break;
 	default:
-		error(_("%s: %s: %s"), progname, dev, strerror(err));
+		error(_("%s: %s: %s"), progname, node, strerror(err));
 		break;
 	}
 }
@@ -282,7 +282,7 @@ static int nilfs_umount_one(struct nilfs_umount_info *umi)
 	if (!mnt_context_is_fake(umi->cxt)) {
 		res = nilfs_do_umount_one(umi);
 		if (res) {
-			complain(res, mnt_context_get_source(umi->cxt));
+			complain(res, mnt_context_get_target(umi->cxt));
 			goto failed;
 		}
 	}
