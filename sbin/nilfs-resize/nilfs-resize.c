@@ -1416,7 +1416,8 @@ static int nilfs_resize_online(const char *device, unsigned long long newsize)
 	nilfs = nilfs_open(device, NULL,
 			   NILFS_OPEN_RAW | NILFS_OPEN_RDWR | NILFS_OPEN_GCLK);
 	if (nilfs == NULL) {
-		myprintf("Error: cannot open NILFS on %s.\n", device);
+		myprintf("Error: cannot open NILFS on %s: %s\n", device,
+			 strerror(errno));
 		goto out;
 	}
 
