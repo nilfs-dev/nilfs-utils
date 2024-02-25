@@ -207,7 +207,7 @@ static int nilfs_find_fs(struct nilfs *nilfs, const char *dev, const char *dir,
 		}
 	}
 	if (ret < 0)
-		errno = ENOENT;
+		errno = ENXIO;
 
  failed_proc_mounts:
 	fclose(fp);
