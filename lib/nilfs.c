@@ -193,17 +193,23 @@ static int nilfs_find_fs(struct nilfs *nilfs, const char *dev, const char *dir,
 		}
 
 		if (has_mntopt(mntent[MNTFLD_OPTS], opt)) {
+			free(nilfs->n_dev);
 			nilfs->n_dev = strdup(mntent[MNTFLD_FS]);
-			if (nilfs->n_dev == NULL)
+			if (unlikely(nilfs->n_dev == NULL)) {
+				free(nilfs->n_ioc);
+				nilfs->n_ioc = NULL;
+				ret = -1;
 				goto failed_proc_mounts;
+			}
+			free(nilfs->n_ioc);
 			nilfs->n_ioc = strdup(mntent[MNTFLD_DIR]);
-			if (nilfs->n_ioc == NULL) {
+			if (unlikely(nilfs->n_ioc == NULL)) {
 				free(nilfs->n_dev);
 				nilfs->n_dev = NULL;
+				ret = -1;
 				goto failed_proc_mounts;
 			}
 			ret = 0;
-			break;
 		}
 	}
 	if (ret < 0)
