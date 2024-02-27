@@ -506,6 +506,8 @@ struct nilfs *nilfs_open(const char *dev, const char *dir, int flags)
 
 	if (flags &
 	    (NILFS_OPEN_RDONLY | NILFS_OPEN_WRONLY | NILFS_OPEN_RDWR)) {
+		struct stat iocst, devst;
+
 		if (nilfs_find_fs(nilfs, dev, dir, MNTOPT_RW) < 0) {
 			if (!(flags & NILFS_OPEN_RDONLY))
 				goto out_fd;
@@ -515,6 +517,27 @@ struct nilfs *nilfs_open(const char *dev, const char *dir, int flags)
 		nilfs->n_iocfd = open(nilfs->n_ioc, O_RDONLY);
 		if (unlikely(nilfs->n_iocfd < 0))
 			goto out_fd;
+
+		/*
+		 * Check if the device of mount point nilfs->n_ioc is the same
+		 * as the device of nilfs->n_dev.  If not, return an error with
+		 * errno = ENOENT since the mount point is hidden under other
+		 * mounts and inaccessible.
+		 */
+		ret = stat(nilfs->n_dev, &devst);
+		if (unlikely(ret < 0))
+			goto out_fd;
+		if (!S_ISBLK(devst.st_mode)) {
+			errno = ENOTBLK;
+			goto out_fd;
+		}
+		ret = fstat(nilfs->n_iocfd, &iocst);
+		if (unlikely(ret < 0))
+			goto out_fd;
+		if (!S_ISDIR(iocst.st_mode) || iocst.st_dev != devst.st_rdev) {
+			errno = ENOENT;
+			goto out_fd;
+		}
 	}
 
 	if (flags & NILFS_OPEN_GCLK) {
