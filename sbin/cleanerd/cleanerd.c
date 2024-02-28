@@ -556,11 +556,13 @@ static int nilfs_segments_still_reclaimable(struct nilfs *nilfs,
 static int nilfs_shrink_protected_region(struct nilfs *nilfs)
 {
 	nilfs_cno_t cno;
+	int arg = 0;
 	int ret = -1;
 
 	nilfs_sync(nilfs, &cno);
 
-	if (nilfs_freeze(nilfs) == 0 && nilfs_thaw(nilfs) == 0)
+	if (ioctl(nilfs->n_iocfd, FIFREEZE, &arg) == 0 &&
+	    ioctl(nilfs->n_iocfd, FITHAW, &arg) == 0)
 		ret = 0;
 
 	return ret;

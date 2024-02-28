@@ -814,37 +814,7 @@ int nilfs_set_alloc_range(struct nilfs *nilfs, off_t start, off_t end)
 	return ioctl(nilfs->n_iocfd, NILFS_IOCTL_SET_ALLOC_RANGE, range);
 }
 
-/**
- * nilfs_freeze - freeze file system
- * @nilfs: nilfs object
- */
-int nilfs_freeze(struct nilfs *nilfs)
-{
-	int arg = 0;
-
-	if (nilfs->n_iocfd < 0) {
-		errno = EBADF;
-		return -1;
-	}
-
-	return ioctl(nilfs->n_iocfd, FIFREEZE, &arg);
-}
-
-/**
- * nilfs_thaw - thaw file system
- * @nilfs: nilfs object
- */
-int nilfs_thaw(struct nilfs *nilfs)
-{
-	int arg = 0;
-
-	if (nilfs->n_iocfd < 0) {
-		errno = EBADF;
-		return -1;
-	}
-
-	return ioctl(nilfs->n_iocfd, FITHAW, &arg);
-}
+/* raw */
 
 /**
  * nilfs_get_segment - read or mmap segment to a memory region
