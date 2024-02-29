@@ -321,6 +321,19 @@ static void msg(const char *fmt, ...)
 		if (verbose) msg(fmt, ##__VA_ARGS__);			\
 	} while (0)
 
+#define errx(fmt, ...)							\
+	msg("Error: " fmt "\n", ##__VA_ARGS__)
+#define err(fmt, ...)							\
+	msg("Error: " fmt ": %s\n", ##__VA_ARGS__, strerror(errno))
+
+#define verbose_err(fmt, ...)						\
+	do {								\
+		if (verbose) err(fmt, ##__VA_ARGS__);			\
+	} while (0)
+
+#define ERR_INDENT 	"       "
+#define ERR_NEWLINE 	"\n" ERR_INDENT
+
 static void nilfs_resize_update_super(const struct nilfs_super_block *sb)
 {
 	blocksize_bits = le32_to_cpu(sb->s_log_block_size) + 10;
@@ -339,7 +352,7 @@ static int nilfs_resize_reload_super(struct nilfs *nilfs)
 
 	sb = nilfs_sb_read(nilfs->n_devfd);
 	if (unlikely(!sb)) {
-		msg("Error: cannot read super block: %s\n", strerror(errno));
+		err("cannot read super block");
 		return -1;
 	}
 	nilfs_resize_update_super(sb);
@@ -363,8 +376,7 @@ static int nilfs_resize_update_sustat(struct nilfs *nilfs)
 
 	ret = nilfs_get_sustat(nilfs, &sustat);
 	if (unlikely(ret < 0)) {
-		msg("Error: failed to get segment usage status: %s\n",
-		    strerror(errno));
+		err("failed to get segment usage status");
 		return -1;
 	}
 	return 0;
@@ -380,7 +392,7 @@ static int nilfs_resize_segment_is_protected(struct nilfs *nilfs, __u64 segnum)
 	/* need updating sustat before testing */
 	ret = nilfs_get_segment(nilfs, segnum, &segment);
 	if (unlikely(ret < 0)) {
-		msg("Error: cannot read segment: %s\n", strerror(errno));
+		err("cannot read segment");
 		return -1;
 	}
 	segseq = nilfs_get_segment_seqnum(nilfs, segment, segnum);
@@ -410,13 +422,13 @@ static int nilfs_resize_lock_cleaner(struct nilfs *nilfs, sigset_t *sigset)
 	sigaddset(&newset, SIGTERM);
 	ret = sigprocmask(SIG_BLOCK, &newset, sigset);
 	if (unlikely(ret < 0)) {
-		msg("Error: cannot block signals: %s\n", strerror(errno));
+		err("cannot block signals");
 		return -1;
 	}
 
 	ret = nilfs_lock_cleaner(nilfs);
 	if (unlikely(ret < 0)) {
-		msg("Error: failed to lock cleaner: %s\n", strerror(errno));
+		err("failed to lock cleaner");
 		sigprocmask(SIG_SETMASK, sigset, NULL);
 		return -1;
 	}
@@ -473,9 +485,9 @@ static int nilfs_resize_check_free_space(struct nilfs *nilfs, __u64 newnsegs)
 		nbytes  = (((newnsegs + nsegs) * blocks_per_segment) <<
 			   blocksize_bits) + 4096;
 
-		msg("Error: Insufficient free space (needs %llu more segment%s).\n"
-		    "       The device size must be at least %llu bytes.\n",
-		    nsegs, nsegs != 1 ? "s" : "", nbytes);
+		errx("Insufficient free space (needs %llu more segment%s)."
+		     ERR_NEWLINE "The device size must be at least %llu bytes.",
+		     nsegs, nsegs != 1 ? "s" : "", nbytes);
 		return -1;
 	} else if (verbose) {
 		nsegs = sustat.ss_ncleansegs - (sustat.ss_nsegs - newnsegs)
@@ -541,8 +553,7 @@ nilfs_resize_find_movable_segments(struct nilfs *nilfs, __u64 start,
 		count = min_t(unsigned long, rest, NILFS_RESIZE_NSUINFO);
 		nsi = nilfs_get_suinfo(nilfs, segnum, suinfo, count);
 		if (unlikely(nsi < 0)) {
-			msg("Error: operation failed during searching movable segments: %s\n",
-			    strerror(errno));
+			err("operation failed during searching movable segments");
 			return -1;
 		}
 		for (i = 0; i < nsi; i++, segnum++) {
@@ -602,8 +613,7 @@ nilfs_resize_get_latest_segment(struct nilfs *nilfs, __u64 start, __u64 end,
 			      NILFS_RESIZE_NSUINFO);
 		nsi = nilfs_get_suinfo(nilfs, segnum, suinfo, count);
 		if (unlikely(nsi < 0)) {
-			msg("Error: operation failed during searching latest segment: %s\n",
-			    strerror(errno));
+			err("operation failed during searching latest segment");
 			return -1;
 		}
 		assert(nsi > 0);
@@ -659,8 +669,7 @@ nilfs_resize_find_active_segments(struct nilfs *nilfs, __u64 start, __u64 end,
 		count = min_t(unsigned long, rest, NILFS_RESIZE_NSUINFO);
 		nsi = nilfs_get_suinfo(nilfs, segnum, suinfo, count);
 		if (unlikely(nsi < 0)) {
-			msg("Error: operation failed during searching active segments: %s\n",
-			    strerror(errno));
+			err("operation failed during searching active segments");
 			return -1;
 		}
 		for (i = 0; i < nsi; i++, segnum++) {
@@ -708,8 +717,7 @@ nilfs_resize_find_inuse_segments(struct nilfs *nilfs, __u64 start, __u64 end,
 		count = min_t(unsigned long, rest, NILFS_RESIZE_NSUINFO);
 		nsi = nilfs_get_suinfo(nilfs, segnum, suinfo, count);
 		if (unlikely(nsi < 0)) {
-			msg("Error: operation failed during searching in-use segments: %s\n",
-			    strerror(errno));
+			err("operation failed during searching in-use segments");
 			return -1;
 		}
 		for (i = 0; i < nsi; i++, segnum++) {
@@ -751,8 +759,7 @@ nilfs_resize_count_inuse_segments(struct nilfs *nilfs, __u64 start, __u64 end)
 		count = min_t(unsigned long, rest, NILFS_RESIZE_NSUINFO);
 		nsi = nilfs_get_suinfo(nilfs, segnum, suinfo, count);
 		if (unlikely(nsi < 0)) {
-			msg("Error: operation failed during counting in-use segments: %s\n",
-			    strerror(errno));
+			err("operation failed during counting in-use segments");
 			return -1;
 		}
 		for (i = 0; i < nsi; i++, segnum++) {
@@ -1009,11 +1016,10 @@ retry:
 			goto retry;
 		}
 	}
-	msg("Error: couldn't move any segments.\n");
+	errx("couldn't move any segments.");
 	return -1;
 failed:
-	msg("Error: operation failed during moving segments: %s\n",
-	    strerror(errno));
+	err("operation failed during moving segments");
 	return -1;
 }
 
@@ -1056,7 +1062,7 @@ static int nilfs_resize_move_out_active_segments(struct nilfs *nilfs,
 			break;
 
 		if (retrycnt >= 6) {
-			msg("Error: Failed to move active segments -- give up.\n");
+			errx("Failed to move active segments -- give up.");
 			return -1;
 		}
 		if (!retrycnt)
@@ -1104,7 +1110,7 @@ static int nilfs_resize_reclaim_range(struct nilfs *nilfs, __u64 newnsegs)
 		return -1;
 
 	if (newnsegs > sustat.ss_nsegs) {
-		msg("Error: Confused. Number of segments became larger than requested size.\n");
+		errx("Confused. Number of segments became larger than requested size.");
 		return -1;
 	}
 	if (newnsegs == sustat.ss_nsegs)
@@ -1149,8 +1155,7 @@ static int nilfs_resize_reclaim_range(struct nilfs *nilfs, __u64 newnsegs)
 		nmoved = nilfs_resize_move_segments(
 			nilfs, segnums, nfound, &reason);
 		if (unlikely(nmoved < 0)) {
-			msg("Error: operation failed during moving in-use segments: %s\n",
-			    strerror(errno));
+			err("operation failed during moving in-use segments");
 			goto out;
 		}
 
@@ -1176,15 +1181,14 @@ out:
 
 /**
  * nilfs_print_resize_error - output error message when resize operation fails
- * @err:    error number
+ * @ec:     error number
  * @shrink: expand or shrink flag (non-zero for shrink)
  */
-static void nilfs_print_resize_error(int err, int shrink)
+static void nilfs_print_resize_error(int ec, int shrink)
 {
-	msg("Error: failed to %s the filesystem: %s\n",
-	    shrink ? "shrink" : "extend", strerror(err));
-	if (err == ENOTTY)
-		msg("       This kernel does not support the resize API.\n");
+	err("failed to %s the filesystem", shrink ? "shrink" : "extend");
+	if (ec == ENOTTY)
+		msg(ERR_INDENT "This kernel does not support the resize API.\n");
 }
 
 /**
@@ -1281,10 +1285,10 @@ static int nilfs_shrink_online(struct nilfs *nilfs, const char *device,
 	} else if (newnsegs == sustat.ss_nsegs) {
 		msg("No segments will be truncated.\n");
 	} else {
-		msg("Error: Confused. Number of segments became larger than requested size:\n"
-		    "  old-nsegs=%llu new-nsegs=%llu\n",
-		    (unsigned long long)sustat.ss_nsegs,
-		    (unsigned long long)newnsegs);
+		errx("Confused. Number of segments became larger than requested size:\n"
+		     "  old-nsegs=%llu new-nsegs=%llu",
+		     (unsigned long long)sustat.ss_nsegs,
+		     (unsigned long long)newnsegs);
 		goto out;
 	}
 
@@ -1293,10 +1297,9 @@ static int nilfs_shrink_online(struct nilfs *nilfs, const char *device,
 
 	ret = nilfs_set_alloc_range(nilfs, 0, newsize);
 	if (unlikely(ret < 0)) {
-		msg("Error: failed to limit allocation range: %s\n",
-		    strerror(errno));
+		err("failed to limit allocation range");
 		if (errno == ENOTTY)
-			msg("       This kernel does not support the set allocation range API.\n");
+			msg(ERR_INDENT "This kernel does not support the set allocation range API.\n");
 		goto out;
 	}
 
@@ -1314,7 +1317,7 @@ static int nilfs_shrink_online(struct nilfs *nilfs, const char *device,
 	}
 
 	for (retry = 0; retry < 4; retry++) {
-		int err;
+		int ec;
 
 		/* shrinker retry loop */
 		ret = nilfs_resize_reclaim_range(nilfs, newnsegs);
@@ -1328,7 +1331,7 @@ static int nilfs_shrink_online(struct nilfs *nilfs, const char *device,
 		verbose_msg("Truncating segments.\n");
 
 		ret = nilfs_resize(nilfs, newsize);
-		err = errno;
+		ec = errno;
 
 		nilfs_resize_unlock_cleaner(nilfs, &sigset);
 		if (likely(ret == 0)) {
@@ -1336,8 +1339,8 @@ static int nilfs_shrink_online(struct nilfs *nilfs, const char *device,
 			goto out;
 		}
 
-		if (err != EBUSY) {
-			nilfs_print_resize_error(err, 1);
+		if (ec != EBUSY) {
+			nilfs_print_resize_error(ec, 1);
 			goto restore_alloc_range;
 		}
 
@@ -1356,7 +1359,7 @@ static int nilfs_shrink_online(struct nilfs *nilfs, const char *device,
 		verbose_msg("In-use segment found again. will retry moving them.. (retry = %d)\n",
 			    retry + 1);
 	}
-	msg("Error: retries failed -- give up\n");
+	errx("retries failed -- give up");
 out:
 	nilfs_resize_progress_exit();
 	return status;
@@ -1403,9 +1406,7 @@ static int nilfs_extend_online(struct nilfs *nilfs, const char *device,
 
 	ret = nilfs_resize(nilfs, newsize);
 	if (unlikely(ret < 0)) {
-		int err = errno;
-
-		nilfs_print_resize_error(err, 0);
+		nilfs_print_resize_error(errno, 0);
 		goto out_unlock;
 	}
 	status = EXIT_SUCCESS;
@@ -1444,8 +1445,7 @@ static int nilfs_resize_online(const char *device, unsigned long long newsize)
 	nilfs = nilfs_open(device, NULL,
 			   NILFS_OPEN_RAW | NILFS_OPEN_RDWR | NILFS_OPEN_GCLK);
 	if (nilfs == NULL) {
-		msg("Error: cannot open NILFS on %s: %s\n", device,
-		    strerror(errno));
+		err("cannot open NILFS on %s", device);
 		goto out;
 	}
 
@@ -1519,7 +1519,7 @@ static void nilfs_resize_parse_options(int argc, char *argv[])
 			show_version_only = 1;
 			break;
 		default:
-			msg("Error: invalid option -- %c\n", optopt);
+			errx("invalid option -- %c", optopt);
 			exit(EXIT_FAILURE);
 		}
 	}
@@ -1580,13 +1580,13 @@ static int nilfs_resize_get_device_size(const char *device)
 
 	devfd = open(device, O_RDONLY);
 	if (devfd < 0) {
-		msg("Error: cannot open device: %s.\n", device);
+		err("cannot open device: %s.", device);
 		goto out;
 	}
 
 	ret = ioctl(devfd, BLKGETSIZE64, &devsize);
 	if (unlikely(ret != 0)) {
-		msg("Error: cannot get device size: %s.", device);
+		err("cannot get device size: %s.", device);
 		goto out_close_dev;
 	}
 	ret = 0;
@@ -1630,10 +1630,10 @@ int main(int argc, char *argv[])
 
 	device = argv[optind++];
 	if (stat(device, &statbuf) < 0) {
-		msg("Error: cannot find %s: %s.\n", device, strerror(errno));
+		err("cannot find %s", device);
 		goto out;
 	} else if (!S_ISBLK(statbuf.st_mode)) {
-		msg("Error: device must be a block device.\n");
+		errx("device must be a block device.");
 		goto out;
 	}
 
@@ -1644,18 +1644,18 @@ int main(int argc, char *argv[])
 	if (optind != argc) {
 		ret = nilfs_resize_parse_size(argv[optind], &size);
 		if (unlikely(ret < 0)) {
-			msg("Error: bad size argument: %s\n", argv[optind]);
+			errx("bad size argument: %s", argv[optind]);
 			goto out;
 		}
 		if (size > devsize) {
-			msg("Error: size larger than partition size (%llu bytes).\n",
-			    devsize);
+			errx("size larger than partition size (%llu bytes).",
+			     devsize);
 			goto out;
 		}
 
 		optind++;
 		if (optind < argc) {
-			msg("Error: too many arguments.\n");
+			errx("too many arguments.");
 			goto out;
 		}
 
@@ -1676,8 +1676,8 @@ int main(int argc, char *argv[])
 		msg("Error checking mount status of %s: %s\n", device,
 		    strerror(errno));
 	} else if (!ret) {
-		msg("Error: %s is not currently mounted. Offline resizing\n"
-		    "       is not supported at present.\n", device);
+		errx("%s is not currently mounted. Offline resizing"
+		     ERR_NEWLINE "is not supported at present.", device);
 	} else {
 		status = nilfs_resize_online(device, size);
 	}
