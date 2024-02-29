@@ -644,21 +644,25 @@ nilfs_resize_get_latest_segment(struct nilfs *nilfs, __u64 start, __u64 end,
  *              numbers
  * @maxsegnums: maximum number of segments to search (maximum number of
  *              segment numbers that can be stored in @segnumv)
+ * @nblocks:    place to store the total number of used blocks in the found
+ *              active segments (optional)
  *
  * This function searches for segments that are reclaimable and not
  * protected by superblock log pointers within the range of the segment
  * sequence specified by [@start, @end], and stores their numbers in
- * @segnumv.
+ * @segnumv.  Also, if @nblocks is not NULL, it stores the total number of
+ * used blocks included in the found active segments.
  *
  * Return: on success, the number of movable segments discovered, -1 on
  * error.
  */
 static ssize_t
 nilfs_resize_find_active_segments(struct nilfs *nilfs, __u64 start, __u64 end,
-				  __u64 *segnumv, unsigned long maxsegnums)
+				  __u64 *segnumv, unsigned long maxsegnums,
+				  unsigned long *nblocks)
 {
 	__u64 segnum, *snp;
-	unsigned long rest, count;
+	unsigned long rest, count, nb = 0;
 	ssize_t nsi, i;
 
 	assert(start <= end);
@@ -677,9 +681,12 @@ nilfs_resize_find_active_segments(struct nilfs *nilfs, __u64 start, __u64 end,
 			    !nilfs_suinfo_error(&suinfo[i])) {
 				*snp++ = segnum;
 				rest--;
+				nb += suinfo[i].sui_nblocks;
 			}
 		}
 	}
+	if (nblocks)
+		*nblocks = nb;
 	return snp - segnumv; /* return the number of found segments */
 }
 
@@ -1055,7 +1062,7 @@ static int nilfs_resize_move_out_active_segments(struct nilfs *nilfs,
 			return -1;
 
 		nfound = nilfs_resize_find_active_segments(
-			nilfs, start, end, segnums, NILFS_RESIZE_NSEGNUMS);
+			nilfs, start, end, segnums, NILFS_RESIZE_NSEGNUMS, NULL);
 		if (unlikely(nfound < 0))
 			return -1;
 		if (!nfound)
