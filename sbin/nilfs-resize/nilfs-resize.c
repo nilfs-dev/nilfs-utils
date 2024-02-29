@@ -127,6 +127,12 @@ static __u64 free_blocks_count;
 static int nsegments_per_clean = 2;
 static struct timespec clean_interval = { 0, 100000000 };   /* 100 msec */
 
+/* balloon file (file for forcing active segments to move) */
+#define NILFS_RESIZE_BALLOON_FILENAME_FMT	".nilfs-balloon-%u"
+#define NILFS_RESIZE_BALLOON_FILENAME_BUFSZ	32
+
+#define NILFS_RESIZE_BALLOON_MAX_CHUNKSIZE	16392  /* chunk size (bytes) */
+
 /* progress meter */
 static int pm_width = 60;
 static int pm_barwidth;
@@ -514,6 +520,132 @@ static void nilfs_resize_restore_alloc_range(struct nilfs *nilfs)
 	if (unlikely(ret < 0))
 		return;
 	nilfs_set_alloc_range(nilfs, 0, fs_devsize);
+}
+
+/**
+ * nilfs_resize_prod_fs - force the file system update to move active segments
+ * @nilfs:      nilfs object
+ * @nblk_write: write data size (in blocks)
+ *
+ * This function creates a temporary file (balloon file) with a random pattern
+ * of size @nblk_write on the root directory that @nilfs holds, writes it to
+ * the log via nilfs_sync(), and then deletes it and also deletes checkpoints
+ * that contain the ballon file.
+ *
+ * Return: 0 on success, -1 on error.
+ */
+static int nilfs_resize_prod_fs(struct nilfs *nilfs, unsigned long nblk_write)
+{
+	char filename[NILFS_RESIZE_BALLOON_FILENAME_BUFSZ];
+	ssize_t rest = nblk_write * blocksize;
+	const char *dev = nilfs_get_dev(nilfs);
+	const char *srcdev = "/dev/urandom";
+	int dirfd = nilfs_get_root_fd(nilfs);
+	int out_fd = -1, in_fd = -1;
+	nilfs_cno_t cno, scno, ecno;
+	sigset_t newset, sigset;
+	int read_failed = 0;
+	int ret, res = -1;
+	unsigned char *data_buf;
+
+	if (!nblk_write)
+		return 0;
+
+	data_buf = malloc(NILFS_RESIZE_BALLOON_MAX_CHUNKSIZE);
+	if (unlikely(!data_buf))
+		return -1;
+
+	in_fd = open(srcdev, O_RDONLY | O_CLOEXEC);
+	if (in_fd < 0)
+		verbose_err("cannot open %s - use calculated values", srcdev);
+
+	ret = nilfs_sync(nilfs, &scno);
+	if (unlikely(ret < 0))
+		scno = 0;
+
+	/* Block signals */
+	sigemptyset(&newset);
+	sigaddset(&newset, SIGINT);
+	sigaddset(&newset, SIGTERM);
+	ret = sigprocmask(SIG_BLOCK, &newset, &sigset);
+	if (unlikely(ret < 0)) {
+		err("cannot block signals");
+		goto failed;
+	}
+
+	/* Write a balloon file to the filesystem */
+	snprintf(filename, NILFS_RESIZE_BALLOON_FILENAME_BUFSZ,
+		 NILFS_RESIZE_BALLOON_FILENAME_FMT, (unsigned)getpid());
+
+	out_fd = openat(dirfd, filename, O_RDWR | O_CREAT | O_TRUNC | O_CLOEXEC,
+			S_IWUSR | S_IRUSR);
+	if (unlikely(out_fd < 0)) {
+		err("failed to create balloon file on %s", dev);
+		goto failed_unblock_signals;
+	}
+
+	while (rest > 0) {
+		size_t request = min_t(size_t, rest,
+				       NILFS_RESIZE_BALLOON_MAX_CHUNKSIZE);
+		ssize_t count;
+		unsigned char *cp;
+
+		if (in_fd >= 0 && !read_failed) {
+			count = read(in_fd, data_buf, request);
+			if (likely(count > 0)) {
+				request = count;
+				goto inflate_balloon;
+			}
+			verbose_err("failed to read balloon data from %s", srcdev);
+			read_failed = 1;
+		}
+		/*
+		 * Fallback path.
+		 *
+		 * Since cryptographically-secure random numbers are not required,
+		 * use the old pseudo-random number function rand() instead of
+		 * getrandom() or anything else that depends on the environment.
+		 */
+		for (cp = data_buf; cp < data_buf + request; cp++)
+			*cp = rand() & 0xff;
+
+	inflate_balloon:
+		count = write(out_fd, data_buf, request);
+		if (unlikely(count < 0)) {
+			err("failed to inflate balloon file on %s", dev);
+			break;
+		}
+		rest -= count;
+	}
+
+	ret = nilfs_sync(nilfs, &ecno);
+	if (unlikely(ret < 0))
+		ecno = 0;
+	close(out_fd);
+
+	/* Delete the balloon file */
+	ret = unlinkat(dirfd, filename, 0);
+	if (unlikely(ret < 0))
+		verbose_err("Balloon file deletion on %s failed", dev);
+
+	/* Delete checkpoints created during prodding */
+	if (likely(ecno > 0)) {
+		for (cno = (scno ? scno + 1 : ecno); cno <= ecno; cno++) {
+			nilfs_delete_checkpoint(nilfs, cno);
+		}
+	}
+	nilfs_sync(nilfs, &cno);
+	res = 0;
+
+failed_unblock_signals:
+	sigprocmask(SIG_SETMASK, &sigset, NULL);  /* Unblock signals */
+
+	nilfs_resize_update_sustat(nilfs);
+failed:
+	if (in_fd >= 0)
+		close(in_fd);
+	free(data_buf);
+	return res;
 }
 
 /**
@@ -977,6 +1109,7 @@ static int nilfs_resize_reclaim_nibble(struct nilfs *nilfs,
 	unsigned long nc;
 	unsigned long long end2 = end;
 	int log_cursor_updated = 0;
+	int prodded = 0;
 	int ret;
 
 	segnum = start;
@@ -1016,10 +1149,40 @@ retry:
 	if (!log_cursor_updated) {
 		ret = nilfs_resize_try_update_log_cursor(
 			nilfs, "No movable segment");
-		if (!ret) {
+		if (ret < 0)
+			goto failed;
+		segnum = start;
+		end = end2;
+		log_cursor_updated = 1;
+		goto retry;
+	}
+	if (!prodded) {
+		unsigned long nblocks, max_blocks;
+
+		nfound = nilfs_resize_find_active_segments(
+			nilfs, start, end2, segnumv, 2, &nblocks);
+		if (unlikely(nfound < 0))
+			goto failed;
+
+		if (nfound > 0) {
+			max_blocks = blocks_per_segment * 2;
+			assert(max_blocks > nblocks);
+
+			verbose_msg("Active segment%s blocking but there are "
+				    "no movable segments.\n"
+				    "Try forcing a filesystem update.\n",
+				    nfound == 1 ? " is" : "s are");
+			ret = nilfs_resize_prod_fs(nilfs, max_blocks - nblocks);
+			if (unlikely(ret < 0)) {
+				err("forced filesystem update failed");
+				goto failed;
+			}
+			verbose_msg("Succeeded - retry moving segments.\n");
+
 			segnum = start;
 			end = end2;
-			log_cursor_updated = 1;
+			log_cursor_updated = 0;
+			prodded = 1;
 			goto retry;
 		}
 	}
