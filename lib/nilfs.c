@@ -599,6 +599,31 @@ const char *nilfs_get_dev(const struct nilfs *nilfs)
 }
 
 /**
+ * nilfs_get_root_path - get the path name string of the mount point
+ * @nilfs: nilfs object
+ *
+ * Return: The absolute path name of the mount point directory, or %NULL if
+ * unavailable.
+ */
+const char *nilfs_get_root_path(const struct nilfs *nilfs)
+{
+	return nilfs->n_ioc;
+}
+
+/**
+ * nilfs_get_root_fd - get the file descriptor of the mount point directory
+ *                     (file system root directory)
+ * @nilfs: nilfs object
+ *
+ * Return: The file descriptor of the mount point directory, or -1 if not
+ * available.
+ */
+int nilfs_get_root_fd(const struct nilfs *nilfs)
+{
+	return nilfs->n_iocfd;
+}
+
+/**
  * nilfs_lock - acquire a lock
  * @nilfs: nilfs object
  * @index: index of the lock to be acquired
