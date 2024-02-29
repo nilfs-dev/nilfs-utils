@@ -114,6 +114,31 @@ static inline int nilfs_unlock_##name(struct nilfs *nilfs)		\
 NILFS_LOCK_FNS(cleaner, 0)
 
 /**
+ * nilfs_get_root_path - get the path name string of the mount point
+ * @nilfs: nilfs object
+ *
+ * Return: The absolute path name of the mount point directory, or %NULL if
+ * unavailable.
+ */
+static inline const char *nilfs_get_root_path(const struct nilfs *nilfs)
+{
+	return nilfs->n_ioc;
+}
+
+/**
+ * nilfs_get_root_fd - get the file descriptor of the mount point directory
+ *                     (file system root directory)
+ * @nilfs: nilfs object
+ *
+ * Return: The file descriptor of the mount point directory, or -1 if not
+ * available.
+ */
+static inline int nilfs_get_root_fd(const struct nilfs *nilfs)
+{
+	return nilfs->n_iocfd;
+}
+
+/**
  * struct nilfs_psegment - partial segment iterator
  * @p_segnum: segment number
  * @p_blocknr: block number of partial segment
