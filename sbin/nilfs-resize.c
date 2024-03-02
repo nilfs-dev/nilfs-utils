@@ -863,17 +863,16 @@ nilfs_resize_find_reclaimable_segments(struct nilfs *nilfs, uint64_t start,
 }
 
 /**
- * nilfs_resize_count_inuse_segments - count the number of reclaimable
- *                                     segments within a specified range
+ * nilfs_resize_count_inuse_segments - count the number of in-use segments
+ *                                     within a specified range
  * @nilfs:      nilfs object
  * @start:      starting segment number of search range (inclusive)
  * @end:        ending segment number of search range (inclusive)
  *
- * This function counts and returns the number of reclaimable (dirty,
- * non-error, and non-active) segments within the range of the segment
- * sequence specified by [@start, @end].
+ * This function counts and returns the number of in-use (dirty) segments
+ * within the range of the segment sequence specified by [@start, @end].
  *
- * Return: number of reclaimable segments on success, -1 on error.
+ * Return: number of in-use segments on success, -1 on error.
  */
 static ssize_t
 nilfs_resize_count_inuse_segments(struct nilfs *nilfs, uint64_t start,
@@ -896,7 +895,7 @@ nilfs_resize_count_inuse_segments(struct nilfs *nilfs, uint64_t start,
 			return -1;
 		}
 		for (i = 0; i < nsi; i++, segnum++) {
-			if (nilfs_suinfo_reclaimable(&suinfo[i])) {
+			if (nilfs_suinfo_dirty(&suinfo[i])) {
 				nfound++;
 				rest--;
 			}
@@ -1247,9 +1246,9 @@ static int nilfs_resize_move_out_active_segments(struct nilfs *nilfs,
  * @nilfs:    nilfs object
  * @newnsegs: target number of segments for shrink
  *
- * This function evicts active segments and in-use (reclaimable) segments
- * from the range that exceeds @newnsegs limit so that the used segment
- * space stays below the @newnsegs limit.
+ * This function evicts in-use segments from the range that exceeds
+ * @newnsegs limit so that the used segment space stays below the @newnsegs
+ * limit.
  *
  * It first tries to evict active segments from outside the range, and if
  * successful, reclaims the remaining reclaimable segments.
