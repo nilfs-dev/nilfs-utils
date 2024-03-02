@@ -815,8 +815,8 @@ nilfs_resize_find_active_segments(struct nilfs *nilfs, uint64_t start,
 }
 
 /**
- * nilfs_resize_find_inuse_segments - find reclaimable segments within a
- *                                    specified range
+ * nilfs_resize_find_reclaimable_segments - find reclaimable segments within a
+ *                                          specified range
  * @nilfs:      nilfs object
  * @start:      starting segment number of search range (inclusive)
  * @end:        ending segment number of search range (inclusive)
@@ -833,9 +833,9 @@ nilfs_resize_find_active_segments(struct nilfs *nilfs, uint64_t start,
  * error.
  */
 static ssize_t
-nilfs_resize_find_inuse_segments(struct nilfs *nilfs, uint64_t start,
-				 uint64_t end, uint64_t *segnumv,
-				 unsigned long maxsegnums)
+nilfs_resize_find_reclaimable_segments(struct nilfs *nilfs, uint64_t start,
+				       uint64_t end, uint64_t *segnumv,
+				       unsigned long maxsegnums)
 {
 	uint64_t segnum, *snp;
 	unsigned long rest, count;
@@ -849,7 +849,7 @@ nilfs_resize_find_inuse_segments(struct nilfs *nilfs, uint64_t start,
 		count = min_t(unsigned long, rest, NILFS_RESIZE_NSUINFO);
 		nsi = nilfs_get_suinfo(nilfs, segnum, suinfo, count);
 		if (unlikely(nsi < 0)) {
-			err("operation failed during searching in-use segments");
+			err("operation failed during searching reclaimable segments");
 			return -1;
 		}
 		for (i = 0; i < nsi; i++, segnum++) {
@@ -1302,7 +1302,7 @@ static int nilfs_resize_reclaim_range(struct nilfs *nilfs, uint64_t newnsegs)
 		ssize_t nmoved;
 		int reason = 0;
 
-		nfound = nilfs_resize_find_inuse_segments(
+		nfound = nilfs_resize_find_reclaimable_segments(
 			nilfs, segnum, end, segnums, NILFS_RESIZE_NSEGNUMS);
 		if (unlikely(nfound < 0))
 			goto out;
@@ -1318,7 +1318,7 @@ static int nilfs_resize_reclaim_range(struct nilfs *nilfs, uint64_t newnsegs)
 		nmoved = nilfs_resize_move_segments(
 			nilfs, segnums, nfound, &reason);
 		if (unlikely(nmoved < 0)) {
-			err("operation failed during moving in-use segments");
+			err("operation failed during moving reclaimable segments");
 			goto out;
 		}
 
