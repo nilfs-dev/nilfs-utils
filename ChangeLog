@@ -1,3 +1,80 @@
+nilfs-utils-2.2.10  Mon Mar 4, 2024 JST
+
+	* fix bugs:
+	  - libnilfsgc, cleanerd, nilfs-resize: treat scrapped segments as
+	    unprotected
+	  - nilfs-resize: fix abnormal message output when shrinking file
+	    system
+	  - nilfs-resize: fix abnormal minimum size error output for sizes less
+	    than 4KiB
+	  - nilfs-resize: fix abnormal truncation when specifying size with
+	    fraction
+	  - lib/sb.c: fix super block read failure from disk image file
+	  - nilfs-tune: add missing -f option in help message
+	  - nilfs-tune: fix the exit code when mount is detected
+	  - nilfs-tune: fix usage of wrong endian conversion macro
+	  - umount_libmount: fix error messages
+	  - libnilfs: fix error code when nilfs_open failed to find nilfs
+	  - libnilfs: nilfs_open: identify the mount point device
+	  - libnilfs: nilfs_open: use last matched mount
+	  - nilfs-{clean,resize}: fix duplicate option error output
+	  - bin/*: correct error message for invalid long option specification
+	* fix perl errors of the checkpatch script:
+	  - checkpatch: fix perl errors due to unescaped left braces in regex
+	* improve cleanerd state management in the libmount version of the
+	  mount program:
+	  - mount_libmount: fix umount failure after remount
+	* improve nilfs-resize command to shrink filesystem even when there are
+	  only active segments:
+	  - nilfs-resize: force file system update in active segment only
+	    situation
+	  - nilfs-resize: allow active segment search function to return block
+	    count
+	  - libnilfs: add functions to get pathname or FD of mount point
+	    directory
+	* mkfs.nilfs2: do not create obsolete .nilfs file
+	* make installation of kernel uapi header files optional:
+	  - Move the kernel uapi header file to "linux" subdirectory
+	  - Make installation of kernel uapi header files optional
+	* improve the mount checks in disk image file mount via loop devices
+	  - libmountchk: determine if image file is mounted via a loop device
+	  - mkfs.nilfs2: use libmountchk to check the mount status of target
+	    device
+	* improve message output:
+	  - nilfs-resize: output the minimum device size in insufficient free
+	    space message
+	  - nilfs-resize: switch singular/plural forms of "segment" in message
+	    text
+	  - nilfs-resize: make the progress bar more accurate
+	  - nilfs-resize: rename function nilfs_resize_inuse_segments()
+	  - mkfs.nilfs2, nilfs-resize, nilfs-tune: output error cause when open
+	    fails
+	  - nilfs-tune: do not display version information by default
+	* backport some changes to bring the API (ioctl) and disk format
+	  header files up to date:
+	  - nilfs-utils: import uapi headers nilfs2_api.h and nilfs2_ondisk.h
+	  - nilfs2: do not use unexported cpu_to_le32()/le32_to_cpu() in uapi
+	    header
+	* backport patches that bug fixes etc. depend on:
+	  - util.h: add likely()/unlikely() macros
+	  - nilfs-utils: use unlikely()/likely() macros
+	  - nilfs2_fs.h: move nilfs_rec_len_{from,to}_disk() to mkfs.h
+	  - nilfs.h: move BUG() macro to util.h
+	  - compat.h: gather definition of FIFREEZE and FITHAW
+	  - compat.h: include the compatible definition for PATH_MAX
+	  - compat.h: ensure to declare major() and minor() macros
+	  - mount_libmount: generalize mount entry search function
+	  - nilfs-resize: add kernel-doc style comments to major functions
+	  - nilfs-resize: add and apply error message macros
+	  - nilfs-resize: add macro to print message when in verbose mode
+	* clean up some early definitions from nilfs.h that are undesirable
+	  as being in a shared file:
+	  - nilfs.h: move byte order conversion macros to compat.h
+	  - nilfs.h: eliminate sector_t and nilfs_blkoff_t
+	* update README file:
+	  - README: describe an example of separating libraries into a
+	    subdirectory
+
 nilfs-utils-2.2.9  Mon Jun 20, 2022 JST
 
 	* {mount,umount}.nilfs2: use libmount by default
