@@ -298,7 +298,6 @@ int main(int argc, char *argv[])
 	int option_index;
 #endif	/* _GNU_SOURCE */
 
-	opterr = 0;
 	progname = strrchr(argv[0], '/');
 	if (progname == NULL)
 		progname = argv[0];
@@ -345,7 +344,7 @@ int main(int argc, char *argv[])
 			       PACKAGE_VERSION);
 			exit(EXIT_SUCCESS);
 		default:
-			errx(EXIT_FAILURE, "invalid option -- %c", optopt);
+			exit(EXIT_FAILURE);
 		}
 	}
 

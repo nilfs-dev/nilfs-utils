@@ -86,8 +86,6 @@ int main(int argc, char *argv[])
 #endif	/* _GNU_SOURCE */
 	sigset_t sigset, oldset;
 
-	opterr = 0;
-
 	last = strrchr(argv[0], '/');
 	progname = last ? last + 1 : argv[0];
 
@@ -107,7 +105,7 @@ int main(int argc, char *argv[])
 			       PACKAGE_VERSION);
 			exit(EXIT_SUCCESS);
 		default:
-			errx(EXIT_FAILURE, "invalid option -- %c", optopt);
+			exit(EXIT_FAILURE);
 		}
 	}
 
