@@ -508,7 +508,7 @@ static void nilfs_clean_parse_options(int argc, char *argv[])
 			show_version_only = 1;
 			break;
 		default:
-			myprintf(_("Error: invalid option -- %c\n"), optopt);
+			nilfs_clean_usage();
 			exit(EXIT_FAILURE);
 		}
 	}
