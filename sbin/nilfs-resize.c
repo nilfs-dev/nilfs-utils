@@ -1682,7 +1682,7 @@ static void nilfs_resize_parse_options(int argc, char *argv[])
 			show_version_only = 1;
 			break;
 		default:
-			errx("invalid option -- %c", optopt);
+			nilfs_resize_usage();
 			exit(EXIT_FAILURE);
 		}
 	}
