@@ -72,8 +72,6 @@
 
 extern int check_mount(const char *device);
 
-typedef uint64_t  blocknr_t;
-
 #define nilfs_crc32(seed, data, length)  crc32_le(seed, data, length)
 
 /*
@@ -154,13 +152,13 @@ static const uint64_t first_cno = 1; /* Number of the first checkpoint */
 
 struct nilfs_file_info {
 	ino_t ino;
-	blocknr_t start;
+	uint64_t start_blocknr;
 	unsigned nblocks;
 	struct nilfs_inode *raw_inode;
 };
 
 struct nilfs_segment_info {
-	blocknr_t       start;
+	uint64_t        start_blocknr;
 	unsigned        nblocks;
 	unsigned        nfinfo;
 	unsigned        nfiles;
@@ -182,7 +180,7 @@ struct nilfs_disk_info {
 
 	unsigned long   blocks_per_segment;
 	unsigned long   nsegments;
-	blocknr_t       first_segment_block;
+	uint64_t        first_segment_block;
 
 	unsigned long   nblocks_to_write;
 	unsigned long   nblocks_used;
@@ -195,23 +193,23 @@ struct nilfs_disk_info {
 
 struct nilfs_segment_ref {
 	uint64_t seq;			/* Sequence number of a full segment */
-	blocknr_t start;                /* Start block of the partial segment
+	uint64_t start_blocknr;		/* Start block of the partial segment
 					   having a valid super root */
-	blocknr_t free_blocks_count;
+	uint64_t free_blocks_count;
 	uint64_t cno;			/* checkpoint number */
 };
 
 static void init_disk_layout(struct nilfs_disk_info *di, int fd,
 			     const char *device);
 
-static inline blocknr_t count_free_blocks(struct nilfs_disk_info *di)
+static inline uint64_t count_free_blocks(struct nilfs_disk_info *di)
 {
 	return di->blocks_per_segment *
 		(di->nsegments - di->nsegments_to_write);
 }
 
-static inline blocknr_t
-segment_start_blocknr(struct nilfs_disk_info *di, unsigned long segnum)
+static inline uint64_t segment_start_blocknr(struct nilfs_disk_info *di,
+					     unsigned long segnum)
 {
 	return segnum > 0 ? di->blocks_per_segment * segnum :
 		di->first_segment_block;
@@ -225,7 +223,7 @@ static unsigned long disk_buffer_size;
 
 static void init_disk_buffer(long max_blocks);
 static void destroy_disk_buffer(void);
-static void *map_disk_buffer(blocknr_t blocknr, int clear_flag);
+static void *map_disk_buffer(uint64_t blocknr, int clear_flag);
 
 static void read_disk_header(int fd, const char *device);
 static void write_disk(int fd, struct nilfs_disk_info *di);
@@ -250,10 +248,10 @@ struct nilfs_fs_info {
 
 	struct nilfs_file_info *files[NILFS_MAX_INITIAL_INO];
 
-	blocknr_t next, altnext;
+	uint64_t next, altnext;
 	unsigned seq;
 	uint64_t cno;
-	blocknr_t vblocknr;
+	uint64_t vblocknr;
 };
 
 static struct nilfs_fs_info nilfs;
@@ -466,7 +464,7 @@ static void init_disk_layout(struct nilfs_disk_info *di, int fd,
 	time_t nilfs_time = time(NULL);
 	unsigned long min_nsegments;
 	unsigned long segment_size;
-	blocknr_t first_segblk;
+	uint64_t first_segblk;
 	struct stat stat;
 
 	if (fstat(fd, &stat) != 0)
@@ -517,7 +515,7 @@ static struct nilfs_segment_info *new_segment(struct nilfs_disk_info *di)
 
 	si->sumbytes = sizeof(struct nilfs_segment_summary);
 	si->nblk_sum = DIV_ROUND_UP(si->sumbytes, blocksize);
-	si->start = di->first_segment_block; /* for segment 0 */
+	si->start_blocknr = di->first_segment_block; /* for segment 0 */
 	return si;
 }
 
@@ -529,7 +527,7 @@ static void fix_disk_layout(struct nilfs_disk_info *di)
 	di->nblocks_used = 0;
 	di->nblocks_to_write = di->first_segment_block;
 	for (i = 0, si = di->seginfo; i < di->nseginfo; i++, si++) {
-		blocknr_t blocknr = si->start + si->nblk_sum;
+		uint64_t blocknr = si->start_blocknr + si->nblk_sum;
 
 		si->nblocks += si->nblk_sum + 1 /* summary and super root */;
 		if (si->nblocks > di->blocks_per_segment)
@@ -540,7 +538,7 @@ static void fix_disk_layout(struct nilfs_disk_info *di)
 
 			if (!fi->nblocks)
 				continue;
-			fi->start = blocknr;
+			fi->start_blocknr = blocknr;
 			blocknr += fi->nblocks;
 
 			if (fi->ino != NILFS_DAT_INO &&
@@ -548,8 +546,8 @@ static void fix_disk_layout(struct nilfs_disk_info *di)
 			    fi->ino != NILFS_CPFILE_INO)
 				di->nblocks_used += fi->nblocks;
 		}
-		if (di->nblocks_to_write < si->start + si->nblocks)
-			di->nblocks_to_write = si->start + si->nblocks;
+		if (di->nblocks_to_write < si->start_blocknr + si->nblocks)
+			di->nblocks_to_write = si->start_blocknr + si->nblocks;
 	}
 	di->nsegments_to_write = DIV_ROUND_UP(di->nblocks_to_write,
 					     di->blocks_per_segment);
@@ -567,7 +565,7 @@ static void add_file(struct nilfs_segment_info *si, ino_t ino,
 
 	fi = &si->files[si->nfiles++];
 	fi->ino = ino;
-	fi->start = 0;
+	fi->start_blocknr = 0;
 	fi->nblocks = nblocks;
 	si->nblocks += nblocks;
 	if (nblocks > 0) {
@@ -822,7 +820,7 @@ static void init_disk_buffer(long max_blocks)
 	atexit(destroy_disk_buffer);
 }
 
-static void *map_disk_buffer(blocknr_t blocknr, int clear_flag)
+static void *map_disk_buffer(uint64_t blocknr, int clear_flag)
 {
 	if (blocknr >= disk_buffer_size)
 		perr("Internal error: illegal disk buffer access (blocknr=%llu)",
@@ -930,7 +928,7 @@ out:
 
 static void write_disk(int fd, struct nilfs_disk_info *di)
 {
-	blocknr_t blocknr;
+	uint64_t blocknr;
 	struct nilfs_segment_info *si;
 	int i;
 
@@ -946,9 +944,10 @@ static void write_disk(int fd, struct nilfs_disk_info *di)
 
 		/* Writing segments */
 		for (i = 0, si = di->seginfo; i < di->nseginfo; i++, si++) {
-			lseek(fd, si->start * blocksize, SEEK_SET);
-			for (blocknr = si->start;
-			     blocknr < si->start + si->nblocks; blocknr++) {
+			lseek(fd, si->start_blocknr * blocksize, SEEK_SET);
+			for (blocknr = si->start_blocknr;
+			     blocknr < si->start_blocknr + si->nblocks;
+			     blocknr++) {
 				if (write(fd, map_disk_buffer(blocknr, 1),
 					  blocksize) < 0)
 					goto failed_to_write;
@@ -1213,7 +1212,7 @@ static void init_nilfs(struct nilfs_disk_info *di)
  * Routines to format blocks
  */
 static void reserve_ifile_inode(ino_t ino);
-static blocknr_t assign_vblocknr(blocknr_t blocknr);
+static uint64_t assign_vblocknr(uint64_t blocknr);
 
 static void init_inode(ino_t ino, unsigned type, int mode, unsigned size)
 {
@@ -1247,7 +1246,8 @@ next_dir_entry(volatile struct nilfs_dir_entry *de)
 
 static void nilfs_mkfs_make_rootdir(void)
 {
-	void *dirbuf = map_disk_buffer(nilfs.files[NILFS_ROOT_INO]->start, 1);
+	uint64_t blocknr = nilfs.files[NILFS_ROOT_INO]->start_blocknr;
+	void *dirbuf = map_disk_buffer(blocknr, 1);
 	volatile struct nilfs_dir_entry *de = dirbuf;
 		/* volatile keyword is inserted to prevent failure of
 		   substitution to de->inode on a certain environment. */
@@ -1281,8 +1281,8 @@ static void nilfs_mkfs_make_reserved_files(void)
 	init_inode(10, DT_REG, 0, 0);
 }
 
-static void *
-map_segsum_info(blocknr_t start, unsigned long *offset, unsigned item_size)
+static void *map_segsum_info(uint64_t start_blocknr, unsigned long *offset,
+			     unsigned item_size)
 {
 	unsigned long block_offset = *offset / blocksize;
 	unsigned long offset_in_block = *offset % blocksize;
@@ -1292,13 +1292,14 @@ map_segsum_info(blocknr_t start, unsigned long *offset, unsigned item_size)
 		*offset = ++block_offset * blocksize;
 	}
 	*offset += item_size;
-	return map_disk_buffer(start + block_offset, 1) + offset_in_block;
+	return map_disk_buffer(start_blocknr + block_offset, 1) +
+		offset_in_block;
 }
 
 static void update_blocknr(struct nilfs_file_info *fi,
 			   unsigned long *sum_offset)
 {
-	blocknr_t start = nilfs.current_segment->start;
+	uint64_t start_blocknr = nilfs.current_segment->start_blocknr;
 	struct nilfs_finfo *finfo;
 	unsigned i;
 
@@ -1307,7 +1308,8 @@ static void update_blocknr(struct nilfs_file_info *fi,
 		return;
 	}
 
-	finfo = map_segsum_info(start, sum_offset, sizeof(struct nilfs_finfo));
+	finfo = map_segsum_info(start_blocknr, sum_offset,
+				sizeof(struct nilfs_finfo));
 	finfo->fi_ino = cpu_to_le64(fi->ino);
 	finfo->fi_ndatablk = finfo->fi_nblocks = cpu_to_le32(fi->nblocks);
 	finfo->fi_cno = cpu_to_le64(1);
@@ -1317,21 +1319,21 @@ static void update_blocknr(struct nilfs_file_info *fi,
 
 		fi->raw_inode->i_bmap[0] = 0;
 		for (i = 0; i < fi->nblocks; i++) {
-			pblkoff = map_segsum_info(start, sum_offset,
+			pblkoff = map_segsum_info(start_blocknr, sum_offset,
 						  sizeof(*pblkoff));
 			*pblkoff = cpu_to_le64(i);
 			fi->raw_inode->i_bmap[i + 1] =
-				cpu_to_le64(fi->start + i);
+				cpu_to_le64(fi->start_blocknr + i);
 		}
 	} else {
 		struct nilfs_binfo_v *pbinfo_v;
-		blocknr_t vblocknr;
+		uint64_t vblocknr;
 
 		fi->raw_inode->i_bmap[0] = 0;
 		for (i = 0; i < fi->nblocks; i++) {
-			pbinfo_v = map_segsum_info(start, sum_offset,
+			pbinfo_v = map_segsum_info(start_blocknr, sum_offset,
 						   sizeof(*pbinfo_v));
-			vblocknr = assign_vblocknr(fi->start + i);
+			vblocknr = assign_vblocknr(fi->start_blocknr + i);
 			pbinfo_v->bi_vblocknr = cpu_to_le64(vblocknr);
 			pbinfo_v->bi_blkoff = cpu_to_le64(i);
 			fi->raw_inode->i_bmap[i + 1] = cpu_to_le64(vblocknr);
@@ -1339,7 +1341,7 @@ static void update_blocknr(struct nilfs_file_info *fi,
 	}
 }
 
-static void prepare_blockgrouped_file(blocknr_t blocknr)
+static void prepare_blockgrouped_file(uint64_t blocknr)
 {
 	struct nilfs_palloc_group_desc *desc;
 	const unsigned group_descs_per_block =
@@ -1353,7 +1355,7 @@ static void prepare_blockgrouped_file(blocknr_t blocknr)
 }
 
 static inline void
-alloc_blockgrouped_file_entry(blocknr_t blocknr, unsigned long nr)
+alloc_blockgrouped_file_entry(uint64_t blocknr, unsigned long nr)
 {
 	struct nilfs_palloc_group_desc *desc = map_disk_buffer(blocknr, 1);
 					/* always use the first group */
@@ -1372,8 +1374,8 @@ static void prepare_ifile(void)
 	struct nilfs_inode *raw_inode;
 	const unsigned entries_per_block =
 		blocksize / sizeof(struct nilfs_inode);
-	blocknr_t entry_block;
-	blocknr_t blocknr = fi->start;
+	uint64_t entry_block;
+	uint64_t blocknr = fi->start_blocknr;
 	int i;
 	ino_t ino = 0;
 
@@ -1402,7 +1404,7 @@ static void reserve_ifile_inode(ino_t ino)
 {
 	struct nilfs_file_info *fi = nilfs.files[NILFS_IFILE_INO];
 
-	alloc_blockgrouped_file_entry(fi->start, ino);
+	alloc_blockgrouped_file_entry(fi->start_blocknr, ino);
 }
 
 static void prepare_cpfile(void)
@@ -1410,8 +1412,8 @@ static void prepare_cpfile(void)
 	struct nilfs_file_info *fi = nilfs.files[NILFS_CPFILE_INO];
 	const unsigned entries_per_block =
 		blocksize / sizeof(struct nilfs_checkpoint);
-	blocknr_t blocknr = fi->start;
-	blocknr_t entry_block = blocknr;
+	uint64_t blocknr = fi->start_blocknr;
+	uint64_t entry_block = blocknr;
 	struct nilfs_cpfile_header *header;
 	struct nilfs_checkpoint *cp;
 	uint64_t cno = 1;
@@ -1469,8 +1471,8 @@ static void prepare_sufile(void)
 	struct nilfs_file_info *fi = nilfs.files[NILFS_SUFILE_INO];
 	const unsigned entries_per_block =
 		blocksize / sizeof(struct nilfs_segment_usage);
-	blocknr_t blocknr = fi->start;
-	blocknr_t entry_block = blocknr;
+	uint64_t blocknr = fi->start_blocknr;
+	uint64_t entry_block = blocknr;
 	struct nilfs_sufile_header *header;
 	struct nilfs_segment_usage *su;
 	unsigned long segnum = 0;
@@ -1509,8 +1511,9 @@ static void commit_sufile(void)
 	const unsigned entries_per_block =
 		blocksize / sizeof(struct nilfs_segment_usage);
 	struct nilfs_segment_usage *su;
-	unsigned segnum = fi->start / nilfs.diskinfo->blocks_per_segment;
-	blocknr_t blocknr = fi->start +
+	unsigned segnum = fi->start_blocknr /
+		nilfs.diskinfo->blocks_per_segment;
+	uint64_t blocknr = fi->start_blocknr +
 		(segnum + NILFS_SUFILE_FIRST_SEGMENT_USAGE_OFFSET) /
 		entries_per_block;
 
@@ -1527,9 +1530,9 @@ static void prepare_dat(void)
 	struct nilfs_dat_entry *entry;
 	const unsigned entries_per_block =
 		blocksize / sizeof(struct nilfs_dat_entry);
-	blocknr_t entry_block;
+	uint64_t entry_block;
 	int i, vblocknr = 0;
-	blocknr_t blocknr = fi->start;
+	uint64_t blocknr = fi->start_blocknr;
 
 	prepare_blockgrouped_file(blocknr);
 	for (entry_block = blocknr + group_desc_blocks_per_group +
@@ -1549,19 +1552,19 @@ static void prepare_dat(void)
 	init_inode(NILFS_DAT_INO, DT_REG, 0, 0);
 }
 
-static blocknr_t assign_vblocknr(blocknr_t blocknr)
+static uint64_t assign_vblocknr(uint64_t blocknr)
 {
 	struct nilfs_file_info *fi = nilfs.files[NILFS_DAT_INO];
 	const unsigned entries_per_block =
 		blocksize / sizeof(struct nilfs_dat_entry);
 	struct nilfs_dat_entry *entry;
-	blocknr_t vblocknr = nilfs.vblocknr++;
-	blocknr_t entry_block = fi->start + group_desc_blocks_per_group
+	uint64_t vblocknr = nilfs.vblocknr++;
+	uint64_t entry_block = fi->start_blocknr + group_desc_blocks_per_group
 		+ bitmap_blocks_per_group + vblocknr / entries_per_block;
 
-	alloc_blockgrouped_file_entry(fi->start, vblocknr);
+	alloc_blockgrouped_file_entry(fi->start_blocknr, vblocknr);
 
-	BUG_ON(entry_block >= fi->start + fi->nblocks);
+	BUG_ON(entry_block >= fi->start_blocknr + fi->nblocks);
 	entry = map_disk_buffer(entry_block, 1);
 
 	entry += vblocknr % entries_per_block;
@@ -1577,6 +1580,7 @@ static void prepare_segment(struct nilfs_segment_info *si)
 	struct nilfs_disk_info *di = nilfs.diskinfo;
 	struct nilfs_file_info *fi;
 	struct nilfs_super_root *sr;
+	uint64_t end_blocknr;
 	int i;
 
 	nilfs.current_segment = si;
@@ -1585,7 +1589,7 @@ static void prepare_segment(struct nilfs_segment_info *si)
 		nilfs.files[fi->ino] = fi;
 
 	/* initialize segment summary */
-	nilfs.segsum = map_disk_buffer(si->start, 1);
+	nilfs.segsum = map_disk_buffer(si->start_blocknr, 1);
 	nilfs.segsum->ss_magic = cpu_to_le32(NILFS_SEGSUM_MAGIC);
 	nilfs.segsum->ss_bytes =
 		cpu_to_le16(sizeof(struct nilfs_segment_summary));
@@ -1600,7 +1604,8 @@ static void prepare_segment(struct nilfs_segment_info *si)
 	nilfs.segsum->ss_cno = cpu_to_le64(nilfs.cno);
 
 	/* initialize super root */
-	nilfs.super_root = map_disk_buffer(si->start + si->nblocks - 1, 1);
+	end_blocknr = si->start_blocknr + si->nblocks - 1;
+	nilfs.super_root = map_disk_buffer(end_blocknr, 1);
 	sr = nilfs.super_root;
 	sr->sr_bytes = cpu_to_le16(NILFS_SR_BYTES(sizeof(struct nilfs_inode)));
 	sr->sr_nongc_ctime = cpu_to_le64(di->ctime);
@@ -1618,7 +1623,7 @@ static void prepare_segment(struct nilfs_segment_info *si)
 
 static void fill_in_checksums(struct nilfs_segment_info *si, uint32_t crc_seed)
 {
-	blocknr_t blocknr;
+	uint64_t blocknr;
 	unsigned long rest_blocks;
 	int crc_offset;
 	int sr_bytes;
@@ -1641,7 +1646,7 @@ static void fill_in_checksums(struct nilfs_segment_info *si, uint32_t crc_seed)
 
 	/* fill in segment checksum */
 	crc_offset = sizeof(nilfs.segsum->ss_datasum);
-	blocknr = si->start;
+	blocknr = si->start_blocknr;
 	rest_blocks = si->nblocks;
 	BUG_ON(!rest_blocks);
 
@@ -1677,14 +1682,14 @@ static void commit_segment(void)
 	fill_in_checksums(si, di->crc_seed);
 
 	segref->seq = nilfs.seq;
-	segref->start = si->start;
+	segref->start_blocknr = si->start_blocknr;
 	segref->cno = nilfs.cno;
 	segref->free_blocks_count = count_free_blocks(di);
 }
 
 static void prepare_super_block(struct nilfs_disk_info *di)
 {
-	blocknr_t blocknr = NILFS_SB_OFFSET_BYTES / blocksize;
+	uint64_t blocknr = NILFS_SB_OFFSET_BYTES / blocksize;
 	unsigned long offset = NILFS_SB_OFFSET_BYTES % blocksize;
 
 	if (sizeof(struct nilfs_super_block) > blocksize)
@@ -1746,7 +1751,7 @@ static void commit_super_block(struct nilfs_disk_info *di,
 	BUG_ON(!raw_sb);
 
 	raw_sb->s_last_cno = cpu_to_le64(segref->cno);
-	raw_sb->s_last_pseg = cpu_to_le64(segref->start);
+	raw_sb->s_last_pseg = cpu_to_le64(segref->start_blocknr);
 	raw_sb->s_last_seq = cpu_to_le64(segref->seq);
 	raw_sb->s_free_blocks_count = cpu_to_le64(segref->free_blocks_count);
 
