@@ -194,7 +194,7 @@ static int nilfs_cleaner_find_fs(struct nilfs_cleaner *cleaner,
 		cleaner->mountdir = cdir;
 	}
 
-	fp = fopen(_PATH_MOUNTED, "r");
+	fp = setmntent(_PATH_MOUNTED, "r");
 	if (unlikely(fp == NULL)) {
 		nilfs_cleaner_logger(LOG_ERR, _("Error: cannot open "
 						_PATH_MOUNTED "."));
