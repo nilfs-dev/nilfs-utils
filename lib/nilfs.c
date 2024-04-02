@@ -68,6 +68,7 @@
 
 #include <errno.h>
 #include <assert.h>
+#include <mntent.h>	/* setmntent, getmntent_r, endmntent, etc */
 #include "nilfs.h"
 #include "compat.h"	/* PATH_MAX, etc */
 #include "util.h"
@@ -76,65 +77,8 @@
 
 extern __u32 crc32_le(__u32 seed, unsigned char const *data, size_t length);
 
-static inline int iseol(int c)
-{
-	return c == '\n' || c == '\0';
-}
-
-static size_t tokenize(char *line, char **tokens, size_t ntoks)
-{
-	char *p;
-	size_t n;
-
-	p = line;
-	for (n = 0; n < ntoks; n++) {
-		while (isspace(*p))
-			p++;
-		if (iseol(*p))
-			break;
-		tokens[n] = p++;
-		while (!isspace(*p) && !iseol(*p))
-			p++;
-		if (isspace(*p))
-			*p++ = '\0';
-		else
-			*p = '\0';
-	}
-	return n;
-}
-
-#define NMNTFLDS	6
-#define MNTFLD_FS	0
-#define MNTFLD_DIR	1
-#define MNTFLD_TYPE	2
-#define MNTFLD_OPTS	3
-#define MNTFLD_FREQ	4
-#define MNTFLD_PASSNO	5
 #define MNTOPT_RW	"rw"
 #define MNTOPT_RO	"ro"
-#define MNTOPT_SEP	','
-
-static int has_mntopt(const char *opts, const char *opt)
-{
-	const char *p, *q;
-	size_t len, n;
-
-	p = opts;
-	len = strlen(opt);
-	while (p != NULL) {
-		q = strchr(p, MNTOPT_SEP);
-		if (q) {
-			n = max_t(size_t, q - p, len);
-			q++;
-		} else {
-			n = max_t(size_t, strlen(p), len);
-		}
-		if (strncmp(p, opt, n) == 0)
-			return 1;
-		p = q;
-	}
-	return 0;
-}
 
 #ifndef LINE_MAX
 #define LINE_MAX	2048
@@ -143,12 +87,13 @@ static int has_mntopt(const char *opts, const char *opt)
 static int nilfs_find_fs(struct nilfs *nilfs, const char *dev, const char *dir,
 			 const char *opt)
 {
-	FILE *fp;
-	char line[LINE_MAX], *mntent[NMNTFLDS];
-	int ret, n;
+	struct mntent *mntent, mntbuf;
+	char buf[LINE_MAX];
 	char canonical[PATH_MAX + 2];
 	char *cdev = NULL, *cdir = NULL;
 	char *mdev, *mdir;
+	FILE *fp;
+	int ret;
 
 	ret = -1;
 	if (dev && myrealpath(dev, canonical, sizeof(canonical))) {
@@ -165,19 +110,16 @@ static int nilfs_find_fs(struct nilfs *nilfs, const char *dev, const char *dir,
 		dir = cdir;
 	}
 
-	fp = fopen(_PATH_PROC_MOUNTS, "r");
+	fp = setmntent(_PATH_PROC_MOUNTS, "r");
 	if (unlikely(fp == NULL))
 		goto failed_dir;
 
-	while (fgets(line, sizeof(line), fp) != NULL) {
-		n = tokenize(line, mntent, NMNTFLDS);
-		assert(n == NMNTFLDS);
-
-		if (strcmp(mntent[MNTFLD_TYPE], NILFS_FSTYPE) != 0)
+	while ((mntent = getmntent_r(fp, &mntbuf, buf, sizeof(buf))) != NULL) {
+		if (strcmp(mntent->mnt_type, NILFS_FSTYPE) != 0)
 			continue;
 
 		if (dir != NULL) {
-			mdir = mntent[MNTFLD_DIR];
+			mdir = mntent->mnt_dir;
 			if (myrealpath(mdir, canonical, sizeof(canonical)))
 				mdir = canonical;
 			if (strcmp(mdir, dir) != 0)
@@ -185,16 +127,16 @@ static int nilfs_find_fs(struct nilfs *nilfs, const char *dev, const char *dir,
 		}
 
 		if (dev != NULL) {
-			mdev = mntent[MNTFLD_FS];
+			mdev = mntent->mnt_fsname;
 			if (myrealpath(mdev, canonical, sizeof(canonical)))
 				mdev = canonical;
 			if (strcmp(mdev, dev) != 0)
 				continue;
 		}
 
-		if (has_mntopt(mntent[MNTFLD_OPTS], opt)) {
+		if (hasmntopt(mntent, opt)) {
 			free(nilfs->n_dev);
-			nilfs->n_dev = strdup(mntent[MNTFLD_FS]);
+			nilfs->n_dev = strdup(mntent->mnt_fsname);
 			if (unlikely(nilfs->n_dev == NULL)) {
 				free(nilfs->n_ioc);
 				nilfs->n_ioc = NULL;
@@ -202,7 +144,7 @@ static int nilfs_find_fs(struct nilfs *nilfs, const char *dev, const char *dir,
 				goto failed_proc_mounts;
 			}
 			free(nilfs->n_ioc);
-			nilfs->n_ioc = strdup(mntent[MNTFLD_DIR]);
+			nilfs->n_ioc = strdup(mntent->mnt_dir);
 			if (unlikely(nilfs->n_ioc == NULL)) {
 				free(nilfs->n_dev);
 				nilfs->n_dev = NULL;
@@ -216,7 +158,7 @@ static int nilfs_find_fs(struct nilfs *nilfs, const char *dev, const char *dir,
 		errno = ENXIO;
 
  failed_proc_mounts:
-	fclose(fp);
+	endmntent(fp);
 
  failed_dir:
 	free(cdir);
