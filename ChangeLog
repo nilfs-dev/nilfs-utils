@@ -1,3 +1,13 @@
+nilfs-utils-2.2.11  Wed Apr 3, 2024 JST
+
+	* fix two bugs related to mount table parsing. One of these is an
+	  important one that fixes an issue where lscp and other tools would
+	  cause an error if the mount point path name contains characters
+	  such as spaces:
+	  - libnilfs: fix nilfs_open failure for mount points with escaped
+	    characters
+	  - libcleaner: fix asymmetry in mount table open/close handling
+
 nilfs-utils-2.2.10  Mon Mar 4, 2024 JST
 
 	* fix bugs:
