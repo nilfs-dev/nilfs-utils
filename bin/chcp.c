@@ -116,8 +116,8 @@ int main(int argc, char *argv[])
 		dev = NULL;
 	} else {
 		modestr = argv[optind++];
-		nilfs_parse_cno(argv[optind], &endptr, CHCP_BASE);
-		if (*endptr == '\0')
+		cno = nilfs_parse_cno(argv[optind], &endptr, CHCP_BASE);
+		if (cno >= NILFS_CNO_MAX || *endptr != '\0')
 			dev = NULL;
 		else
 			dev = argv[optind++];
