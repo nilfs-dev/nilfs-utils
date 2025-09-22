@@ -1,3 +1,11 @@
+nilfs-utils-2.2.12  Mon Sep 22, 2025 JST
+
+	* apply a bug fix for a report that the chcp command could crash with
+	  exit code 139 if given malformed arguments:
+	  - chcp: fix segfault
+	* fix build warnings in Autoconf 2.72 or later:
+	  - configure.ac: do not use AC_PROG_GCC_TRADITIONAL
+
 nilfs-utils-2.2.11  Wed Apr 3, 2024 JST
 
 	* fix two bugs related to mount table parsing. One of these is an
