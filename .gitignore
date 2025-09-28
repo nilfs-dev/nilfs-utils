@@ -40,6 +40,8 @@ INSTALL
 aclocal.m4
 autoconf-[0-9].*
 autom4te.cache
+confdefs.h
+conftest.dir/
 Makefile
 Makefile.in
 config.guess
