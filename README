@@ -33,8 +33,12 @@ option:
 
 This configures the build environment so as to make legacy
 mount/umount helpers (mount.nilfs2 and umount.nilfs2), in which the
-legacy mtab file is handled properly.  For CentOS 6 (and other RHEL 6
-clones), for instance, this option is needed.
+legacy mtab file is handled properly.
+
+Most modern Linux distributions use libmount by default, and this is
+the recommended configuration.  This option is primarily intended for
+legacy environments or specialized configurations that still rely on a
+writable /etc/mtab file.
 
 * Trouble shooting
 
