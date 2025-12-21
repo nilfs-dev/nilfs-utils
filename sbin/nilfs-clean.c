@@ -62,6 +62,7 @@
 #include <stdarg.h>	/* va_start, va_end, vfprintf */
 #include <errno.h>
 #include <signal.h>
+#include <stdint.h>
 #include "nls.h"
 #include "nilfs.h"
 #include "nilfs_cleaner.h"
@@ -123,6 +124,12 @@ enum {
 	NILFS_CLEAN_CMD_SHUTDOWN,
 };
 
+/* GC speed parameters */
+#define NILFS_CLEAN_DEFAULT_GC_SPEED		(1280ULL << 20) /* 1.28 GiB/s */
+#define NILFS_CLEAN_MAX_SEGMENTS_PER_CALL	32
+#define NILFS_CLEAN_MIN_SEGMENTS_PER_CALL	1
+#define NILFS_CLEAN_DEFAULT_NSEGMENTS_PER_CALL	16
+
 /* options */
 static char *progname;
 static int show_version_only;
@@ -131,8 +138,8 @@ static int clean_cmd = NILFS_CLEAN_CMD_RUN;
 static const char *conffile;
 
 static unsigned long protection_period = ULONG_MAX;
-static int nsegments_per_clean = 2;
-static struct timespec cleaning_interval = { 0, 100000000 };   /* 100 msec */
+static unsigned int nsegments_per_clean = 0;		/* to be adjusted */
+static struct timespec cleaning_interval = { 0, 100000000 };	/* 100 msec */
 static unsigned long min_reclaimable_blocks = ULONG_MAX;
 static unsigned char min_reclaimable_blocks_unit = NILFS_CLEANER_ARG_UNIT_NONE;
 
@@ -167,10 +174,69 @@ static void nilfs_clean_escape(int signum)
 	siglongjmp(nilfs_clean_env, 1);
 }
 
+/**
+ * nilfs_clean_adjust_speed - adjust the GC speed instructed to cleanerd
+ * @cleaner: nilfs_cleaner struct
+ *
+ * nilfs_clean_adjust_speed() attempts to adjust the GC speed based on
+ * filesystem layout information, etc.  Even if adjustment is not possible due
+ * to overflow or other reasons, it will not fail and set a default value.
+ */
+static void nilfs_clean_adjust_speed(struct nilfs_cleaner *cleaner)
+{
+	const char *device = nilfs_cleaner_device(cleaner);
+	struct nilfs *nilfs;
+	uint64_t blocks_per_segment;
+	uint64_t interval_ms, nbytes, nsegs;
+	size_t block_size;
+
+	nilfs = nilfs_open(device, NULL, NILFS_OPEN_RDONLY | NILFS_OPEN_RAW);
+	if (unlikely(!nilfs))
+		goto fallback;
+
+	block_size = nilfs_get_block_size(nilfs);
+	blocks_per_segment = nilfs_get_blocks_per_segment(nilfs);
+	nilfs_close(nilfs);
+
+	interval_ms = (cleaning_interval.tv_sec * 1000 +
+		       cleaning_interval.tv_nsec / 1000000);
+
+	if (unlikely(!block_size || !blocks_per_segment || !interval_ms))
+		goto fallback;
+
+	if (unlikely(blocks_per_segment > UINT64_MAX / block_size))
+		goto fallback;
+
+	nbytes = blocks_per_segment * block_size;
+		/* = Number of bytes per segment */
+	if (unlikely(nbytes > UINT64_MAX / 1000))
+		goto fallback;
+
+	nbytes = (nbytes * 1000) / interval_ms;
+		/* = Number of bytes to clean per second */
+	if (unlikely(!nbytes))
+		goto fallback;
+
+	nsegs = NILFS_CLEAN_DEFAULT_GC_SPEED / nbytes;
+		/* = Number of segments to clean per call */
+	nsegments_per_clean = max_t(unsigned int,
+				    min_t(uint64_t, nsegs,
+					  NILFS_CLEAN_MAX_SEGMENTS_PER_CALL),
+				    NILFS_CLEAN_MIN_SEGMENTS_PER_CALL);
+	return;
+
+fallback:
+	errno = 0;
+	nsegments_per_clean = NILFS_CLEAN_DEFAULT_NSEGMENTS_PER_CALL;
+}
+
 static int nilfs_clean_do_run(struct nilfs_cleaner *cleaner)
 {
 	struct nilfs_cleaner_args args;
 	int ret;
+
+	if (!nsegments_per_clean)
+		nilfs_clean_adjust_speed(cleaner);
 
 	args.npasses = 1;
 	args.nsegments_per_clean = nsegments_per_clean;
