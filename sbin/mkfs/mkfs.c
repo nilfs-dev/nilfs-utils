@@ -93,7 +93,7 @@ extern __u32 crc32_le(__u32 seed, unsigned char const *data, size_t length);
 
 #define BADBLOCKS_NAME		"badblocks"
 
-static const char badblocks[] = "/sbin/" BADBLOCKS_NAME;
+static const char badblocks[] = BADBLOCKSDIR "/" BADBLOCKS_NAME;
 
 /*
  * Command interface primitives

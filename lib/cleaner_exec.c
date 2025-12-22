@@ -76,7 +76,7 @@
 #define WAIT_CLEANERD_RETRY_INTERVAL	2	/* in seconds */
 #define WAIT_CLEANERD_RETRY_TIMEOUT	8	/* in seconds */
 
-static const char cleanerd[] = "/sbin/" NILFS_CLEANERD_NAME;
+static const char cleanerd[] = CORE_SBINDIR "/" NILFS_CLEANERD_NAME;
 static const char cleanerd_protperiod_opt[] = "-p";
 
 static void default_logger(int priority, const char *fmt, ...)
