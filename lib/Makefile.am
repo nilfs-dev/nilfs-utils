@@ -1,7 +1,7 @@
 ## Makefile.am
 
 AM_CFLAGS = -Wall
-AM_CPPFLAGS = -I$(top_srcdir)/include
+AM_CPPFLAGS = -I$(top_srcdir)/include -DCORE_SBINDIR=\"$(core_sbindir)\"
 
 lib_LTLIBRARIES = libnilfs.la libnilfsgc.la
 noinst_LTLIBRARIES = librealpath.la libnilfsfeature.la libparser.la \

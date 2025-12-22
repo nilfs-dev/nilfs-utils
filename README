@@ -14,17 +14,6 @@
  $ ./configure
  $ make
 
-If your system is a 64-bit architecture and libraries are installed
-into /usr/lib64 instead of /usr/lib, change the library directory with
---libdir option:
-
- $ ./configure --libdir=/usr/lib64
-
-If you want to separate the library files into a subdirectory, specify
-it as follows, for example:
-
- $ ./configure --libdir=/usr/lib64/nilfs
-
 If /etc/mtab is not a symlink to /proc/self/mounts but a regular file
 in the target system, run the configure script with --without-libmount
 option:
@@ -39,6 +28,56 @@ Most modern Linux distributions use libmount by default, and this is
 the recommended configuration.  This option is primarily intended for
 legacy environments or specialized configurations that still rely on a
 writable /etc/mtab file.
+
+
+* Installation path configuration
+
+If your system is a 64-bit architecture and libraries are installed
+into /usr/lib64 instead of /usr/lib, change the library directory with
+--libdir option:
+
+ $ ./configure --libdir=/usr/lib64
+
+If you want to separate the library files into a subdirectory, specify
+it as follows, for example:
+
+ $ ./configure --libdir=/usr/lib64/nilfs
+
+Modern Linux distributions follow the "UsrMerge" or "Bin-Sbin merge"
+schemes.  The configure script automatically detects the system
+hierarchy and adjusts the installation paths for core binaries
+(mkfs.nilfs2, mount.nilfs2, nilfs_cleanerd, etc.):
+
+ - Legacy: Installs to /sbin
+ - UsrMerge: Installs to /usr/sbin
+ - Bin-Sbin merge (e.g., Fedora Rawhide): Installs to /usr/bin
+
+When installing to /usr/bin, the build system also attempts to create
+compatibility symbolic links in /usr/sbin if that directory exists on
+the target system.
+
+You can manually override this detection using the following options:
+
+ # Force installation into /usr/bin (Bin-Sbin merge style)
+ $ ./configure --enable-usrmerge=bin
+
+ # Force installation into /usr/sbin (UsrMerge style)
+ $ ./configure --enable-usrmerge=sbin
+
+ # Force installation into the traditional /sbin
+ $ ./configure --disable-usrmerge
+
+By default, if the option is omitted, the script probes the system's
+directory configuration to determine the appropriate hierarchy.  If
+the option is specified without a TYPE (i.e., --enable-usrmerge), it
+defaults to "sbin" (/usr/sbin) to align with standard UsrMerge
+practices.
+
+Note: This option is significant even when /sbin is a symbolic link to
+/usr/sbin (i.e., the physical installation destination is the same).
+It ensures that the absolute paths used by the utilities to call other
+binaries are consistent with the chosen hierarchy.
+
 
 * Trouble shooting
 

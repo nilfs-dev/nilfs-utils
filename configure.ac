@@ -24,7 +24,7 @@ LT_PREREQ([2.4])
 LT_INIT
 AC_PATH_PROG([LDCONFIG], [ldconfig],
 	[AC_MSG_ERROR([ldconfig not found])],
-	[$PATH:/sbin])
+	[$PATH:/usr/sbin:/sbin])
 
 dnl UTIL_CHECK_LIB(LIBRARY, FUNCTION, [VARSUFFIX = $1]))
 dnl The VARSUFFIX is optional and overrides the default behaviour. For example:
@@ -62,6 +62,25 @@ AC_ARG_ENABLE([uapi_header_install],
 		       [install kernel uapi header files]),
 	[enable_uapi_header_install="${enableval}"],
 	[enable_uapi_header_install=no])
+
+AC_ARG_ENABLE([usrmerge],
+	[AS_HELP_STRING([--enable-usrmerge[[=TYPE]]],
+	  [set UsrMerge hierarchy type (no, sbin, bin, or auto);
+	   'sbin' (default TYPE) installs to /usr/sbin, 'bin' installs to
+	   /usr/bin [default=auto, which probes the system configuration]])],
+	[enable_usrmerge="${enableval}"],
+	[enable_usrmerge=auto])
+
+# Checks for UsrMerge hierarchy
+AS_IF([test "x$enable_usrmerge" = "xauto"], [
+    AS_IF([test /usr/sbin -ef /usr/bin], [enable_usrmerge=bin],
+          [test -x /usr/bin/rpm && \
+           test "$(rpm --eval '%{_sbindir}')" = /usr/bin],
+              [enable_usrmerge=bin],
+          [test /usr/sbin/mkfs -ef /usr/bin/mkfs], [enable_usrmerge=bin],
+          [test /sbin -ef /usr/sbin], [enable_usrmerge=sbin],
+          [enable_usrmerge=no])
+])
 
 # Checks for libraries.
 AC_CHECK_LIB([uuid], [uuid_generate],
@@ -186,8 +205,37 @@ AC_SYS_LARGEFILE
 AC_PREFIX_DEFAULT([/usr])
 test "x$prefix" = "xNONE" && prefix="/usr"
 test "x$exec_prefix" = "xNONE" && exec_prefix="${prefix}"
-AC_SUBST([root_sbindir], [/sbin])
-AC_SUBST([sbindir], [${exec_prefix}/sbin])
+
+# Determine the location of /sbin binaries based on the --enable-usrmerge
+# option
+AS_CASE(["x$enable_usrmerge"],
+    [xbin], [
+        core_sbindir='${exec_prefix}/bin'
+        sbindir='${exec_prefix}/bin'
+        badblocksdir='/usr/bin'
+        create_compat_sbin_link=yes
+    ],
+    [xsbin|xyes], [
+        core_sbindir='${exec_prefix}/sbin'
+        sbindir='${exec_prefix}/sbin'
+        badblocksdir='/usr/sbin'
+        create_compat_sbin_link=no
+    ],
+    [
+        core_sbindir='/sbin'
+        sbindir='${exec_prefix}/sbin'
+        badblocksdir='/sbin'
+        create_compat_sbin_link=no
+    ]
+)
+
+AC_SUBST([core_sbindir])
+AC_SUBST([sbindir])
+AC_SUBST([badblocksdir])
+
+AM_CONDITIONAL([CREATE_COMPAT_SBIN_LINK],
+	       [test "x$create_compat_sbin_link" = "xyes"])
+
 AC_SUBST([sysconfdir], [/etc])
 AC_SUBST([localstatedir], [/var])
 

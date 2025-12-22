@@ -82,7 +82,7 @@ extern int check_mount(const char *device);
 
 #define BADBLOCKS_NAME		"badblocks"
 
-static const char badblocks[] = "/sbin/" BADBLOCKS_NAME;
+static const char badblocks[] = BADBLOCKSDIR "/" BADBLOCKS_NAME;
 
 /*
  * Command interface primitives
