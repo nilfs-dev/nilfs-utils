@@ -236,6 +236,37 @@ AC_SUBST([badblocksdir])
 AM_CONDITIONAL([CREATE_COMPAT_SBIN_LINK],
 	       [test "x$create_compat_sbin_link" = "xyes"])
 
+# Automatic detection of library installation directory
+
+AS_CASE(["$ac_configure_args"], [*--libdir*], [user_specified_libdir=yes],
+        [user_specified_libdir=no])
+
+AS_IF([test "x$user_specified_libdir" = "xno" && \
+       test "x$libdir" = 'x${exec_prefix}/lib' && \
+       test "x$cross_compiling" = "xno"], [
+    AC_MSG_CHECKING([for architecture-specific library directory])
+    detected_libdir=""
+
+    AS_IF(
+        # 1. Primary: systemd-path (available on most modern distros)
+        [command -v systemd-path >/dev/null 2>&1],
+        [detected_libdir=$(systemd-path system-library-arch 2>/dev/null)],
+
+        # 2. Fallback: use rpm --eval for RPM-based systems
+        [command -v rpm >/dev/null 2>&1],
+        [detected_libdir=$(rpm --eval '%{_libdir}' 2>/dev/null)]
+    )
+
+    AS_IF([test "x$detected_libdir" != "x"], [
+        libdir="$detected_libdir"
+        AC_MSG_RESULT([$libdir (detected)])
+    ], [
+        AC_MSG_RESULT([$libdir (default)])
+    ])
+])
+
+AC_SUBST([libdir])
+
 AC_SUBST([sysconfdir], [/etc])
 AC_SUBST([localstatedir], [/var])
 

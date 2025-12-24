@@ -32,9 +32,19 @@ writable /etc/mtab file.
 
 * Installation path configuration
 
-If your system is a 64-bit architecture and libraries are installed
-into /usr/lib64 instead of /usr/lib, change the library directory with
---libdir option:
+The configure script automatically probes your system to determine the
+appropriate library installation directory (libdir).
+
+- On systems using RPM-based package management (e.g., RHEL clones,
+  Fedora, openSUSE):
+  Detects and sets libdir according to the system's library macro
+  (typically /usr/lib64 on 64-bit systems).
+
+- On Debian-based distributions (e.g., Debian, Ubuntu, etc):
+  Detects and sets libdir according to the Multiarch specification
+  (e.g., /usr/lib/x86_64-linux-gnu).
+
+You can manually override this detection using the --libdir option:
 
  $ ./configure --libdir=/usr/lib64
 
