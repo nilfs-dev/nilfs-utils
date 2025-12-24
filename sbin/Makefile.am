@@ -37,6 +37,19 @@ nilfs_tune_LDADD = $(LDADD) $(top_builddir)/lib/libmountchk.la \
 
 EXTRA_DIST = .gitignore
 
+
+# Define dependencies so that the target binary is not blocked by a directory
+# with the same name
+fix-conflicting-dirs:
+	@for p in $(sbin_PROGRAMS); do \
+	    if [ -d "$$p" ]; then \
+	        echo "Removing directory '$$p' to allow binary creation"; \
+	        rm -rf "$$p"; \
+	    fi; \
+	done
+
+$(sbin_PROGRAMS): fix-conflicting-dirs
+
 if CREATE_COMPAT_SBIN_LINK
 install-exec-hook:
 	@if [ -d "$(DESTDIR)$(exec_prefix)/sbin" ]; then \
