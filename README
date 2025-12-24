@@ -11,23 +11,23 @@
 
 * How to compile
 
+** From a source package (tarball): **
+
  $ ./configure
  $ make
 
-If /etc/mtab is not a symlink to /proc/self/mounts but a regular file
-in the target system, run the configure script with --without-libmount
-option:
+** From the git repository: **
 
- $ ./configure --without-libmount
+ $ git clone https://github.com/nilfs-dev/nilfs-utils.git
+ $ cd nilfs-utils
+ $ ./autogen.sh
+ $ ./configure
+ $ make
 
-This configures the build environment so as to make legacy
-mount/umount helpers (mount.nilfs2 and umount.nilfs2), in which the
-legacy mtab file is handled properly.
-
-Most modern Linux distributions use libmount by default, and this is
-the recommended configuration.  This option is primarily intended for
-legacy environments or specialized configurations that still rely on a
-writable /etc/mtab file.
+Before compiling the development sources (git clone), you need to run
+the autogen.sh script to generate the configuration files.  This is not
+required for packaged sources unless you have modified build system
+files such as configure.ac or Makefile.am.
 
 
 * Installation path configuration
@@ -100,6 +100,17 @@ However, use of this option is normally not recommended because it
 disables the safety check of mkfs.nilfs2, which prevents users from
 accidentally overwriting an in-use device.
 
+If /etc/mtab is not a symlink to /proc/self/mounts but a regular file
+in the target system, you may need to disable libmount support to
+properly handle the legacy mtab file:
+
+ $ ./configure --without-libmount
+
+This option is primarily intended for legacy environments or
+specialized configurations that still rely on a writable /etc/mtab
+file.  Note that most modern distributions provide libmount as standard
+and do not require this option.
+
 You can compile the legacy mount.nilfs2 and umount.nilfs2 helpers
 without support for SELinux context mount options (-o context=<context>,
 etc):
@@ -126,18 +137,6 @@ Note that the utility package itself references bundled local header
 files, so you don't need to install these files with this option to
 build.
 
-
-* How to get development sources
-
- $ cd your-work-directory
- $ git clone https://github.com/nilfs-dev/nilfs-utils.git
-
-Before compiling the development sources, you need to run autogen.sh
-script.  This is not required for packaged sources unless you changed
-the configuration.
- 
- $ cd nilfs-utils
- $ ./autogen.sh
 
 * Developer's notes
 
