@@ -91,6 +91,15 @@ binaries are consistent with the chosen hierarchy.
 
 * Trouble shooting
 
+If you change the installation path (such as --libdir) or other
+configuration options, old build artifacts (especially libtool's .la
+files) may cause build or installation errors.  In such cases, perform
+a clean build as follows:
+
+ $ make distclean
+ $ ./configure [your-new-options]
+ $ make
+
 If the blkid library in your environment is old and incompatible with
 this package, you can use --without-blkid option:
 
