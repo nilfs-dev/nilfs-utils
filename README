@@ -30,6 +30,24 @@ required for packaged sources unless you have modified build system
 files such as configure.ac or Makefile.am.
 
 
+* Installation
+
+To install the compiled utilities and libraries to your system, run:
+
+ $ sudo make install
+
+To remove the installed files from your system, you can run:
+
+ $ sudo make uninstall
+
+Note: It is recommended to keep the build directory or the original
+source tree if you plan to use 'make uninstall' later, as it relies
+on the Makefile generated during configuration.
+
+For more detailed general instructions, see the automatically
+generated INSTALL file.
+
+
 * Installation path configuration
 
 The configure script automatically probes your system to determine the
