@@ -107,6 +107,63 @@ It ensures that the absolute paths used by the utilities to call other
 binaries are consistent with the chosen hierarchy.
 
 
+* Cross-compilation and remote deployment
+
+When cross-compiling, automatic library directory detection is
+disabled.  You must explicitly specify the target's library directory.
+Additionally, you should specify the UsrMerge scheme of the target
+system to ensure files are installed to the correct locations.
+
+1. Preparation (e.g., for aarch64/arm64 on Ubuntu noble):
+   You need a cross-toolchain and development libraries for the target
+   architecture.  On a Debian-based host, you can set them up as
+   follows:
+
+    $ sudo dpkg --add-architecture arm64
+    $ sudo apt update
+    $ sudo apt install gcc-aarch64-linux-gnu libuuid1:arm64 \
+        libblkid-dev:arm64 libmount-dev:arm64 libselinux1-dev:arm64
+
+   If you are on Ubuntu, you may need to add the ports repository to
+   /etc/apt/sources.list.d/ubuntu.sources (or your sources.list):
+
+    Types: deb
+    URIs: http://ports.ubuntu.com/ubuntu-ports
+    Suites: noble noble-updates noble-security noble-backports
+    Components: main restricted universe multiverse
+    Signed-By: /usr/share/keyrings/ubuntu-archive-keyring.gpg
+    Architectures: arm64
+
+   For more details, please refer to the cross-compilation guidelines
+   provided by your specific distribution.
+
+2. Configure and build:
+   For example, when cross-compiling for aarch64-linux-gnu machine
+   running a UsrMerge-enabled OS:
+
+    $ ./configure --host=aarch64-linux-gnu \
+        --libdir=/usr/lib/aarch64-linux-gnu \
+        --enable-usrmerge=sbin
+    $ make
+
+3. Install to target:
+   Instead of running 'make install' on the target, it is recommended
+   to use DESTDIR on the host and transfer the files:
+
+    $ make install DESTDIR=$HOME/tmp/aarch64-linux-root
+    $ tar czf - -C $HOME/tmp/aarch64-linux-root . | \
+        ssh target-host "sudo tar xzvf - --no-same-owner -C /"
+
+   Here, "target-host" represents the host you want to deploy to.
+   Using --no-same-owner with sudo on the target ensures that the
+   extracted files are owned by the root user.
+
+   After transferring the files, update the shared library cache on
+   the target system:
+
+    $ ssh target-host "sudo ldconfig"
+
+
 * Trouble shooting
 
 If you change the installation path (such as --libdir) or other
