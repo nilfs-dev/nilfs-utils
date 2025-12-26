@@ -66,11 +66,6 @@ You can manually override this detection using the --libdir option:
 
  $ ./configure --libdir=/usr/lib64
 
-If you want to separate the library files into a subdirectory, specify
-it as follows, for example:
-
- $ ./configure --libdir=/usr/lib64/nilfs
-
 Modern Linux distributions follow the "UsrMerge" or "Bin-Sbin merge"
 schemes.  The configure script automatically detects the system
 hierarchy and adjusts the installation paths for core binaries
