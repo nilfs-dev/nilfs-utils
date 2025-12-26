@@ -58,6 +58,9 @@ libtool
 stamp-h
 stamp-h1
 
+# Package config files
+*.pc
+
 # stgit generated dirs
 patches-*
 

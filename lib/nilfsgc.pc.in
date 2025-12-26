@@ -1,0 +1,13 @@
+prefix=@prefix@
+exec_prefix=@exec_prefix@
+libdir=@libdir@
+includedir=@includedir@
+
+Name: nilfsgc
+Description: NILFS garbage collector library
+Version: @PACKAGE_VERSION@
+# 'nilfs' is a public dependency because nilfs_gc.h includes nilfs.h
+Requires: nilfs
+Libs: -L${libdir} -lnilfsgc
+Libs.private: @LIB_POSIX_TIMER@
+Cflags: -I${includedir}

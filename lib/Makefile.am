@@ -50,3 +50,12 @@ libnilfsgc_static_la_LIBADD = libsegment.la $(LIB_POSIX_TIMER) \
 libcleaner_la_SOURCES = cleaner_ctl.c
 libcleaner_la_LIBADD = librealpath.la libcleanerexec.la $(LIB_POSIX_MQ) \
 	-luuid $(LIB_POSIX_TIMER)
+
+if INSTALL_PKGCONFIG
+pkgconfig_DATA = nilfs.pc nilfsgc.pc
+$(pkgconfig_DATA): $(top_builddir)/config.status
+endif
+
+DISTCLEANFILES = nilfs.pc nilfsgc.pc
+
+EXTRA_DIST = nilfs.pc.in nilfsgc.pc.in

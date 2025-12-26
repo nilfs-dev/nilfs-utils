@@ -66,6 +66,18 @@ You can manually override this detection using the --libdir option:
 
  $ ./configure --libdir=/usr/lib64
 
+The configure script can also generate pkg-config files (.pc files)
+that provide build metadata for other tools or applications that
+utilize nilfs-utils libraries.  The following option is available to
+control the installation of these files:
+
+ $ ./configure --with-pkgconfigdir=DIR
+
+If the DIR parameter (which is to specify the directory for
+pkg-config files) is omitted, the path will be auto-detected (usually
+${libdir}/pkgconfig).  To disable the installation of .pc files, set
+it to 'no' or use --without-pkgconfigdir option.
+
 Modern Linux distributions follow the "UsrMerge" or "Bin-Sbin merge"
 schemes.  The configure script automatically detects the system
 hierarchy and adjusts the installation paths for core binaries
@@ -100,6 +112,19 @@ Note: This option is significant even when /sbin is a symbolic link to
 /usr/sbin (i.e., the physical installation destination is the same).
 It ensures that the absolute paths used by the utilities to call other
 binaries are consistent with the chosen hierarchy.
+
+
+* Build dependency information (pkg-config)
+
+Since version 2.3.0, nilfs-utils provides pkg-config metadata files
+for its shared libraries (nilfs.pc and nilfsgc.pc).  These files are
+intended to simplify the development of independent tools that link
+against nilfs-utils libraries, and typical users do not need to be
+aware of them.
+
+For those interested in using these files for development, please
+refer to the pkg-config(1) manual page or its official documentation
+(https://www.freedesktop.org/wiki/Software/pkg-config/).
 
 
 * Cross-compilation and remote deployment

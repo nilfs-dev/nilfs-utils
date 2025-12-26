@@ -57,6 +57,12 @@ AC_ARG_WITH([blkid],
 	AS_HELP_STRING([--without-blkid], [compile without blkid support]),
 	[], with_blkid=yes)
 
+AC_ARG_WITH([pkgconfigdir],
+    [AS_HELP_STRING([--with-pkgconfigdir[[=DIR]]],
+        [directory for pkg-config files (no to disable) [default=auto]])],
+    [pkgconfigdir=$withval],
+    [pkgconfigdir=auto])
+
 AC_ARG_ENABLE([uapi_header_install],
 	AS_HELP_STRING([--enable-uapi-header-install],
 		       [install kernel uapi header files]),
@@ -70,6 +76,21 @@ AC_ARG_ENABLE([usrmerge],
 	   /usr/bin [default=auto, which probes the system configuration]])],
 	[enable_usrmerge="${enableval}"],
 	[enable_usrmerge=auto])
+
+# Checks for pkg-config configuration
+AS_IF([test "x$pkgconfigdir" = "xno"], [enable_pkgconfig=no], [
+    # Checks for the existence of pkg-config itself
+    m4_ifdef([PKG_PROG_PKG_CONFIG], [PKG_PROG_PKG_CONFIG], [PKG_CONFIG=""])
+
+    AS_IF([test -n "$PKG_CONFIG"], [enable_pkgconfig=yes],
+          [test "x$pkgconfigdir" = "xyes"], [
+             AC_MSG_ERROR([pkg-config requested but not found])
+          ], [
+             enable_pkgconfig=no
+             AC_MSG_WARN(
+                 [pkg-config not found. PC file installation disabled.])
+          ])
+])
 
 # Checks for UsrMerge hierarchy
 AS_IF([test "x$enable_usrmerge" = "xauto"], [
@@ -269,6 +290,16 @@ AC_SUBST([libdir])
 
 AC_SUBST([sysconfdir], [/etc])
 AC_SUBST([localstatedir], [/var])
+
+AS_IF([test "x$enable_pkgconfig" = "xyes"], [
+    AS_IF([test "x$pkgconfigdir" = "xyes" || test "x$pkgconfigdir" = "xauto"],
+          [pkgconfigdir='${libdir}/pkgconfig'])
+
+    AC_SUBST([pkgconfigdir])
+    AC_CONFIG_FILES([lib/nilfs.pc lib/nilfsgc.pc])
+])
+
+AM_CONDITIONAL([INSTALL_PKGCONFIG], [test "x$enable_pkgconfig" = "xyes"])
 
 AC_CONFIG_FILES([Makefile
 		 bin/Makefile
