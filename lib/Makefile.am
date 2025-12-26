@@ -6,7 +6,7 @@ AM_CPPFLAGS = -I$(top_srcdir)/include -DCORE_SBINDIR=\"$(core_sbindir)\"
 lib_LTLIBRARIES = libnilfs.la libnilfsgc.la
 noinst_LTLIBRARIES = librealpath.la libnilfsfeature.la libparser.la \
 	libmountchk.la libcrc32.la libcleanerexec.la libsegment.la \
-	libcleaner.la
+	libcleaner.la libnilfs_static.la libnilfsgc_static.la
 
 librealpath_la_SOURCES = realpath.c
 
@@ -31,6 +31,9 @@ libnilfs_la_SOURCES = nilfs.c sb.c
 libnilfs_la_LDFLAGS = -version-info $(libnilfs_VERSIONINFO)
 libnilfs_la_LIBADD = librealpath.la libcrc32.la $(LIB_POSIX_SEM)
 
+libnilfs_static_la_SOURCES = $(libnilfs_la_SOURCES)
+libnilfs_static_la_LIBADD = $(libnilfs_la_LIBADD)
+
 nilfsgc_CURRENT = 3
 nilfsgc_REVISION = 0
 nilfsgc_AGE = 0
@@ -39,6 +42,10 @@ nilfsgc_VERSIONINFO = $(nilfsgc_CURRENT):$(nilfsgc_REVISION):$(nilfsgc_AGE)
 libnilfsgc_la_SOURCES = gc.c vector.c cnormap.c
 libnilfsgc_la_LDFLAGS = -version-info $(nilfsgc_VERSIONINFO)
 libnilfsgc_la_LIBADD = libnilfs.la libsegment.la $(LIB_POSIX_TIMER)
+
+libnilfsgc_static_la_SOURCES = $(libnilfsgc_la_SOURCES)
+libnilfsgc_static_la_LIBADD = libsegment.la $(LIB_POSIX_TIMER) \
+	libnilfs_static.la
 
 libcleaner_la_SOURCES = cleaner_ctl.c
 libcleaner_la_LIBADD = librealpath.la libcleanerexec.la $(LIB_POSIX_MQ) \

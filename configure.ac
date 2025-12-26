@@ -21,7 +21,7 @@ AC_PROG_LN_S
 AC_PROG_MAKE_SET
 AC_USE_SYSTEM_EXTENSIONS
 LT_PREREQ([2.4])
-LT_INIT
+LT_INIT([disable-static])
 AC_PATH_PROG([LDCONFIG], [ldconfig],
 	[AC_MSG_ERROR([ldconfig not found])],
 	[$PATH:/usr/sbin:/sbin])

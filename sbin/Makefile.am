@@ -18,10 +18,9 @@ mkfs_nilfs2_LDADD = $(LIB_BLKID) -luuid \
 
 nilfs_cleanerd_SOURCES = cleanerd.c cldconfig.c cldconfig.h
 nilfs_cleanerd_CPPFLAGS = $(AM_CPPFLAGS) -DSYSCONFDIR=\"$(sysconfdir)\"
-# Use -static option to make nilfs_cleanerd self-contained.
-nilfs_cleanerd_LDFLAGS = -static
-nilfs_cleanerd_LDADD = $(LDADD) $(LIB_POSIX_MQ) -luuid \
-	$(top_builddir)/lib/libnilfsgc.la
+# Use internal convenience libraries to make nilfs_cleanerd self-contained.
+nilfs_cleanerd_LDADD = $(LIB_POSIX_MQ) -luuid \
+	$(top_builddir)/lib/libnilfsgc_static.la
 
 nilfs_clean_SOURCES = nilfs-clean.c
 nilfs_clean_LDADD =  $(LDADD) $(top_builddir)/lib/libcleaner.la \
