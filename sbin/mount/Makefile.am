@@ -9,7 +9,7 @@ LEGACYHEADERS = fstab.h mount_constants.h mount_mntent.h mount_opts.h
 AM_CFLAGS = -Wall $(MOUNT_CFLAGS)
 AM_CPPFLAGS = -I$(top_srcdir)/include -DCORE_SBINDIR=\"$(core_sbindir)\"
 LDADD = $(top_builddir)/lib/librealpath.la \
-	$(top_builddir)/lib/libcleanerexec.la $(MOUNT_LIBS) $(LIB_SELINUX) \
+	$(top_builddir)/lib/libcleanerexec.la $(MOUNT_LIBS) $(SELINUX_LIBS) \
 	$(LIB_POSIX_TIMER)
 
 core_sbin_PROGRAMS = mount.nilfs2 umount.nilfs2
@@ -19,6 +19,9 @@ if CONFIG_LIBMOUNT
 COMMONSOURCES += mount_attrs.c
 COMMONHEADERS += mount_attrs.h
 
+# Since mount_nilfs2_CFLAGS is defined in the else block, Automake
+# disables the default AM_CFLAGS.  Explicitly include it here.
+mount_nilfs2_CFLAGS = $(AM_CFLAGS)
 mount_nilfs2_SOURCES = mount_libmount.c $(COMMONSOURCES) $(COMMONHEADERS)
 umount_nilfs2_SOURCES = umount_libmount.c $(COMMONSOURCES) $(COMMONHEADERS)
 
@@ -27,6 +30,7 @@ else
 COMMONSOURCES += $(LEGACYSOURCES)
 COMMONHEADERS += $(LEGACYHEADERS)
 
+mount_nilfs2_CFLAGS = $(AM_CFLAGS) $(SELINUX_CFLAGS)
 mount_nilfs2_SOURCES = mount.nilfs2.c $(COMMONSOURCES) $(COMMONHEADERS)
 umount_nilfs2_SOURCES = umount.nilfs2.c $(COMMONSOURCES) $(COMMONHEADERS)
 

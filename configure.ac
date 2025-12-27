@@ -205,17 +205,31 @@ AS_IF([test "${with_libmount}" = "yes"], [
 ])
 AM_CONDITIONAL(CONFIG_LIBMOUNT, [test "$with_libmount" = "yes"])
 
-if test "${with_selinux}" = "yes"; then
-   AC_CHECK_LIB(selinux, getprevcon,
-	[AC_DEFINE(HAVE_LIBSELINUX, 1,
-	    [Define to 1 if you have the 'selinux' library (-lselinux).])
-	 LIB_SELINUX="-lselinux"
-	],
-	AC_MSG_ERROR([SELinux selected but libselinux not found]))
-   # This function is missing in old libselinux 1.xx versions
-   AC_CHECK_FUNCS([security_get_initial_context])
-fi
-AC_SUBST([LIB_SELINUX])
+AS_IF([test "${with_selinux}" = "yes"], [
+    # Only try pkg-config if PKG_CHECK_MODULES macro is present
+    m4_ifdef([PKG_CHECK_MODULES], [
+        PKG_CHECK_MODULES([SELINUX], [libselinux], [
+            have_selinux_pkg_config=yes
+            AC_DEFINE([HAVE_LIBSELINUX], 1,
+                [Define to 1 if you have the 'selinux' library (-lselinux).])
+        ], [have_selinux_pkg_config=no])
+    ], [have_selinux_pkg_config=no])
+
+    # Fall back
+    AS_IF([test "x$have_selinux_pkg_config" = "xno"], [
+        AC_CHECK_LIB(selinux, getprevcon, [
+            AC_DEFINE(HAVE_LIBSELINUX, 1,
+                [Define to 1 if you have the 'selinux' library (-lselinux).])
+            AC_SUBST(SELINUX_LIBS, ["-lselinux"])
+            AC_SUBST(SELINUX_CFLAGS, [""])
+        ], [
+            AC_MSG_ERROR([SELinux selected but libselinux not found])
+        ])
+        AC_CHECK_HEADERS([selinux/context.h selinux/selinux.h])
+    ])
+    # This function is missing in old libselinux 1.xx versions
+    AC_CHECK_FUNCS([security_get_initial_context])
+])
 
 AM_CONDITIONAL(CONFIG_UAPI_HEADER_INSTALL,
 	       [test "$enable_uapi_header_install" = yes])
