@@ -184,7 +184,7 @@ system to ensure files are installed to the correct locations.
     $ ssh target-host "sudo ldconfig"
 
 
-* Trouble shooting
+* Troubleshooting
 
 If you change the installation path (such as --libdir) or other
 configuration options, old build artifacts (especially libtool's .la
@@ -194,6 +194,23 @@ a clean build as follows:
  $ make distclean
  $ ./configure [your-new-options]
  $ make
+
+If you have:
+
+ - Updated the source tree (e.g., 'git pull')
+ - Installed/Uninstalled system tools (e.g., pkg-config) or libraries
+ - Encountered "command not found" or strange autoconf errors
+
+Stale caches (like autom4te.cache) or outdated generated files may
+be the cause.  In such cases, perform a full reset using git:
+
+ $ git clean -xdf
+ $ ./autogen.sh
+ $ ./configure [options]
+ $ make
+
+ WARNING: This will delete ALL untracked files, including your local
+ config files or uncommitted changes.
 
 If the blkid library in your environment is old and incompatible with
 this package, you can use --without-blkid option:
