@@ -84,13 +84,25 @@ AS_IF([test "x$enable_usrmerge" = "xauto"], [
 ])
 
 # Checks for libraries.
-AC_CHECK_LIB([uuid], [uuid_generate], [
-    AC_DEFINE([HAVE_LIBUUID], 1,
-              [Define to 1 if you have the 'uuid' library (-luuid).])
-    AC_SUBST(UUID_LIBS, ["-luuid"])
-    AC_SUBST(UUID_CFLAGS, [""])
-], [
-    AC_MSG_ERROR([UUID library not found])
+m4_ifdef([PKG_CHECK_MODULES], [
+    PKG_CHECK_MODULES([UUID], [uuid], [
+        have_uuid_pkg_config=yes
+        AC_DEFINE([HAVE_LIBUUID], 1,
+                  [Define to 1 if you have the 'uuid' library (-luuid).])
+    ], [have_uuid_pkg_config=no])
+], [have_uuid_pkg_config=no])
+
+# Fall back
+AS_IF([test "x$have_uuid_pkg_config" = "xno"], [
+    AC_CHECK_LIB([uuid], [uuid_generate], [
+        AC_DEFINE([HAVE_LIBUUID], 1,
+                  [Define to 1 if you have the 'uuid' library (-luuid).])
+        AC_SUBST(UUID_LIBS, ["-luuid"])
+        AC_SUBST(UUID_CFLAGS, ["-I/usr/include/uuid"])
+    ], [
+        AC_MSG_ERROR([UUID library not found])
+    ])
+    AC_CHECK_HEADERS([uuid/uuid.h])
 ])
 
 LIB_POSIX_MQ=''

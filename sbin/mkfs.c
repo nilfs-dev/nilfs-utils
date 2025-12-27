@@ -50,7 +50,7 @@
 #include <sys/wait.h>
 #endif	/* HAVE_SYS_WAIT_H */
 
-#include <uuid/uuid.h>
+#include <uuid.h>
 
 #if HAVE_STRING_H
 #include <string.h>

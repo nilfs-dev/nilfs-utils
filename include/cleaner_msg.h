@@ -12,7 +12,7 @@
 #define NILFS_CLEANER_MSG_H
 
 #include <stdint.h>
-#include <uuid/uuid.h>
+#include <uuid.h>
 #include "nilfs_cleaner.h"
 
 #define NILFS_CLEANER_PRIO_HIGH		1

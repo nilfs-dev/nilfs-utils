@@ -73,7 +73,7 @@
 #include <signal.h>
 #include <setjmp.h>
 #include <assert.h>
-#include <uuid/uuid.h>
+#include <uuid.h>
 #include <linux/nilfs2_ondisk.h>  /* NILFS_MIN_NRSVSEGS */
 #include "nilfs.h"
 #include "compat.h"

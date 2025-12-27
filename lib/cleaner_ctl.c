@@ -74,7 +74,7 @@
 #include <stdarg.h>
 #include <errno.h>
 #include <assert.h>
-#include <uuid/uuid.h>
+#include <uuid.h>
 
 #include "nilfs_cleaner.h"
 #include "cleaner_exec.h"
