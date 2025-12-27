@@ -60,20 +60,17 @@ AC_ARG_ENABLE([usrmerge],
 	[enable_usrmerge="${enableval}"],
 	[enable_usrmerge=auto])
 
-# Checks for pkg-config configuration
-AS_IF([test "x$pkgconfigdir" = "xno"], [enable_pkgconfig=no], [
-    # Checks for the existence of pkg-config itself
-    m4_ifdef([PKG_PROG_PKG_CONFIG], [PKG_PROG_PKG_CONFIG], [PKG_CONFIG=""])
+# Checks for the existence of pkg-config itself
+m4_ifdef([PKG_PROG_PKG_CONFIG], [PKG_PROG_PKG_CONFIG], [PKG_CONFIG=""])
 
-    AS_IF([test -n "$PKG_CONFIG"], [enable_pkgconfig=yes],
-          [test "x$pkgconfigdir" = "xyes"], [
-             AC_MSG_ERROR([pkg-config requested but not found])
-          ], [
-             enable_pkgconfig=no
-             AC_MSG_WARN(
-                 [pkg-config not found. PC file installation disabled.])
-          ])
-])
+AS_IF([test "x$pkgconfigdir" = "xno"], [enable_pkgconfig_output=no],
+      [test -n "$PKG_CONFIG"], [enable_pkgconfig_output=yes],
+      [test "x$pkgconfigdir" = "xyes"], [
+         AC_MSG_ERROR([pkg-config requested but not found])
+      ], [
+         enable_pkgconfig_output=no
+         AC_MSG_WARN([pkg-config not found. PC file installation disabled.])
+      ])
 
 # Checks for UsrMerge hierarchy
 AS_IF([test "x$enable_usrmerge" = "xauto"], [
@@ -279,7 +276,7 @@ AC_SUBST([libdir])
 AC_SUBST([sysconfdir], [/etc])
 AC_SUBST([localstatedir], [/var])
 
-AS_IF([test "x$enable_pkgconfig" = "xyes"], [
+AS_IF([test "x$enable_pkgconfig_output" = "xyes"], [
     AS_IF([test "x$pkgconfigdir" = "xyes" || test "x$pkgconfigdir" = "xauto"],
           [pkgconfigdir='${libdir}/pkgconfig'])
 
@@ -287,7 +284,8 @@ AS_IF([test "x$enable_pkgconfig" = "xyes"], [
     AC_CONFIG_FILES([lib/nilfs.pc lib/nilfsgc.pc])
 ])
 
-AM_CONDITIONAL([INSTALL_PKGCONFIG], [test "x$enable_pkgconfig" = "xyes"])
+AM_CONDITIONAL([INSTALL_PKGCONFIG],
+               [test "x$enable_pkgconfig_output" = "xyes"])
 
 AC_CONFIG_FILES([Makefile
 		 bin/Makefile
