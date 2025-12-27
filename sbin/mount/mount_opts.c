@@ -327,7 +327,7 @@ strip_quotes(char *str)
 static int
 append_context(const char *optname, char *optdata, char **extra_opts)
 {
-	security_context_t raw = NULL;
+	char *raw = NULL;
 	char *data = NULL;
 
 	if (is_selinux_enabled() != 1)
@@ -340,9 +340,7 @@ append_context(const char *optname, char *optdata, char **extra_opts)
 	/* TODO: use strip_quotes() for all mount options? */
 	data = *optdata == '"' ? strip_quotes(optdata) : optdata;
 
-	if (selinux_trans_to_raw_context(
-			(security_context_t) data, &raw) == -1 ||
-			raw == NULL)
+	if (selinux_trans_to_raw_context(data, &raw) == -1 || raw == NULL)
 		return -1;
 
 	if (verbose)
