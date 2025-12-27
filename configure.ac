@@ -26,6 +26,53 @@ AC_PATH_PROG([LDCONFIG], [ldconfig],
 	[AC_MSG_ERROR([ldconfig not found])],
 	[$PATH:/usr/sbin:/sbin])
 
+dnl --------------------------------------------------------------------------
+dnl NILFS_UTILS_DEFINE_HAVE_LIB(PREFIX)
+dnl
+dnl Helper macro to define HAVE_LIB<PREFIX> with a standard description.
+dnl Arguments:
+dnl   $1 : PREFIX (e.g., UUID) - used to name HAVE_LIB* variable.
+dnl --------------------------------------------------------------------------
+AC_DEFUN([NILFS_UTILS_DEFINE_HAVE_LIB], [
+  dnl Generate library name for description (e.g., uuid)
+  m4_pushdef([lib_name], m4_tolower([$1]))
+
+  AC_DEFINE(AS_TR_CPP([HAVE_LIB$1]), 1,
+    [Define to 1 if you have the ']lib_name[' library (-l]lib_name[).])
+
+  m4_popdef([lib_name])
+])
+
+dnl --------------------------------------------------------------------------
+dnl NILFS_UTILS_PKG_CHECK(PREFIX, MODULE, FALLBACK_ACTION)
+dnl
+dnl Arguments:
+dnl   $1 : PREFIX (e.g., UUID) - Used to name HAVE_LIB* variable, etc.
+dnl   $2 : MODULE (e.g., uuid) - pkg-config module name
+dnl   $3 : FALLBACK_ACTION     - Code to run if pkg-config fails or is missing
+dnl --------------------------------------------------------------------------
+AC_DEFUN([NILFS_UTILS_PKG_CHECK], [
+  dnl Generate a temporary variable name (e.g., have_uuid_pkg_config)
+  m4_pushdef([have_pkg_var], [have_]m4_tolower([$1])[_pkg_config])
+
+  have_pkg_var=no
+
+  dnl Try pkg-config if available
+  m4_ifdef([PKG_CHECK_MODULES], [
+    PKG_CHECK_MODULES([$1], [$2], [
+      have_pkg_var=yes
+      NILFS_UTILS_DEFINE_HAVE_LIB([$1])
+    ], [have_pkg_var=no])
+  ], [have_pkg_var=no])
+
+  dnl Fallback if pkg-config failed or was not available
+  AS_IF([test "x$have_pkg_var" = "xno"], [
+    $3
+  ])
+
+  m4_popdef([have_pkg_var])
+])
+
 # Check for options.
 AC_ARG_WITH([libmount],
 	AS_HELP_STRING([--without-libmount],
@@ -84,19 +131,9 @@ AS_IF([test "x$enable_usrmerge" = "xauto"], [
 ])
 
 # Checks for libraries.
-m4_ifdef([PKG_CHECK_MODULES], [
-    PKG_CHECK_MODULES([UUID], [uuid], [
-        have_uuid_pkg_config=yes
-        AC_DEFINE([HAVE_LIBUUID], 1,
-                  [Define to 1 if you have the 'uuid' library (-luuid).])
-    ], [have_uuid_pkg_config=no])
-], [have_uuid_pkg_config=no])
-
-# Fall back
-AS_IF([test "x$have_uuid_pkg_config" = "xno"], [
+NILFS_UTILS_PKG_CHECK([UUID], [uuid], [
     AC_CHECK_LIB([uuid], [uuid_generate], [
-        AC_DEFINE([HAVE_LIBUUID], 1,
-                  [Define to 1 if you have the 'uuid' library (-luuid).])
+        NILFS_UTILS_DEFINE_HAVE_LIB([UUID])
         AC_SUBST(UUID_LIBS, ["-luuid"])
         AC_SUBST(UUID_CFLAGS, ["-I/usr/include/uuid"])
     ], [
@@ -147,20 +184,9 @@ fi
 
 # Check for conditional libraries and headers.
 AS_IF([test "${with_blkid}" = "yes"], [
-    # Only try pkg-config if PKG_CHECK_MODULES macro is present
-    m4_ifdef([PKG_CHECK_MODULES], [
-        PKG_CHECK_MODULES([BLKID], [blkid], [
-            have_blkid_pkg_config=yes
-            AC_DEFINE([HAVE_LIBBLKID], 1,
-                      [Define to 1 if you have the 'blkid' library (-lblkid).])
-        ], [have_blkid_pkg_config=no])
-    ], [have_blkid_pkg_config=no])
-
-    # Fall back
-    AS_IF([test "x$have_blkid_pkg_config" = "xno"], [
+    NILFS_UTILS_PKG_CHECK([BLKID], [blkid], [
         AC_CHECK_LIB(blkid, blkid_new_probe_from_filename, [
-            AC_DEFINE(HAVE_LIBBLKID, 1,
-                [Define to 1 if you have the 'blkid' library (-lblkid).])
+            NILFS_UTILS_DEFINE_HAVE_LIB([BLKID])
             AC_SUBST(BLKID_LIBS, ["-lblkid"])
             AC_SUBST(BLKID_CFLAGS, ["-I/usr/include/blkid"])
         ], [
@@ -179,20 +205,9 @@ AS_IF([test "${with_libmount}" = "yes"], [
         ]))
     ])
 
-    # Only try pkg-config if PKG_CHECK_MODULES macro is present
-    m4_ifdef([PKG_CHECK_MODULES], [
-        PKG_CHECK_MODULES([MOUNT], [mount], [
-            have_mount_pkg_config=yes
-            AC_DEFINE([HAVE_LIBMOUNT], 1,
-                      [Define to 1 if you have the 'mount' library (-lmount).])
-        ], [have_mount_pkg_config=no])
-    ], [have_mount_pkg_config=no])
-
-    # Fall back
-    AS_IF([test "x$have_mount_pkg_config" = "xno"], [
+    NILFS_UTILS_PKG_CHECK([MOUNT], [mount], [
         AC_CHECK_LIB(mount, mnt_context_do_mount, [
-            AC_DEFINE(HAVE_LIBMOUNT, 1,
-                [Define to 1 if you have the 'mount' library (-lmount).])
+            NILFS_UTILS_DEFINE_HAVE_LIB([MOUNT])
             AC_SUBST(MOUNT_LIBS, ["-lmount $BLKID_LIBS"])
             AC_SUBST(MOUNT_CFLAGS, ["-I/usr/include/libmount"])
         ], [
@@ -206,20 +221,9 @@ AS_IF([test "${with_libmount}" = "yes"], [
 AM_CONDITIONAL(CONFIG_LIBMOUNT, [test "$with_libmount" = "yes"])
 
 AS_IF([test "${with_selinux}" = "yes"], [
-    # Only try pkg-config if PKG_CHECK_MODULES macro is present
-    m4_ifdef([PKG_CHECK_MODULES], [
-        PKG_CHECK_MODULES([SELINUX], [libselinux], [
-            have_selinux_pkg_config=yes
-            AC_DEFINE([HAVE_LIBSELINUX], 1,
-                [Define to 1 if you have the 'selinux' library (-lselinux).])
-        ], [have_selinux_pkg_config=no])
-    ], [have_selinux_pkg_config=no])
-
-    # Fall back
-    AS_IF([test "x$have_selinux_pkg_config" = "xno"], [
+    NILFS_UTILS_PKG_CHECK([SELINUX], [libselinux], [
         AC_CHECK_LIB(selinux, getprevcon, [
-            AC_DEFINE(HAVE_LIBSELINUX, 1,
-                [Define to 1 if you have the 'selinux' library (-lselinux).])
+            NILFS_UTILS_DEFINE_HAVE_LIB([SELINUX])
             AC_SUBST(SELINUX_LIBS, ["-lselinux"])
             AC_SUBST(SELINUX_CFLAGS, [""])
         ], [
