@@ -26,23 +26,6 @@ AC_PATH_PROG([LDCONFIG], [ldconfig],
 	[AC_MSG_ERROR([ldconfig not found])],
 	[$PATH:/usr/sbin:/sbin])
 
-dnl UTIL_CHECK_LIB(LIBRARY, FUNCTION, [VARSUFFIX = $1]))
-dnl The VARSUFFIX is optional and overrides the default behaviour. For example:
-dnl     UTIL_CHECK_LIB(yyy, func, xxx) generates have_xxx and HAVE_LIBXXX
-dnl     UTIL_CHECK_LIB(yyy, func)      generates have_yyy and HAVE_LIBYYY
-dnl ---------------------------------
-dnl borrowed from util-linux 2.17.2
-AC_DEFUN([UTIL_CHECK_LIB], [
-	m4_define([suffix], m4_default([$3],$1))
-	[have_]suffix=yes
-	m4_ifdef([$3],
-		 [AC_CHECK_LIB([$1], [$2],
-		 	       [AC_DEFINE(AS_TR_CPP([HAVE_LIB]suffix), 1)],
-			       [[have_]suffix=no])],
-		 [AC_CHECK_LIB([$1], [$2], [], [[have_]suffix=no])])
-	AM_CONDITIONAL(AS_TR_CPP([HAVE_]suffix), [test [$have_]suffix = yes])
-])
-
 # Check for options.
 AC_ARG_WITH([libmount],
 	AS_HELP_STRING([--without-libmount],
