@@ -48,8 +48,9 @@ libnilfsgc_static_la_LIBADD = libsegment.la $(LIB_POSIX_TIMER) \
 	libnilfs_static.la
 
 libcleaner_la_SOURCES = cleaner_ctl.c
+libcleaner_la_CFLAGS = $(AM_CFLAGS) $(UUID_CFLAGS)
 libcleaner_la_LIBADD = librealpath.la libcleanerexec.la $(LIB_POSIX_MQ) \
-	-luuid $(LIB_POSIX_TIMER)
+	$(UUID_LIBS) $(LIB_POSIX_TIMER)
 
 if INSTALL_PKGCONFIG
 pkgconfig_DATA = nilfs.pc nilfsgc.pc

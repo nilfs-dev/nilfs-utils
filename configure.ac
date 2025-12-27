@@ -87,10 +87,14 @@ AS_IF([test "x$enable_usrmerge" = "xauto"], [
 ])
 
 # Checks for libraries.
-AC_CHECK_LIB([uuid], [uuid_generate],
-	[AC_DEFINE([HAVE_LIBUUID], 1,
-	  [Define to 1 if you have the 'uuid' library (-luuid).])],
-	[AC_MSG_ERROR([UUID library not found])])
+AC_CHECK_LIB([uuid], [uuid_generate], [
+    AC_DEFINE([HAVE_LIBUUID], 1,
+              [Define to 1 if you have the 'uuid' library (-luuid).])
+    AC_SUBST(UUID_LIBS, ["-luuid"])
+    AC_SUBST(UUID_CFLAGS, [""])
+], [
+    AC_MSG_ERROR([UUID library not found])
+])
 
 LIB_POSIX_MQ=''
 AC_CHECK_FUNC(mq_open,,
@@ -137,9 +141,10 @@ if test "${with_blkid}" = "yes"; then
    AC_CHECK_LIB(blkid, blkid_new_probe_from_filename,
    		[AC_DEFINE(HAVE_LIBBLKID, 1,
 		    [Define to 1 if you have the 'blkid' library (-lblkid).])
-		 LIB_BLKID="-lblkid -luuid"
+		 LIB_BLKID="-lblkid"
 		],
-		AC_MSG_ERROR([BLKID library not found]), [-luuid])
+		AC_MSG_ERROR([BLKID library not found]),
+		[$UUID_LIBS])  # Other libraries to link when compiling tests
    AC_CHECK_HEADERS([blkid/blkid.h])
 fi
 AC_SUBST(LIB_BLKID)
