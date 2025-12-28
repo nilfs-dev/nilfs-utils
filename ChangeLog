@@ -1,3 +1,23 @@
+nilfs-utils-2.2.13  Sun Dec 28, 2025 JST
+
+	* Build updates:
+	  - Support UsrMerge and Bin-Sbin merge with automatic detection
+	  - Autodetect architecture-specific library directory
+	  - Fix installation of missing header file nilfs_gc.h
+	  - Remove unused UTIL_CHECK_LIB macro
+	  - Add a few autoconf temporary artifacts to .gitignore
+	* Fix a build warning for legacy mount helpers
+	  - mount.nilfs2: do not use security_context_t in the legacy variant
+	* Documentation:
+	  - Modernize description regarding libmount and mtab handling
+	  - Reorganize build instructions and consolidate legacy info
+	  - Add instruction to use 'make distclean' when changing config
+	  - Update troubleshooting guide for build issues
+	  - Add installation and uninstallation instructions to README
+	  - Add a new section to explain cross-compilation and deployment
+	  - Remove inappropriate example for --libdir option
+	  - Fix some grammatical errors and inappropriate expressions
+
 nilfs-utils-2.2.12  Mon Sep 22, 2025 JST
 
 	* apply a bug fix for a report that the chcp command could crash with
