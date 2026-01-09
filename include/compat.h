@@ -20,6 +20,10 @@
 #include <time.h>
 #endif	/* HAVE_TIME_H */
 
+#if HAVE_LINUX_TYPES_H
+#include <linux/types.h>
+#endif	/* HAVE_LINUX_TYPES_H */
+
 #include <endian.h>
 #include <byteswap.h>
 
@@ -32,6 +36,14 @@
 
 #if GCC_VERSION < 29600
 #define __builtin_expect(x, e)	(x)
+#endif
+
+#ifndef __force
+#ifdef __CHECKER__
+#define __force		__attribute__((force))
+#else
+#define __force
+#endif
 #endif
 
 /* Old linux/magic.h may not have the file system magic number of NILFS */
@@ -106,31 +118,31 @@
 
 /* Byte order */
 #if __BYTE_ORDER == __LITTLE_ENDIAN
-#define le16_to_cpu(x)	((__u16)(x))
-#define le32_to_cpu(x)	((__u32)(x))
-#define le64_to_cpu(x)	((__u64)(x))
-#define cpu_to_le16(x)	((__u16)(x))
-#define cpu_to_le32(x)	((__u32)(x))
-#define cpu_to_le64(x)	((__u64)(x))
-#define be16_to_cpu(x)	bswap_16(x)
-#define be32_to_cpu(x)	bswap_32(x)
-#define be64_to_cpu(x)	bswap_64(x)
-#define cpu_to_be16(x)	bswap_16(x)
-#define cpu_to_be32(x)	bswap_32(x)
-#define cpu_to_be64(x)	bswap_64(x)
+#define le16_to_cpu(x)	((__force __u16)(x))
+#define le32_to_cpu(x)	((__force __u32)(x))
+#define le64_to_cpu(x)	((__force __u64)(x))
+#define cpu_to_le16(x)	((__force __le16)(x))
+#define cpu_to_le32(x)	((__force __le32)(x))
+#define cpu_to_le64(x)	((__force __le64)(x))
+#define be16_to_cpu(x)	((__force __u16)bswap_16(x))
+#define be32_to_cpu(x)	((__force __u32)bswap_32(x))
+#define be64_to_cpu(x)	((__force __u64)bswap_64(x))
+#define cpu_to_be16(x)	((__force __be16)bswap_16(x))
+#define cpu_to_be32(x)	((__force __be32)bswap_32(x))
+#define cpu_to_be64(x)	((__force __be64)bswap_64(x))
 #elif __BYTE_ORDER == __BIG_ENDIAN
-#define le16_to_cpu(x)	bswap_16(x)
-#define le32_to_cpu(x)	bswap_32(x)
-#define le64_to_cpu(x)	bswap_64(x)
-#define cpu_to_le16(x)	bswap_16(x)
-#define cpu_to_le32(x)	bswap_32(x)
-#define cpu_to_le64(x)	bswap_64(x)
-#define be16_to_cpu(x)	((__u16)(x))
-#define be32_to_cpu(x)	((__u32)(x))
-#define be64_to_cpu(x)	((__u64)(x))
-#define cpu_to_be16(x)	((__u16)(x))
-#define cpu_to_be32(x)	((__u32)(x))
-#define cpu_to_be64(x)	((__u64)(x))
+#define le16_to_cpu(x)	((__force __u16)bswap_16(x))
+#define le32_to_cpu(x)	((__force __u32)bswap_32(x))
+#define le64_to_cpu(x)	((__force __u64)bswap_64(x))
+#define cpu_to_le16(x)	((__force __le16)bswap_16(x))
+#define cpu_to_le32(x)	((__force __le32)bswap_32(x))
+#define cpu_to_le64(x)	((__force __le64)bswap_64(x))
+#define be16_to_cpu(x)	((__force __u16)(x))
+#define be32_to_cpu(x)	((__force __u32)(x))
+#define be64_to_cpu(x)	((__force __u64)(x))
+#define cpu_to_be16(x)	((__force __be16)(x))
+#define cpu_to_be32(x)	((__force __be32)(x))
+#define cpu_to_be64(x)	((__force __be64)(x))
 #else
 #error "unknown endian"
 #endif	/* __BYTE_ORDER */
