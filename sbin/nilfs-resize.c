@@ -68,8 +68,8 @@
 #include "nilfs.h"
 #include "util.h"
 #include "nilfs_gc.h"
+#include "check_mount.h"
 
-extern int check_mount(const char *device);
 
 #ifdef _GNU_SOURCE
 #include <getopt.h>

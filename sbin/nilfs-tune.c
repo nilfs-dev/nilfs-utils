@@ -70,9 +70,8 @@
 #include <errno.h>
 #include "nilfs.h"
 #include "nilfs_feature.h"
+#include "check_mount.h"
 
-
-extern int check_mount(const char *device);
 
 struct nilfs_tune_options {
 	int flags;

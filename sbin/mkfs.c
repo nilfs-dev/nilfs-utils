@@ -68,9 +68,8 @@
 #include "nilfs_feature.h"
 #include "pathnames.h"
 #include "crc32.h"
+#include "check_mount.h"
 
-
-extern int check_mount(const char *device);
 
 #define nilfs_crc32(seed, data, length)  crc32_le(seed, data, length)
 

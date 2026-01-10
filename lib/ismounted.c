@@ -34,6 +34,7 @@
 #include "pathnames.h"
 #include "compat.h"		/* PATH_MAX, major(), minor() */
 #include "util.h"		/* unlikely() */
+#include "check_mount.h"
 
 
 #define LINE_BUFFER_SIZE	256  /* Line buffer size for reading mtab */
