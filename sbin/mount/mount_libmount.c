@@ -93,7 +93,7 @@ static char *mount_fstype;
 
 /* global variables */
 static const char fstype[] = NILFS2_FS_NAME;
-char *progname = "mount." NILFS2_FS_NAME;
+static char *progname = "mount." NILFS2_FS_NAME;
 
 /* mount info */
 struct nilfs_mount_info {

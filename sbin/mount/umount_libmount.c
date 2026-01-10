@@ -85,7 +85,7 @@ static int suid;	/* reserved for non-root user mount/umount
 
 /* global variables */
 static const char fstype[] = NILFS2_FS_NAME;
-char *progname = "umount." NILFS2_FS_NAME;
+static char *progname = "umount." NILFS2_FS_NAME;
 
 /* umount info */
 struct nilfs_umount_info {

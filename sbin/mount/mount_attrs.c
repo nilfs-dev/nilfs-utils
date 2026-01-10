@@ -35,6 +35,10 @@
 #include <stdlib.h>
 #endif	/* HAVE_STDLIB_H */
 
+#if HAVE_ERR_H
+#include <err.h>
+#endif	/* HAVE_ERR_H */
+
 #if HAVE_STRING_H
 #include <string.h>
 #endif	/* HAVE_STRING_H */
@@ -42,7 +46,6 @@
 #include <libmount.h>
 
 #include <stdarg.h>
-#include <errno.h>
 #include <assert.h>
 
 #include "sundries.h"
@@ -51,7 +54,6 @@
 #include "cleaner_exec.h"	/* PIDOPT_NAME */
 #include "nls.h"
 
-extern char *progname;
 
 void nilfs_mount_attrs_init(struct nilfs_mount_attrs *mattrs)
 {
@@ -137,7 +139,15 @@ int nilfs_mount_attrs_parse(struct nilfs_mount_attrs *mattrs,
 	return 0;
 
 out_inval:
-	error(_("%s: invalid options (%s)."), progname, optstr);
+	/*
+	 * TODO: Implement proper verbosity control.
+	 * Currently, warnx() is used unconditionally because the legacy
+	 * 'mount_quiet' logic is inactive in the libmount version.
+	 * Future cleanups should utilize the libmount context
+	 * (e.g., mnt_context_get_mflags()) and remove dependencies on
+	 * legacy sundries.c, etc.
+	 */
+	warnx(_("invalid options (%s)."), optstr);
 	res = -1;
 failed:
 	if (rest) {
