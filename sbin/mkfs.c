@@ -87,7 +87,7 @@ static const char badblocks[] = BADBLOCKSDIR "/" BADBLOCKS_NAME;
 /*
  * Command interface primitives
  */
-char *progname = "mkfs.nilfs2";
+static char *progname = "mkfs.nilfs2";
 
 /* Options */
 static int quiet;
