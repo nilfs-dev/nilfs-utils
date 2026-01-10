@@ -14,7 +14,7 @@ libnilfsfeature_la_SOURCES = feature.c
 
 libparser_la_SOURCES = parser.c
 
-libmountchk_la_SOURCES = ismounted.c
+libmountchk_la_SOURCES = check_mount.c
 
 libcrc32_la_SOURCES = crc32.c
 
