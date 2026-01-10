@@ -527,7 +527,7 @@ static void nilfs_clean_parse_options(int argc, char *argv[])
 			clean_cmd = NILFS_CLEAN_CMD_STOP;
 			break;
 		case 'c':
-			if (optarg != 0)
+			if (optarg != NULL)
 				conffile = optarg;
 			clean_cmd = NILFS_CLEAN_CMD_RELOAD;
 			break;
