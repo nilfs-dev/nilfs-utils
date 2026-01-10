@@ -40,6 +40,7 @@ INSTALL
 aclocal.m4
 autoconf-[0-9].*
 autom4te.cache
+actmp*
 confdefs.h
 conftest.dir/
 Makefile
