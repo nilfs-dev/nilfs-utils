@@ -1029,7 +1029,7 @@ int nilfs_get_segment(struct nilfs *nilfs, uint64_t segnum,
 		page_offset = segstart % pagesize;
 		alloc_size = roundup(segsize + page_offset, pagesize);
 
-		addr = mmap(0, alloc_size, PROT_READ, MAP_SHARED,
+		addr = mmap(NULL, alloc_size, PROT_READ, MAP_SHARED,
 			    nilfs->n_devfd, segstart - page_offset);
 		if (likely(addr != MAP_FAILED)) {
 			segment->mmapped = 1;
