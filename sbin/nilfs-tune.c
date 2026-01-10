@@ -60,13 +60,15 @@
 #include <pwd.h>
 #endif	/* HAVE_PWD_H */
 
+/* compat.h must be included before on-disk definitions for sparse checks */
+#include "compat.h"
 #include <linux/nilfs2_ondisk.h>
+
 #include <sys/stat.h>
 #include <ctype.h>
 #include <assert.h>
 #include <errno.h>
 #include "nilfs.h"
-#include "compat.h"
 #include "nilfs_feature.h"
 
 

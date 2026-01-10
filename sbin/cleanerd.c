@@ -74,9 +74,12 @@
 #include <setjmp.h>
 #include <assert.h>
 #include <uuid.h>
-#include <linux/nilfs2_ondisk.h>  /* NILFS_MIN_NRSVSEGS */
-#include "nilfs.h"
+
+/* compat.h must be included before on-disk definitions for sparse checks */
 #include "compat.h"
+#include <linux/nilfs2_ondisk.h>  /* NILFS_MIN_NRSVSEGS */
+
+#include "nilfs.h"
 #include "util.h"
 #include "vector.h"
 #include "nilfs_gc.h"

@@ -39,12 +39,14 @@
 #include <linux/types.h>
 #endif	/* HAVE_LINUX_TYPES_H */
 
+/* compat.h must be included before on-disk definitions for sparse checks */
+#include "compat.h"
 #include <linux/fs.h>
 #include <linux/nilfs2_ondisk.h>
+
 #include <errno.h>
 #include <assert.h>
 
-#include "compat.h"
 #include "util.h"
 #include "nilfs_feature.h"
 

@@ -70,12 +70,15 @@
 #include <linux/types.h>
 #endif	/* HAVE_LINUX_TYPES_H */
 
+/* compat.h must be included before on-disk definitions for sparse checks */
+#include "compat.h"
 #include <linux/nilfs2_ondisk.h>
+
 #include <errno.h>
 #include <assert.h>
 #include <mntent.h>	/* setmntent, getmntent_r, endmntent, etc */
+
 #include "nilfs.h"
-#include "compat.h"	/* PATH_MAX, etc */
 #include "util.h"
 #include "pathnames.h"
 #include "realpath.h"

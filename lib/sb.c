@@ -56,12 +56,15 @@
 #include <sys/ioctl.h>
 #endif	/* HAVE_SYS_IOCTL_H */
 
+/* compat.h must be included before on-disk definitions for sparse checks */
+#include "compat.h"
 #include <linux/nilfs2_ondisk.h>
+
 #include <sys/stat.h>  /* fstat(), S_ISBLK(), S_ISREG(), etc */
 #include <errno.h>
 #include <assert.h>
+
 #include "nilfs.h"
-#include "compat.h"
 #include "util.h"
 #include "crc32.h"
 

@@ -11,9 +11,11 @@
 
 #include <stdint.h>	/* uint32_t, etc */
 #include <linux/types.h>
+
+/* compat.h must be included before on-disk definitions for sparse checks */
+#include "compat.h"
 #include <linux/nilfs2_ondisk.h>
 
-#include "compat.h"
 #include "util.h"
 
 /**

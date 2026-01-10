@@ -22,6 +22,10 @@
 
 #if HAVE_LINUX_TYPES_H
 #include <linux/types.h>
+#ifdef __CHECKER__
+/* Include system byteorder header first to prevent redefinition warnings */
+#include <asm/byteorder.h>
+#endif
 #endif	/* HAVE_LINUX_TYPES_H */
 
 #include <endian.h>
@@ -146,6 +150,39 @@
 #else
 #error "unknown endian"
 #endif	/* __BYTE_ORDER */
+
+/*
+ * When using Sparse, map internal kernel macros to the sparse-aware
+ * versions defined above. nilfs2_ondisk.h uses the underscored versions.
+ * This block is restricted to __CHECKER__ to avoid overriding system
+ * definitions during normal builds.
+ */
+#ifdef __CHECKER__
+#undef __le16_to_cpu
+#define __le16_to_cpu(x)  le16_to_cpu(x)
+#undef __le32_to_cpu
+#define __le32_to_cpu(x)  le32_to_cpu(x)
+#undef __le64_to_cpu
+#define __le64_to_cpu(x)  le64_to_cpu(x)
+#undef __cpu_to_le16
+#define __cpu_to_le16(x)  cpu_to_le16(x)
+#undef __cpu_to_le32
+#define __cpu_to_le32(x)  cpu_to_le32(x)
+#undef __cpu_to_le64
+#define __cpu_to_le64(x)  cpu_to_le64(x)
+#undef __be16_to_cpu
+#define __be16_to_cpu(x)  be16_to_cpu(x)
+#undef __be32_to_cpu
+#define __be32_to_cpu(x)  be32_to_cpu(x)
+#undef __be64_to_cpu
+#define __be64_to_cpu(x)  be64_to_cpu(x)
+#undef __cpu_to_be16
+#define __cpu_to_be16(x)  cpu_to_be16(x)
+#undef __cpu_to_be32
+#define __cpu_to_be32(x)  cpu_to_be32(x)
+#undef __cpu_to_be64
+#define __cpu_to_be64(x)  cpu_to_be64(x)
+#endif /* __CHECKER__ */
 
 
 #if HAVE_LIMITS_H

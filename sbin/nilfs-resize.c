@@ -56,14 +56,16 @@
 #include <time.h>	/* timespec, nanosleep() */
 #endif	/* HAVE_TIME_H */
 
+/* compat.h must be included before on-disk definitions for sparse checks */
+#include "compat.h"
 #include <linux/nilfs2_ondisk.h>
+
 #include <sys/stat.h>
 #include <assert.h>
 #include <stdarg.h>	/* va_start, va_end, vfprintf */
 #include <errno.h>
 #include <signal.h>
 #include "nilfs.h"
-#include "compat.h"
 #include "util.h"
 #include "nilfs_gc.h"
 
