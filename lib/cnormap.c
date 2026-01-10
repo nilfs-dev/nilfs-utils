@@ -61,13 +61,15 @@ struct nilfs_cnormap {
 	int64_t base_time;		/* Base time */
 	int64_t base_clock;		/* Monotonic clock at the base time */
 
-	int has_clock_boottime : 1;	/*
-					 * Flag that indicates whether
-					 * clock_gettime(CLOCK_BOOTTIME, )
-					 * is supported or not on the system.
-					 */
-	int has_clock_realtime_coarse : 1; /* Has CLOCK_REALTIME_COARSE */
-	int has_clock_monotonic_coarse : 1; /* Has CLOCK_MONOTONIC_COARSE */
+	/* Clock feature flags */
+	unsigned int has_clock_boottime : 1;
+		/* clock_gettime(CLOCK_BOOTTIME, ) is available */
+
+	unsigned int has_clock_realtime_coarse : 1;
+		/* CLOCK_REALTIME_COARSE is available */
+
+	unsigned int has_clock_monotonic_coarse : 1;
+		/* CLOCK_MONOTONIC_COARSE is available */
 };
 
 struct nilfs_cnormap *nilfs_cnormap_create(struct nilfs *nilfs)
