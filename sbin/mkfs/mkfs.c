@@ -1533,25 +1533,20 @@ static void commit_sufile(void)
 static void prepare_dat(void)
 {
 	struct nilfs_file_info *fi = nilfs.files[NILFS_DAT_INO];
-	struct nilfs_dat_entry *entry;
-	const unsigned entries_per_block =
-		blocksize / sizeof(struct nilfs_dat_entry);
 	blocknr_t entry_block;
-	int i, vblocknr = 0;
 	blocknr_t blocknr = fi->start;
 
 	prepare_blockgrouped_file(blocknr);
 	for (entry_block = blocknr + group_desc_blocks_per_group +
 		     bitmap_blocks_per_group;
 	     entry_block < blocknr + fi->nblocks; entry_block++) {
-		entry = map_disk_buffer(entry_block, 1);
-		for (i = 0; i < entries_per_block; i++, entry++, vblocknr++) {
-#if 0 /* dat are cleared when mapped first */
-			nilfs_dat_entry_set_blocknr(dat, entry, 0);
-			nilfs_dat_entry_set_start(dat, entry, 0);
-			nilfs_dat_entry_set_end(dat, entry, 0);
-#endif
-		}
+		/*
+		 * The entry blocks of the DAT file (i.e., the blocks that
+		 * contain records corresponding to virtual block addresses)
+		 * only need to be filled with zeros, and no additional
+		 * formatting work is required.
+		 */
+		map_disk_buffer(entry_block, 1);
 	}
 	/* reserve the dat entry of vblocknr=0 */
 	alloc_blockgrouped_file_entry(blocknr, 0);
