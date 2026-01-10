@@ -43,9 +43,7 @@
 #define NILFS_MAX_INITIAL_INO		NILFS_USER_INO
 
 /* bit operations */
-extern int ext2fs_set_bit(int nr, void *addr);
-extern int ext2fs_clear_bit(int nr, void *addr);
-extern int ext2fs_test_bit(int nr, const void *addr);
+#include "bitops.h"	/* ext2fs_{set,clear,test}_bit() */
 
 #define nilfs_set_bit			ext2fs_set_bit
 #define nilfs_clear_bit			ext2fs_clear_bit

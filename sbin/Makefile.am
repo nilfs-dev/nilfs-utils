@@ -9,7 +9,7 @@ LDADD = $(top_builddir)/lib/libnilfs.la
 core_sbin_PROGRAMS = mkfs.nilfs2 nilfs_cleanerd
 sbin_PROGRAMS = nilfs-clean nilfs-resize nilfs-tune
 
-mkfs_nilfs2_SOURCES = mkfs.c bitops.c mkfs.h
+mkfs_nilfs2_SOURCES = mkfs.c bitops.c mkfs.h bitops.h
 mkfs_nilfs2_CPPFLAGS = $(AM_CPPFLAGS) -DBADBLOCKSDIR=\"$(badblocksdir)\"
 mkfs_nilfs2_CFLAGS = $(AM_CFLAGS) $(BLKID_CFLAGS) $(UUID_CFLAGS)
 mkfs_nilfs2_LDADD = $(BLKID_LIBS) $(UUID_LIBS) \

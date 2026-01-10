@@ -4,6 +4,8 @@
  * This code has been extracted from e2fsprogs/lib/ext2fs/bitops.c
  */
 
+#include "bitops.h"
+
 #ifndef _EXT2_HAVE_ASM_BITOPS_
 
 /*
