@@ -92,7 +92,7 @@ static int devro;
 static char *mount_fstype;
 
 /* global variables */
-const char fstype[] = NILFS2_FS_NAME;
+static const char fstype[] = NILFS2_FS_NAME;
 char *progname = "mount." NILFS2_FS_NAME;
 
 /* mount info */

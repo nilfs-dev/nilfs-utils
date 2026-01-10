@@ -84,7 +84,7 @@ static int suid;	/* reserved for non-root user mount/umount
 			   (not supported yet) */
 
 /* global variables */
-const char fstype[] = NILFS2_FS_NAME;
+static const char fstype[] = NILFS2_FS_NAME;
 char *progname = "umount." NILFS2_FS_NAME;
 
 /* umount info */
