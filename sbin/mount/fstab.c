@@ -107,7 +107,7 @@ int mtab_is_writable(void)
 
 /* Contents of mtab and fstab ---------------------------------*/
 
-struct mntentchn mounttable, fstab;
+static struct mntentchn mounttable, fstab;
 static int got_mtab;
 static int got_fstab;
 
