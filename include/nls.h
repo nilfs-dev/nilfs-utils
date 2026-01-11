@@ -2,14 +2,6 @@
  * Code borrowed from util-linux-2.12r/lib/nls.h
  */
 
-#if 0
-#include "../defines.h"		/* for HAVE_locale_h */
-
-#ifndef PACKAGE
-#define PACKAGE	"util-linux"
-#endif
-#endif
-
 #ifndef LOCALEDIR
 #define LOCALEDIR "/usr/share/locale"
 #endif
