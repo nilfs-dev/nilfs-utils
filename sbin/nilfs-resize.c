@@ -466,30 +466,31 @@ static uint64_t nilfs_resize_calc_size_of_segments(uint64_t nsegs)
  *
  * Return: 0 if there is enough space, -1 otherwise.
  */
-static int nilfs_resize_check_free_space(struct nilfs *nilfs,
-					 uint64_t newnsegs)
+static int nilfs_resize_check_free_space(struct nilfs *nilfs, uint64_t newnsegs)
 {
-	unsigned long long nrsvsegs, nsegs, nbytes;
+	uint64_t nrsvsegs, nsegs, nbytes;
 
 	nrsvsegs = nilfs_resize_calc_nrsvsegs(newnsegs);
 
 	if (sustat.ss_ncleansegs < sustat.ss_nsegs - newnsegs + nrsvsegs) {
-		unsigned long long nsegs, nbytes;
+		uint64_t nsegs, nbytes;
 
 		nsegs = (sustat.ss_nsegs - newnsegs) - sustat.ss_ncleansegs
 			+ nrsvsegs;
 		nbytes = nilfs_resize_calc_size_of_segments(newnsegs + nsegs) +
 			4096;
 
-		errx("Insufficient free space (needs %llu more segment%s)."
-		     ERR_NEWLINE "The device size must be at least %llu bytes.",
+		errx("Insufficient free space (needs %" PRIu64
+		     " more segment%s)." ERR_NEWLINE
+		     "The device size must be at least %" PRIu64 " bytes.",
 		     nsegs, nsegs != 1 ? "s" : "", nbytes);
 		return -1;
 	} else if (verbose) {
 		nsegs = sustat.ss_ncleansegs - (sustat.ss_nsegs - newnsegs)
 			- nrsvsegs;
 		nbytes = nilfs_resize_calc_size_of_segments(nsegs);
-		msg("%llu free segment%s (%llu bytes) will be left after shrinkage.\n",
+		msg("%" PRIu64 " free segment%s (%" PRIu64 " bytes) "
+		    "will be left after shrinkage.\n",
 		    nsegs, nsegs != 1 ? "s" : "", nbytes);
 	}
 	return 0;
@@ -1361,7 +1362,7 @@ static void nilfs_print_resize_error(int ec, int shrink)
  *                       else
  * @newsize: target device size after resizing (in bytes)
  */
-static int nilfs_resize_prompt(unsigned long long newsize)
+static int nilfs_resize_prompt(uint64_t newsize)
 {
 	int c;
 
@@ -1403,7 +1404,7 @@ static int nilfs_resize_prompt(unsigned long long newsize)
  * Return: %EXIT_SUCCESS on success, %EXIT_FAILURE on failure.
  */
 static int nilfs_shrink_online(struct nilfs *nilfs, const char *device,
-			       unsigned long long newsize)
+			       uint64_t newsize)
 {
 	static char *label = "progress";
 	sigset_t sigset;
@@ -1422,8 +1423,8 @@ static int nilfs_shrink_online(struct nilfs *nilfs, const char *device,
 		return -1;
 
 	msg("Partition size = %" PRIu64 " bytes.\n"
-	    "Shrink the filesystem size from %" PRIu64 " bytes to %llu "
-	    "bytes.\n",
+	    "Shrink the filesystem size from %" PRIu64 " bytes to %" PRIu64
+	    " bytes.\n",
 	    devsize, layout.devsize, newsize);
 
 	if (newsize >= 4096) {
@@ -1553,15 +1554,15 @@ restore_alloc_range:
  * Return: %EXIT_SUCCESS on success, %EXIT_FAILURE on failure.
  */
 static int nilfs_extend_online(struct nilfs *nilfs, const char *device,
-			       unsigned long long newsize)
+			       uint64_t newsize)
 {
 	int status = EXIT_FAILURE;
 	sigset_t sigset;
 	int ret;
 
 	msg("Partition size = %" PRIu64 " bytes.\n"
-	    "Extend the filesystem size from %" PRIu64 " bytes "
-	    "to %llu bytes.\n",
+	    "Extend the filesystem size from %" PRIu64 " bytes to %" PRIu64
+	    " bytes.\n",
 	    devsize, layout.devsize, newsize);
 	if (!assume_yes && nilfs_resize_prompt(newsize) < 0)
 		goto out;
@@ -1601,7 +1602,7 @@ out:
  *
  * Return: %EXIT_SUCCESS on success, %EXIT_FAILURE on failure.
  */
-static int nilfs_resize_online(const char *device, unsigned long long newsize)
+static int nilfs_resize_online(const char *device, uint64_t newsize)
 {
 	struct nilfs *nilfs;
 	nilfs_cno_t cno;
@@ -1696,14 +1697,14 @@ static void nilfs_resize_parse_options(int argc, char *argv[])
  * @arg:   size argument string
  * @sizep: place to store the size
  */
-static int nilfs_resize_parse_size(const char *arg, unsigned long long *sizep)
+static int nilfs_resize_parse_size(const char *arg, uint64_t *sizep)
 {
-	unsigned long long size;
+	uint64_t size;
 	char *endptr;
 
 	assert(arg && *arg != '\0');
 
-	size = strtoull(arg, &endptr, 0);
+	size = (uint64_t)strtoull(arg, &endptr, 0);
 	if (*endptr == '\0') {
 		;
 	} else if (endptr[1] == '\0') {
@@ -1771,7 +1772,7 @@ out:
 int main(int argc, char *argv[])
 {
 	char *last;
-	unsigned long long size;
+	uint64_t size;
 	struct stat statbuf;
 	char *device;
 	int status, ret;
@@ -1826,10 +1827,11 @@ int main(int argc, char *argv[])
 		}
 
 		if (size & (sector_size - 1)) {
-			unsigned long long size2;
+			uint64_t size2;
 
-			size2 = size & ~(unsigned long long)(sector_size - 1);
-			msg("size %llu is not aligned to sector size. truncated to %llu.\n",
+			size2 = size & ~(uint64_t)(sector_size - 1);
+			msg("size %" PRIu64 " is not aligned to sector size. "
+			    "truncated to %" PRIu64 ".\n",
 			    size, size2);
 			size = size2;
 		}
