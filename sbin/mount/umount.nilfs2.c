@@ -432,7 +432,7 @@ umount_one(const char *spec, const char *node, const char *type,
 		}
 	}
 
-	loopdev = 0;
+	loopdev = NULL;
 	if (res >= 0) {
 		/* Umount succeeded */
 		if (verbose)
