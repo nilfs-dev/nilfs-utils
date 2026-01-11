@@ -101,7 +101,7 @@ int readonly;
 int readwrite;
 static int nomtab;
 
-const char fstype[] = NILFS2_FS_NAME;
+static const char fstype[] = NILFS2_FS_NAME;
 char *progname = "umount." NILFS2_FS_NAME;
 
 static const char gcpid_opt_fmt[] = PIDOPT_NAME "=%d";
@@ -119,7 +119,7 @@ struct umount_options {
 			   (not supported yet) */
 };
 
-struct umount_options options = {
+static struct umount_options options = {
 	.force = 0,
 	.lazy = 0,
 	.remount = 0,

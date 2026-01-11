@@ -101,8 +101,7 @@ static int nomtab;
 static int devro;
 static int fake;
 
-/* global variables */
-const char fstype[] = NILFS2_FS_NAME;
+static const char fstype[] = NILFS2_FS_NAME;
 char *progname = "mount." NILFS2_FS_NAME;
 
 static const char gcpid_opt_fmt[] = PIDOPT_NAME "=%d";
@@ -120,7 +119,7 @@ struct mount_options {
 	char *extra_opts;
 	int flags;
 };
-struct mount_options options;
+static struct mount_options options;
 
 
 static void nilfs_mount_logger(int priority, const char *fmt, ...)
