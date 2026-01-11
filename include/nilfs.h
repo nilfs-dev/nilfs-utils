@@ -12,11 +12,14 @@
 #ifndef NILFS_H
 #define NILFS_H
 
-#include <stdint.h>	/* uint32_t, etc */
+#include <inttypes.h>	/* uint32_t, PRIu64, etc */
 #include <sys/types.h>	/* off_t, size_t */
 #include <linux/nilfs2_api.h>
 
 typedef uint64_t nilfs_cno_t;
+
+#define PRIcno		PRIu64
+#define SCNcno		SCNu64
 
 #define NILFS_FSTYPE	"nilfs2"
 
