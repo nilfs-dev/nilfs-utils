@@ -34,6 +34,12 @@
 #define MS_OWNERSECURE	(MS_NOSUID|MS_NODEV)
 
 
+/* Global variables provided by the main programs (mount/umount helpers) */
+extern int verbose;
+extern int mount_quiet;
+extern int readonly, readwrite;
+extern char *progname;
+
 char *append_opt(char *s, const char *opt, const char *val);
 char *append_numopt(char *s, const char *opt, long num);
 void parse_opts(const char *options, int *flags, char **extra_opts);

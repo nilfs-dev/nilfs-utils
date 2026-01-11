@@ -37,15 +37,6 @@
 #include "nls.h"
 
 
-#if defined(MS_SILENT) || defined(HAVE_LIBSELINUX)
-extern int verbose;
-#endif
-#ifdef MS_SILENT
-extern int mount_quiet;
-#endif
-extern int readonly, readwrite;
-extern char *progname;
-
 /* Map from -o and fstab option strings to the flag argument to mount(2).  */
 struct opt_map {
 	const char *opt;	/* option name */
