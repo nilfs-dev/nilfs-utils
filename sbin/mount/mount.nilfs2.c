@@ -105,13 +105,13 @@ static int fake;
 const char fstype[] = NILFS2_FS_NAME;
 char *progname = "mount." NILFS2_FS_NAME;
 
-const char gcpid_opt_fmt[] = PIDOPT_NAME "=%d";
+static const char gcpid_opt_fmt[] = PIDOPT_NAME "=%d";
 typedef int gcpid_opt_t;
 
-const char pp_opt_fmt[] = PPOPT_NAME "=%lu";
+static const char pp_opt_fmt[] = PPOPT_NAME "=%lu";
 typedef unsigned long pp_opt_t;
 
-const char nogc_opt_fmt[] = NOGCOPT_NAME;
+static const char nogc_opt_fmt[] = NOGCOPT_NAME;
 typedef int nogc_opt_t;
 
 struct mount_options {

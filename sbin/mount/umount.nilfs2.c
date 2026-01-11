@@ -104,10 +104,10 @@ static int nomtab;
 const char fstype[] = NILFS2_FS_NAME;
 char *progname = "umount." NILFS2_FS_NAME;
 
-const char gcpid_opt_fmt[] = PIDOPT_NAME "=%d";
+static const char gcpid_opt_fmt[] = PIDOPT_NAME "=%d";
 typedef int gcpid_opt_t;
 
-const char pp_opt_fmt[] = PPOPT_NAME "=%lu";
+static const char pp_opt_fmt[] = PPOPT_NAME "=%lu";
 typedef unsigned long pp_opt_t;
 
 struct umount_options {
