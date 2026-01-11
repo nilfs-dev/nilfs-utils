@@ -86,22 +86,24 @@ static void dumpseg_print_psegment_error(const struct nilfs_psegment *pseg,
 		nblocks = le32_to_cpu(segsum->ss_nblocks);
 		excess = ((uint32_t)(pseg->blocknr - pseg->segment->blocknr) +
 			  nblocks) - pseg->segment->nblocks;
-		printf("  error %d (%s) - pseg blkcnt = %lu, excess blkcnt = %lu\n",
-		       pseg->error, errstr,
-		       (unsigned long)nblocks, (unsigned long)excess);
+		printf("  error %d (%s) - pseg blkcnt = %" PRIu32 ", "
+		       "excess blkcnt = %" PRIu32 "\n",
+		       pseg->error, errstr, nblocks, excess);
 		break;
 	case NILFS_PSEGMENT_ERROR_BIGHDR:
 		hdrsize = le16_to_cpu(segsum->ss_bytes);
 		sumbytes = le32_to_cpu(segsum->ss_sumbytes);
-		printf("  error %d (%s) - header size = %u, summary size = %lu\n",
-		       pseg->error, errstr, hdrsize, (unsigned long)sumbytes);
+		printf("  error %d (%s) - header size = %u, summary size = %"
+		       PRIu32 "\n",
+		       pseg->error, errstr, hdrsize, sumbytes);
 		break;
 	case NILFS_PSEGMENT_ERROR_BIGSUM:
 		sumbytes = le32_to_cpu(segsum->ss_sumbytes);
 		nblocks = le32_to_cpu(segsum->ss_nblocks);
-		printf("  error %d (%s) - summary size = %lu, pseg size = %llu\n",
-		       pseg->error, errstr, (unsigned long)sumbytes,
-		       (unsigned long long)nblocks << pseg->blkbits);
+		printf("  error %d (%s) - summary size = %" PRIu32 ", "
+		       "pseg size = %" PRIu64 "\n",
+		       pseg->error, errstr, sumbytes,
+		       (uint64_t)nblocks << pseg->blkbits);
 		break;
 	default:
 		printf("  error %d (%s)\n", pseg->error, errstr);
@@ -120,25 +122,25 @@ static void dumpseg_print_file_error(const struct nilfs_file *file,
 	case NILFS_FILE_ERROR_MANYBLKS:
 		nblocks = le32_to_cpu(file->finfo->fi_nblocks);
 		pseg_nblocks = le32_to_cpu(pseg->segsum->ss_nblocks);
-		printf("%serror %d (%s) - file blkoff = %lu, file blkcnt = %lu, pseg blkcnt = %lu\n",
+		printf("%serror %d (%s) - file blkoff = %" PRIu32 ", "
+		       "file blkcnt = %" PRIu32 ", pseg blkcnt = %" PRIu32 "\n",
 		       indent, file->error, errstr,
-		       (unsigned long)(file->blocknr - pseg->blocknr),
-		       (unsigned long)nblocks, (unsigned long)pseg_nblocks);
+		       (uint32_t)(file->blocknr - pseg->blocknr),
+		       nblocks, pseg_nblocks);
 		break;
 	case NILFS_FILE_ERROR_BLKCNT:
 		nblocks = le32_to_cpu(file->finfo->fi_nblocks);
 		ndatablk = le32_to_cpu(file->finfo->fi_ndatablk);
-		printf("%serror %d (%s) - file blkcnt = %lu, data blkcnt = %lu\n",
-		       indent, file->error, errstr,
-		       (unsigned long)nblocks, (unsigned long)ndatablk);
+		printf("%serror %d (%s) - file blkcnt = %" PRIu32 ", "
+		       "data blkcnt = %" PRIu32 "\n",
+		       indent, file->error, errstr, nblocks, ndatablk);
 		break;
 	case NILFS_FILE_ERROR_OVERRUN:
 		sumbytes = le32_to_cpu(pseg->segsum->ss_sumbytes);
-		printf("%serror %d (%s) - finfo offset = %lu, finfo total size = %llu, summary size = %lu\n",
-		       indent, file->error, errstr,
-		       (unsigned long)file->offset,
-		       (unsigned long long)file->sumlen,
-		       (unsigned long)sumbytes);
+		printf("%serror %d (%s) - finfo offset = %" PRIu32 ", "
+		       "finfo total size = %zu, summary size = %" PRIu32 "\n",
+		       indent, file->error, errstr, file->offset, file->sumlen,
+		       sumbytes);
 		break;
 	default:
 		printf("%serror %d (%s)\n", indent, file->error, errstr);
@@ -151,14 +153,14 @@ static void dumpseg_print_virtual_block(struct nilfs_block *blk)
 	__le64 *binfo = blk->binfo;
 
 	if (nilfs_block_is_data(blk)) {
-		printf("        vblocknr = %llu, blkoff = %llu, blocknr = %llu\n",
-		       (unsigned long long)le64_to_cpu(binfo[0]),
-		       (unsigned long long)le64_to_cpu(binfo[1]),
-		       (unsigned long long)blk->blocknr);
+		printf("        vblocknr = %" PRIu64 ", blkoff = %" PRIu64 ", "
+		       "blocknr = %" PRIu64 "\n",
+		       (uint64_t)le64_to_cpu(binfo[0]),
+		       (uint64_t)le64_to_cpu(binfo[1]),
+		       blk->blocknr);
 	} else {
-		printf("        vblocknr = %llu, blocknr = %llu\n",
-		       (unsigned long long)le64_to_cpu(binfo[0]),
-		       (unsigned long long)blk->blocknr);
+		printf("        vblocknr = %" PRIu64 ", blocknr = %" PRIu64 "\n",
+		       (uint64_t)le64_to_cpu(binfo[0]), blk->blocknr);
 	}
 }
 
@@ -167,16 +169,15 @@ static void dumpseg_print_real_block(struct nilfs_block *blk)
 	if (nilfs_block_is_data(blk)) {
 		__le64 *binfo = blk->binfo;
 
-		printf("        blkoff = %llu, blocknr = %llu\n",
-		       (unsigned long long)le64_to_cpu(binfo[0]),
-		       (unsigned long long)blk->blocknr);
+		printf("        blkoff = %" PRIu64 ", blocknr = %" PRIu64 "\n",
+		       (uint64_t)le64_to_cpu(binfo[0]), blk->blocknr);
 	} else {
 		struct nilfs_binfo_dat *bid = blk->binfo;
 
-		printf("        blkoff = %llu, level = %d, blocknr = %llu\n",
-		       (unsigned long long)le64_to_cpu(bid->bi_blkoff),
-		       bid->bi_level,
-		       (unsigned long long)blk->blocknr);
+		printf("        blkoff = %" PRIu64 ", level = %d, blocknr = %"
+		       PRIu64 "\n",
+		       (uint64_t)le64_to_cpu(bid->bi_blkoff), bid->bi_level,
+		       blk->blocknr);
 	}
 }
 
@@ -186,9 +187,10 @@ static void dumpseg_print_file(struct nilfs_file *file)
 	struct nilfs_finfo *finfo = file->finfo;
 
 	printf("    finfo\n");
-	printf("      ino = %llu, cno = %llu, nblocks = %d, ndatblk = %d\n",
-	       (unsigned long long)le64_to_cpu(finfo->fi_ino),
-	       (unsigned long long)le64_to_cpu(finfo->fi_cno),
+	printf("      ino = %" PRIu64 ", cno = %" PRIu64 ", nblocks = %" PRIu32
+	       ", ndatblk = %" PRIu32 "\n",
+	       (uint64_t)le64_to_cpu(finfo->fi_ino),
+	       (uint64_t)le64_to_cpu(finfo->fi_cno),
 	       le32_to_cpu(finfo->fi_nblocks),
 	       le32_to_cpu(finfo->fi_ndatablk));
 	if (!nilfs_file_use_real_blocknr(file)) {
@@ -210,15 +212,15 @@ static void dumpseg_print_psegment(struct nilfs_psegment *pseg)
 	char timebuf[DUMPSEG_BUFSIZE];
 	time_t t;
 
-	printf("  partial segment: blocknr = %llu, nblocks = %llu\n",
-	       (unsigned long long)pseg->blocknr,
-	       (unsigned long long)le32_to_cpu(pseg->segsum->ss_nblocks));
+	printf("  partial segment: blocknr = %" PRIu64 ", nblocks = %" PRIu32 "\n",
+	       pseg->blocknr, le32_to_cpu(pseg->segsum->ss_nblocks));
 
 	t = (time_t)le64_to_cpu(pseg->segsum->ss_create);
 	localtime_r(&t, &tm);
 	strftime(timebuf, DUMPSEG_BUFSIZE, "%F %T", &tm);
 	printf("    creation time = %s\n", timebuf);
-	printf("    nfinfo = %d\n", le32_to_cpu(pseg->segsum->ss_nfinfo));
+	printf("    nfinfo = %" PRIu32 "\n",
+	       le32_to_cpu(pseg->segsum->ss_nfinfo));
 	nilfs_file_for_each(&file, pseg) {
 		dumpseg_print_file(&file);
 	}
@@ -232,16 +234,15 @@ static void dumpseg_print_segment(const struct nilfs_segment *segment)
 	const char *errstr;
 	uint64_t next;
 
-	printf("segment: segnum = %llu\n",
-	       (unsigned long long)segment->segnum);
+	printf("segment: segnum = %" PRIu64 "\n", segment->segnum);
 	nilfs_psegment_init(&pseg, segment, segment->nblocks);
 
 	if (!nilfs_psegment_is_end(&pseg)) {
 		next = le64_to_cpu(pseg.segsum->ss_next) /
 			segment->blocks_per_segment;
-		printf("  sequence number = %llu, next segnum = %llu\n",
-		       (unsigned long long)le64_to_cpu(pseg.segsum->ss_seq),
-		       (unsigned long long)next);
+		printf("  sequence number = %" PRIu64 ", next segnum = %" PRIu64
+		       "\n",
+		       (uint64_t)le64_to_cpu(pseg.segsum->ss_seq), next);
 		do {
 			dumpseg_print_psegment(&pseg);
 			nilfs_psegment_next(&pseg);

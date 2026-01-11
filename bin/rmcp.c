@@ -114,14 +114,13 @@ static int rmcp_remove_range(struct nilfs *nilfs,
 		if (errno == EBUSY) {
 			nss++;
 			if (!force)
-				warnx("%llu: cannot remove snapshot",
-				      (unsigned long long)cno);
+				warnx("%" PRIcno ": cannot remove snapshot",
+				      cno);
 
 		} else if (errno == ENOENT) {
 			nocp++;
 		} else {
-			warn("%llu: cannot remove checkpoint",
-			     (unsigned long long)cno);
+			warn("%" PRIcno ": cannot remove checkpoint", cno);
 			ret = -1;
 			goto out;
 		}

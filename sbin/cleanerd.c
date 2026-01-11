@@ -258,8 +258,8 @@ skip_monotonic_clock:
 	       cleanerd->timeout.tv_sec, cleanerd->timeout.tv_nsec);
 	syslog(LOG_DEBUG, "min_reclaimable_blocks: %lu",
 	       cleanerd->min_reclaimable_blocks);
-	syslog(LOG_DEBUG, "prev_nongc_ctime: %llu",
-	       (unsigned long long)cleanerd->prev_nongc_ctime);
+	syslog(LOG_DEBUG, "prev_nongc_ctime: %" PRIu64,
+	       cleanerd->prev_nongc_ctime);
 	syslog(LOG_DEBUG, "mm_prev_state: %d", cleanerd->mm_prev_state);
 	syslog(LOG_DEBUG, "mm_nrestpasses: %d", cleanerd->mm_nrestpasses);
 	syslog(LOG_DEBUG, "mm_nrestsegs: %ld", cleanerd->mm_nrestsegs);
@@ -697,9 +697,10 @@ nilfs_cleanerd_select_segments(struct nilfs_cleanerd *cleanerd,
 		}
 		if (unlikely(n == 0)) {
 			syslog(LOG_WARNING,
-			       "inconsistent number of segments: %llu (nsegs=%llu)",
-			       (unsigned long long)nilfs_vector_get_size(smv),
-			       (unsigned long long)sustat->ss_nsegs);
+			       "inconsistent number of segments: %zu (nsegs=%"
+			       PRIu64 ")",
+			       nilfs_vector_get_size(smv),
+			       (uint64_t)sustat->ss_nsegs);
 			break;
 		}
 	}
@@ -1544,8 +1545,8 @@ static int nilfs_cleanerd_clean_segments(struct nilfs_cleanerd *cleanerd,
 		       (unsigned long long)pt->tv_sec);
 		goto out;
 	}
-	syslog(LOG_DEBUG, "got cno %llu from protection period %lu",
-	       (unsigned long long)params.protcno, (unsigned long)pt->tv_sec);
+	syslog(LOG_DEBUG, "got cno %" PRIcno " from protection period %lu",
+	       params.protcno, (unsigned long)pt->tv_sec);
 
 	memset(&stat, 0, sizeof(stat));
 	ret = nilfs_xreclaim_segment(cleanerd->nilfs, segnums, nsegs, 0,
@@ -1564,8 +1565,8 @@ static int nilfs_cleanerd_clean_segments(struct nilfs_cleanerd *cleanerd,
 
 	if (stat.cleaned_segs > 0) {
 		for (i = 0; i < stat.cleaned_segs; i++)
-			syslog(LOG_DEBUG, "segment %llu cleaned",
-			       (unsigned long long)segnums[i]);
+			syslog(LOG_DEBUG, "segment %" PRIu64 " cleaned",
+			       segnums[i]);
 
 		nilfs_cleanerd_progress(cleanerd, stat.cleaned_segs);
 		cleanerd->fallback = 0;
@@ -1577,8 +1578,8 @@ static int nilfs_cleanerd_clean_segments(struct nilfs_cleanerd *cleanerd,
 	if (stat.deferred_segs > 0) {
 		sumsegs = stat.cleaned_segs + stat.deferred_segs;
 		for (i = stat.cleaned_segs; i < sumsegs; i++)
-			syslog(LOG_DEBUG, "segment %llu deferred",
-			       (unsigned long long)segnums[i]);
+			syslog(LOG_DEBUG, "segment %" PRIu64 " deferred",
+			       segnums[i]);
 
 		nilfs_cleanerd_progress(cleanerd, stat.deferred_segs);
 		cleanerd->fallback = 0;
@@ -1675,8 +1676,8 @@ static int nilfs_cleanerd_clean_loop(struct nilfs_cleanerd *cleanerd)
 			goto sleep;
 
 		/* starts garbage collection */
-		syslog(LOG_DEBUG, "ncleansegs = %llu",
-		       (unsigned long long)sustat.ss_ncleansegs);
+		syslog(LOG_DEBUG, "ncleansegs = %" PRIu64,
+		       (uint64_t)sustat.ss_ncleansegs);
 
 		ns = nilfs_cleanerd_select_segments(
 			cleanerd, &sustat, segnums, &prottime, &oldest);

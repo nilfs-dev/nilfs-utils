@@ -183,8 +183,7 @@ int main(int argc, char *argv[])
 		ret = nilfs_change_cpmode(nilfs, cno, mode);
 		if (unlikely(ret < 0)) {
 			if (errno == ENOENT)
-				warnx("%llu: no checkpoint",
-				      (unsigned long long)cno);
+				warnx("%" PRIcno ": no checkpoint", cno);
 			else
 				warn(NULL);
 			status = EXIT_FAILURE;

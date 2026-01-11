@@ -1421,8 +1421,9 @@ static int nilfs_shrink_online(struct nilfs *nilfs, const char *device,
 	if (unlikely(ret < 0))
 		return -1;
 
-	msg("Partition size = %llu bytes.\n"
-	    "Shrink the filesystem size from %llu bytes to %llu bytes.\n",
+	msg("Partition size = %" PRIu64 " bytes.\n"
+	    "Shrink the filesystem size from %" PRIu64 " bytes to %llu "
+	    "bytes.\n",
 	    devsize, layout.devsize, newsize);
 
 	if (newsize >= 4096) {
@@ -1444,16 +1445,15 @@ static int nilfs_shrink_online(struct nilfs *nilfs, const char *device,
 	if (newnsegs < sustat.ss_nsegs) {
 		uint64_t truncsegs = sustat.ss_nsegs - newnsegs;
 
-		msg("%llu segment%s will be truncated from segnum %llu.\n",
-		    (unsigned long long)truncsegs, truncsegs != 1 ? "s" : "",
-		    (unsigned long long)newnsegs);
+		msg("%" PRIu64 " segment%s will be truncated from segnum %"
+		    PRIu64 ".\n",
+		    truncsegs, truncsegs != 1 ? "s" : "", newnsegs);
 	} else if (newnsegs == sustat.ss_nsegs) {
 		msg("No segments will be truncated.\n");
 	} else {
 		errx("Confused. Number of segments became larger than requested size:\n"
-		     "  old-nsegs=%llu new-nsegs=%llu",
-		     (unsigned long long)sustat.ss_nsegs,
-		     (unsigned long long)newnsegs);
+		     "  old-nsegs=%" PRIu64 " new-nsegs=%" PRIu64,
+		     (uint64_t)sustat.ss_nsegs, newnsegs);
 		goto out;
 	}
 
@@ -1559,8 +1559,9 @@ static int nilfs_extend_online(struct nilfs *nilfs, const char *device,
 	sigset_t sigset;
 	int ret;
 
-	msg("Partition size = %llu bytes.\n"
-	    "Extend the filesystem size from %llu bytes to %llu bytes.\n",
+	msg("Partition size = %" PRIu64 " bytes.\n"
+	    "Extend the filesystem size from %" PRIu64 " bytes "
+	    "to %llu bytes.\n",
 	    devsize, layout.devsize, newsize);
 	if (!assume_yes && nilfs_resize_prompt(newsize) < 0)
 		goto out;
@@ -1813,8 +1814,8 @@ int main(int argc, char *argv[])
 			goto out;
 		}
 		if (size > devsize) {
-			errx("size larger than partition size (%llu bytes).",
-			     devsize);
+			errx("size larger than partition size (%" PRIu64
+			     " bytes).", devsize);
 			goto out;
 		}
 

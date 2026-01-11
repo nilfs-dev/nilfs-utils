@@ -187,11 +187,9 @@ static int nilfs_acc_blocks_psegment(struct nilfs_psegment *psegment,
 	}
 	if (nilfs_file_is_error(&file, &errstr)) {
 		nilfs_gc_logger(LOG_ERR,
-				"error %d (%s) while reading finfo at offset = %lu at pseg blocknr = %llu, segnum = %llu",
-				file.error, errstr,
-				(unsigned long)file.offset,
-				(unsigned long long)psegment->blocknr,
-				(unsigned long long)psegment->segment->segnum);
+				"error %d (%s) while reading finfo at offset = %" PRIu32 " at pseg blocknr = %" PRIu64 ", segnum = %" PRIu64,
+				file.error, errstr, file.offset,
+				psegment->blocknr, psegment->segment->segnum);
 		return -1;
 	}
 	return 0;
@@ -220,10 +218,9 @@ static int nilfs_acc_blocks_segment(const struct nilfs_segment *segment,
 	}
 	if (nilfs_psegment_is_error(&psegment, &errstr)) {
 		nilfs_gc_logger(LOG_ERR,
-				"error %d (%s) while reading segment summary at pseg blocknr = %llu, segnum = %llu",
-				psegment.error, errstr,
-				(unsigned long long)psegment.blocknr,
-				(unsigned long long)segment->segnum);
+				"error %d (%s) while reading segment summary at pseg blocknr = %" PRIu64 ", segnum = %" PRIu64,
+				psegment.error, errstr, psegment.blocknr,
+				segment->segnum);
 		return -1;
 	}
 	return 0;
@@ -393,9 +390,8 @@ static ssize_t nilfs_get_snapshot(struct nilfs *nilfs, nilfs_cno_t **ssp)
 			ss[i + j] = cpinfo[j].ci_cno;
 			if (prev >= ss[i + j]) {
 				nilfs_gc_logger(LOG_ERR,
-						"broken snapshot information. snapshot numbers appeared in a non-ascending order: %llu >= %llu",
-						(unsigned long long)prev,
-						(unsigned long long)ss[i + j]);
+						"broken snapshot information. snapshot numbers appeared in a non-ascending order: %" PRIcno " >= %" PRIcno,
+						prev, ss[i + j]);
 				free(ss);
 				errno = EIO;
 				return -1;
@@ -408,10 +404,9 @@ static ssize_t nilfs_get_snapshot(struct nilfs *nilfs, nilfs_cno_t **ssp)
 			break;
 	}
 	if (unlikely(cpstat.cs_nsss != nss))
-		nilfs_gc_logger
-			(LOG_WARNING, "snapshot count mismatch: %llu != %llu",
-			 (unsigned long long)cpstat.cs_nsss,
-			 (unsigned long long)nss);
+		nilfs_gc_logger(LOG_WARNING,
+				"snapshot count mismatch: %" PRIu64 " != %"
+				PRIu64, cpstat.cs_nsss, nss);
 	*ssp = ss;
 	return nss;
 }

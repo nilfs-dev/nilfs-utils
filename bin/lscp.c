@@ -112,26 +112,23 @@ static void lscp_print_cpinfo(struct nilfs_cpinfo *cpinfo)
 	localtime_r(&t, &tm);
 	strftime(timebuf, LSCP_BUFSIZE, "%F %T", &tm);
 
-	printf("%20llu  %s   %s    %s %12llu %10llu\n",
-	       (unsigned long long)cpinfo->ci_cno, timebuf,
+	printf("%20" PRIcno "  %s   %s    %s %12" PRIu64 " %10" PRIu64 "\n",
+	       (nilfs_cno_t)cpinfo->ci_cno, timebuf,
 	       nilfs_cpinfo_snapshot(cpinfo) ? "ss" : "cp",
 	       nilfs_cpinfo_minor(cpinfo) ? "i" : "-",
-	       (unsigned long long)(show_block_count ?
-				    cpinfo->ci_blocks_count :
-				    cpinfo->ci_nblk_inc),
-	       (unsigned long long)cpinfo->ci_inodes_count);
+	       (uint64_t)(show_block_count ? cpinfo->ci_blocks_count :
+			  cpinfo->ci_nblk_inc),
+	       (uint64_t)cpinfo->ci_inodes_count);
 }
 
 #ifdef CONFIG_PRINT_CPSTAT
 static void lscp_print_cpstat(const struct nilfs_cpstat *cpstat, int mode)
 {
 	if (mode == NILFS_CHECKPOINT)
-		printf("total %llu/%llu\n",
-		       (unsigned long long)cpstat->cs_nsss,
-		       (unsigned long long)cpstat->cs_ncps);
+		printf("total %" PRIu64 "/%" PRIu64 "\n",
+		       (uint64_t)cpstat->cs_nsss, (uint64_t)cpstat->cs_ncps);
 	else
-		printf("total %llu\n",
-		       (unsigned long long)cpstat->cs_nsss);
+		printf("total %" PRIu64 "\n", (uint64_t)cpstat->cs_nsss);
 }
 #endif
 

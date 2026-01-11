@@ -303,10 +303,8 @@ static int nilfs_mkfs_discard_range(int fd, uint64_t start, uint64_t len)
 
 	ret = ioctl(fd, BLKDISCARD, &range);
 	if (verbose) {
-		pinfo("Discard device from %llu to %llu: %s.",
-		      (unsigned long long)start,
-		      (unsigned long long)start + len,
-		      ret ? "failed" : "succeeded");
+		pinfo("Discard device from %" PRIu64 " to %" PRIu64 ": %s.",
+		      start, start + len, ret ? "failed" : "succeeded");
 	}
 	return ret;
 }
@@ -495,11 +493,11 @@ static void init_disk_layout(struct nilfs_disk_info *di, int fd,
 	min_nsegments = nilfs_min_nsegments(di, r_segments_percentage);
 	if (di->nsegments < min_nsegments)
 		perr("Error: too small device.\n"
-		     "       device size=%llu bytes, required size=%llu bytes.\n"
-		     "       Please enlarge the device, or shorten segments with -B option.",
-		     dev_size,
-		     (unsigned long long)segment_size * min_nsegments +
-		     blocksize);
+		     "       device size=%" PRIu64 " bytes, required size=%"
+		     PRIu64 " bytes.\n"
+		     "       Please enlarge the device, or shorten segments with "
+		     "-B option.",
+		     dev_size, (uint64_t)segment_size * min_nsegments + blocksize);
 	di->nseginfo = 0;
 }
 
@@ -822,8 +820,8 @@ static void init_disk_buffer(long max_blocks)
 static void *map_disk_buffer(uint64_t blocknr, int clear_flag)
 {
 	if (blocknr >= disk_buffer_size)
-		perr("Internal error: illegal disk buffer access (blocknr=%llu)",
-		     blocknr);
+		perr("Internal error: illegal disk buffer access (blocknr=%"
+		     PRIu64 ")", blocknr);
 
 	if (!disk_buffer[blocknr]) {
 		if (posix_memalign(&disk_buffer[blocknr], blocksize,
@@ -934,7 +932,7 @@ static void write_disk(int fd, struct nilfs_disk_info *di)
 	if (!quiet) {
 		show_version();
 		pinfo("Start writing file system initial data to the device\n"
-		      "       Blocksize:%d  Device:%s  Device Size:%llu",
+		      "       Blocksize:%d  Device:%s  Device Size:%" PRIu64,
 		      blocksize, di->device, di->dev_size);
 	}
 	if (!nflag) {

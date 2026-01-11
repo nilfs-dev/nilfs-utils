@@ -100,11 +100,11 @@ struct lssu_format {
 static const struct lssu_format lssu_format[] = {
 	{
 		"              SEGNUM        DATE     TIME STAT     NBLOCKS",
-		"%20llu  %s  %c%c%c  %10u\n"
+		"%20" PRIu64 "  %s  %c%c%c  %10" PRIu32 "\n"
 	},
 	{
 		"           SEGNUM        DATE     TIME STAT     NBLOCKS       NLIVEBLOCKS",
-		"%17llu  %s %c%c%c%c  %10u %10u (%3u%%)\n"
+		"%17" PRIu64 "  %s %c%c%c%c  %10" PRIu32 " %10zu (%3u%%)\n"
 	}
 };
 
@@ -179,9 +179,7 @@ static ssize_t lssu_print_suinfo(struct nilfs *nilfs, uint64_t segnum,
 
 		switch (disp_mode) {
 		case LSSU_MODE_NORMAL:
-			printf(lssu_format[disp_mode].body,
-			       (unsigned long long)segnum,
-			       timebuf,
+			printf(lssu_format[disp_mode].body, segnum, timebuf,
 			       nilfs_suinfo_active(&suinfos[i]) ? 'a' : '-',
 			       nilfs_suinfo_dirty(&suinfos[i]) ? 'd' : '-',
 			       nilfs_suinfo_error(&suinfos[i]) ? 'e' : '-',
@@ -211,9 +209,7 @@ static ssize_t lssu_print_suinfo(struct nilfs *nilfs, uint64_t segnum,
 			}
 
 skip_scan:
-			printf(lssu_format[disp_mode].body,
-			       (unsigned long long)segnum,
-			       timebuf,
+			printf(lssu_format[disp_mode].body, segnum, timebuf,
 			       nilfs_suinfo_active(&suinfos[i]) ? 'a' : '-',
 			       nilfs_suinfo_dirty(&suinfos[i]) ? 'd' : '-',
 			       nilfs_suinfo_error(&suinfos[i]) ? 'e' : '-',

@@ -387,9 +387,9 @@ static void show_nilfs_sb(struct nilfs_super_block *sbp)
 
 	printf("Filesystem volume name:\t  %s\n", label);
 	printf("Filesystem UUID:\t  %s\n", uuid_string(sbp->s_uuid));
-	printf("Filesystem magic number:  0x%04x\n",
+	printf("Filesystem magic number:  0x%04" PRIx16 "\n",
 	       le16_to_cpu(sbp->s_magic));
-	printf("Filesystem revision #:\t  %d.%d\n",
+	printf("Filesystem revision #:\t  %" PRIu32 ".%" PRIu16 "\n",
 	       le32_to_cpu(sbp->s_rev_level),
 	       le16_to_cpu(sbp->s_minor_rev_level));
 
@@ -414,8 +414,8 @@ static void show_nilfs_sb(struct nilfs_super_block *sbp)
 	       time_string(le64_to_cpu(sbp->s_mtime)));
 	printf("Last write time:\t  %s",
 	       time_string(le64_to_cpu(sbp->s_wtime)));
-	printf("Mount count:\t\t  %u\n", le16_to_cpu(sbp->s_mnt_count));
-	printf("Maximum mount count:\t  %u\n",
+	printf("Mount count:\t\t  %" PRIu16 "\n", le16_to_cpu(sbp->s_mnt_count));
+	printf("Maximum mount count:\t  %" PRIu16 "\n",
 	       le16_to_cpu(sbp->s_max_mnt_count));
 
 #if 0 /* filesystem check is not implemented yet */
@@ -441,36 +441,44 @@ static void show_nilfs_sb(struct nilfs_super_block *sbp)
 	gid = (gid_t)le16_to_cpu(sbp->s_def_resgid);
 	printf("Reserve blocks gid:\t  %u (%s)\n", gid, group_string(gid));
 
-	printf("First inode:\t\t  %u\n", le32_to_cpu(sbp->s_first_ino));
+	printf("First inode:\t\t  %" PRIu32 "\n", le32_to_cpu(sbp->s_first_ino));
 
-	printf("Inode size:\t\t  %u\n", le16_to_cpu(sbp->s_inode_size));
-	printf("DAT entry size:\t\t  %u\n", le16_to_cpu(sbp->s_dat_entry_size));
-	printf("Checkpoint size:\t  %u\n",
+	printf("Inode size:\t\t  %" PRIu16 "\n", le16_to_cpu(sbp->s_inode_size));
+	printf("DAT entry size:\t\t  %" PRIu16 "\n",
+	       le16_to_cpu(sbp->s_dat_entry_size));
+	printf("Checkpoint size:\t  %" PRIu16 "\n",
 	       le16_to_cpu(sbp->s_checkpoint_size));
-	printf("Segment usage size:\t  %u\n",
+	printf("Segment usage size:\t  %" PRIu16 "\n",
 	       le16_to_cpu(sbp->s_segment_usage_size));
 
-	printf("Number of segments:\t  %llu\n", le64_to_cpu(sbp->s_nsegments));
-	printf("Device size:\t\t  %llu\n", le64_to_cpu(sbp->s_dev_size));
-	printf("First data block:\t  %llu\n",
-	       le64_to_cpu(sbp->s_first_data_block));
-	printf("# of blocks per segment:  %u\n",
+	printf("Number of segments:\t  %" PRIu64 "\n",
+	       (uint64_t)le64_to_cpu(sbp->s_nsegments));
+	printf("Device size:\t\t  %" PRIu64 "\n",
+	       (uint64_t)le64_to_cpu(sbp->s_dev_size));
+	printf("First data block:\t  %" PRIu64 "\n",
+	       (uint64_t)le64_to_cpu(sbp->s_first_data_block));
+	printf("# of blocks per segment:  %" PRIu32 "\n",
 	       le32_to_cpu(sbp->s_blocks_per_segment));
-	printf("Reserved segments %%:\t  %u\n",
+	printf("Reserved segments %%:\t  %" PRIu32 "\n",
 	       le32_to_cpu(sbp->s_r_segments_percentage));
-	printf("Last checkpoint #:\t  %llu\n", le64_to_cpu(sbp->s_last_cno));
-	printf("Last block address:\t  %llu\n", le64_to_cpu(sbp->s_last_pseg));
-	printf("Last sequence #:\t  %llu\n", le64_to_cpu(sbp->s_last_seq));
-	printf("Free blocks count:\t  %llu\n",
-	       le64_to_cpu(sbp->s_free_blocks_count));
+	printf("Last checkpoint #:\t  %" PRIu64 "\n",
+	       (uint64_t)le64_to_cpu(sbp->s_last_cno));
+	printf("Last block address:\t  %" PRIu64 "\n",
+	       (uint64_t)le64_to_cpu(sbp->s_last_pseg));
+	printf("Last sequence #:\t  %" PRIu64 "\n",
+	       (uint64_t)le64_to_cpu(sbp->s_last_seq));
+	printf("Free blocks count:\t  %" PRIu64 "\n",
+	       (uint64_t)le64_to_cpu(sbp->s_free_blocks_count));
 
-	printf("Commit interval:\t  %u\n", le32_to_cpu(sbp->s_c_interval));
-	printf("# of blks to create seg:  %u\n",
+	printf("Commit interval:\t  %" PRIu32 "\n",
+	       le32_to_cpu(sbp->s_c_interval));
+	printf("# of blks to create seg:  %" PRIu32 "\n",
 	       le32_to_cpu(sbp->s_c_block_max));
 
-	printf("CRC seed:\t\t  0x%08x\n", le32_to_cpu(sbp->s_crc_seed));
-	printf("CRC check sum:\t\t  0x%08x\n", le32_to_cpu(sbp->s_sum));
-	printf("CRC check data size:\t  0x%04x\n", le16_to_cpu(sbp->s_bytes));
+	printf("CRC seed:\t\t  0x%08" PRIx32 "\n", le32_to_cpu(sbp->s_crc_seed));
+	printf("CRC check sum:\t\t  0x%08" PRIx32 "\n", le32_to_cpu(sbp->s_sum));
+	printf("CRC check data size:\t  0x%04" PRIx16 "\n",
+	       le16_to_cpu(sbp->s_bytes));
 }
 
 static int update_feature_set(struct nilfs_super_block *sbp,
@@ -538,14 +546,14 @@ static int modify_nilfs(const char *device, struct nilfs_tune_options *opts)
 
 	features = le64_to_cpu(sbp->s_feature_incompat);
 	if (features & ~NILFS_FEATURE_INCOMPAT_SUPP)
-		warnx("Warning: %s: unknown incompatible features: 0x%llx",
-		      device, (unsigned long long)features);
+		warnx("Warning: %s: unknown incompatible features: 0x%" PRIx64,
+		      device, features);
 
 	features = le64_to_cpu(sbp->s_feature_compat_ro);
 	if (opts->flags == O_RDWR &&
 	    (features & ~NILFS_FEATURE_COMPAT_RO_SUPP))
-		warnx("Warning: %s: unknown read-only compatible features: 0x%llx",
-		      device, (unsigned long long)features);
+		warnx("Warning: %s: unknown read-only compatible features: 0x%"
+		      PRIx64, device, features);
 
 	if (opts->mask & NILFS_SB_LABEL)
 		memcpy(sbp->s_volume_name, opts->label,
