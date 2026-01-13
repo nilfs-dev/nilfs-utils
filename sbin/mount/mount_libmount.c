@@ -360,6 +360,7 @@ static int nilfs_prepare_mount(struct nilfs_mount_info *mi)
 					 mnt_table_get_cache(mtab))) {
 			error(_("%s: different mount point (%s). remount failed."),
 			      progname, mnt_context_get_target(cxt));
+			res = -EINVAL;
 			goto failed;
 		}
 
