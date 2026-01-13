@@ -46,6 +46,7 @@
 #include <libmount.h>
 
 #include <stdarg.h>
+#include <errno.h>
 #include <assert.h>
 
 #include "sundries.h"
@@ -76,7 +77,7 @@ int nilfs_mount_attrs_parse(struct nilfs_mount_attrs *mattrs,
 
 	str = strdup(optstr);
 	if (!str)
-		return -1;
+		return -ENOMEM;
 
 	p = str;
 	while (!mnt_optstr_next_option(&p, &name, &namesz, &val, &valsz)) {
@@ -148,7 +149,7 @@ out_inval:
 	 * legacy sundries.c, etc.
 	 */
 	warnx(_("invalid options (%s)."), optstr);
-	res = -1;
+	res = -EINVAL;
 failed:
 	if (rest) {
 		free(*rest);
