@@ -346,8 +346,9 @@ static int nilfs_prepare_mount(struct nilfs_mount_info *mi)
 
 		attrs = mnt_fs_get_attributes(fs);
 		if (attrs) {
-			if (nilfs_mount_attrs_parse(&mi->old_attrs, attrs,
-						    NULL, NULL, 1)) {
+			res = nilfs_mount_attrs_parse(&mi->old_attrs, attrs,
+						      NULL, NULL, 1);
+			if (res < 0) {
 				error(_("%s: libmount mount check failed: %s"),
 				      progname, strerror(-res));
 				goto failed;

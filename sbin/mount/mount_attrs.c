@@ -76,7 +76,7 @@ int nilfs_mount_attrs_parse(struct nilfs_mount_attrs *mattrs,
 
 	str = strdup(optstr);
 	if (!str)
-		return -1;
+		return -ENOMEM;
 
 	p = str;
 	while (!mnt_optstr_next_option(&p, &name, &namesz, &val, &valsz)) {
@@ -140,7 +140,7 @@ int nilfs_mount_attrs_parse(struct nilfs_mount_attrs *mattrs,
 
 out_inval:
 	error(_("%s: invalid options (%s)."), progname, optstr);
-	res = -1;
+	res = -EINVAL;
 failed:
 	if (rest) {
 		free(*rest);
