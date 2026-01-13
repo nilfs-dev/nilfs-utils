@@ -282,7 +282,17 @@ static int nilfs_umount_one(struct nilfs_umount_info *umi)
 	if (!mnt_context_is_fake(umi->cxt)) {
 		res = nilfs_do_umount_one(umi);
 		if (res) {
-			complain(res, mnt_context_get_target(umi->cxt));
+			/*
+			 * mnt_context_do_umount() returns:
+			 *   0: success
+			 * > 0: syscall error (positive errno)
+			 * < 0: library error (negative error code)
+			 *
+			 * complain() expects a positive errno.
+			 */
+			int ec = res < 0 ? -res : res;
+
+			complain(ec, mnt_context_get_target(umi->cxt));
 			goto failed;
 		}
 	}
