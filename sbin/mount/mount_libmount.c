@@ -550,7 +550,9 @@ int main(int argc, char *argv[])
 #if 0
 	mnt_context_set_tables_errcb(mi.cxt, nilfs_libmount_table_errcb);
 #endif
-	mnt_context_set_fstype(mi.cxt, fstype);
+	if (mnt_context_set_fstype(mi.cxt, fstype))
+		die(EX_SYSERR,
+		    _("libmount FS description allocation failed"));
 	mnt_context_disable_helpers(mi.cxt, 1);
 
 	nilfs_mount_attrs_init(&mi.old_attrs);
@@ -563,13 +565,15 @@ int main(int argc, char *argv[])
 		die(EX_USAGE, _("No device specified"));
 
 	device = argv[optind++];
-	mnt_context_set_source(mi.cxt, device);
 
 	if (optind >= argc || !argv[optind])
 		die(EX_USAGE, _("No mountpoint specified"));
 
 	mntdir = argv[optind++];
-	mnt_context_set_target(mi.cxt, mntdir);
+
+	if (mnt_context_set_source(mi.cxt, device) ||
+	    mnt_context_set_target(mi.cxt, mntdir))
+		die(EX_SYSERR, _("Mount entry allocation failed"));
 
 	if (mount_fstype && strncmp(mount_fstype, fstype, strlen(fstype)))
 		die(EX_USAGE, _("Unknown filesystem (%s)"), mount_fstype);

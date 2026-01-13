@@ -324,7 +324,9 @@ int main(int argc, char *argv[])
 #if 0
 	mnt_context_set_tables_errcb(umi.cxt, nilfs_libmount_table_errcb);
 #endif
-	mnt_context_set_fstype(umi.cxt, fstype);
+	if (mnt_context_set_fstype(umi.cxt, fstype))
+		die(EX_SYSERR,
+		    _("libmount FS description allocation failed"));
 	mnt_context_disable_helpers(umi.cxt, 1);
 
 	umask(022);
@@ -355,8 +357,10 @@ int main(int argc, char *argv[])
 		if (!*argv)
 			die(EX_USAGE, _("Cannot umount \"\"\n"));
 
-		mnt_context_set_source(umi.cxt, NULL);
-		mnt_context_set_target(umi.cxt, *argv++);
+		if (mnt_context_set_source(umi.cxt, NULL) ||
+		    mnt_context_set_target(umi.cxt, *argv++))
+			die(EX_SYSERR, _("Mount entry allocation failed"));
+
 		ret += nilfs_umount_one(&umi);
 	}
 
