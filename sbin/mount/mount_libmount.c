@@ -459,9 +459,15 @@ static int nilfs_mnt_context_complete_root(struct libmnt_context *cxt)
 	}
 
 	fs = nilfs_find_mount(cxt, mtab, mnt_context_get_target(cxt), NULL);
-	if (fs)
-		mnt_fs_set_root(mnt_context_get_fs(cxt), mnt_fs_get_root(fs));
-
+	if (fs) {
+		res = mnt_fs_set_root(mnt_context_get_fs(cxt),
+				      mnt_fs_get_root(fs));
+		if (res < 0) {
+			error(_("%s: failed to copy root of the mount: %s"),
+			      progname, strerror(-res));
+			goto failed;
+		}
+	}
 	res = 0;
 failed:
 	return res;
