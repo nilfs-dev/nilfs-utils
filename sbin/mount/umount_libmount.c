@@ -359,6 +359,8 @@ int main(int argc, char *argv[])
 		if (!*argv)
 			die(EX_USAGE, _("Cannot umount \"\"\n"));
 
+		mnt_context_reset_status(umi.cxt);
+
 		if (mnt_context_set_source(umi.cxt, NULL) ||
 		    mnt_context_set_target(umi.cxt, *argv++))
 			die(EX_SYSERR, _("Mount entry allocation failed"));
