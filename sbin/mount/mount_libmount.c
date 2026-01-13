@@ -379,14 +379,21 @@ static int nilfs_prepare_mount(struct nilfs_mount_info *mi)
 static int nilfs_do_mount_one(struct nilfs_mount_info *mi)
 {
 	struct libmnt_context *cxt = mi->cxt;
-	int res, errsv;
+	int res, ec;
 
 	res = mnt_context_do_mount(cxt);
 	if (!res)
 		goto out;
 
-	errsv = errno;
-	switch (errsv) {
+	/*
+	 * mnt_context_do_mount() returns:
+	 *   0: success
+	 * > 0: syscall error (positive errno)
+	 * < 0: library error (negative error code)
+	 */
+	ec = res < 0 ? -res : res;
+
+	switch (ec) {
 	case ENODEV:
 		error(_("%s: cannot find or load %s filesystem"), progname,
 		      fstype);
@@ -394,7 +401,7 @@ static int nilfs_do_mount_one(struct nilfs_mount_info *mi)
 	default:
 		error(_("%s: Error while mounting %s on %s: %s"), progname,
 		      mnt_context_get_source(cxt),
-		      mnt_context_get_target(cxt), strerror(errsv));
+		      mnt_context_get_target(cxt), strerror(ec));
 		break;
 	}
 	if (mi->type != RW2RO_REMOUNT && mi->type != RW2RW_REMOUNT)
