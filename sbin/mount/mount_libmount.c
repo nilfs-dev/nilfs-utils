@@ -336,6 +336,7 @@ static int nilfs_prepare_mount(struct nilfs_mount_info *mi)
 		error(_("%s: the device already has a rw-mount on %s.\n"
 			"\t\tmultiple rw-mount is not allowed."),
 		      progname, mnt_fs_get_target(fs));
+		res = -EBUSY;
 		goto failed;
 	case MS_RDONLY: /* ro-mount (a rw-mount exists) */
 		break;
