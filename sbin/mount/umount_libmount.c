@@ -273,7 +273,7 @@ static int nilfs_do_umount_one(struct nilfs_umount_info *umi)
 
 static int nilfs_umount_one(struct nilfs_umount_info *umi)
 {
-	int res, err = EX_FAIL;
+	int res;
 
 	res = nilfs_prepare_umount(umi);
 	if (res)
@@ -297,16 +297,15 @@ static int nilfs_umount_one(struct nilfs_umount_info *umi)
 		}
 	}
 	res = mnt_context_finalize_umount(umi->cxt);
-	if (!res)
-		err = 0;
 failed:
-	return err;
+	return res;
 }
 
 int main(int argc, char *argv[])
 {
 	struct nilfs_umount_info umi = {0};
-	int ret = 0;
+	unsigned int no_succ = 1, no_fail = 1;
+	int status;
 
 	if (argc > 0) {
 		char *cp = strrchr(argv[0], '/');
@@ -365,9 +364,20 @@ int main(int argc, char *argv[])
 		    mnt_context_set_target(umi.cxt, *argv++))
 			die(EX_SYSERR, _("Mount entry allocation failed"));
 
-		ret += nilfs_umount_one(&umi);
+		if (nilfs_umount_one(&umi) == 0)
+			no_succ = 0;
+		else
+			no_fail = 0;
 	}
 
 	mnt_free_context(umi.cxt);
-	exit(ret);
+
+	if (no_fail)
+		status = EXIT_SUCCESS;	/* all succeeded */
+	else if (no_succ)
+		status = EX_FAIL;	/* all failed */
+	else
+		status = EX_SOMEOK;	/* some succeeded, some failed */
+
+	exit(status);
 }
