@@ -354,14 +354,17 @@ int main(int argc, char *argv[])
 	if (argc < 1)
 		die(EX_USAGE, _("No mountpoint specified"));
 
-	while (argc--) {
-		if (!*argv)
-			die(EX_USAGE, _("Cannot umount \"\"\n"));
+	for( ; argc; argc--, argv++) {
+		if (**argv == '\0') {
+			error(_("%s: cannot umount ''"), progname);
+			no_fail = 0;
+			continue;
+		}
 
 		mnt_context_reset_status(umi.cxt);
 
 		if (mnt_context_set_source(umi.cxt, NULL) ||
-		    mnt_context_set_target(umi.cxt, *argv++))
+		    mnt_context_set_target(umi.cxt, *argv))
 			die(EX_SYSERR, _("Mount entry allocation failed"));
 
 		if (nilfs_umount_one(&umi) == 0)
