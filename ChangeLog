@@ -1,3 +1,26 @@
+nilfs-utils-2.2.14  Sat Jan 17, 2026 JST
+
+	* Fix various error handling issues in libmount-based mount/umount
+	  helpers:
+	  - mount.nilfs2: fix broken overlapping rw-mount protection
+	  - mount.nilfs2: fix ignored error on remount target mismatch
+	  - umount.nilfs2: fix assertion failure when unmounting multiple
+	    targets
+	  - umount.nilfs2: fix incorrect error code handling in libmount-based
+	    umount
+	  - mount.nilfs2: fix error code handling in nilfs_do_mount_one()
+	  - mount.nilfs2: fix error return in nilfs_mount_attrs_parse() and
+	    its caller
+	  - umount.nilfs2: fix exit code accumulation and reorganize status
+	    codes
+	  - umount.nilfs2: fix broken empty string check
+	  - {mount,umount}.nilfs2: check return values of mnt_context_set_*()
+	  - mount.nilfs2: check return value of mnt_fs_set_root()
+	* Fix a build warning for mkfs.nilfs2:
+	  - Remove unnecessary local variables in prepare_dat()
+	* Build updates:
+	  - Ignore actmp files
+
 nilfs-utils-2.2.13  Sun Dec 28, 2025 JST
 
 	* Build updates:
