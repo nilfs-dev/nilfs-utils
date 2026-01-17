@@ -8,7 +8,6 @@
 #include <sys/types.h>
 #include <signal.h>
 #include <stdio.h>
-#include "sundries.h"
 
 #define NILFS2_FS_NAME		"nilfs2"
 #define PPOPT_NAME		"pp"
