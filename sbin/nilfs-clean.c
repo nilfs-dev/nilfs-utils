@@ -28,6 +28,10 @@
 #include <linux/types.h>
 #endif	/* HAVE_LINUX_TYPES_H */
 
+#if HAVE_ERR_H
+#include <err.h>
+#endif	/* HAVE_ERR_H */
+
 #if HAVE_FCNTL_H
 #include <fcntl.h>
 #endif	/* HAVE_FCNTL_H */
@@ -155,17 +159,7 @@ static void nilfs_clean_logger(int priority, const char *fmt, ...)
 	if ((verbose && priority > LOG_INFO) || priority >= LOG_INFO)
 		return;
 	va_start(args, fmt);
-	vfprintf(stderr, fmt, args);
-	fputs(_("\n"), stderr);
-	va_end(args);
-}
-
-static void myprintf(const char *fmt, ...)
-{
-	va_list args;
-
-	va_start(args, fmt);
-	vfprintf(stderr, fmt, args);
+	vwarnx(fmt, args);
 	va_end(args);
 }
 
@@ -259,8 +253,7 @@ static int nilfs_clean_do_run(struct nilfs_cleaner *cleaner)
 
 	ret = nilfs_cleaner_run(cleaner, &args, NULL);
 	if (unlikely(ret < 0)) {
-		myprintf(_("Error: cannot run cleaner: %s\n"),
-			 strerror(errno));
+		warn(_("cannot run cleaner"));
 		return -1;
 	}
 	return 0;
@@ -273,8 +266,7 @@ static int nilfs_clean_do_getinfo(struct nilfs_cleaner *cleaner)
 
 	ret = nilfs_cleaner_get_status(cleaner, &cleaner_status);
 	if (ret < 0) {
-		myprintf(_("Error: cannot get cleaner status: %s\n"),
-			 strerror(errno));
+		warn(_("cannot get cleaner status"));
 		return -1;
 	}
 	switch (cleaner_status) {
@@ -299,7 +291,7 @@ static int nilfs_clean_do_suspend(struct nilfs_cleaner *cleaner)
 
 	ret = nilfs_cleaner_suspend(cleaner);
 	if (unlikely(ret < 0)) {
-		myprintf(_("Error: suspend failed: %s\n"), strerror(errno));
+		warn(_("suspend failed"));
 		return -1;
 	}
 	return 0;
@@ -311,7 +303,7 @@ static int nilfs_clean_do_resume(struct nilfs_cleaner *cleaner)
 
 	ret = nilfs_cleaner_resume(cleaner);
 	if (unlikely(ret < 0)) {
-		myprintf(_("Error: resume failed: %s\n"), strerror(errno));
+		warn(_("resume failed"));
 		return -1;
 	}
 	return 0;
@@ -323,7 +315,7 @@ static int nilfs_clean_do_reload(struct nilfs_cleaner *cleaner)
 
 	ret = nilfs_cleaner_reload(cleaner, conffile);
 	if (unlikely(ret < 0)) {
-		myprintf(_("Error: reload failed: %s\n"), strerror(errno));
+		warn(_("reload failed"));
 		return -1;
 	}
 	return 0;
@@ -335,7 +327,7 @@ static int nilfs_clean_do_stop(struct nilfs_cleaner *cleaner)
 
 	ret = nilfs_cleaner_stop(cleaner);
 	if (unlikely(ret < 0)) {
-		myprintf(_("Error: stop failed: %s\n"), strerror(errno));
+		warn(_("stop failed"));
 		return -1;
 	}
 	return 0;
@@ -347,7 +339,7 @@ static int nilfs_clean_do_shutdown(struct nilfs_cleaner *cleaner)
 
 	ret = nilfs_cleaner_shutdown(cleaner);
 	if (unlikely(ret < 0)) {
-		myprintf(_("Error: shutdown failed: %s\n"), strerror(errno));
+		warn(_("shutdown failed"));
 		return -1;
 	}
 	return 0;
@@ -470,11 +462,11 @@ static int nilfs_clean_parse_gcspeed(const char *arg)
 	nsegments_per_clean = nsegs;
 	return 0;
 failed:
-	myprintf(_("Error: invalid gc speed: %s\n"), arg);
+	warnx(_("invalid gc speed: %s"), arg);
 	return -1;
 
 failed_too_large:
-	myprintf(_("Error: value too large: %s\n"), arg);
+	warnx(_("value too large: %s"), arg);
 	return -1;
 }
 
@@ -485,19 +477,18 @@ static int nilfs_clean_parse_min_reclaimable(const char *arg)
 
 	blocks = strtoul(arg, &endptr, 10);
 	if (endptr == arg || (endptr[0] != '\0' && endptr[0] != '%')) {
-		myprintf(_("Error: invalid reclaimable blocks: %s\n"), arg);
+		warnx(_("invalid reclaimable blocks: %s"), arg);
 		return -1;
 	}
 
 	if (blocks == ULONG_MAX) {
-		myprintf(_("Error: value too large: %s\n"), arg);
+		warnx(_("value too large: %s"), arg);
 		return -1;
 	}
 
 	if (endptr[0] == '%') {
 		if (blocks > 100) {
-			myprintf(_("Error: percent value can't be > 100: %s\n"),
-					arg);
+			warnx(_("percent value can't be > 100: %s"), arg);
 			return -1;
 		}
 		min_reclaimable_blocks_unit = NILFS_CLEANER_ARG_UNIT_PERCENT;
@@ -548,14 +539,13 @@ static void nilfs_clean_parse_options(int argc, char *argv[])
 			if (!ret)
 				break;
 
-			if (errno == ERANGE) {
-				myprintf(_("Error: too large period: %s\n"),
-					 optarg);
-			} else {
-				myprintf(_("Error: invalid protection period: %s\n"),
-					 optarg);
-			}
-			exit(EXIT_FAILURE);
+			if (errno == ERANGE)
+				errx(EXIT_FAILURE,
+				     _("too large period: %s"), optarg);
+			else
+				errx(EXIT_FAILURE,
+				     _("invalid protection period: %s"),
+				     optarg);
 		case 'q':
 			clean_cmd = NILFS_CLEAN_CMD_SHUTDOWN;
 			break;
@@ -597,28 +587,22 @@ int main(int argc, char *argv[])
 
 	nilfs_clean_parse_options(argc, argv);
 	if (show_version_only) {
-		myprintf(_("%s version %s\n"), progname, PACKAGE_VERSION);
+		printf(_("%s version %s\n"), progname, PACKAGE_VERSION);
 		status = EXIT_SUCCESS;
 		goto out;
 	}
 
-	status = EXIT_FAILURE;
 	if (optind < argc) {
 		device = argv[optind++];
 
-		if (stat(device, &statbuf) < 0) {
-			myprintf(_("Error: cannot find %s: %s.\n"), device,
-				 strerror(errno));
-			goto out;
-		} else if (!S_ISBLK(statbuf.st_mode)) {
-			myprintf(_("Error: device must be a block device.\n"));
-			goto out;
-		}
+		if (stat(device, &statbuf) < 0)
+			err(EXIT_FAILURE, _("cannot find '%s'"), device);
+		else if (!S_ISBLK(statbuf.st_mode))
+			errx(EXIT_FAILURE,
+			     _("device must be a block device."));
 	}
-	if (optind < argc) {
-		myprintf(_("Error: too many arguments.\n"));
-		goto out;
-	}
+	if (optind < argc)
+		errx(EXIT_FAILURE, _("too many arguments."));
 
 	status = nilfs_do_clean(device);
 out:
