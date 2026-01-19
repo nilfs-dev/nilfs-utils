@@ -203,4 +203,14 @@
 #endif  /* HAVE_SYS_SYSMACROS_H */
 
 
+#ifndef HAVE_GETPROGNAME
+#if defined(HAVE_DECL_PROGRAM_INVOCATION_SHORT_NAME) && \
+    HAVE_DECL_PROGRAM_INVOCATION_SHORT_NAME
+#include <errno.h>
+#define getprogname() ((const char *)program_invocation_short_name)
+#else
+#error "No way to retrieve the program name"
+#endif
+#endif  /* HAVE_GETPROGNAME */
+
 #endif /* __COMPAT_H__ */

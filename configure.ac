@@ -182,6 +182,13 @@ elif test -f /etc/mtab; then
    mtab_type=file
 fi
 
+# Check program_invocation_short_name and getprogname()
+AC_CHECK_DECLS([program_invocation_short_name], [], [],
+               [[#include <errno.h>]])
+
+AS_IF([test "x$ac_cv_have_decl_program_invocation_short_name" != "xyes"],
+      [AC_CHECK_FUNCS([getprogname])])
+
 # Check for conditional libraries and headers.
 AS_IF([test "${with_blkid}" = "yes"], [
     NILFS_UTILS_PKG_CHECK([BLKID], [blkid], [
