@@ -108,6 +108,15 @@ int nilfs_parse_protection_period(const char *arg, unsigned long *period)
 	char *endptr;
 	int ret = 0;
 
+	while (isspace(*arg))
+		arg++;
+
+	if (*arg == '-') {
+		errno = EINVAL;
+		ret = -1;
+		goto out;
+	}
+
 	val = strtoull(arg, &endptr, 10);
 	if (endptr == arg) {
 		errno = EINVAL;
