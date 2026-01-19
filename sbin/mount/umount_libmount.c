@@ -105,9 +105,7 @@ static void nilfs_umount_logger(int priority, const char *fmt, ...)
 	if ((verbose && priority > LOG_INFO) || priority >= LOG_INFO)
 		return;
 	va_start(args, fmt);
-	fprintf(stderr, "%s: ", progname);
-	vfprintf(stderr, fmt, args);
-	fputs(_("\n"), stderr);
+	vwarnx(fmt, args);
 	va_end(args);
 }
 
