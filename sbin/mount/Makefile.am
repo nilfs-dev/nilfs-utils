@@ -17,7 +17,7 @@ core_sbin_PROGRAMS = mount.nilfs2 umount.nilfs2
 if CONFIG_LIBMOUNT
 
 COMMONSOURCES += mount_attrs.c
-COMMONHEADERS += mount_attrs.h
+COMMONHEADERS += libmount_compat.h mount_attrs.h
 
 # Since mount_nilfs2_CFLAGS is defined in the else block, Automake
 # disables the default AM_CFLAGS.  Explicitly include it here.

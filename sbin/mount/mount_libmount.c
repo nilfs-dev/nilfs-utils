@@ -73,6 +73,7 @@
 #include <errno.h>
 #include <assert.h>
 
+#include "libmount_compat.h"
 #include "sundries.h"
 #include "xmalloc.h"
 #include "mount.nilfs2.h"
@@ -167,7 +168,7 @@ static void nilfs_mount_parse_options(int argc, char *argv[],
 
 	fs = mnt_context_get_fs(cxt);
 	if (!fs)
-		die(EX_SYSERR, _("failed to get fs"));
+		die(MNT_EX_SYSERR, _("failed to get fs"));
 
 	while ((c = getopt(argc, argv, "fvnt:o:rwV")) != EOF) {
 		switch (c) {
@@ -190,19 +191,23 @@ static void nilfs_mount_parse_options(int argc, char *argv[],
 
 			if (nilfs_mount_attrs_parse(&mi->new_attrs, optarg,
 						    NULL, &rest, 0))
-				die(EX_SYSERR, _("failed to parse options"));
+				die(MNT_EX_SYSERR,
+				    _("failed to parse options"));
 			if (rest && mnt_context_append_options(cxt, rest))
-				die(EX_SYSERR, _("failed to append options"));
+				die(MNT_EX_SYSERR,
+				    _("failed to append options"));
 			free(rest);
 			break;
 		}
 		case 'r':
 			if (mnt_context_append_options(cxt, "ro"))
-				die(EX_SYSERR, _("failed to append options"));
+				die(MNT_EX_SYSERR,
+				    _("failed to append options"));
 			break;
 		case 'w':
 			if (mnt_context_append_options(cxt, "rw"))
-				die(EX_SYSERR, _("failed to append options"));
+				die(MNT_EX_SYSERR,
+				    _("failed to append options"));
 			break;
 		case 'V':
 			show_version_only = 1;
@@ -214,7 +219,7 @@ static void nilfs_mount_parse_options(int argc, char *argv[],
 
 	if (show_version_only) {
 		show_version();
-		exit(EXIT_SUCCESS);
+		exit(MNT_EX_SUCCESS);
 	}
 }
 
@@ -248,7 +253,7 @@ static struct libmnt_fs *nilfs_find_mount(struct libmnt_context *cxt,
 	struct libmnt_fs *fs = NULL;
 
 	if (!iter)
-		die(EX_SYSERR, _("libmount iterator allocation failed"));
+		die(MNT_EX_SYSERR, _("libmount iterator allocation failed"));
 
 	while (mnt_table_next_fs(mtab, iter, &fs) == 0) {
 		if (mnt_fs_match_fstype(fs, type) &&
@@ -516,7 +521,7 @@ static int nilfs_update_mount_state(struct nilfs_mount_info *mi)
 
 static int nilfs_mount_one(struct nilfs_mount_info *mi)
 {
-	int res, err = EX_FAIL;
+	int res, err = MNT_EX_FAIL;
 
 	res = nilfs_prepare_mount(mi);
 	if (res)
@@ -553,13 +558,13 @@ int main(int argc, char *argv[])
 	mnt_init_debug(0);
 	mi.cxt = mnt_new_context();
 	if (!mi.cxt)
-		die(EX_SYSERR, _("libmount context allocation failed"));
+		die(MNT_EX_SYSERR, _("libmount context allocation failed"));
 
 #if 0
 	mnt_context_set_tables_errcb(mi.cxt, nilfs_libmount_table_errcb);
 #endif
 	if (mnt_context_set_fstype(mi.cxt, fstype))
-		die(EX_SYSERR,
+		die(MNT_EX_SYSERR,
 		    _("libmount FS description allocation failed"));
 	mnt_context_disable_helpers(mi.cxt, 1);
 
@@ -570,24 +575,24 @@ int main(int argc, char *argv[])
 	umask(022);
 
 	if (optind >= argc || !argv[optind])
-		die(EX_USAGE, _("No device specified"));
+		die(MNT_EX_USAGE, _("No device specified"));
 
 	device = argv[optind++];
 
 	if (optind >= argc || !argv[optind])
-		die(EX_USAGE, _("No mountpoint specified"));
+		die(MNT_EX_USAGE, _("No mountpoint specified"));
 
 	mntdir = argv[optind++];
 
 	if (mnt_context_set_source(mi.cxt, device) ||
 	    mnt_context_set_target(mi.cxt, mntdir))
-		die(EX_SYSERR, _("Mount entry allocation failed"));
+		die(MNT_EX_SYSERR, _("Mount entry allocation failed"));
 
 	if (mount_fstype && strncmp(mount_fstype, fstype, strlen(fstype)))
-		die(EX_USAGE, _("Unknown filesystem (%s)"), mount_fstype);
+		die(MNT_EX_USAGE, _("Unknown filesystem (%s)"), mount_fstype);
 
 	if (getuid() != geteuid())
-		die(EX_USAGE,
+		die(MNT_EX_USAGE,
 		    _("%s: mount by non-root user is not supported yet"),
 		    progname);
 

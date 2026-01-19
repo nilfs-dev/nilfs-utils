@@ -65,6 +65,7 @@
 #include <errno.h>
 #include <assert.h>
 
+#include "libmount_compat.h"
 #include "sundries.h"
 #include "xmalloc.h"
 #include "mount.nilfs2.h"
@@ -134,7 +135,7 @@ static void nilfs_umount_parse_options(int argc, char *argv[],
 
 	fs = mnt_context_get_fs(cxt);
 	if (!fs)
-		die(EX_SYSERR, _("failed to get fs"));
+		die(MNT_EX_SYSERR, _("failed to get fs"));
 
 	while ((c = getopt(argc, argv, "flnvrV")) != EOF) {
 		switch (c) {
@@ -164,7 +165,7 @@ static void nilfs_umount_parse_options(int argc, char *argv[],
 
 	if (show_version_only) {
 		show_version();
-		exit(EXIT_SUCCESS);
+		exit(MNT_EX_SUCCESS);
 	}
 }
 
@@ -221,7 +222,7 @@ static int nilfs_prepare_umount(struct nilfs_umount_info *umi)
 	if (attrs) {
 		if (nilfs_mount_attrs_parse(&umi->old_attrs, attrs,
 					    NULL, NULL, 1))
-			die(EX_SYSERR, _("failed to parse attributes"));
+			die(MNT_EX_SYSERR, _("failed to parse attributes"));
 	}
 	res = 0;
  failed:
@@ -316,7 +317,7 @@ int main(int argc, char *argv[])
 	mnt_init_debug(0);
 	umi.cxt = mnt_new_context();
 	if (!umi.cxt)
-		die(EX_SYSERR, _("libmount context allocation failed"));
+		die(MNT_EX_SYSERR, _("libmount context allocation failed"));
 
 	nilfs_umount_parse_options(argc, argv, &umi);
 
@@ -324,7 +325,7 @@ int main(int argc, char *argv[])
 	mnt_context_set_tables_errcb(umi.cxt, nilfs_libmount_table_errcb);
 #endif
 	if (mnt_context_set_fstype(umi.cxt, fstype))
-		die(EX_SYSERR,
+		die(MNT_EX_SYSERR,
 		    _("libmount FS description allocation failed"));
 	mnt_context_disable_helpers(umi.cxt, 1);
 
@@ -338,9 +339,9 @@ int main(int argc, char *argv[])
 #if 0 /* XXX: normal user mount support */
 		if (mnt_context_is_nomtab(mi.cxt) ||
 		    mnt_context_is_rdonly_umount(mi.cxt))
-			die(EX_USAGE, _("only root can do that"));
+			die(MNT_EX_USAGE, _("only root can do that"));
 #else
-		die(EX_USAGE,
+		die(MNT_EX_USAGE,
 		    _("%s: umount by non-root user is not supported yet"),
 		    progname);
 #endif
@@ -350,7 +351,7 @@ int main(int argc, char *argv[])
 	argv += optind;
 
 	if (argc < 1)
-		die(EX_USAGE, _("No mountpoint specified"));
+		die(MNT_EX_USAGE, _("No mountpoint specified"));
 
 	for( ; argc; argc--, argv++) {
 		if (**argv == '\0') {
@@ -363,7 +364,8 @@ int main(int argc, char *argv[])
 
 		if (mnt_context_set_source(umi.cxt, NULL) ||
 		    mnt_context_set_target(umi.cxt, *argv))
-			die(EX_SYSERR, _("Mount entry allocation failed"));
+			die(MNT_EX_SYSERR,
+			    _("Mount entry allocation failed"));
 
 		if (nilfs_umount_one(&umi) == 0)
 			no_succ = 0;
@@ -374,11 +376,11 @@ int main(int argc, char *argv[])
 	mnt_free_context(umi.cxt);
 
 	if (no_fail)
-		status = EXIT_SUCCESS;	/* all succeeded */
+		status = MNT_EX_SUCCESS; /* all succeeded */
 	else if (no_succ)
-		status = EX_FAIL;	/* all failed */
+		status = MNT_EX_FAIL;	/* all failed */
 	else
-		status = EX_SOMEOK;	/* some succeeded, some failed */
+		status = MNT_EX_SOMEOK;	/* some succeeded, some failed */
 
 	exit(status);
 }
