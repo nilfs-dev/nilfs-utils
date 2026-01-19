@@ -205,18 +205,18 @@ static const char *nilfs_cleaner_cmd_name[] = {
 	"stop", "shutdown"
 };
 
-static void nilfs_cleanerd_version(const char *progname)
+static void nilfs_cleanerd_version(void)
 {
-	printf("%s (%s %s)\n", progname, PACKAGE, PACKAGE_VERSION);
+	printf("%s (%s %s)\n", getprogname(), PACKAGE, PACKAGE_VERSION);
 }
 
-static void nilfs_cleanerd_usage(const char *progname)
+static void nilfs_cleanerd_usage(void)
 {
 	fprintf(stderr,
 		"Usage: %s [option]... dev\n"
 		"%s options:\n"
 		NILFS_CLEANERD_OPTIONS,
-		progname, progname);
+		getprogname(), getprogname());
 }
 
 static void nilfs_cleanerd_set_log_priority(struct nilfs_cleanerd *cleanerd)
@@ -1720,7 +1720,7 @@ sleep:
 
 int main(int argc, char *argv[])
 {
-	char *progname, *conffile;
+	char *conffile;
 	char *dev, *dir;
 	char *endptr;
 	int status, c, ret;
@@ -1728,8 +1728,6 @@ int main(int argc, char *argv[])
 	int option_index;
 #endif	/* _GNU_SOURCE */
 
-	progname = (strrchr(argv[0], '/') != NULL) ?
-		strrchr(argv[0], '/') + 1 : argv[0];
 	conffile = NILFS_CLEANERD_CONFFILE;
 	status = EXIT_SUCCESS;
 	protection_period = ULONG_MAX;
@@ -1748,7 +1746,7 @@ int main(int argc, char *argv[])
 			conffile = optarg;
 			break;
 		case 'h':
-			nilfs_cleanerd_usage(progname);
+			nilfs_cleanerd_usage();
 			exit(EXIT_SUCCESS);
 		case 'n':
 			/* ignore nofork option, do nothing */
@@ -1765,10 +1763,10 @@ int main(int argc, char *argv[])
 			}
 			break;
 		case 'V':
-			nilfs_cleanerd_version(progname);
+			nilfs_cleanerd_version();
 			exit(EXIT_SUCCESS);
 		default:
-			nilfs_cleanerd_usage(progname);
+			nilfs_cleanerd_usage();
 			exit(EXIT_FAILURE);
 		}
 	}
@@ -1800,7 +1798,7 @@ int main(int argc, char *argv[])
 		goto out_free;
 	}
 
-	openlog(progname, LOG_PID, LOG_DAEMON);
+	openlog(getprogname(), LOG_PID, LOG_DAEMON);
 	syslog(LOG_INFO, "start");
 
 	ret = oom_adjust();

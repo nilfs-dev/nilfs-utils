@@ -69,6 +69,7 @@
 #include <errno.h>
 #include <assert.h>
 
+#include "compat.h"	/* getprogname() */
 #include "libmount_compat.h"
 #include "mount.nilfs2.h"
 #include "mount_attrs.h"
@@ -87,7 +88,6 @@ static int suid;	/* reserved for non-root user mount/umount
 
 /* global variables */
 static const char fstype[] = NILFS2_FS_NAME;
-static char *progname = "umount." NILFS2_FS_NAME;
 
 /* umount info */
 struct nilfs_umount_info {
@@ -122,7 +122,7 @@ static int nilfs_libmount_table_errcb(struct libmnt_table *tb,
 
 static void show_version(void)
 {
-	printf("%s (%s %s)\n", progname, PACKAGE, PACKAGE_VERSION);
+	printf("%s (%s %s)\n", getprogname(), PACKAGE, PACKAGE_VERSION);
 }
 
 static void nilfs_umount_parse_options(int argc, char *argv[],
@@ -254,7 +254,7 @@ static int nilfs_do_umount_one(struct nilfs_umount_info *umi)
 					  mattrs.pp, &mattrs.gcpid) == 0) {
 			if (verbose)
 				printf(_("%s: restarted %s(pid=%d)\n"),
-				       progname, NILFS_CLEANERD_NAME,
+				       getprogname(), NILFS_CLEANERD_NAME,
 				       (int)mattrs.gcpid);
 
 			nilfs_mount_attrs_update(&umi->old_attrs, &mattrs, cxt);
@@ -301,12 +301,6 @@ int main(int argc, char *argv[])
 	struct nilfs_umount_info umi = {0};
 	unsigned int no_succ = 1, no_fail = 1;
 	int status;
-
-	if (argc > 0) {
-		char *cp = strrchr(argv[0], '/');
-
-		progname = (cp ? cp + 1 : argv[0]);
-	}
 
 	nilfs_cleaner_logger = nilfs_umount_logger;
 

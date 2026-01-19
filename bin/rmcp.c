@@ -54,6 +54,7 @@
 
 #include <errno.h>
 #include "nilfs.h"
+#include "compat.h"	/* getprogname() */
 #include "parser.h"
 #include "util.h"
 
@@ -83,8 +84,6 @@ static const struct option long_options[] = {
 
 #define RMCP_BASE 10
 
-static char *progname;
-
 static int force;
 static int interactive;
 
@@ -92,7 +91,7 @@ static int rmcp_confirm(const char *arg)
 {
 	char ans[MAX_INPUT];
 
-	fprintf(stderr, "%s: remove checkpoint %s? ", progname, arg);
+	fprintf(stderr, "%s: remove checkpoint %s? ", getprogname(), arg);
 	if (fgets(ans, MAX_INPUT, stdin) != NULL)
 		return ans[0] == 'y' || ans[0] == 'Y';
 	return 0;
@@ -136,7 +135,6 @@ static int rmcp_remove_range(struct nilfs *nilfs,
 int main(int argc, char *argv[])
 {
 	char *dev;
-	char *last;
 	struct nilfs *nilfs;
 	struct nilfs_cpstat cpstat;
 	nilfs_cno_t start, end, oldest;
@@ -145,9 +143,6 @@ int main(int argc, char *argv[])
 #ifdef _GNU_SOURCE
 	int option_index;
 #endif	/* _GNU_SOURCE */
-
-	last = strrchr(argv[0], '/');
-	progname = last ? last + 1 : argv[0];
 
 #ifdef _GNU_SOURCE
 	while ((c = getopt_long(argc, argv, "fihV",
@@ -166,10 +161,10 @@ int main(int argc, char *argv[])
 			interactive = 1;
 			break;
 		case 'h':
-			fprintf(stderr, RMCP_USAGE, progname);
+			fprintf(stderr, RMCP_USAGE, getprogname());
 			exit(EXIT_SUCCESS);
 		case 'V':
-			printf("%s (%s %s)\n", progname, PACKAGE,
+			printf("%s (%s %s)\n", getprogname(), PACKAGE,
 			       PACKAGE_VERSION);
 			exit(EXIT_SUCCESS);
 		default:

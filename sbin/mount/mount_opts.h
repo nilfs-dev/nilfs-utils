@@ -38,7 +38,6 @@
 extern int verbose;
 extern int mount_quiet;
 extern int readonly, readwrite;
-extern char *progname;
 
 char *append_opt(char *s, const char *opt, const char *val);
 char *append_numopt(char *s, const char *opt, long num);

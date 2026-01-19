@@ -83,6 +83,7 @@
 #include <stdarg.h>
 #include <errno.h>
 
+#include "compat.h"	/* getprogname() */
 #include "fstab.h"
 #include "pathnames.h"
 #include "sundries.h"
@@ -102,7 +103,6 @@ int readwrite;
 static int nomtab;
 
 static const char fstype[] = NILFS2_FS_NAME;
-char *progname = "umount." NILFS2_FS_NAME;
 
 static const char gcpid_opt_fmt[] = PIDOPT_NAME "=%d";
 typedef int gcpid_opt_t;
@@ -136,7 +136,7 @@ static void nilfs_umount_logger(int priority, const char *fmt, ...)
 	if ((verbose && priority > LOG_INFO) || priority >= LOG_INFO)
 		return;
 	va_start(args, fmt);
-	fprintf(stderr, "%s: ", progname);
+	fprintf(stderr, "%s: ", getprogname());
 	vfprintf(stderr, fmt, args);
 	fputs(_("\n"), stderr);
 	va_end(args);
@@ -144,7 +144,7 @@ static void nilfs_umount_logger(int priority, const char *fmt, ...)
 
 static void show_version(void)
 {
-	printf("%s (%s %s)\n", progname, PACKAGE, PACKAGE_VERSION);
+	printf("%s (%s %s)\n", getprogname(), PACKAGE, PACKAGE_VERSION);
 }
 
 static void parse_options(int argc, char *argv[], struct umount_options *opts)
@@ -218,12 +218,6 @@ int main(int argc, char *argv[])
 	struct umount_options *opts = &options;
 	int ret = 0;
 
-	if (argc > 0) {
-		char *cp = strrchr(argv[0], '/');
-
-		progname = (cp ? cp + 1 : argv[0]);
-	}
-
 	nilfs_cleaner_logger = nilfs_umount_logger;
 
 	parse_options(argc, argv, opts);
@@ -244,7 +238,7 @@ int main(int argc, char *argv[])
 #else
 		die(EX_USAGE,
 		    _("%s: umount by non-root user is not supported yet"),
-		    progname);
+		    getprogname());
 #endif
 	}
 
@@ -298,31 +292,33 @@ static void complain(int err, const char *dev)
 {
 	switch (err) {
 	case ENXIO:
-		error(_("%s: %s: invalid block device"), progname, dev);
+		error(_("%s: %s: invalid block device"), getprogname(), dev);
 		break;
 	case EINVAL:
-		error(_("%s: %s: not mounted"), progname, dev);
+		error(_("%s: %s: not mounted"), getprogname(), dev);
 		break;
 	case EIO:
-		error(_("%s: %s: I/O error while unmounting"), progname, dev);
+		error(_("%s: %s: I/O error while unmounting"), getprogname(),
+		      dev);
 		break;
 	case EBUSY:
 		/* Let us hope fstab has a line "proc /proc ..."
 		   and not "none /proc ..."*/
-		error(_("%s: %s: device is busy"), progname, dev);
+		error(_("%s: %s: device is busy"), getprogname(), dev);
 		break;
 	case ENOENT:
-		error(_("%s: %s: not found"), progname, dev);
+		error(_("%s: %s: not found"), getprogname(), dev);
 		break;
 	case EPERM:
-		error(_("%s: %s: must be superuser to umount"), progname, dev);
-		break;
-	case EACCES:
-		error(_("%s: %s: block devices not permitted on fs"), progname,
+		error(_("%s: %s: must be superuser to umount"), getprogname(),
 		      dev);
 		break;
+	case EACCES:
+		error(_("%s: %s: block devices not permitted on fs"),
+		      getprogname(), dev);
+		break;
 	default:
-		error(_("%s: %s: %s"), progname, dev, strerror(err));
+		error(_("%s: %s: %s"), getprogname(), dev, strerror(err));
 		break;
 	}
 }
@@ -400,13 +396,13 @@ umount_one(const char *spec, const char *node, const char *type,
 				    MS_MGC_VAL | MS_REMOUNT | MS_RDONLY, NULL);
 			if (res == 0) {
 				error(_("%s: %s busy - remounted read-only"),
-				      progname, spec);
+				      getprogname(), spec);
 				change_mtab_opt(spec, node, type,
 						xstrdup("ro"));
 				return 0;
 			} else if (errno != EBUSY) {	/* hmm ... */
 				error(_("%s: could not remount %s read-only"),
-				      progname, spec);
+				      getprogname(), spec);
 			}
 		} else if (alive && !nilfs_ping_cleanerd(pid)) {
 			if (find_opt(mc->m.mnt_opts, pp_opt_fmt, &prot_period)
@@ -420,7 +416,8 @@ umount_one(const char *spec, const char *node, const char *type,
 
 				if (verbose)
 					printf(_("%s: restarted %s(pid=%d)\n"),
-					       progname, NILFS_CLEANERD_NAME,
+					       getprogname(),
+					       NILFS_CLEANERD_NAME,
 					       (int)pid);
 				s = replace_drop_opt(s, gcpid_opt_fmt, &oldpid,
 						     pid, pid != 0);
@@ -428,7 +425,7 @@ umount_one(const char *spec, const char *node, const char *type,
 				goto out;
 			} else
 				error(_("%s: failed to restart %s"),
-				      progname, NILFS_CLEANERD_NAME);
+				      getprogname(), NILFS_CLEANERD_NAME);
 		}
 	}
 
@@ -436,7 +433,7 @@ umount_one(const char *spec, const char *node, const char *type,
 	if (res >= 0) {
 		/* Umount succeeded */
 		if (verbose)
-			printf(_("%s: %s umounted\n"), progname, spec);
+			printf(_("%s: %s umounted\n"), getprogname(), spec);
 
 		/* Free any loop devices that we allocated ourselves */
 		if (mc) {

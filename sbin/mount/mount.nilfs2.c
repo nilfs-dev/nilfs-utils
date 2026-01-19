@@ -81,6 +81,7 @@
 #include <selinux/context.h>
 #endif /* HAVE_LIBSELINUX */
 
+#include "compat.h"	/* getprogname() */
 #include "fstab.h"
 #include "pathnames.h"
 #include "sundries.h"
@@ -102,7 +103,6 @@ static int devro;
 static int fake;
 
 static const char fstype[] = NILFS2_FS_NAME;
-char *progname = "mount." NILFS2_FS_NAME;
 
 static const char gcpid_opt_fmt[] = PIDOPT_NAME "=%d";
 typedef int gcpid_opt_t;
@@ -129,7 +129,7 @@ static void nilfs_mount_logger(int priority, const char *fmt, ...)
 	if ((verbose && priority > LOG_INFO) || priority >= LOG_INFO)
 		return;
 	va_start(args, fmt);
-	fprintf(stderr, "%s: ", progname);
+	fprintf(stderr, "%s: ", getprogname());
 	vfprintf(stderr, fmt, args);
 	fputs(_("\n"), stderr);
 	va_end(args);
@@ -167,7 +167,7 @@ static void handle_signal(int sig)
 	switch (sig) {
 	case SIGTERM:
 	case SIGINT:
-		die(EX_USER, _("\n%s: interrupted"), progname);
+		die(EX_USER, _("\n%s: interrupted"), getprogname());
 	}
 }
 
@@ -189,7 +189,7 @@ static int device_is_readonly(const char *device, int *ro)
 
 static void show_version(void)
 {
-	printf("%s (%s %s)\n", progname, PACKAGE, PACKAGE_VERSION);
+	printf("%s (%s %s)\n", getprogname(), PACKAGE, PACKAGE_VERSION);
 }
 
 static void parse_options(int argc, char *argv[], struct mount_options *opts)
@@ -317,13 +317,14 @@ update_mtab_entry(const char *spec, const char *node, const char *type,
 			int errsv = errno;
 
 			error(_("%s: can't open %s, %s"),
-			      progname, _PATH_MOUNTED, strerror(errsv));
+			      getprogname(), _PATH_MOUNTED, strerror(errsv));
 		} else {
 			if ((my_addmntent(mfp, &mnt)) == 1) {
 				int errsv = errno;
 
 				error(_("%s: error writing %s, %s"),
-				      progname, _PATH_MOUNTED, strerror(errsv));
+				      getprogname(), _PATH_MOUNTED,
+				      strerror(errsv));
 			}
 		}
 		my_endmntent(mfp);
@@ -348,7 +349,7 @@ static int check_remount_dir(struct mntentchn *mc, const char *mntdir)
 
 	if (strcmp(dir, mc->m.mnt_dir) != 0) {
 		error(_("%s: different mount point (%s). remount failed."),
-		      progname, mntdir);
+		      getprogname(), mntdir);
 		res = -1;
 	}
 	free(dir);
@@ -376,7 +377,7 @@ static int check_mtab(void)
 		else
 			error(_("%s: cannot modify %s.\n"
 				"Please remount the partition with -f option after making %s writable."),
-			      progname, _PATH_MOUNTED, _PATH_MOUNTED);
+			      getprogname(), _PATH_MOUNTED, _PATH_MOUNTED);
 	}
 	return res;
 }
@@ -390,7 +391,8 @@ prepare_mount(struct nilfs_mount_info *mi, const struct mount_options *mo)
 	int res = -1;
 
 	if (!(mo->flags & MS_REMOUNT) && mounted(NULL, mi->mntdir)) {
-		error(_("%s: %s is already mounted."), progname, mi->mntdir);
+		error(_("%s: %s is already mounted."), getprogname(),
+		      mi->mntdir);
 		goto failed;
 	}
 
@@ -418,7 +420,7 @@ prepare_mount(struct nilfs_mount_info *mi, const struct mount_options *mo)
 	case 0: /* overlapping rw-mount */
 		error(_("%s: the device already has a rw-mount on %s.\n"
 			"\t\tmultiple rw-mount is not allowed."),
-		      progname, mc->m.mnt_dir);
+		      getprogname(), mc->m.mnt_dir);
 		goto failed;
 	case MS_RDONLY: /* ro-mount (a rw-mount exists) */
 		break;
@@ -433,7 +435,7 @@ prepare_mount(struct nilfs_mount_info *mi, const struct mount_options *mo)
 		if (find_opt(mc->m.mnt_opts, gcpid_opt_fmt, &pid) >= 0 &&
 		    nilfs_shutdown_cleanerd(mi->device, (pid_t)pid) < 0) {
 			error(_("%s: remount failed due to %s shutdown failure"),
-				progname, NILFS_CLEANERD_NAME);
+			      getprogname(), NILFS_CLEANERD_NAME);
 			goto failed;
 		}
 		mi->gcpid = pid;
@@ -470,11 +472,11 @@ do_mount_one(struct nilfs_mount_info *mi, const struct mount_options *mo)
 	switch (errsv) {
 	case ENODEV:
 		error(_("%s: cannot find or load %s filesystem"),
-		      progname, fstype);
+		      getprogname(), fstype);
 		break;
 	default:
 		error(_("%s: Error while mounting %s on %s: %s"),
-		      progname, mi->device, mi->mntdir, strerror(errsv));
+		      getprogname(), mi->device, mi->mntdir, strerror(errsv));
 		break;
 	}
 	if (mi->type != RW2RO_REMOUNT && mi->type != RW2RW_REMOUNT)
@@ -492,7 +494,7 @@ do_mount_one(struct nilfs_mount_info *mi, const struct mount_options *mo)
 
 			if (verbose)
 				printf(_("%s: restarted %s\n"),
-				       progname, NILFS_CLEANERD_NAME);
+				       getprogname(), NILFS_CLEANERD_NAME);
 
 			mi->optstr = replace_drop_opt(
 				mi->optstr, gcpid_opt_fmt, &oldpid, mi->gcpid,
@@ -502,7 +504,7 @@ do_mount_one(struct nilfs_mount_info *mi, const struct mount_options *mo)
 					  mi->optstr, 0, 0, !mi->mounted);
 		} else {
 			error(_("%s: failed to restart %s"),
-			      progname, NILFS_CLEANERD_NAME);
+			      getprogname(), NILFS_CLEANERD_NAME);
 		}
 	} else
 		printf(_("%s not restarted\n"), NILFS_CLEANERD_NAME);
@@ -529,7 +531,7 @@ static void update_mount_state(struct nilfs_mount_info *mi,
 					  &pid) < 0)
 			error(_("%s aborted"), NILFS_CLEANERD_NAME);
 		else if (verbose)
-			printf(_("%s: started %s\n"), progname,
+			printf(_("%s: started %s\n"), getprogname(),
 			       NILFS_CLEANERD_NAME);
 	}
 
@@ -576,7 +578,7 @@ static int mount_one(char *device, char *mntdir,
 					 "       contain labels, onto an SELinux box. It is likely that confined\n"
 					 "       applications will generate AVC messages and not be allowed access to\n"
 					 "       this file system.  For more details see restorecon(8) and mount(8).\n"),
-				       progname, mntdir);
+				       getprogname(), mntdir);
 		}
 		freecon(raw);
 		freecon(def);
@@ -594,12 +596,6 @@ int main(int argc, char *argv[])
 	struct mount_options *opts = &options;
 	char *device, *mntdir;
 	int res = 0;
-
-	if (argc > 0) {
-		char *cp = strrchr(argv[0], '/');
-
-		progname = (cp ? cp + 1 : argv[0]);
-	}
 
 	nilfs_cleaner_logger = nilfs_mount_logger;
 
@@ -623,17 +619,17 @@ int main(int argc, char *argv[])
 	if (getuid() != geteuid())
 		die(EX_USAGE,
 		    _("%s: mount by non-root user is not supported yet"),
-		    progname);
+		    getprogname());
 
 	if (!nomtab && mtab_does_not_exist())
-		die(EX_USAGE, _("%s: no %s found - aborting"), progname,
+		die(EX_USAGE, _("%s: no %s found - aborting"), getprogname(),
 		    _PATH_MOUNTED);
 
 	if (!(opts->flags & MS_RDONLY) && !(opts->flags & MS_BIND)) {
 		res = device_is_readonly(device, &devro);
 		if (res)
 			die(EX_USAGE, _("%s: device %s not accessible: %s"),
-			    progname, device, strerror(res));
+			    getprogname(), device, strerror(res));
 	}
 
 

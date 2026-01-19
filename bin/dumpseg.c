@@ -47,6 +47,7 @@
 #endif	/* HAVE_TIME_H */
 
 #include "nilfs.h"
+#include "compat.h"	/* getprogname() */
 #include "segment.h"
 
 #ifdef _GNU_SOURCE
@@ -257,16 +258,13 @@ int main(int argc, char *argv[])
 {
 	struct nilfs *nilfs;
 	uint64_t segnum;
-	char *dev, *endptr, *progname, *last;
+	char *dev, *endptr;
 	struct nilfs_segment segment;
 	int c, i, status;
 	int ret;
 #ifdef _GNU_SOURCE
 	int option_index;
 #endif	/* _GNU_SOURCE */
-
-	last = strrchr(argv[0], '/');
-	progname = last ? last + 1 : argv[0];
 
 #ifdef _GNU_SOURCE
 	while ((c = getopt_long(argc, argv, "hV",
@@ -277,10 +275,10 @@ int main(int argc, char *argv[])
 
 		switch (c) {
 		case 'h':
-			fprintf(stderr, DUMPSEG_USAGE, progname);
+			fprintf(stderr, DUMPSEG_USAGE, getprogname());
 			exit(EXIT_SUCCESS);
 		case 'V':
-			printf("%s (%s %s)\n", progname, PACKAGE,
+			printf("%s (%s %s)\n", getprogname(), PACKAGE,
 			       PACKAGE_VERSION);
 			exit(EXIT_SUCCESS);
 		default:

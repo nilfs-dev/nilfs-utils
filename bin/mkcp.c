@@ -44,6 +44,7 @@
 
 #include <signal.h>
 #include "nilfs.h"
+#include "compat.h"	/* getprogname() */
 #include "util.h"
 
 
@@ -72,7 +73,7 @@ int main(int argc, char *argv[])
 {
 	struct nilfs *nilfs;
 	nilfs_cno_t cno;
-	char *dev, *progname, *last;
+	char *dev;
 	int ss, print, c, status, ret;
 #ifdef _GNU_SOURCE
 	int option_index;
@@ -81,8 +82,6 @@ int main(int argc, char *argv[])
 
 	ss = 0;
 	print = 0;
-	last = strrchr(argv[0], '/');
-	progname = last ? last + 1 : argv[0];
 
 #ifdef _GNU_SOURCE
 	while ((c = getopt_long(argc, argv, "sphV",
@@ -99,10 +98,10 @@ int main(int argc, char *argv[])
 			print = 1;
 			break;
 		case 'h':
-			fprintf(stderr, MKCP_USAGE, progname);
+			fprintf(stderr, MKCP_USAGE, getprogname());
 			exit(EXIT_SUCCESS);
 		case 'V':
-			printf("%s (%s %s)\n", progname, PACKAGE,
+			printf("%s (%s %s)\n", getprogname(), PACKAGE,
 			       PACKAGE_VERSION);
 			exit(EXIT_SUCCESS);
 		default:

@@ -47,6 +47,7 @@
 #endif	/* HAVE_TIME_H */
 
 #include "nilfs.h"
+#include "compat.h"	/* getprogname() */
 #include "util.h"
 
 #undef CONFIG_PRINT_CPSTAT
@@ -407,7 +408,7 @@ int main(int argc, char *argv[])
 {
 	struct nilfs *nilfs;
 	struct nilfs_cpstat cpstat;
-	char *dev, *progname;
+	char *dev;
 	int c, mode, rvs, status, ret;
 #ifdef _GNU_SOURCE
 	int option_index;
@@ -415,12 +416,6 @@ int main(int argc, char *argv[])
 
 	mode = NILFS_CHECKPOINT;
 	rvs = 0;
-	progname = strrchr(argv[0], '/');
-	if (progname == NULL)
-		progname = argv[0];
-	else
-		progname++;
-
 
 #ifdef _GNU_SOURCE
 	while ((c = getopt_long(argc, argv, "abgrsi:n:hV",
@@ -452,10 +447,10 @@ int main(int argc, char *argv[])
 			param_lines = (uint64_t)atoll(optarg);
 			break;
 		case 'h':
-			fprintf(stderr, LSCP_USAGE, progname);
+			fprintf(stderr, LSCP_USAGE, getprogname());
 			exit(EXIT_SUCCESS);
 		case 'V':
-			printf("%s (%s %s)\n", progname, PACKAGE,
+			printf("%s (%s %s)\n", getprogname(), PACKAGE,
 			       PACKAGE_VERSION);
 			exit(EXIT_SUCCESS);
 		default:

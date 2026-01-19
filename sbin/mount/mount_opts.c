@@ -30,6 +30,7 @@
 #include <selinux/context.h>
 #endif /* HAVE_LIBSELINUX */
 
+#include "compat.h"	/* getprogname() */
 #include "sundries.h"
 #include "xmalloc.h"
 #include "mount_constants.h"
@@ -304,7 +305,7 @@ strip_quotes(char *str)
 	end = strrchr(str, '"');
 	if (end == NULL || end == str)
 		die(EX_USAGE, _("%s: improperly quoted option string '%s'"),
-		    progname, str);
+		    getprogname(), str);
 
 	*end = '\0';
 	return str+1;
@@ -336,7 +337,7 @@ append_context(const char *optname, char *optdata, char **extra_opts)
 
 	if (verbose)
 		printf(_("%s: translated %s '%s' to '%s'\n"),
-		       progname, optname, data, (char *) raw);
+		       getprogname(), optname, data, (char *) raw);
 
 	*extra_opts = append_opt(*extra_opts, optname, NULL);
 	*extra_opts = xstrconcat4(*extra_opts, "\"", (char *) raw, "\"");

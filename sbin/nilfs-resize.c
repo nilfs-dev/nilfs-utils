@@ -100,7 +100,6 @@ static const struct option long_option[] = {
 #endif
 
 /* options */
-static char *progname;
 static int show_version_only;
 static int verbose;
 static int assume_yes;
@@ -1650,7 +1649,7 @@ out:
  */
 static void nilfs_resize_usage(void)
 {
-	fprintf(stderr, NILFS_RESIZE_USAGE, progname);
+	fprintf(stderr, NILFS_RESIZE_USAGE, getprogname());
 }
 
 /**
@@ -1771,18 +1770,14 @@ out:
  */
 int main(int argc, char *argv[])
 {
-	char *last;
 	uint64_t size;
 	struct stat statbuf;
 	char *device;
 	int status, ret;
 
-	last = strrchr(argv[0], '/');
-	progname = last ? last + 1 : argv[0];
-
 	nilfs_resize_parse_options(argc, argv);
 	if (show_version_only) {
-		msg("%s version %s\n", progname, PACKAGE_VERSION);
+		msg("%s version %s\n", getprogname(), PACKAGE_VERSION);
 		status = EXIT_SUCCESS;
 		goto out;
 	}

@@ -81,6 +81,7 @@
 #include <errno.h>
 #include <assert.h>
 
+#include "compat.h"	/* getprogname() */
 #include "libmount_compat.h"
 #include "mount.nilfs2.h"
 #include "mount_attrs.h"
@@ -99,7 +100,6 @@ static char *mount_fstype;
 
 /* global variables */
 static const char fstype[] = NILFS2_FS_NAME;
-static char *progname = "mount." NILFS2_FS_NAME;
 
 /* mount info */
 struct nilfs_mount_info {
@@ -159,7 +159,7 @@ static int device_is_readonly(const char *device, int *ro)
 
 static void show_version(void)
 {
-	printf("%s (%s %s)\n", progname, PACKAGE, PACKAGE_VERSION);
+	printf("%s (%s %s)\n", getprogname(), PACKAGE, PACKAGE_VERSION);
 }
 
 static void nilfs_mount_parse_options(int argc, char *argv[],
@@ -424,7 +424,7 @@ static int nilfs_do_mount_one(struct nilfs_mount_info *mi)
 					  mattrs.pp, &mattrs.gcpid) == 0) {
 			if (mnt_context_is_verbose(cxt))
 				printf(_("%s: restarted %s\n"),
-				       progname, NILFS_CLEANERD_NAME);
+				       getprogname(), NILFS_CLEANERD_NAME);
 
 			nilfs_mount_attrs_update(&mi->old_attrs, &mattrs, cxt);
 			mnt_context_finalize_mount(cxt);
@@ -506,7 +506,7 @@ static int nilfs_update_mount_state(struct nilfs_mount_info *mi)
 					  &mi->new_attrs.gcpid) < 0)
 			warnx(_("%s aborted"), NILFS_CLEANERD_NAME);
 		else if (mnt_context_is_verbose(cxt))
-			printf(_("%s: started %s\n"), progname,
+			printf(_("%s: started %s\n"), getprogname(),
 			       NILFS_CLEANERD_NAME);
 	}
 
@@ -540,12 +540,6 @@ int main(int argc, char *argv[])
 	struct nilfs_mount_info mi = {0};
 	char *device, *mntdir;
 	int res = 0;
-
-	if (argc > 0) {
-		char *cp = strrchr(argv[0], '/');
-
-		progname = (cp ? cp + 1 : argv[0]);
-	}
 
 	nilfs_cleaner_logger = nilfs_mount_logger;
 

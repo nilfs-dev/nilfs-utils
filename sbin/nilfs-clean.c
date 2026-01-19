@@ -69,6 +69,7 @@
 #include <stdint.h>
 #include "nls.h"
 #include "nilfs.h"
+#include "compat.h"	/* getprogname() */
 #include "nilfs_cleaner.h"
 #include "parser.h"
 #include "util.h"
@@ -135,7 +136,6 @@ enum {
 #define NILFS_CLEAN_DEFAULT_NSEGMENTS_PER_CALL	16
 
 /* options */
-static char *progname;
 static int show_version_only;
 static int verbose;
 static int clean_cmd = NILFS_CLEAN_CMD_RUN;
@@ -416,7 +416,7 @@ out:
 
 static void nilfs_clean_usage(void)
 {
-	fprintf(stderr, NILFS_CLEAN_USAGE, progname);
+	fprintf(stderr, NILFS_CLEAN_USAGE, getprogname());
 }
 
 static int nilfs_clean_parse_gcspeed(const char *arg)
@@ -574,20 +574,16 @@ static void nilfs_clean_parse_options(int argc, char *argv[])
 
 int main(int argc, char *argv[])
 {
-	char *last;
 	struct stat statbuf;
 	char *device = NULL;
 	int status;
-
-	last = strrchr(argv[0], '/');
-	progname = last ? last + 1 : argv[0];
 
 	nilfs_cleaner_logger = nilfs_clean_logger;
 
 
 	nilfs_clean_parse_options(argc, argv);
 	if (show_version_only) {
-		printf(_("%s version %s\n"), progname, PACKAGE_VERSION);
+		printf(_("%s version %s\n"), getprogname(), PACKAGE_VERSION);
 		status = EXIT_SUCCESS;
 		goto out;
 	}

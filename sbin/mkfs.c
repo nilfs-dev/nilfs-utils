@@ -63,6 +63,7 @@
 #endif	/* HAVE_LIBBLKID */
 
 #include "nilfs.h"
+#include "compat.h"	/* getprogname() */
 #include "mkfs.h"
 #include "util.h"
 #include "nilfs_feature.h"
@@ -82,11 +83,6 @@
 #define BADBLOCKS_NAME		"badblocks"
 
 static const char badblocks[] = BADBLOCKSDIR "/" BADBLOCKS_NAME;
-
-/*
- * Command interface primitives
- */
-static char *progname = "mkfs.nilfs2";
 
 /* Options */
 static int quiet;
@@ -1124,12 +1120,6 @@ static void parse_options(int argc, char *argv[])
 
 	if (fs_features)
 		nilfs_mkfs_edit_feature(fs_features);
-
-	if (argc > 0) {
-		char *cp = strrchr(argv[0], '/');
-
-		progname = (cp ? cp + 1 : argv[0]);
-	}
 }
 
 /*
@@ -1142,12 +1132,13 @@ static void usage(void)
 		"       [-L volume-label] [-m reserved-segments-percentage]\n"
 		"       [-O feature[,...]]\n"
 		"       [-hnqvKV] device\n",
-		progname);
+		getprogname());
 }
 
 static void show_version(void)
 {
-	fprintf(stderr, "%s (%s %s)\n", progname, PACKAGE, PACKAGE_VERSION);
+	fprintf(stderr, "%s (%s %s)\n", getprogname(), PACKAGE,
+		PACKAGE_VERSION);
 }
 
 static void pinfo(const char *fmt, ...)
