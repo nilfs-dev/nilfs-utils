@@ -1,10 +1,11 @@
 ## Makefile.am
 
-COMMONSOURCES = sundries.c xmalloc.c
-COMMONHEADERS = mount.nilfs2.h sundries.h xmalloc.h
+COMMONSOURCES =
+COMMONHEADERS = mount.nilfs2.h
 
-LEGACYSOURCES = fstab.c mount_mntent.c mount_opts.c
-LEGACYHEADERS = fstab.h mount_constants.h mount_mntent.h mount_opts.h
+LEGACYSOURCES = fstab.c mount_mntent.c mount_opts.c sundries.c xmalloc.c
+LEGACYHEADERS = fstab.h mount_constants.h mount_mntent.h mount_opts.h \
+	sundries.h xmalloc.h
 
 AM_CFLAGS = -Wall $(MOUNT_CFLAGS)
 AM_CPPFLAGS = -I$(top_srcdir)/include -DCORE_SBINDIR=\"$(core_sbindir)\"

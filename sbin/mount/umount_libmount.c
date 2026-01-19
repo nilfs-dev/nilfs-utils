@@ -43,6 +43,10 @@
 #include <fcntl.h>
 #endif	/* HAVE_FCNTL_H */
 
+#if HAVE_ERR_H
+#include <err.h>
+#endif	/* HAVE_ERR_H */
+
 #if HAVE_STRINGS_H
 #include <strings.h>
 #endif	/* HAVE_STRINGS_H */
@@ -66,8 +70,6 @@
 #include <assert.h>
 
 #include "libmount_compat.h"
-#include "sundries.h"
-#include "xmalloc.h"
 #include "mount.nilfs2.h"
 #include "mount_attrs.h"
 #include "cleaner_exec.h"
@@ -78,7 +80,6 @@
 #endif	/* _GNU_SOURCE */
 
 /* options */
-int mount_quiet;	/* for sundries.c */
 static int verbose;
 static int force;
 static int suid;	/* reserved for non-root user mount/umount
@@ -115,7 +116,7 @@ static int nilfs_libmount_table_errcb(struct libmnt_table *tb,
 				      const char *filename, int line)
 {
 	if (filename)
-		error(_("%s: parse error: ignore entry at line %d."),
+		warnx(_("%s: parse error: ignore entry at line %d."),
 		      filename, line);
 	return 0;
 }
@@ -135,7 +136,7 @@ static void nilfs_umount_parse_options(int argc, char *argv[],
 
 	fs = mnt_context_get_fs(cxt);
 	if (!fs)
-		die(MNT_EX_SYSERR, _("failed to get fs"));
+		errx(MNT_EX_SYSERR, _("failed to get fs"));
 
 	while ((c = getopt(argc, argv, "flnvrV")) != EOF) {
 		switch (c) {
@@ -173,29 +174,28 @@ static void complain(int err, const char *node)
 {
 	switch (err) {
 	case ENXIO:
-		error(_("%s: %s: invalid block device"), progname, node);
+		warnx(_("%s: invalid block device"), node);
 		break;
 	case EINVAL:
-		error(_("%s: %s: not mounted"), progname, node);
+		warnx(_("%s: not mounted"), node);
 		break;
 	case EIO:
-		error(_("%s: %s: I/O error while unmounting"), progname, node);
+		warnx(_("%s: I/O error while unmounting"), node);
 		break;
 	case EBUSY:
-		error(_("%s: %s: target is busy"), progname, node);
+		warnx(_("%s: target is busy"), node);
 		break;
 	case ENOENT:
-		error(_("%s: %s: not found"), progname, node);
+		warnx(_("%s: not found"), node);
 		break;
 	case EPERM:
-		error(_("%s: %s: must be superuser to umount"), progname, node);
+		warnx(_("%s: must be superuser to umount"), node);
 		break;
 	case EACCES:
-		error(_("%s: %s: block devices not permitted on fs"), progname,
-		      node);
+		warnx(_("%s: block devices not permitted on fs"), node);
 		break;
 	default:
-		error(_("%s: %s: %s"), progname, node, strerror(err));
+		warnx(_("%s: %s"), node, strerror(err));
 		break;
 	}
 }
@@ -208,8 +208,7 @@ static int nilfs_prepare_umount(struct nilfs_umount_info *umi)
 
 	res = mnt_context_prepare_umount(cxt);
 	if (res < 0) {
-		error(_("%s: preparing failed: %s"), progname,
-		      strerror(-res));
+		warnx(_("preparation failed: %s"), strerror(-res));
 		goto failed;
 	}
 	/*
@@ -222,7 +221,7 @@ static int nilfs_prepare_umount(struct nilfs_umount_info *umi)
 	if (attrs) {
 		if (nilfs_mount_attrs_parse(&umi->old_attrs, attrs,
 					    NULL, NULL, 1))
-			die(MNT_EX_SYSERR, _("failed to parse attributes"));
+			errx(MNT_EX_SYSERR, _("failed to parse attributes"));
 	}
 	res = 0;
  failed:
@@ -263,8 +262,7 @@ static int nilfs_do_umount_one(struct nilfs_umount_info *umi)
 			nilfs_mount_attrs_update(&umi->old_attrs, &mattrs, cxt);
 			mnt_context_finalize_umount(cxt);
 		} else {
-			error(_("%s: failed to restart %s"),
-			      progname, NILFS_CLEANERD_NAME);
+			warnx(_("failed to restart %s"), NILFS_CLEANERD_NAME);
 		}
 	}
 	return res;
@@ -317,7 +315,7 @@ int main(int argc, char *argv[])
 	mnt_init_debug(0);
 	umi.cxt = mnt_new_context();
 	if (!umi.cxt)
-		die(MNT_EX_SYSERR, _("libmount context allocation failed"));
+		errx(MNT_EX_SYSERR, _("libmount context allocation failed"));
 
 	nilfs_umount_parse_options(argc, argv, &umi);
 
@@ -325,25 +323,24 @@ int main(int argc, char *argv[])
 	mnt_context_set_tables_errcb(umi.cxt, nilfs_libmount_table_errcb);
 #endif
 	if (mnt_context_set_fstype(umi.cxt, fstype))
-		die(MNT_EX_SYSERR,
-		    _("libmount FS description allocation failed"));
+		errx(MNT_EX_SYSERR,
+		     _("libmount FS description allocation failed"));
 	mnt_context_disable_helpers(umi.cxt, 1);
 
 	umask(022);
 
 	if (force)
-		error(_("Force option is ignored (only supported for NFS)"));
+		warnx(_("Force option is ignored (only supported for NFS)"));
 
 	if (getuid() != geteuid()) {
 		suid = 1;
 #if 0 /* XXX: normal user mount support */
 		if (mnt_context_is_nomtab(mi.cxt) ||
 		    mnt_context_is_rdonly_umount(mi.cxt))
-			die(MNT_EX_USAGE, _("only root can do that"));
+			errx(MNT_EX_USAGE, _("only root can do that"));
 #else
-		die(MNT_EX_USAGE,
-		    _("%s: umount by non-root user is not supported yet"),
-		    progname);
+		errx(MNT_EX_USAGE,
+		     _("umount by non-root user is not supported yet"));
 #endif
 	}
 
@@ -351,11 +348,11 @@ int main(int argc, char *argv[])
 	argv += optind;
 
 	if (argc < 1)
-		die(MNT_EX_USAGE, _("No mountpoint specified"));
+		errx(MNT_EX_USAGE, _("No mountpoint specified"));
 
 	for( ; argc; argc--, argv++) {
 		if (**argv == '\0') {
-			error(_("%s: cannot umount ''"), progname);
+			warnx(_("cannot umount ''"));
 			no_fail = 0;
 			continue;
 		}
@@ -364,8 +361,8 @@ int main(int argc, char *argv[])
 
 		if (mnt_context_set_source(umi.cxt, NULL) ||
 		    mnt_context_set_target(umi.cxt, *argv))
-			die(MNT_EX_SYSERR,
-			    _("Mount entry allocation failed"));
+			errx(MNT_EX_SYSERR,
+			     _("Mount entry allocation failed"));
 
 		if (nilfs_umount_one(&umi) == 0)
 			no_succ = 0;

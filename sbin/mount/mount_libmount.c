@@ -43,6 +43,14 @@
 #include <fcntl.h>
 #endif	/* HAVE_FCNTL_H */
 
+#if HAVE_LIMITS_H
+#include <limits.h>		/* ULONG_MAX */
+#endif	/* HAVE_LIMITS_H */
+
+#if HAVE_ERR_H
+#include <err.h>
+#endif	/* HAVE_ERR_H */
+
 #if HAVE_STRINGS_H
 #include <strings.h>
 #endif	/* HAVE_STRINGS_H */
@@ -74,8 +82,6 @@
 #include <assert.h>
 
 #include "libmount_compat.h"
-#include "sundries.h"
-#include "xmalloc.h"
 #include "mount.nilfs2.h"
 #include "mount_attrs.h"
 #include "cleaner_exec.h"
@@ -86,7 +92,6 @@
 #endif	/* _GNU_SOURCE */
 
 /* mount options */
-int mount_quiet;	/* for sundries.c */
 static int verbose;
 static int devro;
 
@@ -131,7 +136,7 @@ static int nilfs_libmount_table_errcb(struct libmnt_table *tb,
 				      const char *filename, int line)
 {
 	if (filename)
-		error(_("%s: parse error: ignore entry at line %d."),
+		warnx(_("%s: parse error: ignore entry at line %d."),
 		      filename, line);
 	return 0;
 }
@@ -168,7 +173,7 @@ static void nilfs_mount_parse_options(int argc, char *argv[],
 
 	fs = mnt_context_get_fs(cxt);
 	if (!fs)
-		die(MNT_EX_SYSERR, _("failed to get fs"));
+		errx(MNT_EX_SYSERR, _("failed to get fs"));
 
 	while ((c = getopt(argc, argv, "fvnt:o:rwV")) != EOF) {
 		switch (c) {
@@ -191,23 +196,23 @@ static void nilfs_mount_parse_options(int argc, char *argv[],
 
 			if (nilfs_mount_attrs_parse(&mi->new_attrs, optarg,
 						    NULL, &rest, 0))
-				die(MNT_EX_SYSERR,
-				    _("failed to parse options"));
+				errx(MNT_EX_SYSERR,
+				     _("failed to parse options"));
 			if (rest && mnt_context_append_options(cxt, rest))
-				die(MNT_EX_SYSERR,
-				    _("failed to append options"));
+				errx(MNT_EX_SYSERR,
+				     _("failed to append options"));
 			free(rest);
 			break;
 		}
 		case 'r':
 			if (mnt_context_append_options(cxt, "ro"))
-				die(MNT_EX_SYSERR,
-				    _("failed to append options"));
+				errx(MNT_EX_SYSERR,
+				     _("failed to append options"));
 			break;
 		case 'w':
 			if (mnt_context_append_options(cxt, "rw"))
-				die(MNT_EX_SYSERR,
-				    _("failed to append options"));
+				errx(MNT_EX_SYSERR,
+				     _("failed to append options"));
 			break;
 		case 'V':
 			show_version_only = 1;
@@ -253,7 +258,7 @@ static struct libmnt_fs *nilfs_find_mount(struct libmnt_context *cxt,
 	struct libmnt_fs *fs = NULL;
 
 	if (!iter)
-		die(MNT_EX_SYSERR, _("libmount iterator allocation failed"));
+		errx(MNT_EX_SYSERR, _("libmount iterator allocation failed"));
 
 	while (mnt_table_next_fs(mtab, iter, &fs) == 0) {
 		if (mnt_fs_match_fstype(fs, type) &&
@@ -291,8 +296,7 @@ static int nilfs_prepare_mount(struct nilfs_mount_info *mi)
 
 	res = mnt_context_prepare_mount(cxt);
 	if (res < 0) {
-		error(_("%s: preparing failed: %s"), progname,
-		      strerror(-res));
+		warnx(_("preparation failed: %s"), strerror(-res));
 		goto failed;
 	}
 	/*
@@ -302,8 +306,7 @@ static int nilfs_prepare_mount(struct nilfs_mount_info *mi)
 
 	res = mnt_context_get_mflags(cxt, &mi->mflags);
 	if (res < 0) {
-		error(_("%s: get mount flags failed: %s"), progname,
-		      strerror(-res));
+		warnx(_("get mount flags failed: %s"), strerror(-res));
 		goto failed;
 	}
 
@@ -311,17 +314,15 @@ static int nilfs_prepare_mount(struct nilfs_mount_info *mi)
 		res = device_is_readonly(mnt_context_get_source(cxt),
 					 &devro);
 		if (res < 0) {
-			error(_("%s: device %s not accessible: %s"),
-			      progname, mnt_context_get_source(cxt),
-			      strerror(-res));
+			warnx(_("device %s not accessible: %s"),
+			      mnt_context_get_source(cxt), strerror(-res));
 			goto failed;
 		}
 	}
 
 	res = mnt_context_get_mtab(cxt, &mtab);
 	if (res < 0) {
-		error(_("%s: libmount mount check failed: %s"),
-		      progname, strerror(-res));
+		warnx(_("libmount mount check failed: %s"), strerror(-res));
 		goto failed;
 	}
 
@@ -336,9 +337,9 @@ static int nilfs_prepare_mount(struct nilfs_mount_info *mi)
 
 	switch (mi->mflags & (MS_RDONLY | MS_REMOUNT)) {
 	case 0: /* overlapping rw-mount */
-		error(_("%s: the device already has a rw-mount on %s.\n"
+		warnx(_("the device already has a rw-mount on %s.\n"
 			"\t\tmultiple rw-mount is not allowed."),
-		      progname, mnt_fs_get_target(fs));
+		      mnt_fs_get_target(fs));
 		res = -EBUSY;
 		goto failed;
 	case MS_RDONLY: /* ro-mount (a rw-mount exists) */
@@ -353,16 +354,16 @@ static int nilfs_prepare_mount(struct nilfs_mount_info *mi)
 			res = nilfs_mount_attrs_parse(&mi->old_attrs, attrs,
 						      NULL, NULL, 1);
 			if (res < 0) {
-				error(_("%s: libmount mount check failed: %s"),
-				      progname, strerror(-res));
+				warnx(_("libmount mount check failed: %s"),
+				      strerror(-res));
 				goto failed;
 			}
 		}
 
 		if (!mnt_fs_match_target(fs, mnt_context_get_target(cxt),
 					 mnt_table_get_cache(mtab))) {
-			error(_("%s: different mount point (%s). remount failed."),
-			      progname, mnt_context_get_target(cxt));
+			warnx(_("different mount point (%s). remount failed."),
+			      mnt_context_get_target(cxt));
 			res = -EINVAL;
 			goto failed;
 		}
@@ -371,8 +372,8 @@ static int nilfs_prepare_mount(struct nilfs_mount_info *mi)
 			res = nilfs_shutdown_cleanerd(
 				mnt_fs_get_source(fs), mi->old_attrs.gcpid);
 			if (res < 0) {
-				error(_("%s: remount failed due to %s shutdown failure"),
-				      progname, NILFS_CLEANERD_NAME);
+				warnx(_("remount failed due to %s shutdown failure"),
+				      NILFS_CLEANERD_NAME);
 				goto failed;
 			}
 		}
@@ -403,11 +404,10 @@ static int nilfs_do_mount_one(struct nilfs_mount_info *mi)
 
 	switch (ec) {
 	case ENODEV:
-		error(_("%s: cannot find or load %s filesystem"), progname,
-		      fstype);
+		warnx(_("cannot find or load %s filesystem"), fstype);
 		break;
 	default:
-		error(_("%s: Error while mounting %s on %s: %s"), progname,
+		warnx(_("Error while mounting %s on %s: %s"),
 		      mnt_context_get_source(cxt),
 		      mnt_context_get_target(cxt), strerror(ec));
 		break;
@@ -431,8 +431,7 @@ static int nilfs_do_mount_one(struct nilfs_mount_info *mi)
 			nilfs_mount_attrs_update(&mi->old_attrs, &mattrs, cxt);
 			mnt_context_finalize_mount(cxt);
 		} else {
-			error(_("%s: failed to restart %s"),
-			      progname, NILFS_CLEANERD_NAME);
+			warnx(_("failed to restart %s"), NILFS_CLEANERD_NAME);
 		}
 	} else {
 		printf(_("%s not restarted\n"), NILFS_CLEANERD_NAME);
@@ -458,8 +457,7 @@ static int nilfs_mnt_context_complete_root(struct libmnt_context *cxt)
 
 	res = mnt_context_get_mtab(cxt, &mtab);
 	if (res < 0) {
-		error(_("%s: failed to get mtab: %s"), progname,
-		      strerror(-res));
+		warnx(_("failed to get mtab: %s"), strerror(-res));
 		goto failed;
 	}
 
@@ -468,8 +466,8 @@ static int nilfs_mnt_context_complete_root(struct libmnt_context *cxt)
 		res = mnt_fs_set_root(mnt_context_get_fs(cxt),
 				      mnt_fs_get_root(fs));
 		if (res < 0) {
-			error(_("%s: failed to copy root of the mount: %s"),
-			      progname, strerror(-res));
+			warnx(_("failed to copy root of the mount: %s"),
+			      strerror(-res));
 			goto failed;
 		}
 	}
@@ -508,7 +506,7 @@ static int nilfs_update_mount_state(struct nilfs_mount_info *mi)
 					  mnt_context_get_target(cxt),
 					  mi->new_attrs.pp,
 					  &mi->new_attrs.gcpid) < 0)
-			error(_("%s aborted"), NILFS_CLEANERD_NAME);
+			warnx(_("%s aborted"), NILFS_CLEANERD_NAME);
 		else if (mnt_context_is_verbose(cxt))
 			printf(_("%s: started %s\n"), progname,
 			       NILFS_CLEANERD_NAME);
@@ -558,14 +556,14 @@ int main(int argc, char *argv[])
 	mnt_init_debug(0);
 	mi.cxt = mnt_new_context();
 	if (!mi.cxt)
-		die(MNT_EX_SYSERR, _("libmount context allocation failed"));
+		errx(MNT_EX_SYSERR, _("libmount context allocation failed"));
 
 #if 0
 	mnt_context_set_tables_errcb(mi.cxt, nilfs_libmount_table_errcb);
 #endif
 	if (mnt_context_set_fstype(mi.cxt, fstype))
-		die(MNT_EX_SYSERR,
-		    _("libmount FS description allocation failed"));
+		errx(MNT_EX_SYSERR,
+		     _("libmount FS description allocation failed"));
 	mnt_context_disable_helpers(mi.cxt, 1);
 
 	nilfs_mount_attrs_init(&mi.old_attrs);
@@ -575,26 +573,26 @@ int main(int argc, char *argv[])
 	umask(022);
 
 	if (optind >= argc || !argv[optind])
-		die(MNT_EX_USAGE, _("No device specified"));
+		errx(MNT_EX_USAGE, _("No device specified"));
 
 	device = argv[optind++];
 
 	if (optind >= argc || !argv[optind])
-		die(MNT_EX_USAGE, _("No mountpoint specified"));
+		errx(MNT_EX_USAGE, _("No mountpoint specified"));
 
 	mntdir = argv[optind++];
 
 	if (mnt_context_set_source(mi.cxt, device) ||
 	    mnt_context_set_target(mi.cxt, mntdir))
-		die(MNT_EX_SYSERR, _("Mount entry allocation failed"));
+		errx(MNT_EX_SYSERR, _("Mount entry allocation failed"));
 
 	if (mount_fstype && strncmp(mount_fstype, fstype, strlen(fstype)))
-		die(MNT_EX_USAGE, _("Unknown filesystem (%s)"), mount_fstype);
+		errx(MNT_EX_USAGE, _("Unknown filesystem (%s)"),
+		     mount_fstype);
 
 	if (getuid() != geteuid())
-		die(MNT_EX_USAGE,
-		    _("%s: mount by non-root user is not supported yet"),
-		    progname);
+		errx(MNT_EX_USAGE,
+		     _("mount by non-root user is not supported yet"));
 
 	res = nilfs_mount_one(&mi);
 
