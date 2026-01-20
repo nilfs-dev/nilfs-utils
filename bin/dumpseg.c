@@ -275,7 +275,7 @@ int main(int argc, char *argv[])
 
 		switch (c) {
 		case 'h':
-			fprintf(stderr, DUMPSEG_USAGE, getprogname());
+			printf(DUMPSEG_USAGE, getprogname());
 			exit(EXIT_SUCCESS);
 		case 'V':
 			printf("%s (%s %s)\n", getprogname(), PACKAGE,

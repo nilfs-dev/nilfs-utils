@@ -210,9 +210,9 @@ static void nilfs_cleanerd_version(void)
 	printf("%s (%s %s)\n", getprogname(), PACKAGE, PACKAGE_VERSION);
 }
 
-static void nilfs_cleanerd_usage(void)
+static void nilfs_cleanerd_usage(FILE *stream)
 {
-	fprintf(stderr,
+	fprintf(stream,
 		"Usage: %s [option]... dev\n"
 		"%s options:\n"
 		NILFS_CLEANERD_OPTIONS,
@@ -1746,7 +1746,7 @@ int main(int argc, char *argv[])
 			conffile = optarg;
 			break;
 		case 'h':
-			nilfs_cleanerd_usage();
+			nilfs_cleanerd_usage(stdout);
 			exit(EXIT_SUCCESS);
 		case 'n':
 			/* ignore nofork option, do nothing */
@@ -1766,7 +1766,7 @@ int main(int argc, char *argv[])
 			nilfs_cleanerd_version();
 			exit(EXIT_SUCCESS);
 		default:
-			nilfs_cleanerd_usage();
+			nilfs_cleanerd_usage(stderr);
 			exit(EXIT_FAILURE);
 		}
 	}

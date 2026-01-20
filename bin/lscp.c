@@ -447,7 +447,7 @@ int main(int argc, char *argv[])
 			param_lines = (uint64_t)atoll(optarg);
 			break;
 		case 'h':
-			fprintf(stderr, LSCP_USAGE, getprogname());
+			printf(LSCP_USAGE, getprogname());
 			exit(EXIT_SUCCESS);
 		case 'V':
 			printf("%s (%s %s)\n", getprogname(), PACKAGE,

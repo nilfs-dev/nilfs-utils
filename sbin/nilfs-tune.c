@@ -85,9 +85,10 @@ struct nilfs_tune_options {
 	char *fs_features;
 };
 
-static void nilfs_tune_usage(void)
+static void nilfs_tune_usage(FILE *stream)
 {
-	printf("Usage: nilfs-tune -l device\n"
+	fprintf(stream,
+	       "Usage: nilfs-tune -l device\n"
 	       "       nilfs-tune [-f] [-i interval] [-m block_max] [-L volume_name]\n"
 	       "                  [-O [^]feature[,...]] [-U UUID] device\n"
 	       "       nilfs-tune [-h|-V]\n");
@@ -154,7 +155,7 @@ static void parse_options(int argc, char *argv[],
 			opts->force = 1;
 			break;
 		case 'h':
-			nilfs_tune_usage();
+			nilfs_tune_usage(stdout);
 			exit(EXIT_SUCCESS);
 			break;
 		case 'i':
@@ -189,7 +190,7 @@ static void parse_options(int argc, char *argv[],
 		case 'O':
 			if (opts->fs_features) {
 				warnx("-O may only be specified once");
-				nilfs_tune_usage();
+				nilfs_tune_usage(stderr);
 				exit(EXIT_FAILURE);
 			}
 			opts->fs_features = optarg;
@@ -207,13 +208,13 @@ static void parse_options(int argc, char *argv[],
 			exit(0);
 			break;
 		default:
-			nilfs_tune_usage();
+			nilfs_tune_usage(stderr);
 			exit(EXIT_FAILURE);
 		}
 	}
 
 	if (optind == argc) {
-		nilfs_tune_usage();
+		nilfs_tune_usage(stderr);
 		exit(EXIT_FAILURE);
 	}
 }
@@ -594,7 +595,7 @@ int main(int argc, char *argv[])
 	const char *device;
 
 	if (argc < 2) {
-		nilfs_tune_usage();
+		nilfs_tune_usage(stderr);
 		exit(EXIT_FAILURE);
 	}
 
@@ -603,7 +604,7 @@ int main(int argc, char *argv[])
 	device = argv[argc-1];
 
 	if (!device) {
-		nilfs_tune_usage();
+		nilfs_tune_usage(stderr);
 		exit(EXIT_FAILURE);
 	}
 

@@ -1646,10 +1646,11 @@ out:
 
 /**
  * nilfs_resize_usage - show command usage
+ * @stream: destination file stream
  */
-static void nilfs_resize_usage(void)
+static void nilfs_resize_usage(FILE *stream)
 {
-	fprintf(stderr, NILFS_RESIZE_USAGE, getprogname());
+	fprintf(stream, NILFS_RESIZE_USAGE, getprogname());
 }
 
 /**
@@ -1672,7 +1673,7 @@ static void nilfs_resize_parse_options(int argc, char *argv[])
 #endif	/* _GNU_SOURCE */
 		switch (c) {
 		case 'h':
-			nilfs_resize_usage();
+			nilfs_resize_usage(stdout);
 			exit(EXIT_SUCCESS);
 			break;
 		case 'v':
@@ -1685,7 +1686,7 @@ static void nilfs_resize_parse_options(int argc, char *argv[])
 			show_version_only = 1;
 			break;
 		default:
-			nilfs_resize_usage();
+			nilfs_resize_usage(stderr);
 			exit(EXIT_FAILURE);
 		}
 	}
@@ -1783,7 +1784,7 @@ int main(int argc, char *argv[])
 	}
 
 	if (optind == argc) {
-		nilfs_resize_usage();
+		nilfs_resize_usage(stderr);
 		status = EXIT_FAILURE;
 		goto out;
 	}

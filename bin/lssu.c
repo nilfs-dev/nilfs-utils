@@ -316,7 +316,7 @@ int main(int argc, char *argv[])
 			param_lines = (uint64_t)atoll(optarg);
 			break;
 		case 'h':
-			fprintf(stderr, LSSU_USAGE, getprogname());
+			printf(LSSU_USAGE, getprogname());
 			exit(EXIT_SUCCESS);
 		case 'p':
 			ret = nilfs_parse_protection_period(

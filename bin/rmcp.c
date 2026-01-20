@@ -161,7 +161,7 @@ int main(int argc, char *argv[])
 			interactive = 1;
 			break;
 		case 'h':
-			fprintf(stderr, RMCP_USAGE, getprogname());
+			printf(RMCP_USAGE, getprogname());
 			exit(EXIT_SUCCESS);
 		case 'V':
 			printf("%s (%s %s)\n", getprogname(), PACKAGE,

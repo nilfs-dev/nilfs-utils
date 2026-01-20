@@ -98,7 +98,7 @@ int main(int argc, char *argv[])
 			print = 1;
 			break;
 		case 'h':
-			fprintf(stderr, MKCP_USAGE, getprogname());
+			printf(MKCP_USAGE, getprogname());
 			exit(EXIT_SUCCESS);
 		case 'V':
 			printf("%s (%s %s)\n", getprogname(), PACKAGE,

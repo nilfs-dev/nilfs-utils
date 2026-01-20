@@ -265,7 +265,7 @@ static inline struct nilfs_segment_ref *get_last_segment(void)
 
 
 /* Print routines */
-static void usage(void);
+static void usage(FILE *stream);
 static void show_version(void);
 static void pinfo(const char *, ...);
 static void perr(const char *, ...);
@@ -1054,7 +1054,7 @@ static void parse_options(int argc, char *argv[])
 			force_overwrite = 1;
 			break;
 		case 'h':
-			usage();
+			usage(stdout);
 			exit(EXIT_SUCCESS);
 		case 'K':
 			discard = 0;
@@ -1096,7 +1096,7 @@ static void parse_options(int argc, char *argv[])
 			show_version_only = 1;
 			break;
 		default:
-			usage();
+			usage(stderr);
 			exit(EXIT_FAILURE);
 		}
 	}
@@ -1105,7 +1105,7 @@ static void parse_options(int argc, char *argv[])
 		verbose = 0;
 
 	if ((optind == argc) && !show_version_only) {
-		usage();
+		usage(stderr);
 		exit(EXIT_FAILURE);
 	}
 
@@ -1124,9 +1124,9 @@ static void parse_options(int argc, char *argv[])
 /*
  * Print routines
  */
-static void usage(void)
+static void usage(FILE *stream)
 {
-	fprintf(stderr,
+	fprintf(stream,
 		"Usage: %s [-b block-size] [-B blocks-per-segment] [-c] [-f]\n"
 		"       [-L volume-label] [-m reserved-segments-percentage]\n"
 		"       [-O feature[,...]]\n"

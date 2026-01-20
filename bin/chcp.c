@@ -96,7 +96,7 @@ int main(int argc, char *argv[])
 
 		switch (c) {
 		case 'h':
-			fprintf(stderr, CHCP_USAGE, getprogname());
+			printf(CHCP_USAGE, getprogname());
 			exit(EXIT_SUCCESS);
 		case 'V':
 			printf("%s (%s %s)\n", getprogname(), PACKAGE,

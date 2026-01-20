@@ -414,9 +414,9 @@ out:
 	return status;
 }
 
-static void nilfs_clean_usage(void)
+static void nilfs_clean_usage(FILE *stream)
 {
-	fprintf(stderr, NILFS_CLEAN_USAGE, getprogname());
+	fprintf(stream, NILFS_CLEAN_USAGE, getprogname());
 }
 
 static int nilfs_clean_parse_gcspeed(const char *arg)
@@ -523,7 +523,7 @@ static void nilfs_clean_parse_options(int argc, char *argv[])
 			clean_cmd = NILFS_CLEAN_CMD_RELOAD;
 			break;
 		case 'h':
-			nilfs_clean_usage();
+			nilfs_clean_usage(stdout);
 			exit(EXIT_SUCCESS);
 			break;
 		case 'l':
@@ -566,7 +566,7 @@ static void nilfs_clean_parse_options(int argc, char *argv[])
 			show_version_only = 1;
 			break;
 		default:
-			nilfs_clean_usage();
+			nilfs_clean_usage(stderr);
 			exit(EXIT_FAILURE);
 		}
 	}
