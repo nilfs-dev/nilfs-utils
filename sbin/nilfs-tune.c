@@ -595,7 +595,7 @@ int main(int argc, char *argv[])
 
 	if (argc < 2) {
 		nilfs_tune_usage();
-		exit(EXIT_SUCCESS);
+		exit(EXIT_FAILURE);
 	}
 
 	parse_options(argc, argv, &opts);
