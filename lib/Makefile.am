@@ -27,7 +27,7 @@ libnilfs_REVISION = 0
 libnilfs_AGE = 0
 libnilfs_VERSIONINFO = $(libnilfs_CURRENT):$(libnilfs_REVISION):$(libnilfs_AGE)
 
-libnilfs_la_SOURCES = nilfs.c sb.c
+libnilfs_la_SOURCES = nilfs.c sb.c lookup_device.c
 libnilfs_la_LDFLAGS = -version-info $(libnilfs_VERSIONINFO)
 libnilfs_la_LIBADD = librealpath.la libcrc32.la $(LIB_POSIX_SEM)
 

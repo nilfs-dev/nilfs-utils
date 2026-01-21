@@ -76,6 +76,7 @@ struct nilfs_layout {
 #define NILFS_OPEN_WRONLY	0x0004	/* Open NILFS API in write only mode */
 #define NILFS_OPEN_RDWR		0x0008	/* Open NILFS API in read/write mode */
 #define NILFS_OPEN_GCLK		0x1000	/* Open GC lock primitive */
+#define NILFS_OPEN_SRCHDEV	0x2000	/* Search device bound to the node */
 
 
 struct nilfs *nilfs_open(const char *dev, const char *dir, int flags);

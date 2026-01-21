@@ -82,6 +82,7 @@
 #include "util.h"
 #include "pathnames.h"
 #include "realpath.h"
+#include "lookup_device.h"	/* nilfs_lookup_device() */
 
 /**
  * struct nilfs - nilfs object
@@ -408,6 +409,7 @@ static int nilfs_open_sem(struct nilfs *nilfs)
 struct nilfs *nilfs_open(const char *dev, const char *dir, int flags)
 {
 	struct nilfs *nilfs;
+	char *backdev;
 	uint64_t features;
 	int ret;
 
@@ -429,6 +431,15 @@ struct nilfs *nilfs_open(const char *dev, const char *dir, int flags)
 	nilfs->n_opts = 0;
 	nilfs->n_mincno = NILFS_CNO_MIN;
 	memset(nilfs->n_sems, 0, sizeof(nilfs->n_sems));
+	backdev = NULL;
+
+	if ((flags & NILFS_OPEN_SRCHDEV) && dev) {
+		ret = nilfs_lookup_device(dev, &backdev);
+		if (unlikely(ret < 0))
+			goto out_fd;
+		else if (ret > 0)
+			dev = backdev;  /* replace dev in this function */
+	}
 
 	if (flags & NILFS_OPEN_RAW) {
 		if (dev == NULL) {
@@ -499,6 +510,7 @@ struct nilfs *nilfs_open(const char *dev, const char *dir, int flags)
 	}
 
 	/* success */
+	free(backdev);
 	return nilfs;
 
 	/* error */
@@ -508,6 +520,7 @@ out_fd:
 	if (nilfs->n_iocfd >= 0)
 		close(nilfs->n_iocfd);
 
+	free(backdev);
 	free(nilfs->n_dev);
 	free(nilfs->n_ioc);
 	free(nilfs->n_sb);
