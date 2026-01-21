@@ -1,3 +1,15 @@
+nilfs-utils-2.2.15  Wed Jan 21, 2026 JST
+
+	* Fix a regression introduced in nilfs-utils-2.2.12:
+	  - chcp: fix inverted logic in argument parsing
+	* Backport miscellaneous fixes:
+	  - libparser: reject negative values in
+	    nilfs_parse_protection_period()
+	  - mkfs.nilfs2: remove stray debug print
+	* Backport manual page updates:
+	  - man: fix typos, grammatical errors and style
+	  - man: update examples in nilfs.8
+
 nilfs-utils-2.2.14  Sat Jan 17, 2026 JST
 
 	* Fix various error handling issues in libmount-based mount/umount
