@@ -47,7 +47,7 @@ libnilfsgc_static_la_SOURCES = $(libnilfsgc_la_SOURCES)
 libnilfsgc_static_la_LIBADD = libsegment.la $(LIB_POSIX_TIMER) \
 	libnilfs_static.la
 
-libcleaner_la_SOURCES = cleaner_ctl.c
+libcleaner_la_SOURCES = cleaner_ctl.c lookup_device.c
 libcleaner_la_CFLAGS = $(AM_CFLAGS) $(UUID_CFLAGS)
 libcleaner_la_LIBADD = librealpath.la libcleanerexec.la $(LIB_POSIX_MQ) \
 	$(UUID_LIBS) $(LIB_POSIX_TIMER)

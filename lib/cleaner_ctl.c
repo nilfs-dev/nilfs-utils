@@ -83,6 +83,7 @@
 #include "pathnames.h"
 #include "realpath.h"
 #include "util.h"
+#include "lookup_device.h"	/* nilfs_lookup_device() */
 
 struct nilfs_cleaner {
 	pid_t cleanerd_pid;
@@ -378,6 +379,7 @@ struct nilfs_cleaner *nilfs_cleaner_launch(const char *device,
 					   unsigned long protperiod)
 {
 	struct nilfs_cleaner *cleaner;
+	char *backdev = NULL;
 	int ret;
 
 	cleaner = malloc(sizeof(*cleaner));
@@ -386,6 +388,12 @@ struct nilfs_cleaner *nilfs_cleaner_launch(const char *device,
 	memset(cleaner, 0, sizeof(*cleaner));
 	cleaner->sendq = -1;
 	cleaner->recvq = -1;
+
+	ret = nilfs_lookup_device(device, &backdev);
+	if (unlikely(ret < 0))
+		goto error;
+	else if (ret > 0)
+		device = backdev;  /* replace device in this function */
 
 	cleaner->device = strdup(device);
 	cleaner->mountdir = strdup(mntdir);
@@ -401,11 +409,14 @@ struct nilfs_cleaner *nilfs_cleaner_launch(const char *device,
 	if (unlikely(ret < 0))
 		goto abort;
 
+	free(backdev);
 	return cleaner; /* cleanerd started */
 
 error:
 	nilfs_cleaner_logger(LOG_ERR,  _("Error: %s"), strerror(errno));
 abort:
+	free(backdev);
+
 	if (cleaner) {
 		free(cleaner->device); /* free(NULL) is just ignored */
 		free(cleaner->mountdir);
@@ -418,6 +429,7 @@ struct nilfs_cleaner *nilfs_cleaner_open(const char *device,
 					 const char *mntdir, int oflag)
 {
 	struct nilfs_cleaner *cleaner;
+	char *backdev = NULL;
 	int ret;
 
 	cleaner = malloc(sizeof(*cleaner));
@@ -426,6 +438,12 @@ struct nilfs_cleaner *nilfs_cleaner_open(const char *device,
 	memset(cleaner, 0, sizeof(*cleaner));
 	cleaner->sendq = -1;
 	cleaner->recvq = -1;
+
+	ret = nilfs_lookup_device(device, &backdev);
+	if (unlikely(ret < 0))
+		goto error;
+	else if (ret > 0)
+		device = backdev;  /* replace device in this function */
 
 	ret = nilfs_cleaner_find_fs(cleaner, device, mntdir);
 	if (unlikely(ret < 0))
@@ -445,11 +463,14 @@ struct nilfs_cleaner *nilfs_cleaner_open(const char *device,
 	    nilfs_cleaner_open_queue(cleaner) < 0)
 		goto abort;
 
+	free(backdev);
 	return cleaner;
 
 error:
 	nilfs_cleaner_logger(LOG_ERR,  _("Error: %s"), strerror(errno));
 abort:
+	free(backdev);
+
 	if (cleaner) {
 		free(cleaner->device); /* free(NULL) is just ignored */
 		free(cleaner->mountdir);

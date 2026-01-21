@@ -93,7 +93,7 @@ static const struct option long_option[] = {
 	{NULL, 0, NULL, 0}
 };
 #define NILFS_CLEAN_USAGE						\
-	"Usage: %s [options] [device]\n"				\
+	"Usage: %s [options] [device|node]\n"				\
 	"  -b, --break,--stop\tstop running cleaner\n"			\
 	"  -c, --reload[=CONFFILE]\n"					\
 	"            \t\treload config\n"				\
@@ -115,7 +115,7 @@ static const struct option long_option[] = {
 #define NILFS_CLEAN_USAGE						  \
 	"Usage: %s [-b] [-c [conffile]] [-h] [-l] [-m blocks]\n"	  \
 	"          [-p protection-period] [-q] [-r] [-s] [-S gc-speed]\n" \
-	"          [-v] [-V] [device]\n"
+	"          [-v] [-V] [device|node]\n"
 #endif	/* _GNU_SOURCE */
 
 
@@ -593,9 +593,6 @@ int main(int argc, char *argv[])
 
 		if (stat(device, &statbuf) < 0)
 			err(EXIT_FAILURE, _("cannot find '%s'"), device);
-		else if (!S_ISBLK(statbuf.st_mode))
-			errx(EXIT_FAILURE,
-			     _("device must be a block device."));
 	}
 	if (optind < argc)
 		errx(EXIT_FAILURE, _("too many arguments."));
