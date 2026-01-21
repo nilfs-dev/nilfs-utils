@@ -67,11 +67,11 @@ ordinary POSIX file system.  This will invoke a cleaner process
 lists checkpoints created in the file system as follows:
 .PP
         CNO        DATE     TIME  MODE  FLG      BLKCNT       ICNT
-          1  2014-01-18 20:49:54   cp    -            4          2
-          2  2014-01-18 20:51:45   cp    -         3990         11
-          3  2014-01-18 20:51:45   cp    -         6058          3
-          4  2014-01-18 20:51:49   cp    -         4807          6
-          5  2014-01-18 20:51:49   cp    -          262          3
+          1  2024-03-16 23:49:26   cp    -            4          1
+          2  2024-03-16 23:49:44   cp    -            4          1
+          3  2024-03-16 23:50:55   cp    -         3208        625
+          4  2024-03-16 23:51:18   cp    -         2207        506
+          5  2024-03-16 23:51:23   cp    -         2204        503
         ...
 .TP
 .B chcp ss \fP2
@@ -79,11 +79,11 @@ changes the checkpoint whose \fIcheckpoint-number\fP is two to a snapshot.
 Then the checkpoint list will become as follows:
 .PP
         CNO        DATE     TIME  MODE  FLG      BLKCNT       ICNT
-          1  2014-01-18 20:49:54   cp    -            4          2
-          2  2014-01-18 20:51:45   ss    -         3990         11
-          3  2014-01-18 20:51:45   cp    -         6058          3
-          4  2014-01-18 20:51:49   cp    -         4807          6
-          5  2014-01-18 20:51:49   cp    -          262          3
+          1  2024-03-16 23:49:26   cp    -            4          1
+          2  2024-03-16 23:49:44   ss    -            4          1
+          3  2024-03-16 23:50:55   cp    -         3208        625
+          4  2024-03-16 23:51:18   cp    -         2207        506
+          5  2024-03-16 23:51:23   cp    -         2204        503
         ...
 .TP
 .B mount \-t nilfs2 \-r \-o cp=2 \fP/dev/sdb1 /snapshot
@@ -95,8 +95,8 @@ one or more snapshots are mountable independently, so the online
 backup is possible through the snapshot mounts.
 .PP
         # mount \-t nilfs2
-        /dev/sdb1 on /nilfs type nilfs2 (rw,gcpid=13296)
-        /dev/sdb1 on /snapshot type nilfs2 (ro,cp=2)
+        /dev/sdb1 on /nilfs type nilfs2 (rw,relatime)
+        /dev/sdb1 on /snapshot type nilfs2 (ro,relatime,cp=2)
 .TP
 .B umount \fP/nilfs
 unmounts the NILFS2 file system mounted on `/nilfs' and will shut down
