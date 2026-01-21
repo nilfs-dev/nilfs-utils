@@ -14,7 +14,7 @@ or destroyed a while ago.
 .PP
 The current major version of NILFS is version 2, which is referred to
 as NILFS2.  NILFS2 is equipped with an online garbage collector (also
-called cleaner) that reclaims disk space in the background with
+called cleaner) that reclaims disk space in the background while
 keeping multiple snapshots.
 .PP
 When data is written or any change is made to a NILFS2 file system, it
@@ -99,12 +99,12 @@ backup is possible through the snapshot mounts.
         /dev/sdb1 on /snapshot type nilfs2 (ro,cp=2)
 .TP
 .B umount \fP/nilfs
-unmounts the NILFS2 file system mounted on `/nilfs' and will shutdown
+unmounts the NILFS2 file system mounted on `/nilfs' and will shut down
 the \fBnilfs_cleanerd\fP(8) through an external umount program
 (\fBumount.nilfs2\fP(8)) for the read/write mount.
 .SH AUTHORS
 .B NILFS2
-was developed by NILFS development team.
+was developed by the NILFS development team.
 .SH SEE ALSO
 .BR mkfs.nilfs2 (8),
 .BR mount.nilfs2 (8),
