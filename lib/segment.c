@@ -49,6 +49,17 @@ static const char *nilfs_file_error_strings[] = {
 };
 
 /* nilfs_psegment */
+
+/**
+ * nilfs_psegment_is_valid() - check validity of a partial segment
+ * @pseg: partial segment iterator to be checked
+ *
+ * Checks the magic number, checksum, and size consistency of the segment
+ * summary associated with @pseg.  If invalid, the error code is set in
+ * @pseg->error.
+ *
+ * Return: %1 if valid, %0 if invalid.
+ */
 static int nilfs_psegment_is_valid(struct nilfs_psegment *pseg)
 {
 	uint32_t sumbytes, offset, sumblks, nblocks;
@@ -105,6 +116,16 @@ error:
 	return 0;
 }
 
+/**
+ * nilfs_psegment_init() - initialize partial segment iterator
+ * @pseg:    partial segment iterator to be initialized
+ * @segment: segment object
+ * @blkcnt:  number of valid blocks in the buffer
+ *
+ * Initializes @pseg to point to the first partial segment within the
+ * given @segment.  @blkcnt limits the range of the segment buffer to be
+ * checked.
+ */
 void nilfs_psegment_init(struct nilfs_psegment *pseg,
 			 const struct nilfs_segment *segment, uint32_t blkcnt)
 {
@@ -116,12 +137,26 @@ void nilfs_psegment_init(struct nilfs_psegment *pseg,
 	pseg->error = NILFS_PSEGMENT_SUCCESS;
 }
 
+/**
+ * nilfs_psegment_is_end() - check if partial segment iteration has finished
+ * @pseg: partial segment iterator
+ *
+ * Return: %true if the iterator has reached the end or encountered an
+ * error.  %false if iteration can continue.
+ */
 int nilfs_psegment_is_end(struct nilfs_psegment *pseg)
 {
 	return pseg->blkcnt < NILFS_PSEG_MIN_BLOCKS ||
 		!nilfs_psegment_is_valid(pseg);
 }
 
+/**
+ * nilfs_psegment_next() - move to the next partial segment
+ * @pseg: partial segment iterator
+ *
+ * Advances the iterator to the next partial segment within the current
+ * full segment.  Updates block counts and pointers accordingly.
+ */
 void nilfs_psegment_next(struct nilfs_psegment *pseg)
 {
 	uint32_t nblocks = le32_to_cpu(pseg->segsum->ss_nblocks);
@@ -132,6 +167,12 @@ void nilfs_psegment_next(struct nilfs_psegment *pseg)
 	pseg->blocknr += nblocks;
 }
 
+/**
+ * nilfs_psegment_strerror() - get error message for partial segment error
+ * @errnum: error code (NILFS_PSEGMENT_ERROR_*)
+ *
+ * Return: Pointer to the error message string.
+ */
 const char *nilfs_psegment_strerror(int errnum)
 {
 	if (errnum < 0 || errnum >= ARRAY_SIZE(nilfs_psegment_error_strings))
@@ -141,11 +182,30 @@ const char *nilfs_psegment_strerror(int errnum)
 }
 
 /* nilfs_file */
+
+/**
+ * nilfs_finfo_use_real_blocknr() - check if real block numbers are used
+ * @finfo: file information structure
+ *
+ * Determines if the file associated with @finfo uses real block numbers
+ * (i.e., it is the DAT file) or virtual block numbers.
+ *
+ * Return: %true if real block numbers are used, %false otherwise.
+ */
 static int nilfs_finfo_use_real_blocknr(const struct nilfs_finfo *finfo)
 {
 	return le64_to_cpu(finfo->fi_ino) == NILFS_DAT_INO;
 }
 
+/**
+ * nilfs_file_adjust_finfo_position() - adjust finfo position for block
+ *                                      boundary
+ * @file:    file iterator
+ * @blksize: block size in bytes
+ *
+ * Adjusts the finfo pointer and offset in @file if the current position
+ * crosses a block boundary, skipping any padding.
+ */
 static void nilfs_file_adjust_finfo_position(struct nilfs_file *file,
 					     uint32_t blksize)
 {
@@ -157,6 +217,18 @@ static void nilfs_file_adjust_finfo_position(struct nilfs_file *file,
 	}
 }
 
+/**
+ * nilfs_binfo_total_size() - calculate total size of block information array
+ * @offset:    current byte offset
+ * @blksize:   block size in bytes
+ * @binfosize: size of a single block information item
+ * @blkcnt:    number of blocks
+ *
+ * Calculates the total size in bytes required for a binfo array of
+ * @blkcnt items, accounting for block boundary padding.
+ *
+ * Return: Total size in bytes.
+ */
 static size_t nilfs_binfo_total_size(size_t offset, uint32_t blksize,
 				     unsigned int binfosize, uint32_t blkcnt)
 {
@@ -172,6 +244,16 @@ static size_t nilfs_binfo_total_size(size_t offset, uint32_t blksize,
 		(blkcnt % binfo_per_block) * binfosize;
 }
 
+/**
+ * nilfs_file_info_size() - calculate size of current file information block
+ * @file: file iterator
+ *
+ * Calculates the total size of the current finfo structure and its
+ * associated binfo array, including any necessary padding for block
+ * boundaries.
+ *
+ * Return: Size in bytes.
+ */
 static size_t nilfs_file_info_size(struct nilfs_file *file)
 {
 	const uint32_t blksize = 1UL << file->psegment->blkbits;
@@ -197,6 +279,15 @@ static size_t nilfs_file_info_size(struct nilfs_file *file)
 	return delta;
 }
 
+/**
+ * nilfs_file_init_from_finfo() - initialize file iterator from finfo
+ * @file: file iterator
+ *
+ * Initializes internal members of @file (@use_real_blocknr and @sumlen)
+ * based on the current file information pointed to by @file->finfo.
+ * Also performs a basic bounds check to ensure the finfo structure fits
+ * in the remaining summary buffer.
+ */
 static void nilfs_file_init_from_finfo(struct nilfs_file *file)
 {
 	if (file->offset + sizeof(struct nilfs_finfo) > file->sumbytes) {
@@ -212,6 +303,14 @@ static void nilfs_file_init_from_finfo(struct nilfs_file *file)
 	file->sumlen = nilfs_file_info_size(file);
 }
 
+/**
+ * nilfs_file_init() - initialize file iterator
+ * @file: file iterator to be initialized
+ * @pseg: parent partial segment iterator
+ *
+ * Initializes @file to point to the first file information entry within
+ * the partial segment @pseg.
+ */
 void nilfs_file_init(struct nilfs_file *file,
 		     const struct nilfs_psegment *pseg)
 {
@@ -235,6 +334,16 @@ void nilfs_file_init(struct nilfs_file *file,
 	file->error = NILFS_FILE_SUCCESS;
 }
 
+/**
+ * nilfs_file_is_valid() - check validity of file information
+ * @file: file iterator to be checked
+ *
+ * Performs sanity checks on the file information, such as verifying that
+ * sizes do not overrun the summary block and that block counts are
+ * consistent.  If invalid, the error code is set in @file->error.
+ *
+ * Return: %1 if valid, %0 if invalid.
+ */
 static int nilfs_file_is_valid(struct nilfs_file *file)
 {
 	const struct nilfs_psegment *pseg = file->psegment;
@@ -269,11 +378,25 @@ error:
 	return 0;
 }
 
+/**
+ * nilfs_file_is_end() - check if file iteration has finished
+ * @file: file iterator
+ *
+ * Return: %true if the iterator has reached the end or encountered an
+ * error.  %false if iteration can continue.
+ */
 int nilfs_file_is_end(struct nilfs_file *file)
 {
 	return file->index >= file->nfinfo || !nilfs_file_is_valid(file);
 }
 
+/**
+ * nilfs_file_next() - move to the next file
+ * @file: file iterator
+ *
+ * Advances the iterator to the next file information entry within the
+ * current partial segment.
+ */
 void nilfs_file_next(struct nilfs_file *file)
 {
 	const uint32_t blksize = 1UL << file->psegment->blkbits;
@@ -288,6 +411,12 @@ void nilfs_file_next(struct nilfs_file *file)
 	file->index++;
 }
 
+/**
+ * nilfs_file_strerror() - get error message for file error
+ * @errnum: error code (NILFS_FILE_ERROR_*)
+ *
+ * Return: Pointer to the error message string.
+ */
 const char *nilfs_file_strerror(int errnum)
 {
 	if (errnum < 0 || errnum >= ARRAY_SIZE(nilfs_file_error_strings))
@@ -297,6 +426,16 @@ const char *nilfs_file_strerror(int errnum)
 }
 
 /* nilfs_block */
+
+/**
+ * nilfs_block_adjust_binfo_position() - adjust binfo position for block
+ *                                       boundary
+ * @blk:     block iterator
+ * @blksize: block size in bytes
+ *
+ * Adjusts the binfo pointer and offset in @blk if the current position
+ * crosses a block boundary, skipping any padding.
+ */
 static void nilfs_block_adjust_binfo_position(struct nilfs_block *blk,
 					      uint32_t blksize)
 {
@@ -311,6 +450,14 @@ static void nilfs_block_adjust_binfo_position(struct nilfs_block *blk,
 	}
 }
 
+/**
+ * nilfs_block_init() - initialize block iterator
+ * @blk:  block iterator to be initialized
+ * @file: parent file iterator
+ *
+ * Initializes @blk to point to the first block information entry associated
+ * with @file.
+ */
 void nilfs_block_init(struct nilfs_block *blk, const struct nilfs_file *file)
 {
 	const uint32_t blksize = 1UL << file->psegment->blkbits;
@@ -334,11 +481,25 @@ void nilfs_block_init(struct nilfs_block *blk, const struct nilfs_file *file)
 	nilfs_block_adjust_binfo_position(blk, blksize);
 }
 
+/**
+ * nilfs_block_is_end() - check if block iteration has finished
+ * @blk: block iterator
+ *
+ * Return: %true if all block information entries for the current file
+ * have been processed.  %false otherwise.
+ */
 int nilfs_block_is_end(const struct nilfs_block *blk)
 {
 	return blk->index >= blk->nbinfo;
 }
 
+/**
+ * nilfs_block_next() - move to the next block information
+ * @blk: block iterator
+ *
+ * Advances the iterator to the next block information entry.  Adjusts for
+ * block boundaries if necessary.
+ */
 void nilfs_block_next(struct nilfs_block *blk)
 {
 	const uint32_t blksize = 1UL << blk->file->psegment->blkbits;
