@@ -69,13 +69,13 @@ static const struct option long_options[] = {
 	{NULL, 0, NULL, 0}
 };
 #define RMCP_USAGE							\
-	"Usage: %s [OPTION]... [DEVICE] CNO...\n"			\
+	"Usage: %s [OPTION]... [DEVICE|NODE] CNO...\n"			\
 	"  -f, --force\t\tignore snapshots or nonexistent checkpoints\n" \
 	"  -i, --interactive\tprompt before any removal\n"		\
 	"  -h, --help\t\tdisplay this help and exit\n"			\
 	"  -V, --version\t\tdisplay version and exit\n"
 #else	/* !_GNU_SOURCE */
-#define RMCP_USAGE	"Usage: %s [-fihV] [device] cno...\n"
+#define RMCP_USAGE	"Usage: %s [-fihV] [device|node] cno...\n"
 #endif	/* _GNU_SOURCE */
 
 #define CHCP_PROMPT							\
@@ -184,7 +184,7 @@ int main(int argc, char *argv[])
 			dev = NULL;
 	}
 
-	nilfs = nilfs_open(dev, NULL, NILFS_OPEN_RDWR);
+	nilfs = nilfs_open(dev, NULL, NILFS_OPEN_RDWR | NILFS_OPEN_SRCHDEV);
 	if (nilfs == NULL)
 		err(EXIT_FAILURE, "cannot open NILFS on %s", dev ? : "device");
 

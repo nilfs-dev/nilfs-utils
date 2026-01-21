@@ -59,13 +59,13 @@ static const struct option long_option[] = {
 	{NULL, 0, NULL, 0}
 };
 
-#define MKCP_USAGE	"Usage: %s [OPTION] [DEVICE]\n"			\
+#define MKCP_USAGE	"Usage: %s [OPTION] [DEVICE|NODE]\n"		\
 			"  -s, --snapshot\tcreate a snapshot\n"		\
 			"  -p, --print\tprint the created CP number\n"	\
 			"  -h, --help\t\tdisplay this help and exit\n"	\
 			"  -V, --version\t\tdisplay version and exit\n"
 #else	/* !_GNU_SOURCE */
-#define MKCP_USAGE	"Usage: %s [-sphV] [device]\n"
+#define MKCP_USAGE	"Usage: %s [-sphV] [device|node]\n"
 #endif	/* _GNU_SOURCE */
 
 
@@ -116,7 +116,8 @@ int main(int argc, char *argv[])
 	else
 		dev = argv[optind];
 
-	nilfs = nilfs_open(dev, NULL, NILFS_OPEN_RDWR | NILFS_OPEN_GCLK);
+	nilfs = nilfs_open(dev, NULL, (NILFS_OPEN_RDWR | NILFS_OPEN_GCLK |
+				       NILFS_OPEN_SRCHDEV));
 	if (nilfs == NULL)
 		err(EXIT_FAILURE, "cannot open NILFS on %s", dev ? : "device");
 

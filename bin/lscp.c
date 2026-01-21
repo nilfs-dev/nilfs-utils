@@ -66,7 +66,7 @@ static const struct option long_option[] = {
 	{"version", no_argument, NULL, 'V'},
 	{NULL, 0, NULL, 0}
 };
-#define LSCP_USAGE	"Usage: %s [OPTION]... [DEVICE]\n"		\
+#define LSCP_USAGE	"Usage: %s [OPTION]... [DEVICE|NODE]\n"		\
 			"  -a, --all\t\tshow all checkpoints\n"		\
 			"  -b, --show-block-count\t\tshow block count\n"\
 			"  -g, --show-increment\t\tshow increment count\n"\
@@ -77,7 +77,8 @@ static const struct option long_option[] = {
 			"  -h, --help\t\tdisplay this help and exit\n"	\
 			"  -V, --version\t\tdisplay version and exit\n"
 #else
-#define LSCP_USAGE	"Usage: %s [-bgrshV] [-i cno] [-n lines] [device]\n"
+#define LSCP_USAGE	"Usage: %s [-bgrshV] [-i cno] [-n lines] "	\
+			"[device|node]\n"
 #endif	/* _GNU_SOURCE */
 
 #define LSCP_BUFSIZE	128
@@ -465,7 +466,7 @@ int main(int argc, char *argv[])
 	else
 		dev = NULL;
 
-	nilfs = nilfs_open(dev, NULL, NILFS_OPEN_RDONLY);
+	nilfs = nilfs_open(dev, NULL, NILFS_OPEN_RDONLY | NILFS_OPEN_SRCHDEV);
 	if (nilfs == NULL)
 		err(EXIT_FAILURE, "cannot open NILFS on %s", dev ? : "device");
 

@@ -67,12 +67,12 @@ static const struct option long_option[] = {
 };
 
 #define CHCP_USAGE	\
-	"Usage: %s [OPTION]... " CHCP_MODE_CP "|" CHCP_MODE_SS" [DEVICE] CNO...\n"	\
+	"Usage: %s [OPTION]... " CHCP_MODE_CP "|" CHCP_MODE_SS" [DEVICE|NODE] CNO...\n"	\
 	"  -h, --help\t\tdisplay this help and exit\n"			\
 	"  -V, --version\t\tdisplay version and exit\n"
 #else	/* !_GNU_SOURCE */
 #define CHCP_USAGE	\
-	"Usage: %s [option]... " CHCP_MODE_CP "|" CHCP_MODE_SS " [device] cno...\n"
+	"Usage: %s [option]... " CHCP_MODE_CP "|" CHCP_MODE_SS " [device|node] cno...\n"
 #endif	/* _GNU_SOURCE */
 
 
@@ -128,7 +128,8 @@ int main(int argc, char *argv[])
 	else
 		errx(EXIT_FAILURE, "%s: invalid checkpoint mode", modestr);
 
-	nilfs = nilfs_open(dev, NULL, NILFS_OPEN_RDWR | NILFS_OPEN_GCLK);
+	nilfs = nilfs_open(dev, NULL, (NILFS_OPEN_RDWR | NILFS_OPEN_GCLK |
+				       NILFS_OPEN_SRCHDEV));
 	if (nilfs == NULL)
 		err(EXIT_FAILURE, "cannot open NILFS on %s", dev ? : "device");
 

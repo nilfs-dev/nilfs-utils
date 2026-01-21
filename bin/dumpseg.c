@@ -59,11 +59,11 @@ static const struct option long_option[] = {
 };
 
 #define DUMPSEG_USAGE	\
-	"Usage: %s [OPTION]... [DEVICE] SEGNUM...\n"	\
-	"  -h, --help\t\tdisplay this help and exit\n"	\
+	"Usage: %s [OPTION]... [DEVICE|NODE] SEGNUM...\n"		\
+	"  -h, --help\t\tdisplay this help and exit\n"			\
 	"  -V, --version\t\tdisplay version and exit\n"
 #else	/* !_GNU_SOURCE */
-#define DUMPSEG_USAGE	"Usage: %s [-h] [-V] [device] segnum...\n"
+#define DUMPSEG_USAGE	"Usage: %s [-h] [-V] [device|node] segnum...\n"
 #endif	/* _GNU_SOURCE */
 
 
@@ -296,7 +296,7 @@ int main(int argc, char *argv[])
 			dev = argv[optind++];
 	}
 
-	nilfs = nilfs_open(dev, NULL, NILFS_OPEN_RAW);
+	nilfs = nilfs_open(dev, NULL, NILFS_OPEN_RAW | NILFS_OPEN_SRCHDEV);
 	if (nilfs == NULL)
 		err(EXIT_FAILURE, "cannot open NILFS on %s", dev ? : "device");
 

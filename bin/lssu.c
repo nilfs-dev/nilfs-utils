@@ -71,7 +71,7 @@ static const struct option long_option[] = {
 };
 
 #define LSSU_USAGE							\
-	"Usage: %s [OPTION]... [DEVICE]\n"				\
+	"Usage: %s [OPTION]... [DEVICE|NODE]\n"				\
 	"  -a, --all\t\t\tdo not hide clean segments\n"			\
 	"  -h, --help\t\t\tdisplay this help and exit\n"		\
 	"  -i, --index\t\t\tskip index segments at start of inputs\n"	\
@@ -82,7 +82,7 @@ static const struct option long_option[] = {
 #else	/* !_GNU_SOURCE */
 #include <unistd.h>
 #define LSSU_USAGE \
-	"Usage: %s [-alhV] [-i index] [-n lines] [-p period] [device]\n"
+	"Usage: %s [-alhV] [-i index] [-n lines] [-p period] [device|node]\n"
 #endif	/* _GNU_SOURCE */
 
 #define LSSU_BUFSIZE	128
@@ -346,7 +346,7 @@ int main(int argc, char *argv[])
 	else
 		errx(EXIT_FAILURE, "too many arguments");
 
-	open_flags = NILFS_OPEN_RDONLY;
+	open_flags = NILFS_OPEN_RDONLY | NILFS_OPEN_SRCHDEV;
 	if (latest)
 		open_flags |= NILFS_OPEN_RAW | NILFS_OPEN_GCLK;
 
