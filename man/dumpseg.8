@@ -1,7 +1,7 @@
 .\"  Copyright (C) 2007-2012 Nippon Telegraph and Telephone Corporation.
 .\"  Written by Ryusuke Konishi <konishi.ryusuke@gmail.com>
 .\"
-.TH DUMPSEG 8 "Apr 2014" "nilfs-utils version 2.2"
+.TH DUMPSEG 8 "Jan 2026" "nilfs-utils version 2.3"
 .SH NAME
 dumpseg \- print segment information of NILFS2
 .SH SYNOPSIS
@@ -9,7 +9,7 @@ dumpseg \- print segment information of NILFS2
 [\fB\-hV\fP]
 .sp
 .B dumpseg
-[\fIdevice\fP] \fIsegment-number\fP ...
+[\fIdevice\fP|\fInode\fP] \fIsegment-number\fP ...
 .SH DESCRIPTION
 The
 .B dumpseg
@@ -17,7 +17,11 @@ program is an analysis tool for on-disk logs of a NILFS2 file system
 found in \fIdevice\fP.  It displays the configuration of every log
 stored in the segments specified by one or more \fIsegment-numbers\fP.
 The term segment here means a contiguous lump of disk blocks giving an
-allocation unit of NILFS2 disk space.  When \fIdevice\fP is omitted,
+allocation unit of NILFS2 disk space.
+.I device
+may be a block device or a filesystem node (file or directory) on the
+filesystem.
+When \fIdevice\fP is omitted,
 it tries to find an active NILFS2 file system from \fI/proc/mounts\fP.
 .PP
 .B dumpseg

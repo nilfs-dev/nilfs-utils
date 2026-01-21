@@ -1,18 +1,21 @@
 .\"  Copyright (C) 2011-2012 Nippon Telegraph and Telephone Corporation.
 .\"  Written by Ryusuke Konishi <konishi.ryusuke@gmail.com>
 .\"
-.TH NILFS-CLEAN 8 "Apr 2014" "nilfs-utils version 2.2"
+.TH NILFS-CLEAN 8 "Jan 2026" "nilfs-utils version 2.3"
 .SH NAME
 nilfs-clean \- run garbage collector on NILFS file system
 .SH SYNOPSIS
 .B nilfs-clean
-[\fIoptions\fP] [\fIdevice\fP]
+[\fIoptions\fP] [\fIdevice\fP|\fInode\fP]
 .SH DESCRIPTION
 The \fBnilfs-clean\fP program communicates with
 \fBnilfs_cleanerd\fP(8) program and controls execution of garbage
 collection (GC) on NILFS2 file systems.  It can be used to manually
 run garbage collection of a file system mounted on \fIdevice\fP to
 increase the free space.
+.I device
+may be a block device or a filesystem node (file or directory) on the
+filesystem.
 .PP
 If a GC command is specified by one of the following options
 (i.e. \'\-c\',\'\-s\',\'\-r\', and \'\-l\' options), the command is

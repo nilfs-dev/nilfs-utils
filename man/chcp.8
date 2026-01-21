@@ -1,16 +1,19 @@
 .\"  Copyright (C) 2007-2012 Nippon Telegraph and Telephone Corporation.
 .\"  Written by Ryusuke Konishi <konishi.ryusuke@gmail.com>
 .\"
-.TH CHCP 8 "Apr 2014" "nilfs-utils version 2.2"
+.TH CHCP 8 "Jan 2026" "nilfs-utils version 2.3"
 .SH NAME
 chcp \- change mode of NILFS2 checkpoints
 .SH SYNOPSIS
 .B chcp
-[\fIoptions\fP] \fBcp\fP | \fBss\fP [\fIdevice\fP] \fIcheckpoint-number\fP ...
+[\fIoptions\fP] \fBcp\fP | \fBss\fP [\fIdevice\fP|\fInode\fP] \fIcheckpoint-number\fP ...
 .SH DESCRIPTION
 .B chcp
 is a utility to change the mode of the given checkpoints for the NILFS2
 file system found in \fIdevice\fP.
+.I device
+may be a block device or a filesystem node (file or directory) on the
+filesystem.
 .B chcp
 changes checkpoints to snapshots, or vice versa.  The target
 checkpoints are specified with one or more checkpoint numbers.  When

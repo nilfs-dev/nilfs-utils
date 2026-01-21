@@ -1,16 +1,20 @@
 .\"  Copyright (C) 2007-2012 Nippon Telegraph and Telephone Corporation.
 .\"  Written by Ryusuke Konishi <konishi.ryusuke@gmail.com>
 .\"
-.TH MKCP 8 "Apr 2014" "nilfs-utils version 2.2"
+.TH MKCP 8 "Jan 2026" "nilfs-utils version 2.3"
 .SH NAME
 mkcp \- make a NILFS2 checkpoint
 .SH SYNOPSIS
 .B mkcp
-[\fIoptions\fP] [\fIdevice\fP]
+[\fIoptions\fP] [\fIdevice\fP|\fInode\fP]
 .SH DESCRIPTION
 .B mkcp
 is a utility for making a checkpoint or snapshot for the NILFS2 file
-system found in \fIdevice\fP.  When \fIdevice\fP is omitted, it tries
+system found in \fIdevice\fP.
+.I device
+may be a block device or a filesystem node (file or directory) on the
+filesystem.
+When \fIdevice\fP is omitted, it tries
 to find a NILFS2 file system from \fI/proc/mounts\fP.
 .PP
 This command is valid only for mounted NILFS2 file systems, and

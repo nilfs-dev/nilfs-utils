@@ -1,16 +1,20 @@
 .\"  Copyright (C) 2007-2012 Nippon Telegraph and Telephone Corporation.
 .\"  Written by Ryusuke Konishi <konishi.ryusuke@gmail.com>
 .\"
-.TH LSCP 1 "Apr 2014" "nilfs-utils version 2.2"
+.TH LSCP 1 "Jan 2026" "nilfs-utils version 2.3"
 .SH NAME
 lscp \- list NILFS2 checkpoints
 .SH SYNOPSIS
 .B lscp
-[\fIoptions\fP] [\fIdevice\fP]
+[\fIoptions\fP] [\fIdevice\fP|\fInode\fP]
 .SH DESCRIPTION
 .B lscp
 is a utility for displaying checkpoints or snapshots of the NILFS2
-file system found in \fIdevice\fP.  When \fIdevice\fP is omitted,
+file system found in \fIdevice\fP.
+.I device
+may be a block device or a filesystem node (file or directory) on the
+filesystem.
+When \fIdevice\fP is omitted,
 \fI/proc/mounts\fP is examined to find a NILFS2 file system.
 .PP
 This command will fail if the \fIdevice\fP has no active mounts of a
