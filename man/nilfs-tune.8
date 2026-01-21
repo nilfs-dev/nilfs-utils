@@ -16,7 +16,7 @@ Modifying active mounts may cause severe damage.
 .SH OPTIONS
 .TP
 .B \-f
-Force to modify even the specified file system is mounted.
+Force to modify even if the specified file system is mounted.
 .TP
 .B \-i \fIinterval\fP
 Set the commit interval of segment.
@@ -31,7 +31,7 @@ values of the parameters that can be set via this program.
 .B \-L \fIvolume-label\fP
 Set the volume label of the file system.  NILFS2 file system labels
 can be at most 80 bytes long.  If volume-label is longer than 80 bytes,
-nilfs-tune will truncate it.  The volume label can be used mount(8) and
+nilfs-tune will truncate it.  The volume label can be used by mount(8) and
 /etc/fstab(5) (and possibly others) by specifying \fBLABEL\fP=volume-label
 instead of a block special device name like /dev/sda5.
 .TP
