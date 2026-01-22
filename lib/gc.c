@@ -411,7 +411,7 @@ static ssize_t nilfs_get_snapshot(struct nilfs *nilfs, nilfs_cno_t **ssp)
 	return nss;
 }
 
-/*
+/**
  * nilfs_vdesc_is_live - judge if a virtual block address is live or dead
  * @vdesc: descriptor object of the virtual block address
  * @protect: the minimum of checkpoint numbers to be protected
