@@ -164,7 +164,7 @@ static char *skip_over_word(char *cp)
 }
 
 /**
- * nilfs_string2feature - convert a string to a feature
+ * nilfs_edit_feature() - update feature flags from a string
  * @str: string to be parsed
  * @compat_array: array to store resultant compat flags
  * @ok_array: array of bit masks that caller allows bet set
