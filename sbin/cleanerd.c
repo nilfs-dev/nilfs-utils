@@ -95,6 +95,8 @@
 #endif	/* SYSCONFDIR */
 #define NILFS_CLEANERD_CONFFILE	SYSCONFDIR "/nilfs_cleanerd.conf"
 
+#define NILFS_CLEANERD_NSUINFO	512
+#define NILFS_CLEANERD_NULLTIME INT64_MAX
 
 #ifdef _GNU_SOURCE
 #include <getopt.h>
@@ -636,9 +638,6 @@ static int nilfs_shrink_protected_region(struct nilfs *nilfs)
  * @prottimep: place to store lower limit of protected period
  * @oldestp: place to store the oldest mod-time
  */
-#define NILFS_CLEANERD_NSUINFO	512
-#define NILFS_CLEANERD_NULLTIME INT64_MAX
-
 static ssize_t
 nilfs_cleanerd_select_segments(struct nilfs_cleanerd *cleanerd,
 			       struct nilfs_sustat *sustat, uint64_t *segnums,
