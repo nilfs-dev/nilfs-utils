@@ -130,6 +130,7 @@ static const struct option long_option[] = {
  * @fallback: fallback state
  * @retry_cleaning: retrying reclamation for protected segments
  * @no_timeout: the next timeout will be 0 seconds
+ * @shutdown: shutdown request flag
  * @ncleansegs: number of segments cleaned per cycle
  * @cleaning_interval: cleaning interval
  * @target: target time for sleeping (monotonic time)
