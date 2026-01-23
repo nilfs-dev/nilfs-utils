@@ -439,11 +439,13 @@ struct nilfs_cleaner *nilfs_cleaner_open(const char *device,
 	cleaner->sendq = -1;
 	cleaner->recvq = -1;
 
-	ret = nilfs_lookup_device(device, &backdev);
-	if (unlikely(ret < 0))
-		goto error;
-	else if (ret > 0)
-		device = backdev;  /* replace device in this function */
+	if (device) {
+		ret = nilfs_lookup_device(device, &backdev);
+		if (unlikely(ret < 0))
+			goto error;
+		else if (ret > 0)
+			device = backdev;  /* Substitute with backdev */
+	}
 
 	ret = nilfs_cleaner_find_fs(cleaner, device, mntdir);
 	if (unlikely(ret < 0))
