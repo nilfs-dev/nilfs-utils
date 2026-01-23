@@ -93,8 +93,8 @@ hierarchy and adjusts the installation paths for core binaries
  - Bin-Sbin merge (e.g., Fedora Rawhide): Installs to /usr/bin
 
 When installing to /usr/bin, the build system also attempts to create
-compatibility symbolic links in /usr/sbin if that directory exists on
-the target system.
+compatibility symbolic links in /usr/sbin if that directory exists and
+is different from /usr/bin.
 
 You can manually override this detection using the following options:
 
