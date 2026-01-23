@@ -277,8 +277,15 @@ skip_monotonic_clock:
 }
 
 /**
- * nilfs_cleanerd_config - load configuration file
+ * nilfs_cleanerd_config() - load configuration file
  * @cleanerd: cleanerd object
+ * @conffile: path to the configuration file (optional)
+ *
+ * nilfs_cleanerd_config() reads the configuration file specified by
+ * @conffile and initializes the cleanerd configuration state.  If
+ * @conffile is NULL, the default configuration file is used.
+ *
+ * Return: 0 on success, or -1 on failure.
  */
 static int nilfs_cleanerd_config(struct nilfs_cleanerd *cleanerd,
 				 const char *conffile)
@@ -315,8 +322,15 @@ static int nilfs_cleanerd_config(struct nilfs_cleanerd *cleanerd,
 }
 
 /**
- * nilfs_cleanerd_reconfig - reload configuration file
+ * nilfs_cleanerd_reconfig() - reload configuration file
  * @cleanerd: cleanerd object
+ * @conffile: path to the configuration file (optional)
+ *
+ * nilfs_cleanerd_reconfig() reads the configuration file specified by
+ * @conffile and reflects the new settings to the internal parameters
+ * of @cleanerd.
+ *
+ * Return: 0 on success, or -1 on failure.
  */
 static int nilfs_cleanerd_reconfig(struct nilfs_cleanerd *cleanerd,
 				   const char *conffile)
