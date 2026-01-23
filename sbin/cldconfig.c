@@ -769,10 +769,16 @@ static int nilfs_cldconfig_do_read(struct nilfs_cldconfig *config,
 }
 
 /**
- * nilfs_cldconfig_read -
- * @config: config
- * @conffile: configuration file path
+ * nilfs_cldconfig_read() - read configuration file
+ * @config: configuration object to be initialized
+ * @path: path to the configuration file
  * @nilfs: nilfs object
+ *
+ * nilfs_cldconfig_read() initializes the configuration object @config with
+ * default values, and then overrides them with parameters defined in the
+ * file specified by @path.
+ *
+ * Return: 0 on success, or -1 on failure.
  */
 int nilfs_cldconfig_read(struct nilfs_cldconfig *config, const char *path,
 			 struct nilfs *nilfs)
