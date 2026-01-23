@@ -370,9 +370,22 @@ static __attribute__((noinline)) char *get_canonical_path(const char *path)
 }
 
 /**
- * nilfs_cleanerd_create - create cleanerd object
- * @dev: name of the device on which the cleanerd operates
- * @conffile: pathname of configuration file
+ * nilfs_cleanerd_create() - create cleanerd object
+ * @dev: path to the block device
+ * @dir: mount point directory (optional)
+ * @conffile: path to the configuration file (optional)
+ *
+ * nilfs_cleanerd_create() allocates a new cleanerd object, opens a handle
+ * for NILFS library operations on the device @dev and @dir, and
+ * initializes internal parameters by loading the configuration from
+ * @conffile.
+ *
+ * It also performs initialization tasks such as setting up a checkpoint
+ * number reverse mapper and creating a POSIX message queue for accepting
+ * control commands.
+ *
+ * Return: A pointer to the newly allocated cleanerd object on success,
+ * or NULL on failure.
  */
 static struct nilfs_cleanerd *
 nilfs_cleanerd_create(const char *dev, const char *dir, const char *conffile)
