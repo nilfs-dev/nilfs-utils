@@ -195,7 +195,12 @@ AS_CASE(["x$enable_usrmerge"],
         core_sbindir='${exec_prefix}/bin'
         sbindir='${exec_prefix}/bin'
         badblocksdir='/usr/bin'
-        create_compat_sbin_link=yes
+        # If /usr/sbin is effectively /usr/bin,
+        # we must not create compat symlinks because they would overwrite
+        # the actual binaries installed in /usr/bin.
+        AS_IF([test "/usr/sbin" -ef "/usr/bin"],
+              [create_compat_sbin_link=no],
+              [create_compat_sbin_link=yes])
     ],
     [xsbin|xyes], [
         core_sbindir='${exec_prefix}/sbin'
