@@ -660,7 +660,7 @@ int nilfs_xreclaim_segment(struct nilfs *nilfs,
 	nilfs_cno_t protcno;
 	ssize_t n, i, ret = -1;
 	size_t nblocks;
-	uint32_t reclaimable_blocks;
+	size_t total_reclaimable_blocks;
 	struct nilfs_suinfo_update *sup;
 	struct timeval tv;
 
@@ -748,7 +748,7 @@ int nilfs_xreclaim_segment(struct nilfs *nilfs,
 	if (unlikely(ret < 0))
 		goto out_lock;
 
-	reclaimable_blocks = (nilfs_get_blocks_per_segment(nilfs) * n) -
+	total_reclaimable_blocks = (nilfs_get_blocks_per_segment(nilfs) * n) -
 			(nilfs_vector_get_size(vdescv) +
 			nilfs_vector_get_size(bdescv));
 
@@ -757,7 +757,7 @@ int nilfs_xreclaim_segment(struct nilfs *nilfs,
 		stat->defunct_pblks = nblocks - stat->live_pblks;
 
 		stat->live_blks = stat->live_vblks + stat->live_pblks;
-		stat->defunct_blks = reclaimable_blocks;
+		stat->defunct_blks = total_reclaimable_blocks;
 	}
 	if (dryrun)
 		goto out_lock;
@@ -778,8 +778,8 @@ int nilfs_xreclaim_segment(struct nilfs *nilfs,
 	 * threshold try to update suinfo instead of cleaning
 	 */
 	if ((params->flags & NILFS_RECLAIM_PARAM_MIN_RECLAIMABLE_BLKS) &&
-			nilfs_opt_test_set_suinfo(nilfs) &&
-			reclaimable_blocks < params->min_reclaimable_blks * n) {
+	    nilfs_opt_test_set_suinfo(nilfs) &&
+	    total_reclaimable_blocks < params->min_reclaimable_blks * n) {
 		if (stat) {
 			stat->deferred_segs = n;
 			stat->cleaned_segs = 0;
