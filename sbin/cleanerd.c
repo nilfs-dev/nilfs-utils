@@ -183,7 +183,7 @@ struct nilfs_cleanerd {
 	unsigned long jobid;
 	int mm_prev_state;
 	int mm_nrestpasses;
-	long mm_nrestsegs;
+	uint64_t mm_nrestsegs;
 	unsigned int mm_nsegs_per_step;
 	struct timespec mm_protection_period;
 	struct timespec mm_cleaning_interval;
@@ -272,7 +272,7 @@ skip_monotonic_clock:
 	       cleanerd->prev_nongc_ctime);
 	syslog(LOG_DEBUG, "mm_prev_state: %d", cleanerd->mm_prev_state);
 	syslog(LOG_DEBUG, "mm_nrestpasses: %d", cleanerd->mm_nrestpasses);
-	syslog(LOG_DEBUG, "mm_nrestsegs: %ld", cleanerd->mm_nrestsegs);
+	syslog(LOG_DEBUG, "mm_nrestsegs: %" PRIu64, cleanerd->mm_nrestsegs);
 	syslog(LOG_DEBUG, "mm_nsegs_per_step: %u",
 	       cleanerd->mm_nsegs_per_step);
 	syslog(LOG_DEBUG, "mm_protection_period: %ld.%09ld",
@@ -1465,21 +1465,22 @@ static int nilfs_cleanerd_handle_clean_check(struct nilfs_cleanerd *cleanerd,
 	return 0; /* do gc */
 }
 
-static ssize_t
-nilfs_cleanerd_count_inuse_segments(struct nilfs_cleanerd *cleanerd,
-				    struct nilfs_sustat *sustat)
+static int
+nilfs_cleanerd_count_reclaimable_segments(struct nilfs_cleanerd *cleanerd,
+					  struct nilfs_sustat *sustat,
+					  uint64_t *count)
 {
 	struct nilfs_suinfo si[NILFS_CLEANERD_NSUINFO];
-	uint64_t segnum;
-	unsigned long rest, count;
-	ssize_t nsi, i;
-	ssize_t nfound = 0;
+	uint64_t segnum, rest, nfound;
 
 	segnum = 0;
+	nfound = 0;
 	rest = sustat->ss_nsegs;
 	while (rest > 0 && segnum < sustat->ss_nsegs) {
-		count = min_t(unsigned long, rest, NILFS_CLEANERD_NSUINFO);
-		nsi = nilfs_get_suinfo(cleanerd->nilfs, segnum, si, count);
+		size_t nitems = min_t(uint64_t, rest, NILFS_CLEANERD_NSUINFO);
+		ssize_t nsi, i;
+
+		nsi = nilfs_get_suinfo(cleanerd->nilfs, segnum, si, nitems);
 		if (unlikely(nsi < 0)) {
 			syslog(LOG_ERR, "cannot get segment usage info: %m");
 			return -1;
@@ -1491,24 +1492,24 @@ nilfs_cleanerd_count_inuse_segments(struct nilfs_cleanerd *cleanerd,
 			}
 		}
 	}
-	return nfound; /* return the number of found segments */
+	*count = nfound;
+	return 0;
 }
 
 static int nilfs_cleanerd_handle_manual_mode(struct nilfs_cleanerd *cleanerd,
 					     struct nilfs_sustat *sustat)
 {
-	ssize_t ret;
+	if (cleanerd->mm_nrestsegs == 0 && cleanerd->mm_nrestpasses > 0) {
+		uint64_t count;
+		int ret;
 
-	if (cleanerd->mm_nrestsegs == 0) {
-		if (cleanerd->mm_nrestpasses > 0) {
-			ret = nilfs_cleanerd_count_inuse_segments(cleanerd,
-								  sustat);
-			if (ret < 0) {
-				cleanerd->mm_nrestpasses = 0;
-			} else {
-				cleanerd->mm_nrestpasses--;
-				cleanerd->mm_nrestsegs = ret;
-			}
+		ret = nilfs_cleanerd_count_reclaimable_segments(
+			cleanerd, sustat, &count);
+		if (unlikely(ret < 0)) {
+			cleanerd->mm_nrestpasses = 0;
+		} else {
+			cleanerd->mm_nrestpasses--;
+			cleanerd->mm_nrestsegs = count;
 		}
 	}
 	if (cleanerd->mm_nrestpasses == 0 && cleanerd->mm_nrestsegs == 0)
@@ -1552,7 +1553,8 @@ static void nilfs_cleanerd_progress(struct nilfs_cleanerd *cleanerd, int nsegs)
 	if (cleanerd->running == 2) {
 		/* decrease remaining number of segments */
 		cleanerd->mm_nrestsegs =
-			max_t(long, cleanerd->mm_nrestsegs - nsegs, 0);
+			(cleanerd->mm_nrestsegs >= nsegs ?
+			 cleanerd->mm_nrestsegs - nsegs : 0);
 	}
 }
 
