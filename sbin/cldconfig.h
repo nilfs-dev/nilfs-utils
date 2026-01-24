@@ -79,8 +79,8 @@ struct nilfs_cldconfig {
 	uint64_t cf_min_clean_segments;
 	uint64_t cf_max_clean_segments;
 	struct timespec cf_clean_check_interval;
-	int cf_nsegments_per_clean;
-	int cf_mc_nsegments_per_clean;
+	unsigned int cf_nsegments_per_clean;
+	unsigned int cf_mc_nsegments_per_clean;
 	struct timespec cf_cleaning_interval;
 	struct timespec cf_mc_cleaning_interval;
 	struct timespec cf_retry_interval;

@@ -135,7 +135,7 @@ static const struct option long_option[] = {
  * @retry_cleaning: retrying reclamation for protected segments
  * @no_timeout: the next timeout will be 0 seconds
  * @shutdown: shutdown request flag
- * @ncleansegs: number of segments cleaned per cycle
+ * @nsegs_per_step: number of segments cleaned per cleaning step
  * @cleaning_interval: cleaning interval
  * @target: target time for sleeping (monotonic time)
  * @timeout: timeout value for sleeping
@@ -150,7 +150,8 @@ static const struct option long_option[] = {
  * @mm_prev_state: previous status during suspending
  * @mm_nrestpasses: remaining number of passes
  * @mm_nrestsegs: remaining number of segment (1-pass)
- * @mm_ncleansegs: number of segments cleaned per cycle (manual mode)
+ * @mm_nsegs_per_step: number of segments cleaned per cleaning step
+ *                     (manual mode)
  * @mm_protection_period: protection period (manual mode)
  * @mm_cleaning_interval: cleaning interval (manual mode)
  * @mm_min_reclaimable_blocks: min. number of reclaimable blocks (manual mode)
@@ -169,7 +170,7 @@ struct nilfs_cleanerd {
 	bool no_timeout : 1;
 	bool shutdown : 1;
 
-	long ncleansegs;
+	unsigned int nsegs_per_step;
 	struct timespec cleaning_interval;
 	struct timespec target;
 	struct timespec timeout;
@@ -183,7 +184,7 @@ struct nilfs_cleanerd {
 	int mm_prev_state;
 	int mm_nrestpasses;
 	long mm_nrestsegs;
-	long mm_ncleansegs;
+	unsigned int mm_nsegs_per_step;
 	struct timespec mm_protection_period;
 	struct timespec mm_cleaning_interval;
 	uint32_t mm_min_reclaimable_blocks;
@@ -257,7 +258,7 @@ skip_monotonic_clock:
 	syslog(LOG_DEBUG, "retry_cleaning: %d", cleanerd->retry_cleaning);
 	syslog(LOG_DEBUG, "no_timeout: %d", cleanerd->no_timeout);
 	syslog(LOG_DEBUG, "shutdown: %d", cleanerd->shutdown);
-	syslog(LOG_DEBUG, "ncleansegs: %ld", cleanerd->ncleansegs);
+	syslog(LOG_DEBUG, "nsegs_per_step: %u", cleanerd->nsegs_per_step);
 	syslog(LOG_DEBUG, "cleaning_interval: %ld.%09ld",
 	       cleanerd->cleaning_interval.tv_sec,
 	       cleanerd->cleaning_interval.tv_nsec);
@@ -272,7 +273,8 @@ skip_monotonic_clock:
 	syslog(LOG_DEBUG, "mm_prev_state: %d", cleanerd->mm_prev_state);
 	syslog(LOG_DEBUG, "mm_nrestpasses: %d", cleanerd->mm_nrestpasses);
 	syslog(LOG_DEBUG, "mm_nrestsegs: %ld", cleanerd->mm_nrestsegs);
-	syslog(LOG_DEBUG, "mm_ncleansegs: %ld", cleanerd->mm_ncleansegs);
+	syslog(LOG_DEBUG, "mm_nsegs_per_step: %u",
+	       cleanerd->mm_nsegs_per_step);
 	syslog(LOG_DEBUG, "mm_protection_period: %ld.%09ld",
 	       cleanerd->mm_protection_period.tv_sec,
 	       cleanerd->mm_protection_period.tv_nsec);
@@ -350,7 +352,7 @@ static int nilfs_cleanerd_reconfig(struct nilfs_cleanerd *cleanerd,
 	if (unlikely(ret < 0)) {
 		syslog(LOG_ERR, "cannot configure: %m");
 	} else {
-		cleanerd->ncleansegs = config->cf_nsegments_per_clean;
+		cleanerd->nsegs_per_step = config->cf_nsegments_per_clean;
 		cleanerd->cleaning_interval = config->cf_cleaning_interval;
 		cleanerd->min_reclaimable_blocks =
 				config->cf_min_reclaimable_blocks;
@@ -544,10 +546,11 @@ static int nilfs_cleanerd_automatic_suspend(struct nilfs_cleanerd *cleanerd)
 	return cleanerd->config.cf_min_clean_segments > 0;
 }
 
-static long nilfs_cleanerd_ncleansegs(struct nilfs_cleanerd *cleanerd)
+static unsigned int
+nilfs_cleanerd_nsegs_per_step(struct nilfs_cleanerd *cleanerd)
 {
 	return cleanerd->running == 2 ?
-		cleanerd->mm_ncleansegs : cleanerd->ncleansegs;
+		cleanerd->mm_nsegs_per_step : cleanerd->nsegs_per_step;
 }
 
 static struct timespec *
@@ -575,14 +578,14 @@ nilfs_cleanerd_min_reclaimable_blocks(struct nilfs_cleanerd *cleanerd)
 }
 
 static void
-nilfs_cleanerd_reduce_ncleansegs_for_retry(struct nilfs_cleanerd *cleanerd)
+nilfs_cleanerd_reduce_nsegs_per_step(struct nilfs_cleanerd *cleanerd)
 {
 	if (cleanerd->running == 2) {
-		if (cleanerd->ncleansegs > 1)
-			cleanerd->ncleansegs >>= 1;
+		if (cleanerd->nsegs_per_step > 1)
+			cleanerd->nsegs_per_step >>= 1;
 	} else  {
-		if (cleanerd->mm_ncleansegs > 1)
-			cleanerd->mm_ncleansegs >>= 1;
+		if (cleanerd->mm_nsegs_per_step > 1)
+			cleanerd->mm_nsegs_per_step >>= 1;
 	}
 }
 
@@ -656,13 +659,14 @@ nilfs_cleanerd_select_segments(struct nilfs_cleanerd *cleanerd,
 	struct timespec ts, ts2;
 	int64_t prottime, oldest, lastmod, now;
 	uint64_t segnum;
-	size_t count, nsegs;
+	size_t count;
 	ssize_t nssegs, n;
 	long long imp, thr;
+	unsigned int nsegs_per_step;
 	int ret;
 	int i;
 
-	nsegs = nilfs_cleanerd_ncleansegs(cleanerd);
+	nsegs_per_step = nilfs_cleanerd_nsegs_per_step(cleanerd);
 	nilfs = cleanerd->nilfs;
 
 	smv = nilfs_vector_create(sizeof(struct nilfs_segimp));
@@ -739,7 +743,7 @@ nilfs_cleanerd_select_segments(struct nilfs_cleanerd *cleanerd,
 	}
 	nilfs_vector_sort(smv, nilfs_comp_segimp);
 
-	nssegs = min_t(size_t, nilfs_vector_get_size(smv), nsegs);
+	nssegs = min_t(size_t, nilfs_vector_get_size(smv), nsegs_per_step);
 	for (i = 0; i < nssegs; i++) {
 		sm = nilfs_vector_get_element(smv, i);
 		assert(sm != NULL);
@@ -1157,9 +1161,9 @@ static int nilfs_cleanerd_cmd_run(struct nilfs_cleanerd *cleanerd,
 		    req2->args.nsegments_per_clean >
 		    NILFS_CLDCONFIG_NSEGMENTS_PER_CLEAN_MAX)
 			goto error_inval;
-		cleanerd->mm_ncleansegs = req2->args.nsegments_per_clean;
+		cleanerd->mm_nsegs_per_step = req2->args.nsegments_per_clean;
 	} else {
-		cleanerd->mm_ncleansegs = cleanerd->ncleansegs;
+		cleanerd->mm_nsegs_per_step = cleanerd->nsegs_per_step;
 	}
 	/* gc speed (cleaning interval) */
 	if (req2->args.valid & NILFS_CLEANER_ARG_CLEANING_INTERVAL) {
@@ -1446,13 +1450,13 @@ static int nilfs_cleanerd_handle_clean_check(struct nilfs_cleanerd *cleanerd,
 	if (sustat->ss_ncleansegs <
 	    config->cf_min_clean_segments + r_segments) {
 		/* disk space is close to limit -- accelerate cleaning */
-		cleanerd->ncleansegs = config->cf_mc_nsegments_per_clean;
+		cleanerd->nsegs_per_step = config->cf_mc_nsegments_per_clean;
 		cleanerd->cleaning_interval = config->cf_mc_cleaning_interval;
 		cleanerd->min_reclaimable_blocks =
 				config->cf_mc_min_reclaimable_blocks;
 	} else {
 		/* continue to run */
-		cleanerd->ncleansegs = config->cf_nsegments_per_clean;
+		cleanerd->nsegs_per_step = config->cf_nsegments_per_clean;
 		cleanerd->cleaning_interval = config->cf_cleaning_interval;
 		cleanerd->min_reclaimable_blocks =
 				config->cf_min_reclaimable_blocks;
@@ -1586,7 +1590,7 @@ static int nilfs_cleanerd_clean_segments(struct nilfs_cleanerd *cleanerd,
 				     &params, &stat);
 	if (unlikely(ret < 0)) {
 		if (errno == ENOMEM) {
-			nilfs_cleanerd_reduce_ncleansegs_for_retry(cleanerd);
+			nilfs_cleanerd_reduce_nsegs_per_step(cleanerd);
 			cleanerd->fallback = true;
 			*ndone = 0;
 			ret = 0;
@@ -1679,7 +1683,7 @@ static int nilfs_cleanerd_clean_loop(struct nilfs_cleanerd *cleanerd)
 	if (unlikely(ret < 0))
 		return -1;
 
-	cleanerd->ncleansegs = cleanerd->config.cf_nsegments_per_clean;
+	cleanerd->nsegs_per_step = cleanerd->config.cf_nsegments_per_clean;
 	cleanerd->cleaning_interval = cleanerd->config.cf_cleaning_interval;
 	cleanerd->min_reclaimable_blocks =
 			cleanerd->config.cf_min_reclaimable_blocks;
