@@ -167,9 +167,10 @@ AC_SUBST(LIB_POSIX_TIMER)
 AC_HEADER_SYS_WAIT
 AC_CHECK_HEADERS([ctype.h err.h fcntl.h grp.h inttypes.h libintl.h limits.h \
 		  linux/magic.h linux/types.h locale.h mntent.h mqueue.h \
-		  paths.h poll.h pwd.h semaphore.h stddef.h stdint.h stdlib.h \
-		  string.h strings.h sys/ioctl.h sys/mman.h sys/mount.h \
-		  sys/sysmacros.h sys/time.h syslog.h time.h unistd.h])
+		  paths.h poll.h pwd.h semaphore.h \
+		  stdbool.h stddef.h stdint.h stdlib.h string.h strings.h \
+		  sys/ioctl.h sys/mman.h sys/mount.h sys/sysmacros.h \
+		  sys/time.h syslog.h time.h unistd.h])
 
 # Check /etc/mtab
 mtab_type=''

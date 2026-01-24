@@ -524,7 +524,7 @@ static int nilfs_cldconfig_handle_use_mmap(struct nilfs_cldconfig *config,
 					   char **tokens, size_t ntoks,
 					   struct nilfs *nilfs)
 {
-	config->cf_use_mmap = 1;
+	config->cf_use_mmap = true;
 	return 0;
 }
 
@@ -532,7 +532,7 @@ static int nilfs_cldconfig_handle_use_set_suinfo(struct nilfs_cldconfig *config,
 						 char **tokens, size_t ntoks,
 						 struct nilfs *nilfs)
 {
-	config->cf_use_set_suinfo = 1;
+	config->cf_use_set_suinfo = true;
 	return 0;
 }
 

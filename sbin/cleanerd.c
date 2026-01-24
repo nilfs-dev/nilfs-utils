@@ -71,6 +71,7 @@
 
 #include <errno.h>
 #include <signal.h>
+#include <stdbool.h>
 #include <setjmp.h>
 #include <assert.h>
 #include <uuid.h>
@@ -158,11 +159,15 @@ struct nilfs_cleanerd {
 	struct nilfs_cnormap *cnormap;
 	struct nilfs_cldconfig config;
 	char *conffile;
+
 	int running;
-	int fallback;
-	int retry_cleaning;
-	int no_timeout;
-	int shutdown;
+
+	/* Boolean bitfields */
+	bool fallback : 1;
+	bool retry_cleaning : 1;
+	bool no_timeout : 1;
+	bool shutdown : 1;
+
 	long ncleansegs;
 	struct timespec cleaning_interval;
 	struct timespec target;
@@ -1300,7 +1305,7 @@ static int nilfs_cleanerd_cmd_shutdown(struct nilfs_cleanerd *cleanerd,
 {
 	struct nilfs_cleaner_response res = {0};
 
-	cleanerd->shutdown = 1;
+	cleanerd->shutdown = true;
 	res.result = NILFS_CLEANER_RSP_ACK;
 	return nilfs_cleanerd_respond(cleanerd, req, &res);
 }
@@ -1581,7 +1586,7 @@ static int nilfs_cleanerd_clean_segments(struct nilfs_cleanerd *cleanerd,
 	if (unlikely(ret < 0)) {
 		if (errno == ENOMEM) {
 			nilfs_cleanerd_reduce_ncleansegs_for_retry(cleanerd);
-			cleanerd->fallback = 1;
+			cleanerd->fallback = true;
 			*ndone = 0;
 			ret = 0;
 		}
@@ -1596,8 +1601,8 @@ static int nilfs_cleanerd_clean_segments(struct nilfs_cleanerd *cleanerd,
 			       segnums[i]);
 
 		nilfs_cleanerd_progress(cleanerd, stat.cleaned_segs);
-		cleanerd->fallback = 0;
-		cleanerd->retry_cleaning = 0;
+		cleanerd->fallback = false;
+		cleanerd->retry_cleaning = false;
 
 		*ndone += stat.cleaned_segs;
 	}
@@ -1609,11 +1614,11 @@ static int nilfs_cleanerd_clean_segments(struct nilfs_cleanerd *cleanerd,
 			       segnums[i]);
 
 		nilfs_cleanerd_progress(cleanerd, stat.deferred_segs);
-		cleanerd->fallback = 0;
-		cleanerd->retry_cleaning = 0;
+		cleanerd->fallback = false;
+		cleanerd->retry_cleaning = false;
 
 		if (!stat.cleaned_segs)
-			cleanerd->no_timeout = 1;
+			cleanerd->no_timeout = true;
 
 		*ndone += stat.deferred_segs;
 	}
@@ -1627,9 +1632,9 @@ static int nilfs_cleanerd_clean_segments(struct nilfs_cleanerd *cleanerd,
 		    nilfs_shrink_protected_region(cleanerd->nilfs) == 0) {
 
 			syslog(LOG_DEBUG, "retrying protected region");
-			cleanerd->retry_cleaning = 1;
+			cleanerd->retry_cleaning = true;
 		} else {
-			cleanerd->retry_cleaning = 0;
+			cleanerd->retry_cleaning = false;
 		}
 	}
 
@@ -1665,8 +1670,8 @@ static int nilfs_cleanerd_clean_loop(struct nilfs_cleanerd *cleanerd)
 	nilfs_cleanerd_dump_req = 0;
 
 	cleanerd->running = 1;
-	cleanerd->fallback = 0;
-	cleanerd->retry_cleaning = 0;
+	cleanerd->fallback = false;
+	cleanerd->retry_cleaning = false;
 	nilfs_gc_logger = syslog;
 
 	ret = nilfs_cleanerd_init_interval(cleanerd);
@@ -1683,7 +1688,7 @@ static int nilfs_cleanerd_clean_loop(struct nilfs_cleanerd *cleanerd)
 		nilfs_cleanerd_clean_check_pause(cleanerd);
 
 	while (!cleanerd->shutdown) {
-		cleanerd->no_timeout = 0;
+		cleanerd->no_timeout = false;
 
 		ret = sigprocmask(SIG_BLOCK, &sigset, NULL);
 		if (unlikely(ret < 0)) {
@@ -1722,7 +1727,7 @@ static int nilfs_cleanerd_clean_loop(struct nilfs_cleanerd *cleanerd)
 			if (unlikely(ret < 0))
 				return -1;
 		} else {
-			cleanerd->retry_cleaning = 0;
+			cleanerd->retry_cleaning = false;
 		}
 		/* done */
 

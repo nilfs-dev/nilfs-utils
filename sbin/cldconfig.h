@@ -19,6 +19,7 @@
 #endif	/* HAVE_TIME_H */
 
 #include <stdint.h>	/* uint64_t */
+#include <stdbool.h>
 #include <syslog.h>
 
 /**
@@ -83,8 +84,11 @@ struct nilfs_cldconfig {
 	struct timespec cf_cleaning_interval;
 	struct timespec cf_mc_cleaning_interval;
 	struct timespec cf_retry_interval;
-	int cf_use_mmap;
-	int cf_use_set_suinfo;
+
+	/* Boolean bitfields */
+	bool cf_use_mmap : 1;
+	bool cf_use_set_suinfo : 1;
+
 	int cf_log_priority;
 	unsigned long cf_min_reclaimable_blocks;
 	unsigned long cf_mc_min_reclaimable_blocks;
@@ -106,8 +110,8 @@ enum nilfs_selection_policy {
 #define NILFS_CLDCONFIG_CLEANING_INTERVAL		5
 #define NILFS_CLDCONFIG_MC_CLEANING_INTERVAL		1
 #define NILFS_CLDCONFIG_RETRY_INTERVAL			60
-#define NILFS_CLDCONFIG_USE_MMAP			1
-#define NILFS_CLDCONFIG_USE_SET_SUINFO			0
+#define NILFS_CLDCONFIG_USE_MMAP			true
+#define NILFS_CLDCONFIG_USE_SET_SUINFO			false
 #define NILFS_CLDCONFIG_LOG_PRIORITY			LOG_INFO
 #define NILFS_CLDCONFIG_MIN_RECLAIMABLE_BLOCKS		10
 #define NILFS_CLDCONFIG_MIN_RECLAIMABLE_BLOCKS_UNIT	NILFS_SIZE_UNIT_PERCENT
