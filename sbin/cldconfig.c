@@ -53,6 +53,7 @@
 
 #include <errno.h>
 #include <assert.h>
+#include <inttypes.h>
 #include "nilfs.h"
 #include "util.h"
 #include "cldconfig.h"
@@ -446,25 +447,36 @@ nilfs_cldconfig_handle_mc_nsegments_per_clean(struct nilfs_cldconfig *config,
 	return 0;
 }
 
-static unsigned long long
+static uint32_t
 nilfs_convert_size_to_blocks_per_segment(struct nilfs *nilfs,
-					 struct nilfs_param *param)
+					 struct nilfs_param *param,
+					 const char *token)
 {
-	unsigned long long ret, segment_size, block_size, bytes;
+	uint32_t blocks_per_segment = nilfs_get_blocks_per_segment(nilfs);
+	uint64_t block_count;
 
 	if (param->unit == NILFS_SIZE_UNIT_NONE) {
-		ret = param->num;
+		block_count = param->num;
 	} else if (param->unit == NILFS_SIZE_UNIT_PERCENT) {
-		ret = (nilfs_get_blocks_per_segment(nilfs) * param->num + 99)
-				/ 100;
+		block_count = DIV_ROUND_UP((uint64_t)blocks_per_segment *
+					   param->num, 100);
 	} else {
-		block_size = nilfs_get_block_size(nilfs);
-		segment_size = block_size *
-				nilfs_get_blocks_per_segment(nilfs);
+		size_t block_size = nilfs_get_block_size(nilfs);
+		uint64_t segment_size, bytes;
+
+		segment_size = (uint64_t)block_size * blocks_per_segment;
 		bytes = nilfs_convert_units_to_bytes(param) % segment_size;
-		ret = (bytes + block_size - 1) / block_size;
+		block_count = DIV_ROUND_UP(bytes, block_size);
 	}
-	return ret;
+
+	if (block_count > blocks_per_segment) {
+		syslog(LOG_WARNING,
+		       "%s: block count (=%" PRIu64 ") exceeds "
+		       "blocks per segment (=%" PRIu32 ") - clamped",
+		       token, block_count, blocks_per_segment);
+		block_count = blocks_per_segment;
+	}
+	return (uint32_t)block_count;
 }
 
 static int
@@ -476,7 +488,8 @@ nilfs_cldconfig_handle_min_reclaimable_blocks(struct nilfs_cldconfig *config,
 
 	if (nilfs_cldconfig_get_size_argument(tokens, ntoks, &param) == 0)
 		config->cf_min_reclaimable_blocks =
-			nilfs_convert_size_to_blocks_per_segment(nilfs, &param);
+			nilfs_convert_size_to_blocks_per_segment(
+				nilfs, &param, tokens[0]);
 	return 0;
 }
 
@@ -489,7 +502,8 @@ nilfs_cldconfig_handle_mc_min_reclaimable_blocks(struct nilfs_cldconfig *config,
 
 	if (nilfs_cldconfig_get_size_argument(tokens, ntoks, &param) == 0)
 		config->cf_mc_min_reclaimable_blocks =
-			nilfs_convert_size_to_blocks_per_segment(nilfs, &param);
+			nilfs_convert_size_to_blocks_per_segment(
+				nilfs, &param, tokens[0]);
 	return 0;
 }
 
@@ -697,12 +711,14 @@ static void nilfs_cldconfig_set_default(struct nilfs_cldconfig *config,
 	param.num = NILFS_CLDCONFIG_MIN_RECLAIMABLE_BLOCKS;
 	param.unit = NILFS_CLDCONFIG_MIN_RECLAIMABLE_BLOCKS_UNIT;
 	config->cf_min_reclaimable_blocks =
-		nilfs_convert_size_to_blocks_per_segment(nilfs, &param);
+		nilfs_convert_size_to_blocks_per_segment(
+			nilfs, &param, "min_reclaimable_blocks(default)");
 
 	param.num = NILFS_CLDCONFIG_MC_MIN_RECLAIMABLE_BLOCKS;
 	param.unit = NILFS_CLDCONFIG_MC_MIN_RECLAIMABLE_BLOCKS_UNIT;
 	config->cf_mc_min_reclaimable_blocks =
-		nilfs_convert_size_to_blocks_per_segment(nilfs, &param);
+		nilfs_convert_size_to_blocks_per_segment(
+			nilfs, &param, "mc_min_reclaimable_blocks(default)");
 }
 
 static inline int iseol(int c)

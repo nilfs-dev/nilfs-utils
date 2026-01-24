@@ -90,8 +90,8 @@ struct nilfs_cldconfig {
 	bool cf_use_set_suinfo : 1;
 
 	int cf_log_priority;
-	unsigned long cf_min_reclaimable_blocks;
-	unsigned long cf_mc_min_reclaimable_blocks;
+	uint32_t cf_min_reclaimable_blocks;
+	uint32_t cf_mc_min_reclaimable_blocks;
 };
 
 enum nilfs_selection_policy {

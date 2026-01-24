@@ -71,6 +71,7 @@
 
 #include <errno.h>
 #include <signal.h>
+#include <inttypes.h>
 #include <stdbool.h>
 #include <setjmp.h>
 #include <assert.h>
@@ -172,7 +173,7 @@ struct nilfs_cleanerd {
 	struct timespec cleaning_interval;
 	struct timespec target;
 	struct timespec timeout;
-	unsigned long min_reclaimable_blocks;
+	uint32_t min_reclaimable_blocks;
 	uint64_t prev_nongc_ctime;
 	mqd_t recvq;
 	char *recvq_name;
@@ -185,7 +186,7 @@ struct nilfs_cleanerd {
 	long mm_ncleansegs;
 	struct timespec mm_protection_period;
 	struct timespec mm_cleaning_interval;
-	unsigned long mm_min_reclaimable_blocks;
+	uint32_t mm_min_reclaimable_blocks;
 };
 
 /**
@@ -264,7 +265,7 @@ skip_monotonic_clock:
 	       cleanerd->target.tv_sec, cleanerd->target.tv_nsec);
 	syslog(LOG_DEBUG, "timeout: %ld.%09ld",
 	       cleanerd->timeout.tv_sec, cleanerd->timeout.tv_nsec);
-	syslog(LOG_DEBUG, "min_reclaimable_blocks: %lu",
+	syslog(LOG_DEBUG, "min_reclaimable_blocks: %" PRIu32,
 	       cleanerd->min_reclaimable_blocks);
 	syslog(LOG_DEBUG, "prev_nongc_ctime: %" PRIu64,
 	       cleanerd->prev_nongc_ctime);
@@ -278,7 +279,7 @@ skip_monotonic_clock:
 	syslog(LOG_DEBUG, "mm_cleaning_interval: %ld.%09ld",
 	       cleanerd->mm_cleaning_interval.tv_sec,
 	       cleanerd->mm_cleaning_interval.tv_nsec);
-	syslog(LOG_DEBUG, "mm_min_reclaimable_blocks: %lu",
+	syslog(LOG_DEBUG, "mm_min_reclaimable_blocks: %" PRIu32,
 	       cleanerd->mm_min_reclaimable_blocks);
 	syslog(LOG_DEBUG, "=================================================");
 }
@@ -565,7 +566,7 @@ nilfs_cleanerd_protection_period(struct nilfs_cleanerd *cleanerd)
 		&cleanerd->config.cf_protection_period;
 }
 
-static unsigned long
+static uint32_t
 nilfs_cleanerd_min_reclaimable_blocks(struct nilfs_cleanerd *cleanerd)
 {
 	return cleanerd->running == 2 ?
