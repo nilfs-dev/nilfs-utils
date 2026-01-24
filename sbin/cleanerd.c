@@ -686,6 +686,20 @@ nilfs_cleanerd_select_segments(struct nilfs_cleanerd *cleanerd,
 	int i;
 
 	nsegs_per_step = nilfs_cleanerd_nsegs_per_step(cleanerd);
+
+	if (nsegs_per_step > sustat->ss_ncleansegs) {
+		syslog(LOG_DEBUG,
+		       "reducing segments per cleaning step from %u to %u "
+		       "(ncleansegs)",
+		       nsegs_per_step, (unsigned int)sustat->ss_ncleansegs);
+		nsegs_per_step = (unsigned int)sustat->ss_ncleansegs;
+		/*
+		 * Even if nsegs_per_step becomes 0, fall through to update
+		 * timestamps.  This ensures nilfs_cleanerd_recalc_interval()
+		 * sets a short retry interval.
+		 */
+	}
+
 	nilfs = cleanerd->nilfs;
 
 	smv = nilfs_vector_create(sizeof(struct nilfs_segimp));
