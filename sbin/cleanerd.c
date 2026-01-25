@@ -600,11 +600,11 @@ static void
 nilfs_cleanerd_reduce_nsegs_per_step(struct nilfs_cleanerd *cleanerd)
 {
 	if (cleanerd->running == 2) {
-		if (cleanerd->nsegs_per_step > 1)
-			cleanerd->nsegs_per_step >>= 1;
-	} else  {
 		if (cleanerd->mm_nsegs_per_step > 1)
 			cleanerd->mm_nsegs_per_step >>= 1;
+	} else  {
+		if (cleanerd->nsegs_per_step > 1)
+			cleanerd->nsegs_per_step >>= 1;
 	}
 }
 
