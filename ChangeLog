@@ -1,3 +1,260 @@
+nilfs-utils-2.3.0  Sun Jan 25, 2026 JST
+
+	* New Features:
+	  - Support file/directory arguments for utilities (lscp, lssu,
+	    nilfs-clean, etc.) to automatically resolve backing devices.
+	  - nilfs-clean: Automatically adjust GC speed by default, eliminating
+	    manual tuning.
+
+	* GC Daemon (cleanerd) Improvements:
+	  - Cap segments per cleaning step by available free segments to
+	    prevent stalling when free space is running out.  Also, cap
+	    the number of segments per cleaning step to prevent theoretical
+	    size_t overflow on 32-bit systems.
+	  - Improve signal handling (exit cleanly on SIGINT, ignore SIGUSR2).
+	  - Add state dump feature (SIGUSR1).
+
+	* Build System Updates:
+	  - Support generating pkg-config information for shared libraries.
+	  - Support pkg-config for finding dependencies (libuuid, libmount,
+	    libblkid, libselinux).
+	  - Do not install static libraries by default.
+	  - Gather system programs directly below sbin source directory.
+
+	* Library Refactoring and API Changes:
+	  - Reorganize APIs in libnilfs and libnilfsgc:
+	    - Add/update APIs for segment I/O, resize, and freeze/thaw.
+	    - Unify type definitions (use standard uint32_t/uint64_t).
+	    - Remove obsolete APIs and internal structures from public headers.
+
+	* Other Utilities Updates:
+	  - mkfs.nilfs2: Set "block_count read-only compat" flag by default.
+          - Align help message output and exit codes with standard conventions
+	    (e.g. nilfs-tune).
+	  - nilfs-resize: Use new library API for layout information.
+
+	* Miscellaneous:
+	  - Refactor type definitions (use uint64_t/uint32_t/bool/size_t) for
+	    safety and consistency.
+	  - Adapt to Sparse code checking (fix endian macros, etc.).
+	  - Massive code cleanups and coding style fixes.
+
+	* Note: Although the development tree diverged from v2.2.5, updates
+	  in the v2.2.y stable branch are backports derived from the master
+	  branch.  Consequently, this release incorporates all fixes and
+	  improvements listed below from nilfs-utils-2.2.6 through
+	  nilfs-utils-2.2.16.
+
+nilfs-utils-2.2.16  Sun Jan 25, 2026 JST
+
+	* Fix a build issue on distributions with fully merged bin/sbin:
+	  - build: avoid overwriting binaries with compat symlinks on
+	    merged-/usr (e.g., Fedora Rawhide)
+	* Backport some kernel-doc warning fixes
+
+nilfs-utils-2.2.15  Wed Jan 21, 2026 JST
+
+	* Fix a regression introduced in nilfs-utils-2.2.12:
+	  - chcp: fix inverted logic in argument parsing
+	* Backport miscellaneous fixes:
+	  - libparser: reject negative values in
+	    nilfs_parse_protection_period()
+	  - mkfs.nilfs2: remove stray debug print
+	* Backport manual page updates:
+	  - man: fix typos, grammatical errors and style
+	  - man: update examples in nilfs.8
+
+nilfs-utils-2.2.14  Sat Jan 17, 2026 JST
+
+	* Fix various error handling issues in libmount-based mount/umount
+	  helpers:
+	  - mount.nilfs2: fix broken overlapping rw-mount protection
+	  - mount.nilfs2: fix ignored error on remount target mismatch
+	  - umount.nilfs2: fix assertion failure when unmounting multiple
+	    targets
+	  - umount.nilfs2: fix incorrect error code handling in libmount-based
+	    umount
+	  - mount.nilfs2: fix error code handling in nilfs_do_mount_one()
+	  - mount.nilfs2: fix error return in nilfs_mount_attrs_parse() and
+	    its caller
+	  - umount.nilfs2: fix exit code accumulation and reorganize status
+	    codes
+	  - umount.nilfs2: fix broken empty string check
+	  - {mount,umount}.nilfs2: check return values of mnt_context_set_*()
+	  - mount.nilfs2: check return value of mnt_fs_set_root()
+	* Fix a build warning for mkfs.nilfs2:
+	  - Remove unnecessary local variables in prepare_dat()
+	* Build updates:
+	  - Ignore actmp files
+
+nilfs-utils-2.2.13  Sun Dec 28, 2025 JST
+
+	* Build updates:
+	  - Support UsrMerge and Bin-Sbin merge with automatic detection
+	  - Autodetect architecture-specific library directory
+	  - Fix installation of missing header file nilfs_gc.h
+	  - Remove unused UTIL_CHECK_LIB macro
+	  - Add a few autoconf temporary artifacts to .gitignore
+	* Fix a build warning for legacy mount helpers
+	  - mount.nilfs2: do not use security_context_t in the legacy variant
+	* Documentation:
+	  - Modernize description regarding libmount and mtab handling
+	  - Reorganize build instructions and consolidate legacy info
+	  - Add instruction to use 'make distclean' when changing config
+	  - Update troubleshooting guide for build issues
+	  - Add installation and uninstallation instructions to README
+	  - Add a new section to explain cross-compilation and deployment
+	  - Remove inappropriate example for --libdir option
+	  - Fix some grammatical errors and inappropriate expressions
+
+nilfs-utils-2.2.12  Mon Sep 22, 2025 JST
+
+	* apply a bug fix for a report that the chcp command could crash with
+	  exit code 139 if given malformed arguments:
+	  - chcp: fix segfault
+	* fix build warnings in Autoconf 2.72 or later:
+	  - configure.ac: do not use AC_PROG_GCC_TRADITIONAL
+
+nilfs-utils-2.2.11  Wed Apr 3, 2024 JST
+
+	* fix two bugs related to mount table parsing. One of these is an
+	  important one that fixes an issue where lscp and other tools would
+	  cause an error if the mount point path name contains characters
+	  such as spaces:
+	  - libnilfs: fix nilfs_open failure for mount points with escaped
+	    characters
+	  - libcleaner: fix asymmetry in mount table open/close handling
+
+nilfs-utils-2.2.10  Mon Mar 4, 2024 JST
+
+	* fix bugs:
+	  - libnilfsgc, cleanerd, nilfs-resize: treat scrapped segments as
+	    unprotected
+	  - nilfs-resize: fix abnormal message output when shrinking file
+	    system
+	  - nilfs-resize: fix abnormal minimum size error output for sizes less
+	    than 4KiB
+	  - nilfs-resize: fix abnormal truncation when specifying size with
+	    fraction
+	  - lib/sb.c: fix super block read failure from disk image file
+	  - nilfs-tune: add missing -f option in help message
+	  - nilfs-tune: fix the exit code when mount is detected
+	  - nilfs-tune: fix usage of wrong endian conversion macro
+	  - umount_libmount: fix error messages
+	  - libnilfs: fix error code when nilfs_open failed to find nilfs
+	  - libnilfs: nilfs_open: identify the mount point device
+	  - libnilfs: nilfs_open: use last matched mount
+	  - nilfs-{clean,resize}: fix duplicate option error output
+	  - bin/*: correct error message for invalid long option specification
+	* fix perl errors of the checkpatch script:
+	  - checkpatch: fix perl errors due to unescaped left braces in regex
+	* improve cleanerd state management in the libmount version of the
+	  mount program:
+	  - mount_libmount: fix umount failure after remount
+	* improve nilfs-resize command to shrink filesystem even when there are
+	  only active segments:
+	  - nilfs-resize: force file system update in active segment only
+	    situation
+	  - nilfs-resize: allow active segment search function to return block
+	    count
+	  - libnilfs: add functions to get pathname or FD of mount point
+	    directory
+	* mkfs.nilfs2: do not create obsolete .nilfs file
+	* make installation of kernel uapi header files optional:
+	  - Move the kernel uapi header file to "linux" subdirectory
+	  - Make installation of kernel uapi header files optional
+	* improve the mount checks in disk image file mount via loop devices
+	  - libmountchk: determine if image file is mounted via a loop device
+	  - mkfs.nilfs2: use libmountchk to check the mount status of target
+	    device
+	* improve message output:
+	  - nilfs-resize: output the minimum device size in insufficient free
+	    space message
+	  - nilfs-resize: switch singular/plural forms of "segment" in message
+	    text
+	  - nilfs-resize: make the progress bar more accurate
+	  - nilfs-resize: rename function nilfs_resize_inuse_segments()
+	  - mkfs.nilfs2, nilfs-resize, nilfs-tune: output error cause when open
+	    fails
+	  - nilfs-tune: do not display version information by default
+	* backport some changes to bring the API (ioctl) and disk format
+	  header files up to date:
+	  - nilfs-utils: import uapi headers nilfs2_api.h and nilfs2_ondisk.h
+	  - nilfs2: do not use unexported cpu_to_le32()/le32_to_cpu() in uapi
+	    header
+	* backport patches that bug fixes etc. depend on:
+	  - util.h: add likely()/unlikely() macros
+	  - nilfs-utils: use unlikely()/likely() macros
+	  - nilfs2_fs.h: move nilfs_rec_len_{from,to}_disk() to mkfs.h
+	  - nilfs.h: move BUG() macro to util.h
+	  - compat.h: gather definition of FIFREEZE and FITHAW
+	  - compat.h: include the compatible definition for PATH_MAX
+	  - compat.h: ensure to declare major() and minor() macros
+	  - mount_libmount: generalize mount entry search function
+	  - nilfs-resize: add kernel-doc style comments to major functions
+	  - nilfs-resize: add and apply error message macros
+	  - nilfs-resize: add macro to print message when in verbose mode
+	* clean up some early definitions from nilfs.h that are undesirable
+	  as being in a shared file:
+	  - nilfs.h: move byte order conversion macros to compat.h
+	  - nilfs.h: eliminate sector_t and nilfs_blkoff_t
+	* update README file:
+	  - README: describe an example of separating libraries into a
+	    subdirectory
+
+nilfs-utils-2.2.9  Mon Jun 20, 2022 JST
+
+	* {mount,umount}.nilfs2: use libmount by default
+	* fix build warnings in Autoconf 2.70 or later:
+	  - configure.ac: use AC_CONFIG_HEADERS instead of AC_CONFIG_HEADER
+	  - configure.ac: remove AC_PROG_CC_C99 macro
+	  - configure.ac: use AC_USE_SYSTEM_EXTENSIONS instead of AC_GNU_SOURCE
+	  - configure.ac: use LT_INIT instead of AC_PROG_LIBTOOL
+	  - configure.ac: remove obsolete AC_HEADER_STDC marco
+	  - configure.ac: remove obsolete AC_HEADER_TIME marco
+	  - do not use AC_TYPE_SIGNAL and RETSIGTYPE
+	* fix gcc8 -Wstringop-truncation warnings:
+	  - mkfs, nilfs-tune: fix gcc8 warnings for volume name buffers
+	  - nilfs-tune: fix gcc8 warnings at user_string() and group_string()
+	* update documents:
+	  - README: update git repository url
+	  - README: alter URLs referenced in the developer notes
+	  - README: remedy a note about dependency on the selinux library
+
+nilfs-utils-2.2.8  Tue Aug 20, 2019 JST
+
+	* fix some build issues:
+	  - use _POSIX_MAX_INPUT
+	  - mount.nilfs: drop include rpc/types.h
+	  - libmount, libblkid: fix order of autoconf probing
+	  - mkfs.nilfs2: fix library order of libuuid
+	* fix bugs:
+	  - mkfs.nilfs2: fix underflow in calculation of minimum number of
+	    segments
+	  - mkfs.nilfs2: fix wrong suggestion of minimum device size
+	* update maintainer's email address
+
+nilfs-utils-2.2.7  Sun Nov 5, 2017 JST
+
+	* Fix conflicting data buffer error; this fixes a cleanerd crash
+	  issue in some high loads that leads the file system to a disk
+	  full.
+
+nilfs-utils-2.2.6  Mon Oct 10, 2016 JST
+
+	* dumpseg: fix misuse of endian conversion macro for ss_nblocks
+	* libnilfs: fix potential memory access overrun at
+	  nilfs_psegment_is_valid()
+	* libnilfs: fix potential underflow at nilfs_psegment_is_end()
+	* libnilfs: fix potential underflow of p_maxblocks at
+	  nilfs_psegment_init()
+	* libnilfs: add missing errno setting at nilfs_sb_write()
+	* libnilfs: add sanity check on segment summary header size
+	* libnilfs: check range of finfo and binfos before reading them
+	* libnilfs: add sanity check for block counts in finfo
+	* libnilfs: get rid of HAVE_MUNMAP
+	* ChangeLog: fix typos
+
 nilfs-utils-2.2.5  Sun Sep 4, 2016 JST
 
 	* fix the problem that checkpoints and blocks with a future timestamp
