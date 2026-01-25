@@ -1,3 +1,10 @@
+nilfs-utils-2.2.16  Sun Jan 25, 2026 JST
+
+	* Fix a build issue on distributions with fully merged bin/sbin:
+	  - build: avoid overwriting binaries with compat symlinks on
+	    merged-/usr (e.g., Fedora Rawhide)
+	* Backport some kernel-doc warning fixes
+
 nilfs-utils-2.2.15  Wed Jan 21, 2026 JST
 
 	* Fix a regression introduced in nilfs-utils-2.2.12:
