@@ -5,12 +5,22 @@ dnl Copyright (C) 2007-2012 Nippon Telegraph and Telephone Corporation.
 #                                               -*- Autoconf -*-
 # Process this file with autoconf to produce a configure script.
 
-AC_PREREQ(2.60)
+AC_PREREQ(2.64)
 AC_INIT([NILFS utils],[2.4.0-dev],[linux-nilfs@vger.kernel.org])
 AM_INIT_AUTOMAKE
 AC_CONFIG_SRCDIR([config.h.in])
 AC_CONFIG_HEADERS([config.h])
 AC_CONFIG_MACRO_DIR([m4])
+
+dnl GIT ID embedding logic
+m4_define([nilfs_utils_git_rev],
+  m4_esyscmd_s([case "$NILFS_UTILS_USE_GITID" in 1|[tT]*|[oO]n|[yY]*)	\
+                git describe --tags --always --dirty 2>/dev/null ;; esac]))
+
+dnl Emit to config.h if not empty
+m4_if(nilfs_utils_git_rev, [], [],
+      [AC_DEFINE_UNQUOTED([NILFS_UTILS_GIT_REVISION], ["nilfs_utils_git_rev"],
+                          [Git revision])])
 
 # Checks for programs.
 AC_PROG_CC

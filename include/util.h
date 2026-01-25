@@ -22,6 +22,17 @@
 /* Force a compilation error if the condition is true */
 #define BUILD_BUG_ON(condition) ((void)sizeof(struct { int: -!!(condition); }))
 
+/* Macro to emit a git revision string into binaries */
+#if defined(NILFS_UTILS_GIT_REVISION) && defined(__GNUC__)
+#define NILFS_UTILS_GITID() 						     \
+	__asm__(							     \
+	    ".section .comment\n\t"					     \
+	    ".string \"nilfs-utils git: " NILFS_UTILS_GIT_REVISION "\"\n\t"  \
+	    ".previous")
+#else
+#define NILFS_UTILS_GITID()	/* muted */
+#endif
+
 #define typecheck(type, x)					\
 	({							\
 	   type __dummy;					\
