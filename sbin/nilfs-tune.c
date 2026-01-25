@@ -71,6 +71,7 @@
 #include "nilfs.h"
 #include "nilfs_feature.h"
 #include "check_mount.h"
+#include "util.h"	/* NILFS_UTILS_GITID() */
 
 
 struct nilfs_tune_options {
@@ -84,6 +85,8 @@ struct nilfs_tune_options {
 	uint8_t uuid[16];
 	char *fs_features;
 };
+
+NILFS_UTILS_GITID();
 
 static void nilfs_tune_usage(FILE *stream)
 {

@@ -84,6 +84,8 @@
 
 static const char badblocks[] = BADBLOCKSDIR "/" BADBLOCKS_NAME;
 
+NILFS_UTILS_GITID();
+
 /* Options */
 static int quiet;
 static int cflag;

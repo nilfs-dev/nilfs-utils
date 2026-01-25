@@ -69,6 +69,8 @@ static const struct option long_option[] = {
 #endif	/* _GNU_SOURCE */
 
 
+NILFS_UTILS_GITID();
+
 int main(int argc, char *argv[])
 {
 	struct nilfs *nilfs;

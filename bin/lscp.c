@@ -98,6 +98,8 @@ static struct nilfs_cpinfo cpinfos[LSCP_NCPINFO];
 static int show_block_count = 1;
 static int show_all;
 
+NILFS_UTILS_GITID();
+
 static void lscp_print_header(void)
 {
 	printf("                 CNO        DATE     TIME  MODE  FLG     %s       ICNT\n",

@@ -141,6 +141,8 @@ static int pm_in_progress;	/* 0: off, 1: on, -1: interrupted */
 static const char *pm_label;
 
 
+NILFS_UTILS_GITID();
+
 /**
  * nilfs_resize_logger - logger function to pass to libraries used
  * @priority: log level

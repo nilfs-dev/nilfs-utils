@@ -218,6 +218,8 @@ static const char *nilfs_cleaner_cmd_name[] = {
 	"stop", "shutdown"
 };
 
+NILFS_UTILS_GITID();
+
 static void nilfs_cleanerd_version(void)
 {
 	printf("%s (%s %s)\n", getprogname(), PACKAGE, PACKAGE_VERSION);

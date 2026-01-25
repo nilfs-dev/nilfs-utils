@@ -70,6 +70,8 @@ static const struct option long_option[] = {
 #define DUMPSEG_BASE	10
 #define DUMPSEG_BUFSIZE	128
 
+NILFS_UTILS_GITID();
+
 static void dumpseg_print_psegment_error(const struct nilfs_psegment *pseg,
 					 const char *errstr)
 {

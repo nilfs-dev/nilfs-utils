@@ -87,6 +87,7 @@
 #include "mount_attrs.h"
 #include "cleaner_exec.h"
 #include "nls.h"
+#include "util.h"	/* NILFS_UTILS_GITID() */
 
 #ifdef _GNU_SOURCE
 #include <getopt.h>
@@ -100,6 +101,8 @@ static char *mount_fstype;
 
 /* global variables */
 static const char fstype[] = NILFS2_FS_NAME;
+
+NILFS_UTILS_GITID();
 
 /* mount info */
 struct nilfs_mount_info {

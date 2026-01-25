@@ -122,6 +122,8 @@ enum {
 #define LINE_MAX	2048
 #endif	/* LINE_MAX */
 
+NILFS_UTILS_GITID();
+
 static int nilfs_find_fs(struct nilfs *nilfs, const char *dev, const char *dir,
 			 const char *opt)
 {

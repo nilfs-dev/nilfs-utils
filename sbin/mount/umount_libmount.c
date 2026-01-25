@@ -75,6 +75,7 @@
 #include "mount_attrs.h"
 #include "cleaner_exec.h"
 #include "nls.h"
+#include "util.h"	/* NILFS_UTILS_GITID() */
 
 #ifdef _GNU_SOURCE
 #include <getopt.h>
@@ -88,6 +89,8 @@ static int suid;	/* reserved for non-root user mount/umount
 
 /* global variables */
 static const char fstype[] = NILFS2_FS_NAME;
+
+NILFS_UTILS_GITID();
 
 /* umount info */
 struct nilfs_umount_info {

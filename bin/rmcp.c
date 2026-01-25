@@ -87,6 +87,8 @@ static const struct option long_options[] = {
 static int force;
 static int interactive;
 
+NILFS_UTILS_GITID();
+
 static int rmcp_confirm(const char *arg)
 {
 	char ans[MAX_INPUT];

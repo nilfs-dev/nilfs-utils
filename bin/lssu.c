@@ -120,6 +120,8 @@ static uint64_t param_lines;
 static size_t blocks_per_segment;
 static struct nilfs_suinfo suinfos[LSSU_NSEGS];
 
+NILFS_UTILS_GITID();
+
 static void lssu_print_header(void)
 {
 	puts(lssu_format[disp_mode].header);

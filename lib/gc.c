@@ -47,6 +47,8 @@
 #define NILFS_GC_NCPINFO	512
 
 
+NILFS_UTILS_GITID();
+
 static void default_logger(int priority, const char *fmt, ...)
 {
 	va_list args;

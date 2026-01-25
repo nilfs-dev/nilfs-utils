@@ -150,7 +150,8 @@ static unsigned char min_reclaimable_blocks_unit = NILFS_CLEANER_ARG_UNIT_NONE;
 static sigjmp_buf nilfs_clean_env;
 static struct nilfs_cleaner *nilfs_cleaner;
 
-/* cleaner parameter */
+
+NILFS_UTILS_GITID();
 
 static void nilfs_clean_logger(int priority, const char *fmt, ...)
 {
