@@ -9,6 +9,8 @@
  *1: required only if supporting SELinux context mount options without
      using libmount.  By default, libmount is used and support of the
      context mount depends on the libmount that distro provides.
+     Note that libselinux-dev may be available as the newer version
+     (as is the case in Debian Sid).
 
  *2: required if resolving build dependencies via .pc (pkg-config)
      files or generating the project's .pc files.
