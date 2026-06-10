@@ -91,6 +91,8 @@ static int nilfs_sb_is_valid(struct nilfs_super_block *sbp, int check_crc)
 		return 0;
 	if (unlikely(le16_to_cpu(sbp->s_bytes) > NILFS_MAX_SB_SIZE))
 		return 0;
+	if (le32_to_cpu(sbp->s_log_block_size) > 6)
+		return 0;
 	if (!check_crc)
 		return 1;
 
