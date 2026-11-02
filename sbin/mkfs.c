@@ -103,7 +103,7 @@ static uint64_t compat_array[NILFS_MAX_FEATURE_TYPES] = {
 	/* Compat */
 	0,
 	/* Read-only compat */
-	NILFS_FEATURE_COMPAT_RO_BLOCK_COUNT,
+	NILFS_FEATURE_COMPAT_RO_BLOCK_COUNT | NILFS_FEATURE_COMPAT_RO_ATIME,
 	/* Incompat */
 	0
 };
