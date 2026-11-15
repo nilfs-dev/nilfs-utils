@@ -61,6 +61,8 @@ static const struct nilfs_feature features[] = {
 	/* Read-only compat features */
 	{ NILFS_FEATURE_TYPE_COMPAT_RO,
 	  NILFS_FEATURE_COMPAT_RO_BLOCK_COUNT, "block_count" },
+	{ NILFS_FEATURE_TYPE_COMPAT_RO,
+	  NILFS_FEATURE_COMPAT_RO_ATIME, "atime" },
 	/* Incompat features */
 	/* End */
 	{ 0, 0, NULL }
