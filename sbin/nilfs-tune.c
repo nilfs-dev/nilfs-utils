@@ -101,7 +101,7 @@ static const uint64_t ok_features[NILFS_MAX_FEATURE_TYPES] = {
 	/* Compat */
 	0,
 	/* Read-only compat */
-	NILFS_FEATURE_COMPAT_RO_BLOCK_COUNT,
+	NILFS_FEATURE_COMPAT_RO_BLOCK_COUNT | NILFS_FEATURE_COMPAT_RO_ATIME,
 	/* Incompat */
 	0
 };
@@ -110,7 +110,7 @@ static const uint64_t clear_ok_features[NILFS_MAX_FEATURE_TYPES] = {
 	/* Compat */
 	0,
 	/* Read-only compat */
-	NILFS_FEATURE_COMPAT_RO_BLOCK_COUNT,
+	NILFS_FEATURE_COMPAT_RO_BLOCK_COUNT | NILFS_FEATURE_COMPAT_RO_ATIME,
 	/* Incompat */
 	0
 };
@@ -485,20 +485,48 @@ static void show_nilfs_sb(struct nilfs_super_block *sbp)
 	       le16_to_cpu(sbp->s_bytes));
 }
 
+#define ATIME_ON_PROMPT \
+	"Warning: Enabling the atime feature will cause existing files to\n"  \
+	"expose the epoch date (1970-01-01) as their atime.\n"
+
+#define ATIME_OFF_PROMPT \
+	"Warning: Disabling the atime feature allows older kernels to\n"      \
+	"mount the filesystem read-write, which leaves atime as 0\n"          \
+	"(1970-01-01) in newly allocated inode blocks and may expose it\n"    \
+	"when re-enabled.\n"
+
+static int prompt_feature_set(const char *msg)
+{
+	int c;
+
+	puts(msg);
+	puts("Do you wish to proceed (y/N)? ");
+	return ((c = getchar()) == 'y' || c == 'Y') ? 0 : -1;
+}
+
 static int update_feature_set(struct nilfs_super_block *sbp,
 			      struct nilfs_tune_options *opts)
 {
 	uint64_t features[NILFS_MAX_FEATURE_TYPES];
+	uint64_t old_features[NILFS_MAX_FEATURE_TYPES];
 	uint64_t bad_mask;
 	int bad_type;
 	int ret;
 
 	features[NILFS_FEATURE_TYPE_COMPAT] =
+	old_features[NILFS_FEATURE_TYPE_COMPAT] =
 		le64_to_cpu(sbp->s_feature_compat);
 	features[NILFS_FEATURE_TYPE_COMPAT_RO] =
+	old_features[NILFS_FEATURE_TYPE_COMPAT_RO] =
 		le64_to_cpu(sbp->s_feature_compat_ro);
 	features[NILFS_FEATURE_TYPE_INCOMPAT] =
+	old_features[NILFS_FEATURE_TYPE_INCOMPAT] =
 		le64_to_cpu(sbp->s_feature_incompat);
+
+#define FEATURE_ON(type, mask) (!(old_features[(type)] & (mask)) && \
+				 (features[(type)] & (mask)))
+#define FEATURE_OFF(type, mask) ((old_features[(type)] & (mask)) && \
+				 !(features[(type)] & (mask)))
 
 	assert(opts->fs_features != NULL);
 	ret = nilfs_edit_feature(opts->fs_features, features, ok_features,
@@ -515,6 +543,16 @@ static int update_feature_set(struct nilfs_super_block *sbp,
 			      nilfs_feature2string(bad_type, bad_mask));
 		}
 	} else {
+		if (FEATURE_ON(NILFS_FEATURE_TYPE_COMPAT_RO,
+			       NILFS_FEATURE_COMPAT_RO_ATIME) &&
+		    prompt_feature_set(ATIME_ON_PROMPT) < 0)
+				return -1;
+
+		if (FEATURE_OFF(NILFS_FEATURE_TYPE_COMPAT_RO,
+				NILFS_FEATURE_COMPAT_RO_ATIME) &&
+		    prompt_feature_set(ATIME_OFF_PROMPT) < 0)
+				return -1;
+
 		sbp->s_feature_compat =
 			cpu_to_le64(features[NILFS_FEATURE_TYPE_COMPAT]);
 		sbp->s_feature_compat_ro =
