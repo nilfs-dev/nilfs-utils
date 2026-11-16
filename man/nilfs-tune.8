@@ -1,6 +1,6 @@
 .\"  Copyright (C) 2010 Jiro SEKIBA <jir@unicus.jp>
 .\"
-.TH NILFS-TUNE 8 "Jan 2026" "nilfs-utils version 2.3"
+.TH NILFS-TUNE 8 "Nov 2026" "nilfs-utils version 2.4-dev"
 .SH NAME
 nilfs-tune \- adjust tunable file system parameters on NILFS file system
 .SH SYNOPSIS
@@ -43,9 +43,16 @@ caret character ('^') will be cleared in the filesystem's superblock;
 filesystem features without a prefix character
 will be added to the filesystem.
 .IP
-The following filesystem feature can be set or cleared using
+The following filesystem features can be set or cleared using
 .BR nilfs-tune :
 .RS
+.TP
+.B atime
+Enable per-inode access time (atime) tracking.  Filesystems with this
+feature enabled can only be mounted read-only on older kernels that do
+not support it.  Enabling or re-enabling this feature may expose the
+epoch date (1970-01-01) as the atime for inodes created while it was
+disabled on older kernels.
 .TP
 .B block_count
 Enable block count per checkpoint.

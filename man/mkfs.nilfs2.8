@@ -1,7 +1,7 @@
 .\"  Copyright (C) 2007-2012 Nippon Telegraph and Telephone Corporation.
 .\"  Written by Ryusuke Konishi <konishi.ryusuke@gmail.com>
 .\"
-.TH MKFS.NILFS2 8 "Jan 2026" "nilfs-utils version 2.3"
+.TH MKFS.NILFS2 8 "Nov 2026" "nilfs-utils version 2.4-dev"
 .SH NAME
 mkfs.nilfs2 \- create a NILFS2 filesystem
 .SH SYNOPSIS
@@ -165,6 +165,11 @@ by commas, that are to be enabled.  To disable a feature, simply
 prefix the feature name with a caret ('^') character.  The
 pseudo-filesystem feature "none" will clear all filesystem features.
 .RS
+.TP
+.B atime
+Enable per-inode access time (atime) tracking.  Note that filesystems
+with this feature enabled can only be mounted read-only on older kernels
+that do not support it.
 .TP
 .B block_count
 Enable block count per checkpoint (enabled by default).
