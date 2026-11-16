@@ -1214,6 +1214,7 @@ static void init_inode(ino_t ino, unsigned type, int mode, unsigned size)
 	raw_inode->i_links_count =	cpu_to_le16(1);
 	raw_inode->i_ctime =		cpu_to_le64(nilfs.diskinfo->ctime);
 	raw_inode->i_mtime =		cpu_to_le64(nilfs.diskinfo->ctime);
+	raw_inode->i_atime =		cpu_to_le64(nilfs.diskinfo->ctime);
 
 	if (ino >= NILFS_USER_INO)
 		reserve_ifile_inode(ino);
