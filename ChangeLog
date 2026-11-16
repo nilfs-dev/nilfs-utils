@@ -1,3 +1,13 @@
+nilfs-utils-2.3.1  Fri Jun 19, 2026 JST
+
+	* Backport a fix for a potential overflow in the library function that
+	  determines if a superblock is valid (CVE-2026-55392):
+	  - lib/sb: validate s_log_block_size in nilfs_sb_is_valid()
+	* Backport a cleanerd fix:
+	  - cleanerd: apply missing fix for swapped segment count reduction
+	* Backport a minor correction to a footnote in the README file:
+	  - README: mention libselinux-dev as a newer package name
+
 nilfs-utils-2.3.0  Sun Jan 25, 2026 JST
 
 	* New Features:
