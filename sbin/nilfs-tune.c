@@ -562,15 +562,17 @@ static int update_feature_set(struct nilfs_super_block *sbp,
 			      nilfs_feature2string(bad_type, bad_mask));
 		}
 	} else {
-		if (FEATURE_ON(NILFS_FEATURE_TYPE_COMPAT_RO,
-			       NILFS_FEATURE_COMPAT_RO_ATIME) &&
-		    prompt_feature_set(ATIME_ON_PROMPT) < 0)
+		if (!opts->force) {
+			if (FEATURE_ON(NILFS_FEATURE_TYPE_COMPAT_RO,
+				       NILFS_FEATURE_COMPAT_RO_ATIME) &&
+			    prompt_feature_set(ATIME_ON_PROMPT) < 0)
 				return -1;
 
-		if (FEATURE_OFF(NILFS_FEATURE_TYPE_COMPAT_RO,
-				NILFS_FEATURE_COMPAT_RO_ATIME) &&
-		    prompt_feature_set(ATIME_OFF_PROMPT) < 0)
+			if (FEATURE_OFF(NILFS_FEATURE_TYPE_COMPAT_RO,
+					NILFS_FEATURE_COMPAT_RO_ATIME) &&
+			    prompt_feature_set(ATIME_OFF_PROMPT) < 0)
 				return -1;
+		}
 
 		sbp->s_feature_compat =
 			cpu_to_le64(features[NILFS_FEATURE_TYPE_COMPAT]);
