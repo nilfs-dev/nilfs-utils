@@ -497,11 +497,30 @@ static void show_nilfs_sb(struct nilfs_super_block *sbp)
 
 static int prompt_feature_set(const char *msg)
 {
-	int c;
-
 	puts(msg);
-	puts("Do you wish to proceed (y/N)? ");
-	return ((c = getchar()) == 'y' || c == 'Y') ? 0 : -1;
+
+	for (;;) {
+		int c, c_next;
+
+		printf("Do you wish to proceed (y/N)? ");
+		fflush(stdout);
+
+		c = getchar();
+		if (c == EOF || c == '\n')
+			return -1;
+
+		c_next = getchar();
+		if (c_next == EOF || c_next == '\n') {
+			if (c == 'y' || c == 'Y')
+				return 0;
+			if (c == 'n' || c == 'N')
+				return -1;
+		}
+
+		/* Skip to the end of the line or to EOF */
+		while (c_next != '\n' && c_next != EOF)
+			c_next = getchar();
+	}
 }
 
 static int update_feature_set(struct nilfs_super_block *sbp,
