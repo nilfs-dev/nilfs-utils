@@ -46,9 +46,9 @@
  * @i_links_count: links count
  * @i_flags: file flags
  * @i_bmap: block mapping
- * @i_xattr: extended attributes
+ * @i_atime: access time (seconds)
  * @i_generation: file generation (for NFS)
- * @i_pad: padding
+ * @i_atime_nsec: access time (nano seconds)
  */
 struct nilfs_inode {
 	__le64	i_blocks;
@@ -64,9 +64,9 @@ struct nilfs_inode {
 	__le32	i_flags;
 	__le64	i_bmap[NILFS_INODE_BMAP_SIZE];
 #define i_device_code	i_bmap[0]
-	__le64	i_xattr;
+	__le64	i_atime;
 	__le32	i_generation;
-	__le32	i_pad;
+	__le32	i_atime_nsec;
 };
 
 #define NILFS_MIN_INODE_SIZE		128
